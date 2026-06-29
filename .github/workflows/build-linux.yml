@@ -1,0 +1,177 @@
+name: Build Linux App
+
+on:
+  push:
+    tags:
+      - '*-linux/v*'
+      - '*-all/v*'
+  workflow_dispatch:
+    inputs:
+      archs:
+        description: 'Target architectures (comma-separated)'
+        required: false
+        type: choice
+        options: [armv7l, aarch64, 'armv7l,aarch64']
+        default: 'armv7l'
+      enable_nuitka:
+        description: 'Enable Nuitka compilation'
+        required: false
+        type: boolean
+        default: true
+      version:
+        description: 'Version override (leave empty to use pyproject.toml)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      app_name: ${{ steps.vars.outputs.app_name }}
+      version: ${{ steps.vars.outputs.version }}
+      python_version: ${{ steps.vars.outputs.python_version }}
+      build_matrix: ${{ steps.matrix.outputs.build_matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read project config
+        id: vars
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          # 确定版本号：tag 触发从 tag 提取，手动触发用输入值，否则从 pyproject.toml 读取
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/*/v}"
+          elif [[ -n "$VERSION_INPUT" ]]; then
+            VERSION="$VERSION_INPUT"
+          else
+            VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          fi
+          # 回写 pyproject.toml，确保 pyapp build 读到正确版本（无覆盖时为空操作）
+          [[ -n "$VERSION" ]] && sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          echo "app_name=$(grep '^name = ' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "python_version=$(grep 'python_version' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
+      - name: Generate matrix
+        id: matrix
+        run: |
+          ARCHS="${{ inputs.archs || 'armv7l' }}"
+          MATRIX=""
+          [[ "$ARCHS" == *"armv7l"* ]] && MATRIX+='{"arch":"armv7l","qemu_arch":"armv7"},'
+          [[ "$ARCHS" == *"aarch64"* ]] && MATRIX+='{"arch":"aarch64","qemu_arch":"aarch64"},'
+          echo "build_matrix=[${MATRIX%,}]" >> $GITHUB_OUTPUT
+
+  build:
+    needs: config
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.config.outputs.build_matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 在宿主机计算好 PBS 的下载 URL 和文件名，避免在 QEMU 内写复杂的 case 判断
+      - name: Resolve PBS metadata
+        id: pbs
+        run: |
+          PY_VER="${{ needs.config.outputs.python_version }}"
+          PY_MINOR=$(echo "$PY_VER" | cut -d. -f1,2)
+          
+          case "$PY_MINOR" in
+            3.10) FULL_PY_VER="3.10.20" ;;
+            3.11) FULL_PY_VER="3.11.15" ;;
+            3.12) FULL_PY_VER="3.12.13" ;;
+            *) echo "::error::Unsupported Python: $PY_VER" && exit 1 ;;
+          esac
+          
+          case "${{ matrix.arch }}" in
+            armv7l)  TRIPLE="armv7-unknown-linux-gnueabihf" ;;
+            aarch64) TRIPLE="aarch64-unknown-linux-gnu" ;;
+          esac
+          
+          PBS_TAG="20260610"
+          FILENAME="cpython-${FULL_PY_VER}+${PBS_TAG}-${TRIPLE}-install_only_stripped.tar.gz"
+          echo "url=https://github.com/astral-sh/python-build-standalone/releases/download/${PBS_TAG}/${FILENAME}" >> $GITHUB_OUTPUT
+          echo "filename=$FILENAME" >> $GITHUB_OUTPUT
+
+      # 前端是纯静态资源，在宿主机构建即可，run-on-arch 会把工作目录挂载进 QEMU 容器
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build frontend
+        run: |
+          cd frontend
+          [[ -f package-lock.json ]] && npm ci || npm install
+          npm run build
+
+      - name: Build on ${{ matrix.arch }}
+        uses: uraimo/run-on-arch-action@v3
+        with:
+          arch: ${{ matrix.qemu_arch }}
+          distro: bullseye
+          githubToken: ${{ github.token }}
+          # 不使用 install 阶段，所有操作在 run 阶段执行，确保网络失败可重试
+          run: |
+            set -e
+            
+            # 1. 换国内镜像源并安装工具链 (带重试)
+            sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list
+            sed -i 's|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list
+            
+            for i in 1 2 3; do
+              apt-get update -qq && \
+              apt-get install -y -qq --no-install-recommends \
+                build-essential gcc g++ make patchelf wget git file ca-certificates tar gzip && break
+              echo "::warning::apt install failed, retry $i..." && sleep 5
+            done
+            command -v wget >/dev/null 2>&1 || { echo "::error::apt install failed after 3 retries"; exit 1; }
+            
+            # 2. 下载并解压 PBS 编译环境
+            PBS_URL="${{ steps.pbs.outputs.url }}"
+            PBS_FILENAME="${{ steps.pbs.outputs.filename }}"
+            echo "Downloading $PBS_URL"
+            wget -q --tries=3 --retry-connrefused --waitretry=5 "$PBS_URL" -O "$PBS_FILENAME"
+            
+            mkdir -p /opt/python
+            tar -xzf "$PBS_FILENAME" -C /opt/python --strip-components=1
+            ln -sf /opt/python/bin/python3 /usr/bin/python3
+            export PATH="/opt/python/bin:$PATH"
+            
+            [ "${{ matrix.arch }}" = "armv7l" ] && export PIP_EXTRA_INDEX_URL="https://www.piwheels.org/simple"
+            
+            # 3. 预填充 pyapp 运行时缓存，避免重复下载
+            CACHE_DIR="/root/.pyapp/cache/runtimes"
+            mkdir -p "$CACHE_DIR"
+            cp "$PBS_FILENAME" "$CACHE_DIR/$PBS_FILENAME"
+            
+            # 4. 安装 pyapp 并执行构建
+            python3 -m pip install --upgrade pip
+            python3 -m pip install "pyapp-cli[compile] @ git+https://github.com/Jzhenli/pyapp.git"
+            
+            pyapp build linux --arch ${{ matrix.arch }}
+            [[ "${{ inputs.enable_nuitka }}" != "false" ]] && pyapp compile linux
+            pyapp package linux
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ needs.config.outputs.app_name }}-${{ needs.config.outputs.version }}-linux-${{ matrix.arch }}
+          path: dist/*.tar.gz
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Linux Build (${{ matrix.arch }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ needs.config.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Arch**: ${{ matrix.arch }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Nuitka**: ${{ inputs.enable_nuitka != false }}" >> $GITHUB_STEP_SUMMARY
