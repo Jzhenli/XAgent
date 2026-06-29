@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.136.1",
     "uvicorn>=0.30.0",
     "platformdirs>=4.0.0",
+    "pyapp-runtime>=0.1.0",
 ]
 
 [project.optional-dependencies]
@@ -49,7 +50,8 @@ dependencies = [
     "bacpypes3==0.0.106",
     "protobuf>=4.25.0",
     "platformdirs>=3.0.0",
-    "psutil"
+    "psutil",
+    "pyapp-runtime>=0.1.0",
 ]
 pip_index_url = "https://jzhenli.github.io/my-pypi/"
 
@@ -73,7 +75,8 @@ dependencies = [
     "bacpypes3==0.0.106",
     "protobuf>=4.25.0",
     "platformdirs>=3.0.0",
-    "psutil"
+    "psutil",
+    "pyapp-runtime>=0.1.0",
 ]
 
 [tool.pyapp.linux]
@@ -95,5 +98,6 @@ dependencies = [
     "xknx==2.12.2",
     "protobuf>=4.25.0",
     "platformdirs>=3.0.0",
-    "psutil"
+    "psutil",
+    "pyapp-runtime>=0.1.0",
 ]

@@ -25,6 +25,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pyapp_runtime import attach
 
 # ============================================================================
 # Local Imports
@@ -247,6 +248,11 @@ app.include_router(rules_router)
 app.include_router(devices_router)
 app.include_router(users_router)
 app.include_router(north_channels_router)
+
+# 注册生命周期端点（/api/health、/api/shutdown、/api/restart）。
+# 必须在 catch-all 路由 @app.get("/{path:path}") 之前注册，否则 GET /api/health
+# 会被 catch-all 拦截。attach() 幂等，重复调用安全。
+attach(app)
 
 
 # ============================================================================

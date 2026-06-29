@@ -2,14 +2,12 @@
 
 import asyncio
 import logging
-import os
-import sys
-import threading
 
 from .core import ConfigManager, setup_logging
 from .gateway import Gateway
 from .api import app
 from .api.dependencies import set_gateway_storage
+from pyapp_runtime import set_server
 import uvicorn
 
 logger = logging.getLogger(__name__)
@@ -31,7 +29,7 @@ async def run_plugins(gateway: Gateway, shutdown_event: asyncio.Event):
         pass
 
 
-async def async_main():
+async def async_main(host=None, port=None, stop_event=None, access_log=False):
     config_manager = ConfigManager()
     config = config_manager.load()
 
@@ -47,17 +45,33 @@ async def async_main():
 
     shutdown_event = asyncio.Event()
 
-    # 创建 uvicorn server
+    # 创建 uvicorn server（host/port 优先使用传入值，回退到配置）
+    effective_host = host if host is not None else config.server.host
+    effective_port = port if port is not None else config.server.port
     uvicorn_config = uvicorn.Config(
         app=app,
-        host=config.server.host,
-        port=config.server.port,
+        host=effective_host,
+        port=effective_port,
         reload=False,
         log_level=config.logging.level.lower(),
-        access_log=False,
+        access_log=access_log,
         log_config=None
     )
     server = uvicorn.Server(uvicorn_config)
+    # 注册 server 引用，使 /api/shutdown 端点能翻转 server.should_exit。
+    # 与 XAgentServer._stop_event 的 watch 机制互补：两条关闭路径都收敛到
+    # server.should_exit = True。
+    set_server(server)
+
+    # 监听外部 stop_event：run_in_executor 阻塞等待，set 后立即唤醒，无轮询
+    watch_task = None
+    if stop_event is not None:
+        async def _watch_stop():
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, stop_event.wait)
+            server.should_exit = True
+            shutdown_event.set()
+        watch_task = asyncio.create_task(_watch_stop())
 
     plugins_task = asyncio.create_task(run_plugins(gateway, shutdown_event))
 
@@ -67,6 +81,15 @@ async def async_main():
         logger.info("Received keyboard interrupt")
         shutdown_event.set()
     finally:
+        # 唤醒 _watch_stop 的 executor 线程，避免 asyncio.run 卡在 shutdown_default_executor
+        if stop_event is not None:
+            stop_event.set()
+        if watch_task is not None and not watch_task.done():
+            try:
+                await watch_task
+            except Exception as e:
+                logger.debug(f"_watch_stop task ended: {e}")
+
         plugins_task.cancel()
         try:
             await plugins_task
@@ -79,39 +102,3 @@ async def async_main():
             await gateway.stop()
         except Exception as e:
             logger.error(f"Error during gateway shutdown: {e}")
-
-
-def main():
-    """主入口函数
-    
-    退出策略：
-    1. 正常情况：使用 sys.exit(0) 优雅退出
-    2. 有非 daemon 线程阻塞：使用 os._exit(0) 强制退出
-    """
-    try:
-        asyncio.run(async_main())
-    except KeyboardInterrupt:
-        logger.info("Received keyboard interrupt")
-    finally:
-        logger.info("Event loop closed")
-
-    # 检查是否有非 daemon 线程阻止退出
-    non_daemon_threads = [
-        t for t in threading.enumerate() 
-        if t.is_alive() and t != threading.current_thread() and not t.daemon
-    ]
-    
-    if non_daemon_threads:
-        # 有非 daemon 线程，需要强制退出
-        logger.warning(
-            f"Non-daemon threads preventing clean exit: {[t.name for t in non_daemon_threads]}. "
-            f"Using os._exit() for immediate termination."
-        )
-        os._exit(0)
-    else:
-        # 正常退出
-        sys.exit(0)
-
-
-if __name__ == "__main__":
-    main()
