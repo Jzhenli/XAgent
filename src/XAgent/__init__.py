@@ -8,4 +8,7 @@ __version__ = "0.1.0"
 # Import main function for PyApp launcher
 from XAgent.main import main
 
-__all__ = ["main", "__version__"]
+# Import create_app for Android bridge
+from XAgent.xcore import create_app
+
+__all__ = ["main", "create_app", "__version__"]
