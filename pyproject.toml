@@ -25,6 +25,8 @@ build-backend = "setuptools.build_meta"
 python_version = "3.10"
 app_module = "XAgent"
 port = 18080
+pip_index_url = "https://jzhenli.github.io/my-pypi/"
+pip_extra_index_urls = ["https://pypi.org/simple"]
 
 [tool.pyapp.android]
 package_name = "com.example.xagent"
@@ -53,7 +55,6 @@ dependencies = [
     "psutil",
     "pyapp-runtime>=0.1.0",
 ]
-pip_index_url = "https://jzhenli.github.io/my-pypi/"
 
 [tool.pyapp.windows]
 deployment = "standalone"
