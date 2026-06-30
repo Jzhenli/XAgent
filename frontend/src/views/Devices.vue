@@ -87,12 +87,20 @@ const deviceForm = ref({
   port: 502,
   slave_id: 1,
   timeout: 5,
+  interval: 1,
+  // Modbus RTU 串口参数
+  serial_port: '/dev/ttyUSB0',
+  baudrate: 9600,
+  parity: 'N',
+  stopbits: 1,
+  bytesize: 8,
+  // KNX 参数
   gateway_ip: '',
   local_ip: '',
   connection_type: 'automatic',
-  interval: 1,
   sync_mode: 'smart',
   sync_interval: 60,
+  // BACnet 参数
   device_id: 1234,
   tags: ''
 })
@@ -105,19 +113,19 @@ const pluginOptions = [
   { 
     label: 'Modbus TCP', 
     value: 'modbus_tcp', 
-    defaultPort: 502,
-    defaultConfig: { slave_id: 1, timeout: 5, interval: 1 }
+    defaultConfig: { slave_id: 1, timeout: 5, interval: 1, host: '', port: 502 }
   },
   { 
     label: 'Modbus RTU', 
     value: 'modbus_rtu', 
-    defaultPort: 0,
-    defaultConfig: { slave_id: 1, timeout: 5, interval: 1 }
+    defaultConfig: { 
+      slave_id: 1, timeout: 5, interval: 1,
+      serial_port: '/dev/ttyUSB0', baudrate: 9600, parity: 'N', stopbits: 1, bytesize: 8
+    }
   },
   { 
     label: 'KNX', 
     value: 'knx', 
-    defaultPort: 3671,
     defaultConfig: { 
       local_ip: '', 
       timeout: 5, 
@@ -130,25 +138,32 @@ const pluginOptions = [
   { 
     label: 'BACnet', 
     value: 'bacnet', 
-    defaultPort: 47808,
     defaultConfig: { device_id: 1234, timeout: 5, interval: 1 }
   }
 ]
 
-const deviceFormRules = {
+const deviceFormRules = computed(() => ({
   asset: [{ required: true, message: '请输入资产标识', trigger: 'blur' }],
   pluginName: [{ required: true, message: '请选择协议类型', trigger: 'change' }],
-  host: [{ required: true, message: '请输入主机地址', trigger: 'blur' }]
-}
+  // host 只在 TCP/BACnet/KNX 时必填
+  host: deviceForm.value.pluginName === 'modbus_rtu' 
+    ? [] 
+    : [{ required: true, message: '请输入主机地址', trigger: 'blur' }],
+  // serial_port 只在 RTU 时必填
+  serial_port: deviceForm.value.pluginName === 'modbus_rtu'
+    ? [{ required: true, message: '请输入串口设备路径', trigger: 'blur' }]
+    : []
+}))
 
 const handlePluginChange = (val: string) => {
   const opt = pluginOptions.find(o => o.value === val)
   if (opt) {
-    deviceForm.value.port = opt.defaultPort
     if (opt.defaultConfig) {
       Object.assign(deviceForm.value, opt.defaultConfig)
     }
   }
+  // 清除所有校验状态，避免切换插件类型后残留旧的校验错误
+  deviceFormRef.value?.clearValidate()
 }
 
 const handleAddDevice = () => {
@@ -164,10 +179,15 @@ const handleAddDevice = () => {
     port: 502,
     slave_id: 1,
     timeout: 5,
+    interval: 1,
+    serial_port: '/dev/ttyUSB0',
+    baudrate: 9600,
+    parity: 'N',
+    stopbits: 1,
+    bytesize: 8,
     gateway_ip: '',
     local_ip: '',
     connection_type: 'automatic',
-    interval: 1,
     sync_mode: 'smart',
     sync_interval: 60,
     device_id: 1234,
@@ -189,10 +209,15 @@ const handleEditDevice = (device: DeviceListItem) => {
     port: device.connection.port,
     slave_id: (device.pluginConfig.slave_id as number) || 1,
     timeout: (device.pluginConfig.timeout as number) || 5,
+    interval: (device.pluginConfig.interval as number) || 1,
+    serial_port: (device.pluginConfig.serial_port as string) || '/dev/ttyUSB0',
+    baudrate: (device.pluginConfig.baudrate as number) || 9600,
+    parity: (device.pluginConfig.parity as string) || 'N',
+    stopbits: (device.pluginConfig.stopbits as number) || 1,
+    bytesize: (device.pluginConfig.bytesize as number) || 8,
     gateway_ip: (device.pluginConfig.gateway_ip as string) || '',
     local_ip: (device.pluginConfig.local_ip as string) || '',
     connection_type: (device.pluginConfig.connection_type as string) || 'automatic',
-    interval: (device.pluginConfig.interval as number) || 1,
     sync_mode: (device.pluginConfig.sync_mode as string) || 'smart',
     sync_interval: (device.pluginConfig.sync_interval as number) || 60,
     device_id: (device.pluginConfig.device_id as number) || 1234,
@@ -214,9 +239,18 @@ const handleSaveDevice = async () => {
     const buildPluginConfig = (): Record<string, unknown> => {
       const baseConfig: Record<string, unknown> = {}
       
-      if (deviceForm.value.pluginName === 'modbus_tcp' || deviceForm.value.pluginName === 'modbus_rtu') {
+      if (deviceForm.value.pluginName === 'modbus_tcp') {
         baseConfig.host = deviceForm.value.host
         baseConfig.port = deviceForm.value.port
+        baseConfig.slave_id = deviceForm.value.slave_id
+        baseConfig.timeout = deviceForm.value.timeout
+        baseConfig.interval = deviceForm.value.interval
+      } else if (deviceForm.value.pluginName === 'modbus_rtu') {
+        baseConfig.serial_port = deviceForm.value.serial_port
+        baseConfig.baudrate = deviceForm.value.baudrate
+        baseConfig.parity = deviceForm.value.parity
+        baseConfig.stopbits = deviceForm.value.stopbits
+        baseConfig.bytesize = deviceForm.value.bytesize
         baseConfig.slave_id = deviceForm.value.slave_id
         baseConfig.timeout = deviceForm.value.timeout
         baseConfig.interval = deviceForm.value.interval
@@ -1165,12 +1199,65 @@ onMounted(async () => {
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="主机地址" prop="host">
-          <el-input v-model="deviceForm.host" placeholder="请输入主机地址，如 192.168.1.100" />
-        </el-form-item>
-        <el-form-item label="端口">
-          <el-input-number v-model="deviceForm.port" :min="1" :max="65535" />
-        </el-form-item>
+        
+        <!-- Modbus TCP: 主机地址和端口 -->
+        <template v-if="deviceForm.pluginName === 'modbus_tcp'">
+          <el-form-item label="主机地址" prop="host">
+            <el-input v-model="deviceForm.host" placeholder="请输入主机地址，如 192.168.1.100" />
+          </el-form-item>
+          <el-form-item label="端口">
+            <el-input-number v-model="deviceForm.port" :min="1" :max="65535" />
+          </el-form-item>
+        </template>
+        
+        <!-- Modbus RTU: 串口参数 -->
+        <template v-if="deviceForm.pluginName === 'modbus_rtu'">
+          <el-form-item label="串口设备" prop="serial_port">
+            <el-input v-model="deviceForm.serial_port" placeholder="如 /dev/ttyUSB0 或 COM3" />
+            <div style="font-size: 12px; color: #909399; margin-top: 4px;">
+              Linux: /dev/ttyUSB0, /dev/ttyS0 等；Windows: COM3, COM4 等
+            </div>
+          </el-form-item>
+          <el-form-item label="波特率">
+            <el-select v-model="deviceForm.baudrate" placeholder="请选择波特率">
+              <el-option :value="1200" label="1200" />
+              <el-option :value="2400" label="2400" />
+              <el-option :value="4800" label="4800" />
+              <el-option :value="9600" label="9600" />
+              <el-option :value="19200" label="19200" />
+              <el-option :value="38400" label="38400" />
+              <el-option :value="57600" label="57600" />
+              <el-option :value="115200" label="115200" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="校验位">
+            <el-radio-group v-model="deviceForm.parity">
+              <el-radio value="N">无校验 (N)</el-radio>
+              <el-radio value="E">偶校验 (E)</el-radio>
+              <el-radio value="O">奇校验 (O)</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="停止位">
+                <el-radio-group v-model="deviceForm.stopbits">
+                  <el-radio :value="1">1</el-radio>
+                  <el-radio :value="2">2</el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="数据位">
+                <el-radio-group v-model="deviceForm.bytesize">
+                  <el-radio :value="7">7</el-radio>
+                  <el-radio :value="8">8</el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </template>
+        
+        <!-- Modbus TCP/RTU 共有参数 -->
         <el-form-item v-if="deviceForm.pluginName === 'modbus_tcp' || deviceForm.pluginName === 'modbus_rtu'" label="从站ID">
           <el-input-number v-model="deviceForm.slave_id" :min="0" :max="255" />
         </el-form-item>
@@ -1188,6 +1275,18 @@ onMounted(async () => {
           <div style="font-size: 12px; color: #909399; margin-top: 4px;">
             数据采集间隔时间，推荐5-10秒。
           </div>
+        </el-form-item>
+        <el-form-item v-if="deviceForm.pluginName === 'bacnet'" label="主机地址" prop="host">
+          <el-input v-model="deviceForm.host" placeholder="请输入主机地址" />
+        </el-form-item>
+        <el-form-item v-if="deviceForm.pluginName === 'bacnet'" label="端口">
+          <el-input-number v-model="deviceForm.port" :min="1" :max="65535" />
+        </el-form-item>
+        <el-form-item v-if="deviceForm.pluginName === 'knx'" label="网关IP" prop="host">
+          <el-input v-model="deviceForm.host" placeholder="KNX/IP 网关地址" />
+        </el-form-item>
+        <el-form-item v-if="deviceForm.pluginName === 'knx'" label="端口">
+          <el-input-number v-model="deviceForm.port" :min="1" :max="65535" />
         </el-form-item>
         <el-form-item v-if="deviceForm.pluginName === 'knx'" label="本地IP">
           <el-input v-model="deviceForm.local_ip" placeholder="可选，本地IP地址" />

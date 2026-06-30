@@ -14,6 +14,8 @@ export interface DeviceListItem {
   connection: {
     host: string
     port: number
+    serial_port?: string
+    baudrate?: number
   }
   pluginConfig: Record<string, unknown>
   tags: string[]
@@ -27,10 +29,15 @@ function mapDeviceToListItem(device: DeviceConfig, connectionStatusMap: Record<s
   
   let host = ''
   let port = 0
+  let serial_port: string | undefined
+  let baudrate: number | undefined
   
   if (pluginName === 'knx') {
     host = (pluginConfig.gateway_ip as string) || ''
     port = (pluginConfig.gateway_port as number) || 0
+  } else if (pluginName === 'modbus_rtu') {
+    serial_port = (pluginConfig.serial_port as string) || '/dev/ttyUSB0'
+    baudrate = (pluginConfig.baudrate as number) || 9600
   } else {
     host = (pluginConfig.host as string) || ''
     port = (pluginConfig.port as number) || 0
@@ -48,7 +55,9 @@ function mapDeviceToListItem(device: DeviceConfig, connectionStatusMap: Record<s
     pointCount: device.points?.length || 0,
     connection: {
       host: host,
-      port: port
+      port: port,
+      serial_port: serial_port,
+      baudrate: baudrate
     },
     pluginConfig: pluginConfig as Record<string, unknown>,
     tags: device.tags || [],
