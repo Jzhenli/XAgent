@@ -8,7 +8,11 @@ import type {
   DeviceListResponse,
   BatchOperationResult,
   DeviceReloadResponse,
-  DeviceStatus
+  DeviceStatus,
+  DiscoverPointsRequest,
+  DiscoverPointsResponse,
+  BatchAddPointsRequest,
+  BatchAddPointsResponse
 } from './types'
 
 export const deviceApi = {
@@ -92,6 +96,18 @@ export const deviceApi = {
 
   async importDevices(data: Record<string, unknown>, overwrite = false): Promise<BatchOperationResult> {
     const res = await api.post('/api/devices/import', data, { params: { overwrite } })
+    return res.data
+  },
+
+  // ========== 点位发现相关API ==========
+
+  async discoverPoints(asset: string, request: DiscoverPointsRequest): Promise<DiscoverPointsResponse> {
+    const res = await api.post(`/api/devices/${asset}/discover-points`, request)
+    return res.data
+  },
+
+  async batchAddPoints(asset: string, request: BatchAddPointsRequest): Promise<BatchAddPointsResponse> {
+    const res = await api.post(`/api/devices/${asset}/points/batch`, request)
     return res.data
   }
 }

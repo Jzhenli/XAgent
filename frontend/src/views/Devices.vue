@@ -23,6 +23,7 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PointTrend from '@/components/PointTrend.vue'
+import PointDiscovery from '@/components/PointDiscovery.vue'
 
 const deviceStore = useDeviceStore()
 const pointStore = usePointStore()
@@ -34,6 +35,7 @@ const statusFilter = ref('')
 const selectedDeviceAsset = ref<string | null>(null)
 const showTrend = ref(false)
 const selectedPointForTrend = ref<{ deviceAsset: string; pointName: string } | null>(null)
+const showPointDiscoveryDialog = ref(false)
 
 const activeTab = ref('devices')
 
@@ -363,6 +365,14 @@ const handleCloseTrend = () => {
   showTrend.value = false
   selectedPointForTrend.value = null
   pointStore.clearSelection()
+}
+
+const handlePointDiscoverySuccess = async () => {
+  showPointDiscoveryDialog.value = false
+  if (selectedDeviceAsset.value) {
+    await pointStore.fetchDevicePoints(selectedDeviceAsset.value)
+  }
+  ElMessage.success('点位发现完成，已更新点位列表')
 }
 
 const getDevicePoints = (asset: string) => {
@@ -968,9 +978,20 @@ onMounted(async () => {
               </el-button>
             </div>
             <span class="panel-title">{{ deviceStore.getDeviceByAsset(selectedDeviceAsset)?.name || selectedDeviceAsset }}</span>
-            <el-button v-if="userStore.hasPermission('devices', 'create')" type="primary" :icon="Plus" size="small" @click="handleAddPoint">
-              新增点位
-            </el-button>
+            <div class="points-actions">
+              <el-button v-if="userStore.hasPermission('devices', 'create')" type="primary" :icon="Plus" size="small" @click="handleAddPoint">
+                新增点位
+              </el-button>
+              <el-button 
+                v-if="userStore.hasPermission('devices', 'create') && currentDevicePluginName === 'bacnet'" 
+                type="success" 
+                :icon="Search" 
+                size="small" 
+                @click="showPointDiscoveryDialog = true"
+              >
+                点位发现
+              </el-button>
+            </div>
           </div>
           
           <el-table 
@@ -1104,6 +1125,15 @@ onMounted(async () => {
             <div class="points-actions">
               <el-button v-if="userStore.hasPermission('devices', 'create')" type="primary" :icon="Plus" size="small" @click="handleAddPoint">
                 新增点位
+              </el-button>
+              <el-button 
+                v-if="userStore.hasPermission('devices', 'create') && currentDevicePluginName === 'bacnet'" 
+                type="success" 
+                :icon="Search" 
+                size="small" 
+                @click="showPointDiscoveryDialog = true"
+              >
+                点位发现
               </el-button>
             </div>
           </div>
@@ -1614,6 +1644,14 @@ onMounted(async () => {
       accept=".yaml,.yml"
       style="display: none"
       @change="handleImportFileChange"
+    />
+
+    <PointDiscovery
+      v-if="selectedDeviceAsset"
+      :device-asset="selectedDeviceAsset"
+      :visible="showPointDiscoveryDialog"
+      @close="showPointDiscoveryDialog = false"
+      @success="handlePointDiscoverySuccess"
     />
   </div>
 </template>

@@ -507,3 +507,65 @@ class DeviceService:
                 connection_status[asset] = "offline"
         
         return connection_status
+    
+    async def batch_add_points(
+        self,
+        asset: str,
+        points: List[PointConfig]
+    ) -> Dict[str, Any]:
+        """批量添加点位
+        
+        Args:
+            asset: 设备资产标识
+            points: 点位配置列表
+            
+        Returns:
+            批量操作结果，包含总数、成功数、失败数和详细结果
+            
+        Raises:
+            ValueError: 设备不存在
+        """
+        config_service = self._get_config_service()
+        
+        # 检查设备是否存在
+        device = await self.get_device(asset)
+        if not device:
+            raise ValueError(f"Device '{asset}' not found")
+        
+        results = {
+            'total': len(points),
+            'succeeded': 0,
+            'failed': 0,
+            'details': []
+        }
+        
+        # 逐个添加点位
+        for point in points:
+            try:
+                point_dict = point.model_dump()
+                await config_service.add_point(asset, point_dict, user="api")
+                
+                results['succeeded'] += 1
+                results['details'].append({
+                    'point_name': point.name,
+                    'status': 'success',
+                    'message': f"Point '{point.name}' added successfully"
+                })
+                
+            except Exception as e:
+                results['failed'] += 1
+                results['details'].append({
+                    'point_name': point.name,
+                    'status': 'failed',
+                    'message': str(e)
+                })
+                logger.warning(
+                    f"Failed to add point '{point.name}' to device '{asset}': {e}"
+                )
+        
+        logger.info(
+            f"Batch added {results['succeeded']}/{results['total']} points "
+            f"to device '{asset}'"
+        )
+        
+        return results

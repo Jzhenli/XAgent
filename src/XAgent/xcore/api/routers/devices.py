@@ -12,7 +12,12 @@ from ..models.device import (
     DeviceListResponse,
     BatchOperationResult,
     DeviceReloadResponse,
-    BatchDeviceReloadResponse
+    BatchDeviceReloadResponse,
+    DiscoverPointsRequest,
+    DiscoverPointsResponse,
+    DiscoveredPoint,
+    BatchAddPointsRequest,
+    BatchAddPointsResponse
 )
 from ..services.device_service_db import DeviceService
 from ..dependencies import get_app_state
@@ -549,3 +554,145 @@ async def import_devices(
         failed=result['failed'],
         details=result['details']
     )
+
+
+# ========== 点位发现和批量添加API ==========
+
+@router.post("/{asset}/discover-points", response_model=DiscoverPointsResponse)
+async def discover_device_points(
+    asset: str,
+    request: DiscoverPointsRequest,
+    state = Depends(get_app_state),
+    token: str = Depends(verify_api_token)
+):
+    """发现设备中的点位
+    
+    自动发现BACnet设备中的对象（点位），支持：
+    - 按对象类型过滤（可选）
+    - 自动读取对象属性（objectName, description等）
+    - 自动判断可写性
+    - 数据类型映射
+    
+    Args:
+        asset: 设备资产标识
+        request: 发现请求参数
+        
+    Returns:
+        发现的点位列表
+        
+    Raises:
+        HTTPException: 404 - 设备不存在
+        HTTPException: 500 - 设备未连接或发现失败
+        HTTPException: 504 - 发现超时
+    """
+    try:
+        # 检查设备是否存在
+        device_service = get_device_service(state)
+        device = await device_service.get_device(asset)
+        if not device:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Device '{asset}' not found"
+            )
+        
+        # 检查插件是否为BACnet
+        if device.plugin.name != "bacnet":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Device '{asset}' is not a BACnet device"
+            )
+        
+        # 导入发现服务
+        from ..services.device_discovery_service import DeviceDiscoveryService
+        
+        # 创建发现服务实例
+        discovery_service = DeviceDiscoveryService(state.gateway.plugin_loader)
+        
+        # 执行点位发现
+        result = await discovery_service.discover_points(
+            device_asset=asset,
+            object_types=request.object_types
+        )
+        
+        # 转换为响应模型
+        points = [
+            DiscoveredPoint(**point)
+            for point in result['points']
+        ]
+        
+        return DiscoverPointsResponse(
+            success=result['success'],
+            points=points,
+            total=result['total']
+        )
+        
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg:
+            raise HTTPException(status_code=404, detail=error_msg)
+        elif "not connected" in error_msg:
+            raise HTTPException(status_code=500, detail=error_msg)
+        else:
+            raise HTTPException(status_code=400, detail=error_msg)
+    except RuntimeError as e:
+        # bacpypes3未安装
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to discover points for device '{asset}': {e}", exc_info=True)
+        raise HTTPException(
+            status_code=504,
+            detail=f"Point discovery failed or timeout: {str(e)}"
+        )
+
+
+@router.post("/{asset}/points/batch", response_model=BatchAddPointsResponse)
+async def batch_add_points_to_device(
+    asset: str,
+    request: BatchAddPointsRequest,
+    service: DeviceService = Depends(get_device_service),
+    token: str = Depends(verify_api_token)
+):
+    """批量添加点位到设备
+    
+    批量添加多个点位，支持：
+    - 自动验证点位配置
+    - 批量添加，提高效率
+    - 详细的成功/失败统计
+    
+    Args:
+        asset: 设备资产标识
+        request: 批量添加请求
+        
+    Returns:
+        批量添加结果
+        
+    Raises:
+        HTTPException: 404 - 设备不存在
+        HTTPException: 500 - 批量添加失败
+    """
+    try:
+        # 执行批量添加
+        result = await service.batch_add_points(asset, request.points)
+        
+        return BatchAddPointsResponse(
+            success=True,
+            message=f"Batch added {result['succeeded']}/{result['total']} points to device '{asset}'",
+            asset=asset,
+            total=result['total'],
+            succeeded=result['succeeded'],
+            failed=result['failed'],
+            details=result['details']
+        )
+        
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg:
+            raise HTTPException(status_code=404, detail=error_msg)
+        else:
+            raise HTTPException(status_code=400, detail=error_msg)
+    except Exception as e:
+        logger.error(f"Failed to batch add points to device '{asset}': {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Batch add points failed: {str(e)}"
+        )

@@ -197,3 +197,46 @@ class BatchDeviceReloadResponse(BaseModel):
     succeeded: int
     failed: int
     results: Dict[str, str] = Field(default_factory=dict)
+
+
+# ========== 点位发现相关模型 ==========
+
+class DiscoverPointsRequest(BaseModel):
+    """点位发现请求"""
+    object_types: Optional[List[str]] = Field(
+        default=None,
+        description="要发现的对象类型列表（可选），如 ['analogInput', 'analogOutput']"
+    )
+
+
+class DiscoveredPoint(BaseModel):
+    """发现的点位信息"""
+    object_type: str = Field(..., description="BACnet对象类型")
+    object_instance: int = Field(..., description="对象实例ID")
+    object_name: str = Field(..., description="对象名称")
+    description: Optional[str] = Field(default="", description="描述")
+    writable: bool = Field(..., description="是否可写")
+    data_type: str = Field(..., description="系统内部数据类型")
+
+
+class DiscoverPointsResponse(BaseModel):
+    """点位发现响应"""
+    success: bool
+    points: List[DiscoveredPoint] = Field(default_factory=list)
+    total: int
+
+
+class BatchAddPointsRequest(BaseModel):
+    """批量添加点位请求"""
+    points: List[PointConfig] = Field(..., description="要添加的点位列表")
+
+
+class BatchAddPointsResponse(BaseModel):
+    """批量添加点位响应"""
+    success: bool
+    message: str
+    asset: str
+    total: int
+    succeeded: int
+    failed: int
+    details: List[Dict[str, Any]] = Field(default_factory=list)

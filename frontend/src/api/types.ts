@@ -392,3 +392,38 @@ export interface DataQualityStats {
   total: number
   quality_rate: number
 }
+
+// ========== 点位发现相关类型 ==========
+
+export interface DiscoverPointsRequest {
+  object_types?: string[]
+}
+
+export interface DiscoveredPoint {
+  object_type: string
+  object_instance: number
+  object_name: string
+  description?: string
+  writable: boolean
+  data_type: string
+}
+
+export interface DiscoverPointsResponse {
+  success: boolean
+  points: DiscoveredPoint[]
+  total: number
+}
+
+export interface BatchAddPointsRequest {
+  points: PointConfig[]
+}
+
+export interface BatchAddPointsResponse {
+  success: boolean
+  message: string
+  asset: string
+  total: number
+  succeeded: number
+  failed: number
+  details: Record<string, unknown>[]
+}

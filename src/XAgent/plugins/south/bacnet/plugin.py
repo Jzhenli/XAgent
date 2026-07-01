@@ -806,4 +806,189 @@ class BACnetPlugin(SouthPluginBase):
             logger.error(f"Error writing point {point_info.get('name')}: {e}")
             return False
     
+    # ========== 点位发现相关方法 ==========
+    
+    async def read_object_list(self) -> List[tuple]:
+        """
+        读取设备的对象列表
+        
+        读取设备对象的 objectList 属性，返回所有对象的列表。
+        用于点位发现功能。
+        
+        Returns:
+            对象列表，格式为 [(object_type, object_instance), ...]
+            例如: [('analogInput', 1), ('analogInput', 2), ('binaryOutput', 5)]
+            
+        Raises:
+            RuntimeError: bacpypes3未安装或设备未连接
+            ValueError: 设备不支持objectList读取
+        """
+        if not BACNET_AVAILABLE:
+            raise RuntimeError("bacpypes3 library not installed")
+        
+        if not self._connected or not self._app:
+            raise RuntimeError("Device not connected")
+        
+        try:
+            device_address = f"{self._host}:{self._port}"
+            object_identifier = f"device,{self._device_id}"
+            
+            logger.info(
+                f"Reading object list from device {self._asset_name} "
+                f"(device_id={self._device_id})"
+            )
+            
+            # 读取设备的 objectList 属性
+            response = await asyncio.wait_for(
+                self._app.read_property(
+                    device_address,
+                    object_identifier,
+                    "objectList"
+                ),
+                timeout=self._point_timeout * 3  # 使用更长的超时时间
+            )
+            
+            # 检查错误响应
+            if _ErrorRejectAbortNack and isinstance(response, _ErrorRejectAbortNack):
+                logger.error(
+                    f"Failed to read objectList from device {self._device_id}: {response}"
+                )
+                raise ValueError(
+                    f"Device does not support objectList reading or access denied: {response}"
+                )
+            
+            # 解析对象列表
+            object_list = []
+            
+            if response is None:
+                logger.warning(f"Empty objectList response from device {self._device_id}")
+                return []
+            
+            # 处理不同格式的响应
+            if isinstance(response, list):
+                # 直接是列表格式
+                for obj_id in response:
+                    if isinstance(obj_id, tuple) and len(obj_id) == 2:
+                        object_type, instance = obj_id
+                        object_list.append((str(object_type), int(instance)))
+                    elif isinstance(obj_id, str):
+                        # 字符串格式："analogInput,1"
+                        parts = obj_id.split(',')
+                        if len(parts) == 2:
+                            object_type = parts[0].strip()
+                            instance = int(parts[1].strip())
+                            object_list.append((object_type, instance))
+            
+            elif hasattr(response, 'value'):
+                # 包装在对象中的值
+                actual_value = response.value
+                if isinstance(actual_value, list):
+                    for obj_id in actual_value:
+                        if isinstance(obj_id, tuple) and len(obj_id) == 2:
+                            object_type, instance = obj_id
+                            object_list.append((str(object_type), int(instance)))
+                        elif isinstance(obj_id, str):
+                            parts = obj_id.split(',')
+                            if len(parts) == 2:
+                                object_type = parts[0].strip()
+                                instance = int(parts[1].strip())
+                                object_list.append((object_type, instance))
+            
+            logger.info(
+                f"Successfully read {len(object_list)} objects "
+                f"from device {self._asset_name}"
+            )
+            
+            return object_list
+            
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Timeout reading objectList from device {self._device_id} "
+                f"after {self._point_timeout * 3}s"
+            )
+            raise RuntimeError("Timeout reading object list")
+        
+        except Exception as e:
+            logger.error(
+                f"Error reading objectList from device {self._device_id}: {e}",
+                exc_info=True
+            )
+            raise
+    
+    async def read_property(
+        self,
+        object_type: str,
+        object_instance: int,
+        property_name: str
+    ) -> Any:
+        """
+        读取对象的任意属性
+        
+        通用方法，可读取任意BACnet对象的任意属性。
+        用于点位发现功能，读取对象的 objectName, description 等属性。
+        
+        Args:
+            object_type: 对象类型（如 'analogInput', 'binaryOutput'）
+            object_instance: 对象实例ID（整数）
+            property_name: 属性名称（如 'objectName', 'description', 'presentValue'）
+            
+        Returns:
+            属性值
+            
+        Raises:
+            RuntimeError: bacpypes3未安装或设备未连接
+        """
+        if not BACNET_AVAILABLE:
+            raise RuntimeError("bacpypes3 library not installed")
+        
+        if not self._connected or not self._app:
+            raise RuntimeError("Device not connected")
+        
+        try:
+            device_address = f"{self._host}:{self._port}"
+            object_identifier = f"{object_type},{object_instance}"
+            
+            logger.debug(
+                f"Reading property - device: {device_address}, "
+                f"object: {object_identifier}, "
+                f"property: {property_name}"
+            )
+            
+            # 读取属性
+            response = await asyncio.wait_for(
+                self._app.read_property(
+                    device_address,
+                    object_identifier,
+                    property_name
+                ),
+                timeout=self._point_timeout
+            )
+            
+            # 检查错误响应
+            if _ErrorRejectAbortNack and isinstance(response, _ErrorRejectAbortNack):
+                logger.debug(
+                    f"Error reading property {property_name} "
+                    f"from {object_identifier}: {response}"
+                )
+                return None
+            
+            # 解析响应
+            if hasattr(response, 'value'):
+                return response.value
+            
+            return response
+            
+        except asyncio.TimeoutError:
+            logger.debug(
+                f"Timeout reading property {property_name} "
+                f"from {object_type}:{object_instance} after {self._point_timeout}s"
+            )
+            return None
+        
+        except Exception as e:
+            logger.debug(
+                f"Error reading property {property_name} "
+                f"from {object_type}:{object_instance}: {e}"
+            )
+            return None
 
