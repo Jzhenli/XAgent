@@ -361,7 +361,6 @@ watch(() => props.visible, async (visible) => {
         <el-table-column prop="device_name" label="设备名称" min-width="150" show-overflow-tooltip />
         <el-table-column prop="vendor_name" label="厂商" min-width="120" show-overflow-tooltip />
         <el-table-column prop="model_name" label="型号" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="object_count" label="对象数" width="80" />
 
         <!-- 操作列 -->
         <el-table-column label="操作" width="180" fixed="right">

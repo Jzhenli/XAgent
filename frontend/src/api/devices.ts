@@ -106,7 +106,7 @@ export const deviceApi = {
   // ========== 设备发现相关API ==========
 
   async discoverDevices(request: DiscoverDevicesRequest): Promise<DiscoverDevicesResponse> {
-    const res = await api.post('/api/devices/discover/bacnet', request)
+    const res = await api.post('/api/devices/discover/bacnet', request, { timeout: 60000 })
     return res.data
   },
 

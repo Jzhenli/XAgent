@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deviceApi } from '@/api/devices'
 import type { DiscoveredDeviceResponse, DeviceConfig } from '@/api/types'
@@ -31,14 +31,22 @@ const autoFillForm = () => {
     // 自动读取设备名称
     name.value = props.device.device_name || `BACnet Device ${props.device.device_id}`
   }
+  // 重置启用状态，避免保留上次用户的修改
+  enabled.value = true
 }
 
-// 监听visible变化，触发自动填充
-const stopWatch = computed(() => {
+// 监听visible变化，触发自动填充（immediate: 处理以 visible=true 挂载的场景）
+watch(() => props.visible, (val) => {
+  if (val) {
+    autoFillForm()
+  }
+}, { immediate: true })
+
+// 监听 device 变化，对话框保持打开时切换设备也能刷新表单
+watch(() => props.device, () => {
   if (props.visible) {
     autoFillForm()
   }
-  return props.visible
 })
 
 // 保存设备
@@ -66,20 +74,21 @@ const handleSave = async () => {
       name: name.value.trim(),
       plugin: {
         name: 'bacnet',
-        type: 'south',
-        version: '1.0.0'
+        config: {
+          host: props.device.address,
+          port: props.device.port,
+          device_id: props.device.device_id,
+          timeout: 5,
+          interval: 1
+        }
       },
-      plugin_config: {
-        host: props.device.address,
-        port: props.device.port,
-        device_id: props.device.device_id
-      },
+      points: [],
       enabled: enabled.value,
       description: `${props.device.vendor_name || 'Unknown'} - ${props.device.model_name || 'Unknown'}`
     }
 
     // 创建设备
-    await deviceApi.createDevice(deviceConfig)
+    await deviceApi.create(deviceConfig)
 
     ElMessage.success('设备保存成功')
     emit('success')
@@ -102,7 +111,7 @@ const handleClose = () => {
 
 <template>
   <el-dialog
-    v-model="stopWatch"
+    v-model="props.visible"
     title="确认设备信息 - 步骤 3/3"
     width="600px"
     @close="handleClose"

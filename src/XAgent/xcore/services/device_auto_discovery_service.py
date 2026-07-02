@@ -24,7 +24,6 @@ import psutil
 import re
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +38,6 @@ class DiscoveredDevice:
     vendor_name: Optional[str] = None
     model_name: Optional[str] = None
     object_count: Optional[int] = None
-    response_time: float = 0.0
 
 
 @dataclass
@@ -283,6 +281,44 @@ class DeviceAutoDiscoveryService:
             logger.error(f"Failed to get network interfaces: {e}", exc_info=True)
             raise RuntimeError(f"Failed to get network interfaces: {str(e)}")
     
+    async def _read_device_property(
+        self,
+        app,
+        device_address: str,
+        object_identifier: str,
+        property_name: str,
+        timeout: float = 3.0
+    ) -> Optional[str]:
+        """读取设备属性（用于发现后的详情 enrichment）
+
+        Args:
+            app: NormalApplication 实例
+            device_address: 设备地址（如 "192.168.1.100:47808"）
+            object_identifier: 对象标识符（如 "device,100"）
+            property_name: 属性名（如 "objectName"）
+            timeout: 单次读取超时（秒）
+
+        Returns:
+            属性值字符串，失败返回 None
+        """
+        from bacpypes3.apdu import ErrorRejectAbortNack
+        try:
+            response = await asyncio.wait_for(
+                app.read_property(device_address, object_identifier, property_name),
+                timeout=timeout
+            )
+            if isinstance(response, ErrorRejectAbortNack):
+                return None
+            if hasattr(response, 'value'):
+                return str(response.value)
+            return str(response) if response is not None else None
+        except asyncio.TimeoutError:
+            logger.debug(f"Timeout reading {property_name} from {device_address}")
+            return None
+        except Exception as e:
+            logger.debug(f"Failed to read {property_name} from {device_address}: {e}")
+            return None
+
     async def discover_devices(
         self,
         network_range: Optional[str] = None,
@@ -449,17 +485,25 @@ class DeviceAutoDiscoveryService:
                             logger.warning(f"Invalid device address: {address}")
                             continue
 
-                    # 创建设备对象（基础信息）
-                    # TODO: 需要进一步读取设备属性以获取详细信息
-                    # - device_name (通过读取 device对象的 objectName 属性)
-                    # - vendor_name (通过读取 vendorName 属性)
-                    # - model_name (通过读取 modelName 属性)
-                    # - object_count (通过读取 objectList 属性)
+                    # 读取设备详情（objectName / vendorName / modelName）
+                    # 跳过 objectList（object_count）——数据量大且耗时
+                    # 三个属性并发读取，将单设备耗时从 3*timeout 降为 timeout
+                    device_address = f"{address}:{port}"
+                    object_identifier = f"device,{device_id}"
+
+                    device_name, vendor_name, model_name = await asyncio.gather(
+                        self._read_device_property(app, device_address, object_identifier, "objectName"),
+                        self._read_device_property(app, device_address, object_identifier, "vendorName"),
+                        self._read_device_property(app, device_address, object_identifier, "modelName"),
+                    )
+
                     device = DiscoveredDevice(
                         device_id=device_id,
                         address=address,
                         port=port,
-                        response_time=time.time()
+                        device_name=device_name,
+                        vendor_name=vendor_name,
+                        model_name=model_name,
                     )
 
                     discovered_devices.append(device)
@@ -479,8 +523,8 @@ class DeviceAutoDiscoveryService:
 
             logger.info(f"Discovered {len(discovered_devices)} BACnet devices")
 
-            # 按响应时间排序（响应快的设备优先）
-            discovered_devices.sort(key=lambda d: d.response_time)
+            # 按 device_id 排序，保证返回顺序稳定可预测
+            discovered_devices.sort(key=lambda d: d.device_id)
 
             return discovered_devices
 

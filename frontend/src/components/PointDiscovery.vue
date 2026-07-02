@@ -149,19 +149,30 @@ const handleBatchAdd = async () => {
     )
 
     // 将发现的点位转换为PointConfig格式
-    const pointsToAdd: PointConfig[] = selectedPoints.value.map(point => ({
-      name: point.object_name,
-      description: point.description || `${point.object_type}:${point.object_instance}`,
-      data_type: point.data_type,
-      enabled: true,
-      config: {
+    const pointsToAdd: PointConfig[] = selectedPoints.value.map(point => {
+      const config: Record<string, unknown> = {
         object_type: point.object_type,
         object_instance: point.object_instance,
         writable: point.writable
-      },
-      metadata: batchEditForm.value.unit ? { unit: batchEditForm.value.unit } : {},
-      tags: []
-    }))
+      }
+      if (batchEditForm.value.scale !== null) config.scale = batchEditForm.value.scale
+      if (batchEditForm.value.offset !== null) config.offset = batchEditForm.value.offset
+
+      const metadata: Record<string, unknown> = {}
+      if (batchEditForm.value.unit) metadata.unit = batchEditForm.value.unit
+      if (batchEditForm.value.alarm_high !== null) metadata.alarm_high = batchEditForm.value.alarm_high
+      if (batchEditForm.value.alarm_low !== null) metadata.alarm_low = batchEditForm.value.alarm_low
+
+      return {
+        name: point.object_name,
+        description: point.description || `${point.object_type}:${point.object_instance}`,
+        data_type: point.data_type,
+        enabled: true,
+        config,
+        metadata,
+        tags: []
+      }
+    })
 
     const response = await deviceApi.batchAddPoints(props.deviceAsset, {
       points: pointsToAdd

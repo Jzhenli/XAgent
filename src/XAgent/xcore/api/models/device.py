@@ -281,6 +281,7 @@ class NetworkInterfaceResponse(BaseModel):
     network_address: str = Field(..., description="网络地址")
     broadcast_address: str = Field(..., description="广播地址")
     description: str = Field("", description="网卡描述")
+    priority: int = Field(0, description="优先级（1=有线, 2=无线, 3=其他，数值越小越优先）")
 
 
 class DiscoverDevicesResponse(BaseModel):

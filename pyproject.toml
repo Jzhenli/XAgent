@@ -97,6 +97,7 @@ dependencies = [
     "pyserial>=3.5",
     "aiomqtt>=0.1.0",
     "xknx==2.12.2",
+    "bacpypes3==0.0.106",
     "protobuf>=4.25.0",
     "platformdirs>=3.0.0",
     "psutil",
