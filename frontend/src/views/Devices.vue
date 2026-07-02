@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useDeviceStore } from '@/stores/devices'
 import { usePointStore } from '@/stores/points'
 import { useUserStore } from '@/stores/users'
-import type { DeviceConfig, PointConfig, StandardDataType } from '@/api/types'
+import type { DeviceConfig, PointConfig, StandardDataType, DiscoveredDeviceResponse } from '@/api/types'
 import type { DeviceListItem } from '@/stores/devices'
 import { useResponsive } from '@/utils/useResponsive'
 import yaml from 'js-yaml'
@@ -24,6 +24,10 @@ import {
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PointTrend from '@/components/PointTrend.vue'
 import PointDiscovery from '@/components/PointDiscovery.vue'
+import DeviceDiscovery from '@/components/DeviceDiscovery.vue'
+import ProtocolSelectionDialog from '@/components/ProtocolSelectionDialog.vue'
+import BACnetModeSelectionDialog from '@/components/BACnetModeSelectionDialog.vue'
+import DeviceConfirmDialog from '@/components/DeviceConfirmDialog.vue'
 
 const deviceStore = useDeviceStore()
 const pointStore = usePointStore()
@@ -36,6 +40,14 @@ const selectedDeviceAsset = ref<string | null>(null)
 const showTrend = ref(false)
 const selectedPointForTrend = ref<{ deviceAsset: string; pointName: string } | null>(null)
 const showPointDiscoveryDialog = ref(false)
+
+// 新增设备流程状态
+const showProtocolDialog = ref(false)
+const showBACnetModeDialog = ref(false)
+const showDiscoveryDialog = ref(false)
+const showConfirmDialog = ref(false)
+const selectedProtocol = ref('')
+const selectedDevice = ref<DiscoveredDeviceResponse | null>(null)
 
 const activeTab = ref('devices')
 
@@ -169,33 +181,8 @@ const handlePluginChange = (val: string) => {
 }
 
 const handleAddDevice = () => {
-  isEditing.value = false
-  editingAsset.value = ''
-  deviceForm.value = {
-    asset: '',
-    name: '',
-    description: '',
-    enabled: true,
-    pluginName: 'modbus_tcp',
-    host: '',
-    port: 502,
-    slave_id: 1,
-    timeout: 5,
-    interval: 1,
-    serial_port: '/dev/ttyUSB0',
-    baudrate: 9600,
-    parity: 'N',
-    stopbits: 1,
-    bytesize: 8,
-    gateway_ip: '',
-    local_ip: '',
-    connection_type: 'automatic',
-    sync_mode: 'smart',
-    sync_interval: 60,
-    device_id: 1234,
-    tags: ''
-  }
-  showDeviceDialog.value = true
+  // 打开协议选择对话框
+  showProtocolDialog.value = true
 }
 
 const handleEditDevice = (device: DeviceListItem) => {
@@ -373,6 +360,120 @@ const handlePointDiscoverySuccess = async () => {
     await pointStore.fetchDevicePoints(selectedDeviceAsset.value)
   }
   ElMessage.success('点位发现完成，已更新点位列表')
+}
+
+// ===== 新增设备流程处理函数 =====
+
+// 选择协议
+const handleSelectProtocol = (protocol: string) => {
+  selectedProtocol.value = protocol
+  if (protocol === 'bacnet') {
+    showBACnetModeDialog.value = true
+  } else {
+    // 其他协议，打开手动配置对话框
+    // TODO: 实现其他协议的配置
+    isEditing.value = false
+    editingAsset.value = ''
+    deviceForm.value = {
+      asset: '',
+      name: '',
+      description: '',
+      enabled: true,
+      pluginName: protocol,
+      host: '',
+      port: protocol === 'knx' ? 3671 : 502,
+      slave_id: 1,
+      timeout: 5,
+      interval: 1,
+      serial_port: '/dev/ttyUSB0',
+      baudrate: 9600,
+      parity: 'N',
+      stopbits: 1,
+      bytesize: 8,
+      gateway_ip: '',
+      local_ip: '',
+      connection_type: 'automatic',
+      sync_mode: 'smart',
+      sync_interval: 60,
+      device_id: 1234,
+      tags: ''
+    }
+    showDeviceDialog.value = true
+  }
+}
+
+// 选择BACnet模式
+const handleSelectBACnetMode = (mode: 'manual' | 'discover') => {
+  if (mode === 'discover') {
+    showDiscoveryDialog.value = true
+  } else {
+    // 手动配置，打开设备配置对话框
+    isEditing.value = false
+    editingAsset.value = ''
+    deviceForm.value = {
+      asset: '',
+      name: '',
+      description: '',
+      enabled: true,
+      pluginName: 'bacnet',
+      host: '',
+      port: 47808,
+      slave_id: 1,
+      timeout: 5,
+      interval: 5,
+      serial_port: '/dev/ttyUSB0',
+      baudrate: 9600,
+      parity: 'N',
+      stopbits: 1,
+      bytesize: 8,
+      gateway_ip: '',
+      local_ip: '',
+      connection_type: 'automatic',
+      sync_mode: 'smart',
+      sync_interval: 60,
+      device_id: 1234,
+      tags: ''
+    }
+    showDeviceDialog.value = true
+  }
+}
+
+// 从设备发现中选择单个设备（点击[自定义]按钮）
+const handleCustomizeDevice = (device: DiscoveredDeviceResponse) => {
+  selectedDevice.value = device
+  showConfirmDialog.value = true
+}
+
+// 从设备发现中快速添加单个设备（点击[添加]按钮）
+const handleQuickAddDevice = async (device: DiscoveredDeviceResponse) => {
+  // DeviceDiscovery组件内部已处理，这里只需刷新设备列表
+  await deviceStore.fetchDevices()
+  await deviceStore.fetchConnectionStatus()
+  await pointStore.fetchDevicesWithPoints()
+}
+
+// 设备发现成功
+const handleDeviceDiscoverySuccess = async () => {
+  showDiscoveryDialog.value = false
+  await deviceStore.fetchDevices()
+  await deviceStore.fetchConnectionStatus()
+  await pointStore.fetchDevicesWithPoints()
+  ElMessage.success('设备发现完成，已更新设备列表')
+}
+
+// 设备确认成功（从DeviceConfirmDialog保存设备）
+const handleDeviceConfirmSuccess = async () => {
+  showConfirmDialog.value = false
+  await deviceStore.fetchDevices()
+  await deviceStore.fetchConnectionStatus()
+  await pointStore.fetchDevicesWithPoints()
+  ElMessage.success('设备已成功添加')
+}
+
+// 返回设备发现对话框
+const handleBackToDiscovery = () => {
+  showConfirmDialog.value = false
+  showDiscoveryDialog.value = true
 }
 
 const getDevicePoints = (asset: string) => {
@@ -1652,6 +1753,40 @@ onMounted(async () => {
       :visible="showPointDiscoveryDialog"
       @close="showPointDiscoveryDialog = false"
       @success="handlePointDiscoverySuccess"
+    />
+
+    <!-- 新增设备流程组件 -->
+
+    <!-- 步骤 1: 协议选择 -->
+    <ProtocolSelectionDialog
+      :visible="showProtocolDialog"
+      @close="showProtocolDialog = false"
+      @selectProtocol="handleSelectProtocol"
+    />
+
+    <!-- 步骤 1.5: BACnet模式选择 -->
+    <BACnetModeSelectionDialog
+      :visible="showBACnetModeDialog"
+      @close="showBACnetModeDialog = false"
+      @selectMode="handleSelectBACnetMode"
+    />
+
+    <!-- 步骤 2: 设备发现 -->
+    <DeviceDiscovery
+      :visible="showDiscoveryDialog"
+      @close="showDiscoveryDialog = false"
+      @success="handleDeviceDiscoverySuccess"
+      @quickAdd="handleQuickAddDevice"
+      @customize="handleCustomizeDevice"
+    />
+
+    <!-- 步骤 3: 设备确认 -->
+    <DeviceConfirmDialog
+      :visible="showConfirmDialog"
+      :device="selectedDevice"
+      @close="showConfirmDialog = false"
+      @success="handleDeviceConfirmSuccess"
+      @back="handleBackToDiscovery"
     />
   </div>
 </template>

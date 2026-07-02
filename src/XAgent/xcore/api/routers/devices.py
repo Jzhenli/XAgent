@@ -17,7 +17,14 @@ from ..models.device import (
     DiscoverPointsResponse,
     DiscoveredPoint,
     BatchAddPointsRequest,
-    BatchAddPointsResponse
+    BatchAddPointsResponse,
+    # 设备发现相关模型
+    DiscoverDevicesRequest,
+    DiscoverDevicesResponse,
+    DiscoveredDeviceResponse,
+    BatchAddDevicesRequest,
+    BatchAddDevicesResponse,
+    NetworkInterfaceResponse  # 新增：网卡信息响应模型
 )
 from ..services.device_service_db import DeviceService
 from ..dependencies import get_app_state
@@ -179,6 +186,64 @@ async def get_devices_connection_status(
         设备连接状态映射 {"asset": "online"|"offline", ...}
     """
     return service.get_devices_connection_status()
+
+
+# ========== 固定路径路由（必须在/{asset}之前定义）==========
+
+@router.get("/network-interfaces", response_model=List[NetworkInterfaceResponse])
+async def get_network_interfaces(
+    state = Depends(get_app_state),
+    token: str = Depends(verify_api_token)
+):
+    """获取可用的网络接口列表
+
+    用于多网卡环境下选择合适的网卡进行设备发现。
+    使用psutil库获取网卡信息，只返回IPv4网卡，并按优先级排序（有线>无线>其他）。
+
+    Returns:
+        网络接口列表（包含IP地址、网络前缀、广播地址、优先级等信息）
+
+    Raises:
+        HTTPException: 500 - psutil库未安装或获取失败
+    """
+    try:
+        # 导入设备发现服务（从 xcore/services 导入，向上两级）
+        from ...services.device_auto_discovery_service import DeviceAutoDiscoveryService
+
+        # 创建发现服务实例
+        discovery_service = DeviceAutoDiscoveryService(state.gateway.plugin_loader)
+
+        # 获取网络接口列表（异步调用）
+        interfaces = await discovery_service.get_network_interfaces()
+
+        # 转换为响应模型
+        interface_responses = [
+            NetworkInterfaceResponse(
+                name=interface.name,
+                ip_address=interface.ip_address,
+                network_prefix=interface.network_prefix,
+                network_address=interface.network_address,
+                broadcast_address=interface.broadcast_address,
+                description=interface.description,
+                priority=interface.priority  # 添加优先级字段
+            )
+            for interface in interfaces
+        ]
+        
+        return interface_responses
+        
+    except RuntimeError as e:
+        logger.error(f"Failed to get network interfaces: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error getting network interfaces: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {str(e)}"
+        )
 
 
 @router.get("/{asset}", response_model=DeviceConfig)
@@ -556,6 +621,91 @@ async def import_devices(
     )
 
 
+# ========== 设备发现API ==========
+
+@router.post("/discover/bacnet", response_model=DiscoverDevicesResponse)
+async def discover_bacnet_devices(
+    request: DiscoverDevicesRequest,
+    state = Depends(get_app_state),
+    token: str = Depends(verify_api_token)
+):
+    """发现网络中的BACnet设备
+    
+    通过发送Who-Is广播，自动发现网络中的BACnet设备。
+    设备收到广播后会返回I-Am响应，包含设备ID、地址等信息。
+    
+    Args:
+        request: 发现请求参数
+            - network_range: 网络范围（可选）
+            - device_id_range: 设备ID范围（可选）
+            - timeout: 发现超时时间（秒）
+            
+    Returns:
+        发现的设备列表
+        
+    Raises:
+        HTTPException: 400 - 参数错误
+        HTTPException: 500 - bacpypes3未安装或发现失败
+        HTTPException: 504 - 发现超时（无设备响应）
+    """
+    try:
+        # 导入设备发现服务（从 xcore/services 导入，向上两级）
+        from ...services.device_auto_discovery_service import DeviceAutoDiscoveryService
+        
+        # 创建发现服务实例
+        discovery_service = DeviceAutoDiscoveryService(state.gateway.plugin_loader)
+        
+        # 转换device_id_range为tuple
+        device_id_range = None
+        if request.device_id_range:
+            device_id_range = tuple(request.device_id_range)
+        
+        # 执行设备发现
+        discovered_devices = await discovery_service.discover_devices(
+            network_range=request.network_range,
+            device_id_range=device_id_range,
+            timeout=request.timeout,
+            interface_ip=request.interface_ip
+        )
+        
+        # 转换为响应模型
+        devices = [
+            DiscoveredDeviceResponse(
+                device_id=device.device_id,
+                address=device.address,
+                port=device.port,
+                device_name=device.device_name,
+                vendor_name=device.vendor_name,
+                model_name=device.model_name,
+                object_count=device.object_count
+            )
+            for device in discovered_devices
+        ]
+        
+        return DiscoverDevicesResponse(
+            success=True,
+            devices=devices,
+            total=len(devices)
+        )
+        
+    except ValueError as e:
+        # 参数错误
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        # bacpypes3未安装或发现失败
+        error_msg = str(e)
+        if "bacpypes3" in error_msg:
+            raise HTTPException(status_code=500, detail=error_msg)
+        else:
+            raise HTTPException(status_code=504, detail=error_msg)
+    except Exception as e:
+        logger.error(f"Device discovery failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=504,
+            detail=f"Device discovery failed or timeout: {str(e)}"
+        )
+
+
 # ========== 点位发现和批量添加API ==========
 
 @router.post("/{asset}/discover-points", response_model=DiscoverPointsResponse)
@@ -602,8 +752,8 @@ async def discover_device_points(
                 detail=f"Device '{asset}' is not a BACnet device"
             )
         
-        # 导入发现服务
-        from ..services.device_discovery_service import DeviceDiscoveryService
+        # 导入发现服务（从 xcore/services 导入，向上两级）
+        from ...services.device_discovery_service import DeviceDiscoveryService
         
         # 创建发现服务实例
         discovery_service = DeviceDiscoveryService(state.gateway.plugin_loader)

@@ -240,3 +240,66 @@ class BatchAddPointsResponse(BaseModel):
     succeeded: int
     failed: int
     details: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+# ========== 设备发现相关模型 ==========
+
+class DiscoverDevicesRequest(BaseModel):
+    """设备发现请求"""
+    network_range: Optional[str] = Field(None, description="网络范围，如192.168.1.0/24")
+    device_id_range: Optional[List[int]] = Field(None, description="设备ID范围，如[0, 1000]")
+    timeout: float = Field(5.0, ge=0.1, le=30, description="发现超时时间（秒）")
+    interface_ip: Optional[str] = Field(None, description="指定网卡IP地址（多网卡环境下建议指定）")
+    
+    @field_validator('device_id_range')
+    @classmethod
+    def validate_device_id_range(cls, v):
+        if v is not None:
+            if len(v) != 2:
+                raise ValueError('device_id_range must contain exactly 2 integers')
+            if v[0] > v[1]:
+                raise ValueError('device_id_range[0] must be <= device_id_range[1]')
+        return v
+
+
+class DiscoveredDeviceResponse(BaseModel):
+    """发现的设备响应"""
+    device_id: int = Field(..., description="设备ID")
+    address: str = Field(..., description="设备地址")
+    port: int = Field(..., description="设备端口")
+    device_name: Optional[str] = Field(None, description="设备名称")
+    vendor_name: Optional[str] = Field(None, description="厂商名称")
+    model_name: Optional[str] = Field(None, description="型号名称")
+    object_count: Optional[int] = Field(None, description="对象数量")
+
+
+class NetworkInterfaceResponse(BaseModel):
+    """网卡信息响应"""
+    name: str = Field(..., description="网卡名称")
+    ip_address: str = Field(..., description="IP地址")
+    network_prefix: int = Field(..., description="网络前缀")
+    network_address: str = Field(..., description="网络地址")
+    broadcast_address: str = Field(..., description="广播地址")
+    description: str = Field("", description="网卡描述")
+
+
+class DiscoverDevicesResponse(BaseModel):
+    """设备发现响应"""
+    success: bool = Field(..., description="是否成功")
+    devices: List[DiscoveredDeviceResponse] = Field(..., description="发现的设备列表")
+    total: int = Field(..., description="发现总数")
+
+
+class BatchAddDevicesRequest(BaseModel):
+    """批量添加设备请求"""
+    devices: List[DeviceConfig] = Field(..., description="要添加的设备列表")
+
+
+class BatchAddDevicesResponse(BaseModel):
+    """批量添加设备响应"""
+    success: bool
+    message: str
+    total: int
+    succeeded: int
+    failed: int
+    details: List[Dict[str, Any]] = Field(default_factory=list)

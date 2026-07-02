@@ -12,7 +12,11 @@ import type {
   DiscoverPointsRequest,
   DiscoverPointsResponse,
   BatchAddPointsRequest,
-  BatchAddPointsResponse
+  BatchAddPointsResponse,
+  // 设备发现相关类型
+  DiscoverDevicesRequest,
+  DiscoverDevicesResponse,
+  NetworkInterfaceResponse
 } from './types'
 
 export const deviceApi = {
@@ -96,6 +100,18 @@ export const deviceApi = {
 
   async importDevices(data: Record<string, unknown>, overwrite = false): Promise<BatchOperationResult> {
     const res = await api.post('/api/devices/import', data, { params: { overwrite } })
+    return res.data
+  },
+
+  // ========== 设备发现相关API ==========
+
+  async discoverDevices(request: DiscoverDevicesRequest): Promise<DiscoverDevicesResponse> {
+    const res = await api.post('/api/devices/discover/bacnet', request)
+    return res.data
+  },
+
+  async getNetworkInterfaces(): Promise<NetworkInterfaceResponse[]> {
+    const res = await api.get('/api/devices/network-interfaces')
     return res.data
   },
 

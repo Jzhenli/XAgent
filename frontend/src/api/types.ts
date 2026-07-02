@@ -26,7 +26,7 @@ export interface DeviceConfig {
   enabled: boolean
   status?: DeviceStatus
   plugin: PluginReference
-  points: PointConfig[]
+  points?: PointConfig[]  // 修正：points字段改为可选，匹配后端定义
   metadata?: Record<string, unknown>
   tags?: string[]
   created_at?: string
@@ -426,4 +426,39 @@ export interface BatchAddPointsResponse {
   succeeded: number
   failed: number
   details: Record<string, unknown>[]
+}
+
+// ========== 设备发现相关类型 ==========
+
+export interface DiscoverDevicesRequest {
+  network_range?: string
+  device_id_range?: number[]
+  timeout: number
+  interface_ip?: string  // 指定网卡IP地址（多网卡环境下建议指定）
+}
+
+export interface DiscoveredDeviceResponse {
+  device_id: number
+  address: string
+  port: number
+  device_name?: string
+  vendor_name?: string
+  model_name?: string
+  object_count?: number
+}
+
+export interface DiscoverDevicesResponse {
+  success: boolean
+  devices: DiscoveredDeviceResponse[]
+  total: number
+}
+
+export interface NetworkInterfaceResponse {
+  name: string  // 网卡名称
+  ip_address: string  // IP地址
+  network_prefix: number  // 网络前缀
+  network_address: string  // 网络地址
+  broadcast_address: string  // 广播地址
+  description: string  // 网卡描述
+  priority: number  // 优先级（1=有线, 2=无线, 3=其他，数值越小优先级越高）
 }
