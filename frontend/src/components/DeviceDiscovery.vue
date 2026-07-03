@@ -22,6 +22,20 @@ const emit = defineEmits<Emits>()
 // 当前步骤 (0: 配置, 1: 搜索中, 2: 搜索结果)
 const currentStep = ref(0)
 
+// 对话框宽度自适应
+const dialogWidth = computed(() => {
+  const screenWidth = window.innerWidth
+  if (screenWidth < 768) {
+    return '550px' // 小屏幕：紧凑
+  } else if (screenWidth < 1024) {
+    return '600px' // 中屏幕：适中
+  } else if (screenWidth < 1440) {
+    return '650px' // 大屏幕：舒适
+  } else {
+    return '700px' // 超大屏幕：固定上限
+  }
+})
+
 // 网卡选择
 const networkInterfaces = ref<NetworkInterfaceResponse[]>([])
 const selectedInterfaceIp = ref<string>('')
@@ -267,26 +281,37 @@ watch(() => props.visible, async (visible) => {
   <el-dialog
     v-model="props.visible"
     title="BACnet 设备发现"
-    width="900px"
+    :width="dialogWidth"
     @close="handleClose"
   >
     <!-- 步骤条 -->
-    <el-steps :active="currentStep" align-center class="mb-6">
-      <el-step title="配置参数" description="设置搜索参数" />
-      <el-step title="搜索设备" description="发送广播搜索" />
-      <el-step title="查看结果" description="选择并添加设备" />
-    </el-steps>
+    <div class="steps-compact mb-3">
+      <div class="step-item" :class="{ active: currentStep === 0, completed: currentStep > 0 }">
+        <div class="step-circle">1</div>
+        <div class="step-text">配置参数</div>
+      </div>
+      <div class="step-line" :class="{ active: currentStep >= 1 }"></div>
+      <div class="step-item" :class="{ active: currentStep === 1, completed: currentStep > 1 }">
+        <div class="step-circle">2</div>
+        <div class="step-text">搜索设备</div>
+      </div>
+      <div class="step-line" :class="{ active: currentStep >= 2 }"></div>
+      <div class="step-item" :class="{ active: currentStep === 2 }">
+        <div class="step-circle">3</div>
+        <div class="step-text">查看结果</div>
+      </div>
+    </div>
 
     <!-- 步骤 0: 配置参数 -->
     <div v-show="currentStep === 0" class="step-content">
       <el-card shadow="never">
         <template #header>
           <div class="card-header">
-            <span>搜索配置</span>
+            <span class="header-title">搜索配置</span>
           </div>
         </template>
 
-        <el-form label-width="120px">
+        <el-form label-width="80px" size="small">
           <el-form-item label="选择网卡">
             <el-select
               v-model="selectedInterfaceIp"
@@ -301,9 +326,7 @@ watch(() => props.visible, async (visible) => {
                 :value="nic.ip_address"
               />
             </el-select>
-            <el-text type="info" size="small" class="mt-1">
-              多网卡环境下建议指定网卡，默认自动选择有线网卡
-            </el-text>
+            <div class="form-tip">多网卡环境下建议指定网卡，默认自动选择有线网卡</div>
           </el-form-item>
 
           <el-form-item label="网络范围">
@@ -315,7 +338,7 @@ watch(() => props.visible, async (visible) => {
           </el-form-item>
 
           <el-form-item label="设备ID范围">
-            <el-row :gutter="10">
+            <el-row :gutter="8">
               <el-col :span="12">
                 <el-input-number
                   v-model="deviceIdRangeMin"
@@ -325,7 +348,7 @@ watch(() => props.visible, async (visible) => {
                   class="w-full"
                   controls-position="right"
                 />
-                <el-text type="info" size="small" class="mt-1">最小ID</el-text>
+                <div class="form-tip">最小ID</div>
               </el-col>
               <el-col :span="12">
                 <el-input-number
@@ -336,12 +359,10 @@ watch(() => props.visible, async (visible) => {
                   class="w-full"
                   controls-position="right"
                 />
-                <el-text type="info" size="small" class="mt-1">最大ID</el-text>
+                <div class="form-tip">最大ID</div>
               </el-col>
             </el-row>
-            <el-text type="info" size="small" class="mt-1 block">
-              不填写则搜索所有设备ID (范围: 0-4194303)
-            </el-text>
+            <div class="form-tip">不填写则搜索所有设备ID (范围: 0-4194303)</div>
           </el-form-item>
 
           <el-form-item label="超时时间">
@@ -354,9 +375,7 @@ watch(() => props.visible, async (visible) => {
               controls-position="right"
             />
             <span class="unit-text">秒</span>
-            <el-text type="info" size="small" class="ml-2">
-              推荐: 5-10秒
-            </el-text>
+            <div class="form-tip inline">推荐: 5-10秒</div>
           </el-form-item>
         </el-form>
       </el-card>
@@ -366,7 +385,7 @@ watch(() => props.visible, async (visible) => {
     <div v-show="currentStep === 1" class="step-content">
       <el-card shadow="never" class="searching-card">
         <div class="searching-animation">
-          <el-icon class="searching-icon" :size="80">
+          <el-icon class="searching-icon" :size="35">
             <Search />
           </el-icon>
           <div class="searching-text">
@@ -380,32 +399,15 @@ watch(() => props.visible, async (visible) => {
 
     <!-- 步骤 2: 搜索结果 -->
     <div v-show="currentStep === 2" class="step-content">
-      <!-- 结果统计卡片 -->
-      <el-card shadow="never" class="mb-4 result-summary-card">
-        <div class="result-summary">
-          <div class="summary-item">
-            <el-icon :size="32" color="#67C23A"><Search /></el-icon>
-            <div class="summary-text">
-              <div class="summary-number">{{ discoveredDevices.length }}</div>
-              <div class="summary-label">发现设备</div>
-            </div>
-          </div>
-          <el-divider direction="vertical" />
-          <div class="summary-item">
-            <el-icon :size="32" color="#409EFF"><CircleCheck /></el-icon>
-            <div class="summary-text">
-              <div class="summary-number">{{ selectedCount }}</div>
-              <div class="summary-label">已选择</div>
-            </div>
-          </div>
-        </div>
-      </el-card>
-
       <!-- 设备列表 -->
       <el-card shadow="never">
         <template #header>
           <div class="card-header">
-            <span>设备列表</span>
+            <div class="header-left">
+              <span class="header-title">设备列表</span>
+              <el-tag size="small" type="success">{{ discoveredDevices.length }} 发现</el-tag>
+              <el-tag size="small" type="primary">{{ selectedCount }} 已选</el-tag>
+            </div>
             <el-button
               type="primary"
               :icon="RefreshRight"
@@ -421,9 +423,9 @@ watch(() => props.visible, async (visible) => {
         <el-empty
           v-if="discoveredDevices.length === 0"
           description="未发现任何BACnet设备"
-          :image-size="120"
+          :image-size="60"
         >
-          <el-button type="primary" @click="handleResearch">调整参数重新搜索</el-button>
+          <el-button type="primary" size="small" @click="handleResearch">调整参数重新搜索</el-button>
         </el-empty>
 
         <!-- 设备表格 -->
@@ -431,22 +433,22 @@ watch(() => props.visible, async (visible) => {
           v-else
           :data="discoveredDevices"
           @selection-change="handleSelectionChange"
-          max-height="400"
+          max-height="160"
           stripe
+          size="small"
         >
-          <el-table-column type="selection" width="55" />
-          <el-table-column prop="device_id" label="设备ID" width="100" />
-          <el-table-column label="地址" width="180">
+          <el-table-column type="selection" width="40" />
+          <el-table-column prop="device_id" label="设备ID" width="70" />
+          <el-table-column label="地址" width="130">
             <template #default="{ row }">
               {{ row.address }}:{{ row.port }}
             </template>
           </el-table-column>
-          <el-table-column prop="device_name" label="设备名称" min-width="150" show-overflow-tooltip />
-          <el-table-column prop="vendor_name" label="厂商" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="model_name" label="型号" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="device_name" label="设备名称" min-width="100" show-overflow-tooltip />
+          <el-table-column prop="vendor_name" label="厂商" width="90" show-overflow-tooltip />
 
           <!-- 操作列 -->
-          <el-table-column label="操作" width="100" fixed="right">
+          <el-table-column label="操作" width="70" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
                 <el-tooltip content="快速添加" placement="top">
@@ -465,7 +467,7 @@ watch(() => props.visible, async (visible) => {
                     size="small"
                     circle
                     @click="handleCustomizeDevice(row)"
-                    class="ml-4"
+                    class="ml-2"
                   />
                 </el-tooltip>
               </div>
@@ -473,14 +475,16 @@ watch(() => props.visible, async (visible) => {
           </el-table-column>
         </el-table>
 
-        <div v-if="discoveredDevices.length > 0" class="mt-4">
+        <div v-if="discoveredDevices.length > 0" class="table-footer">
           <el-checkbox
             v-model="selectAll"
             @change="handleSelectAll"
+            size="small"
             :indeterminate="selectedCount > 0 && selectedCount < discoveredDevices.length"
           >
-            全选
+            全选当前结果
           </el-checkbox>
+          <span class="selection-count">{{ selectedCount }}/{{ discoveredDevices.length }} 已选</span>
         </div>
       </el-card>
     </div>
@@ -490,8 +494,9 @@ watch(() => props.visible, async (visible) => {
       <div class="dialog-footer">
         <!-- 步骤 0: 配置 -->
         <template v-if="currentStep === 0">
-          <el-button @click="handleClose">取消</el-button>
+          <el-button size="small" @click="handleClose">取消</el-button>
           <el-button
+            size="small"
             type="primary"
             :icon="Search"
             :loading="searching"
@@ -503,14 +508,15 @@ watch(() => props.visible, async (visible) => {
 
         <!-- 步骤 1: 搜索中 -->
         <template v-else-if="currentStep === 1">
-          <el-button @click="handleClose" :disabled="searching">取消</el-button>
-          <el-button type="primary" :loading="true">搜索中...</el-button>
+          <el-button size="small" @click="handleClose" :disabled="searching">取消</el-button>
+          <el-button size="small" type="primary" :loading="true">搜索中...</el-button>
         </template>
 
         <!-- 步骤 2: 结果 -->
         <template v-else-if="currentStep === 2">
-          <el-button @click="handleClose">关闭</el-button>
+          <el-button size="small" @click="handleClose">关闭</el-button>
           <el-button
+            size="small"
             type="primary"
             :icon="CircleCheck"
             @click="handleBatchAdd"
@@ -531,38 +537,46 @@ watch(() => props.visible, async (visible) => {
   align-items: center;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.header-left .el-tag {
+  font-size: 11px;
+}
+
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
 }
 
 .w-full {
   width: 100%;
 }
 
-.mb-4 {
-  margin-bottom: 16px;
+.mb-3 {
+  margin-bottom: 8px;
 }
 
-.mb-6 {
-  margin-bottom: 24px;
+.mb-4 {
+  margin-bottom: 10px;
 }
 
 .mt-1 {
   margin-top: 4px;
 }
 
-.mt-4 {
-  margin-top: 16px;
-}
-
 .ml-2 {
   margin-left: 8px;
-}
-
-.ml-4 {
-  margin-left: 16px;
 }
 
 /* 操作按钮向右对齐 */
@@ -576,7 +590,7 @@ watch(() => props.visible, async (visible) => {
 .unit-text {
   margin-left: 8px;
   color: #606266;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* 块级元素 */
@@ -585,14 +599,104 @@ watch(() => props.visible, async (visible) => {
   width: 100%;
 }
 
+/* 表单提示文本 */
+.form-tip {
+  font-size: 11px;
+  color: #909399;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.form-tip.inline {
+  display: inline;
+  margin-top: 0;
+  margin-left: 8px;
+}
+
+/* 紧凑步骤条 */
+.steps-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.step-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e4e7ed;
+  color: #909399;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.step-item.active .step-circle {
+  background: #409EFF;
+  color: white;
+}
+
+.step-item.completed .step-circle {
+  background: #67C23A;
+  color: white;
+}
+
+.step-text {
+  font-size: 11px;
+  color: #909399;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.step-item.active .step-text {
+  color: #409EFF;
+  font-weight: 600;
+}
+
+.step-item.completed .step-text {
+  color: #67C23A;
+}
+
+.step-line {
+  width: 25px;
+  height: 2px;
+  background: #e4e7ed;
+  margin: 0 5px;
+  transition: all 0.3s;
+}
+
+.step-line.active {
+  background: #409EFF;
+}
+
 /* 步骤内容 */
 .step-content {
-  min-height: 400px;
+  min-height: 200px;
+}
+
+/* 表单紧凑样式 */
+.el-form-item {
+  margin-bottom: 12px;
+}
+
+.el-form-item :deep(.el-form-item__label) {
+  font-size: 12px;
+  padding-right: 8px;
 }
 
 /* 搜索中动画 */
 .searching-card {
-  min-height: 400px;
+  min-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -600,31 +704,31 @@ watch(() => props.visible, async (visible) => {
 
 .searching-animation {
   text-align: center;
-  padding: 60px 0;
+  padding: 15px 0;
 }
 
 .searching-icon {
   animation: pulse 2s ease-in-out infinite;
   color: #409EFF;
-  margin-bottom: 30px;
+  margin-bottom: 10px;
 }
 
 .searching-text h3 {
-  margin: 0 0 16px 0;
-  font-size: 20px;
+  margin: 0 0 6px 0;
+  font-size: 14px;
   font-weight: 500;
   color: #303133;
 }
 
 .searching-text .sub-text {
-  margin: 0 0 12px 0;
-  font-size: 14px;
+  margin: 0 0 6px 0;
+  font-size: 11px;
   color: #606266;
 }
 
 .searching-text .timeout-text {
   margin: 0;
-  font-size: 13px;
+  font-size: 11px;
   color: #909399;
 }
 
@@ -639,44 +743,162 @@ watch(() => props.visible, async (visible) => {
   }
 }
 
-/* 结果统计卡片 */
-.result-summary-card {
-  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+/* 表格紧凑样式 */
+.el-table {
+  font-size: 11px;
 }
 
-.result-summary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 60px;
-  padding: 20px 0;
+.el-table :deep(.el-table__row) {
+  height: 32px;
 }
 
-.summary-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.summary-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.summary-number {
-  font-size: 28px;
+.el-table th {
+  font-size: 11px;
   font-weight: 600;
-  color: #303133;
-  line-height: 1;
 }
 
-.summary-label {
-  font-size: 13px;
+.el-table td {
+  padding: 4px 0;
+}
+
+/* 表格底部 */
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-top: 1px solid #ebeef5;
+  margin-top: 4px;
+}
+
+.selection-count {
+  font-size: 11px;
   color: #909399;
 }
 
-.el-divider--vertical {
-  height: 40px;
+/* 空状态样式调整 */
+.el-empty {
+  padding: 8px 0;
+}
+
+/* 响应式设计 - 保持合理比例 */
+/* 小屏幕适配（<768px） */
+@media (max-width: 767px) {
+  .el-table {
+    max-height: 140px !important;
+  }
+
+  .step-content {
+    min-height: 180px !important;
+  }
+
+  .el-form-item {
+    margin-bottom: 10px;
+  }
+
+  .el-form-item :deep(.el-form-item__label) {
+    font-size: 11px;
+    padding-right: 6px;
+  }
+}
+
+/* 中屏幕适配（768px-1023px） */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .el-table {
+    max-height: 180px !important;
+  }
+
+  .step-circle {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .step-text {
+    font-size: 12px;
+  }
+
+  .el-form-item :deep(.el-form-item__label) {
+    font-size: 13px;
+    padding-right: 10px;
+  }
+}
+
+/* 大屏幕适配（1024px-1439px） */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .el-table {
+    max-height: 200px !important;
+    font-size: 12px;
+  }
+
+  .el-table :deep(.el-table__row) {
+    height: 36px;
+  }
+
+  .step-circle {
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+  }
+
+  .step-text {
+    font-size: 13px;
+  }
+
+  .header-title {
+    font-size: 14px;
+  }
+
+  .el-form-item {
+    margin-bottom: 14px;
+  }
+
+  .el-form-item :deep(.el-form-item__label) {
+    font-size: 13px;
+    padding-right: 10px;
+  }
+}
+
+/* 超大屏幕适配（≥1440px） */
+@media (min-width: 1440px) {
+  .el-table {
+    max-height: 220px !important;
+    font-size: 13px;
+  }
+
+  .el-table :deep(.el-table__row) {
+    height: 40px;
+  }
+
+  .el-table th {
+    font-size: 13px;
+  }
+
+  .step-circle {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  .step-text {
+    font-size: 14px;
+  }
+
+  .header-title {
+    font-size: 15px;
+  }
+
+  .el-form-item {
+    margin-bottom: 16px;
+  }
+
+  .el-form-item :deep(.el-form-item__label) {
+    font-size: 14px;
+    padding-right: 12px;
+  }
+
+  .form-tip {
+    font-size: 12px;
+  }
 }
 </style>
