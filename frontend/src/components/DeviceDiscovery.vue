@@ -297,18 +297,9 @@ watch(() => props.visible, async (visible) => {
               <el-option
                 v-for="nic in networkInterfaces"
                 :key="nic.ip_address"
-                :label="`${nic.name} (${nic.ip_address}/${nic.network_prefix})`"
+                :label="`${nic.name} (${nic.ip_address})`"
                 :value="nic.ip_address"
-              >
-                <div style="display: flex; justify-content: space-between;">
-                  <span>{{ nic.name }}</span>
-                  <span style="color: #8492a6; font-size: 13px;">
-                    {{ nic.ip_address }}/{{ nic.network_prefix }}
-                    <el-tag v-if="nic.priority === 1" size="small" type="success">有线</el-tag>
-                    <el-tag v-if="nic.priority === 2" size="small" type="warning">无线</el-tag>
-                  </span>
-                </div>
-              </el-option>
+              />
             </el-select>
             <el-text type="info" size="small" class="mt-1">
               多网卡环境下建议指定网卡，默认自动选择有线网卡
@@ -457,25 +448,27 @@ watch(() => props.visible, async (visible) => {
           <!-- 操作列 -->
           <el-table-column label="操作" width="100" fixed="right">
             <template #default="{ row }">
-              <el-tooltip content="快速添加" placement="top">
-                <el-button
-                  type="primary"
-                  :icon="Plus"
-                  size="small"
-                  circle
-                  @click="handleQuickAddDevice(row)"
-                />
-              </el-tooltip>
-              <el-tooltip content="自定义添加" placement="top">
-                <el-button
-                  type="warning"
-                  :icon="Edit"
-                  size="small"
-                  circle
-                  @click="handleCustomizeDevice(row)"
-                  class="ml-2"
-                />
-              </el-tooltip>
+              <div class="operation-buttons">
+                <el-tooltip content="快速添加" placement="top">
+                  <el-button
+                    type="primary"
+                    :icon="Plus"
+                    size="small"
+                    circle
+                    @click="handleQuickAddDevice(row)"
+                  />
+                </el-tooltip>
+                <el-tooltip content="自定义添加" placement="top">
+                  <el-button
+                    type="warning"
+                    :icon="Edit"
+                    size="small"
+                    circle
+                    @click="handleCustomizeDevice(row)"
+                    class="ml-4"
+                  />
+                </el-tooltip>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -566,6 +559,17 @@ watch(() => props.visible, async (visible) => {
 
 .ml-2 {
   margin-left: 8px;
+}
+
+.ml-4 {
+  margin-left: 16px;
+}
+
+/* 操作按钮向右对齐 */
+.operation-buttons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 /* 单位文本 */
