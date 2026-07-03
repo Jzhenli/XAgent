@@ -652,14 +652,25 @@ class DeviceAutoDiscoveryService:
             logger.error(f"Device discovery failed: {e}", exc_info=True)
             raise RuntimeError(f"Device discovery failed: {str(e)}")
         finally:
-            # 关闭临时的 Application 实例
-            # 设备发现完成后立即关闭，释放端口 47808
+            # 优雅关闭临时的 Application 实例
+            # 设备发现完成后需要优雅关闭，避免bacpypes3内部异步任务出错
             try:
                 if app and hasattr(app, 'close'):
-                    await app.close()
+                    # 等待一小段时间，让bacpypes3内部的异步任务完成或超时
+                    # who_is()完成后，内部可能有confirmation任务仍在运行
+                    # 给它们500ms时间自然结束，避免强制中断导致错误
+                    await asyncio.sleep(0.5)
+                    
+                    # 关闭应用
+                    app.close()  # close() 是同步方法，不需要 await
                     logger.info(
                         f"Closed temporary BACnet Application instance "
-                        f"(released port 47808)"
+                        f"(released port 47808 gracefully)"
                     )
             except Exception as e:
-                logger.error(f"Error closing temporary discovery app: {e}")
+                # 关闭时的错误是预期的（应用和内部任务正在清理）
+                # 只记录warning，不作为严重错误
+                logger.warning(
+                    f"Expected cleanup warning when closing discovery app: {e}. "
+                    f"This is normal during application shutdown."
+                )

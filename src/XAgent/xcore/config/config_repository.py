@@ -160,21 +160,134 @@ class ConfigRepository:
         user: Optional[str] = None
     ) -> DeviceConfig:
         """创建设备
-        
+
+        如果存在已删除的同名设备，则恢复它；否则创建新设备。
+
         Args:
             device: 设备配置
             user: 操作用户
-            
+
         Returns:
             创建的设备配置
-            
+
         Raises:
-            ValueError: 如果设备已存在
+            ValueError: 如果设备已存在且未删除
         """
+        # 检查是否存在已删除的同名设备
+        existing_device = await self._get_device_record_include_deleted(device.asset)
+
+        if existing_device:
+            if existing_device['status'] == 'deleted':
+                return await self._restore_deleted_device(device, user)
+            else:
+                raise ValueError(f"Device '{device.asset}' already exists")
+
+        # 设备不存在，执行正常创建流程
+        return await self._create_new_device(device, user)
+
+    async def _get_device_record_include_deleted(self, asset: str) -> Optional[Dict[str, Any]]:
+        """获取设备记录（包括已删除的）"""
+        async with self._db.execute(
+            """
+            SELECT asset, name, description, plugin_name, plugin_config,
+                   enabled, status, metadata, tags, created_at, updated_at
+            FROM device_registry
+            WHERE asset = ?
+            """,
+            (asset,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            if not row:
+                return None
+
+            return {
+                'asset': row[0],
+                'name': row[1],
+                'description': row[2],
+                'plugin_name': row[3],
+                'plugin_config': json.loads(row[4]) if row[4] else {},
+                'enabled': bool(row[5]),
+                'status': row[6],
+                'metadata': json.loads(row[7]) if row[7] else {},
+                'tags': json.loads(row[8]) if row[8] else [],
+                'created_at': row[9],
+                'updated_at': row[10]
+            }
+
+    async def _restore_deleted_device(
+        self,
+        device: DeviceConfig,
+        user: Optional[str] = None
+    ) -> DeviceConfig:
+        """恢复已删除的设备"""
+        now = time.time()
+        logger.info(f"Restoring deleted device: {device.asset}")
+
+        # 获取原始创建时间
+        existing_device = await self._get_device_record_include_deleted(device.asset)
+        original_created_at = existing_device['created_at'] if existing_device else now
+
+        # 删除旧的点位记录
+        await self._db.execute(
+            "DELETE FROM point_registry WHERE asset = ?",
+            (device.asset,)
+        )
+
+        # 更新设备记录，恢复为活跃状态
+        config_json = json.dumps(device.to_dict(), sort_keys=True)
+        config_hash = self._compute_hash(config_json)
+
+        await self._db.execute(
+            """
+            UPDATE device_registry SET
+                name = ?, description = ?, service_name = ?, plugin_name = ?, plugin_config = ?,
+                enabled = ?, status = 'active', metadata = ?, tags = ?, config_hash = ?,
+                updated_at = ?, deleted_at = NULL
+            WHERE asset = ?
+            """,
+            (
+                device.name, device.description,
+                device.plugin.name, device.plugin.name, json.dumps(device.plugin.config),
+                device.enabled, json.dumps(device.metadata), json.dumps(device.tags),
+                config_hash, now, device.asset
+            )
+        )
+
+        # 创建新的点位
+        for point in device.points:
+            await self._create_point(device.asset, point, user)
+
+        # 保存配置版本
+        await self._save_config_version(
+            'device', device.asset, device.to_dict(),
+            'restore', user, now
+        )
+
+        await self._db.commit()
+
+        # 设置设备属性（保留原始创建时间）
+        device.created_at = original_created_at
+        device.updated_at = now
+        device.created_by = user
+        device.updated_by = user
+
+        # 获取最新版本号
+        versions = await self.get_config_versions('device', device.asset, limit=1)
+        device.version = versions[0]['version'] if versions else 1
+
+        logger.info(f"Device restored: {device.asset} by {user}")
+        return device
+
+    async def _create_new_device(
+        self,
+        device: DeviceConfig,
+        user: Optional[str] = None
+    ) -> DeviceConfig:
+        """创建新设备"""
         now = time.time()
         config_json = json.dumps(device.to_dict(), sort_keys=True)
         config_hash = self._compute_hash(config_json)
-        
+
         try:
             await self._db.execute(
                 """
@@ -186,7 +299,7 @@ class ConfigRepository:
                 """,
                 (
                     device.asset, device.name, device.description,
-                    device.plugin_name, device.plugin_name, json.dumps(device.plugin_config),
+                    device.plugin.name, device.plugin.name, json.dumps(device.plugin.config),
                     device.enabled, device.status,
                     json.dumps(device.metadata), json.dumps(device.tags),
                     config_hash, now, now
@@ -196,23 +309,26 @@ class ConfigRepository:
             if 'UNIQUE constraint' in str(e):
                 raise ValueError(f"Device '{device.asset}' already exists")
             raise ValueError(f"Failed to create device '{device.asset}': {e}")
-        
+
+        # 创建点位
         for point in device.points:
             await self._create_point(device.asset, point, user)
-        
+
+        # 保存配置版本
         await self._save_config_version(
-            'device', device.asset, device.to_dict(), 
+            'device', device.asset, device.to_dict(),
             'create', user, now
         )
-        
+
         await self._db.commit()
-        
+
+        # 设置设备属性
         device.version = 1
         device.created_at = now
         device.updated_at = now
         device.created_by = user
         device.updated_by = user
-        
+
         logger.info(f"Device created: {device.asset} by {user}")
         return device
     
@@ -265,7 +381,7 @@ class ConfigRepository:
             """,
             (
                 device.name, device.description,
-                device.plugin_name, device.plugin_name, json.dumps(device.plugin_config),
+                device.plugin.name, device.plugin.name, json.dumps(device.plugin.config),
                 device.enabled, device.status,
                 json.dumps(device.metadata), json.dumps(device.tags),
                 config_hash, now, asset
