@@ -50,6 +50,117 @@ _NetworkPortObject = None
 _ErrorRejectAbortNack = None
 
 
+class BACnetAppManager:
+    """
+    BACnet Application 共享实例管理器
+    
+    用于设备轮询层的共享 Application 实例管理：
+    - 使用固定端口 47809（避开标准端口 47808）
+    - 所有 BACnet 设备插件共享同一个 Application 实例
+    - 引用计数管理，最后一个设备断开时关闭实例
+    
+    设备发现层使用独立的临时实例（端口 47808），与此管理器无关。
+    """
+    
+    _shared_app: Optional[Any] = None
+    _local_port: int = 47809  # 固定使用 47809（设备轮询专用）
+    _lock: Optional[asyncio.Lock] = None  # 延迟创建，确保在有 event loop 时初始化
+    _reference_count: int = 0
+    
+    @classmethod
+    async def get_shared_app(cls) -> Any:
+        """
+        获取共享的 Application 实例
+        
+        Returns:
+            共享的 BACnet Application 实例
+        """
+        # 确保 Lock 已创建（延迟初始化，在有 event loop 时）
+        if cls._lock is None:
+            cls._lock = asyncio.Lock()
+        
+        async with cls._lock:
+            if cls._shared_app is None:
+                # 首次创建共享实例
+                if not _check_bacnet_available():
+                    raise RuntimeError("bacpypes3 is not installed")
+                
+                device_object = _DeviceObject(
+                    objectIdentifier=("device", 999),  # 客户端设备ID
+                    objectName="XAgent_Shared_BACnet_Client",
+                )
+                
+                # 使用固定端口 47809
+                local_address = f"0.0.0.0:{cls._local_port}"
+                
+                network_port_object = _NetworkPortObject(
+                    local_address,
+                    objectIdentifier=("network-port", 1),
+                    objectName="NetworkPort-Shared",
+                )
+                
+                cls._shared_app = _Application.from_object_list(
+                    [device_object, network_port_object]
+                )
+                
+                logger.info(
+                    f"Created shared BACnet Application instance "
+                    f"on port {cls._local_port} (for device polling)"
+                )
+            
+            cls._reference_count += 1
+            logger.debug(
+                f"Shared app reference count: {cls._reference_count} "
+                f"(port {cls._local_port})"
+            )
+            return cls._shared_app
+    
+    @classmethod
+    async def release_shared_app(cls) -> None:
+        """
+        释放共享 Application 实例的引用
+        
+        使用引用计数管理：
+        - 每次设备断开时减少计数
+        - 计数为0时关闭并清理实例
+        - 防止引用计数变成负数（防御性编程）
+        """
+        # 确保 Lock 已创建（延迟初始化，在有 event loop 时）
+        if cls._lock is None:
+            cls._lock = asyncio.Lock()
+        
+        async with cls._lock:
+            # ✅ 检查引用计数，防止负数（防御性编程）
+            if cls._reference_count <= 0:
+                logger.warning(
+                    f"Attempted to release shared app with zero or negative reference count "
+                    f"(count={cls._reference_count}, port={cls._local_port}). "
+                    f"This may indicate a duplicate release call."
+                )
+                # 已经没有引用了，直接返回
+                return
+            
+            cls._reference_count -= 1
+            logger.debug(
+                f"Shared app reference count: {cls._reference_count} "
+                f"(port {cls._local_port})"
+            )
+            
+            if cls._reference_count == 0 and cls._shared_app is not None:
+                # 所有设备都已断开，关闭并清理实例
+                try:
+                    if hasattr(cls._shared_app, 'close'):
+                        await cls._shared_app.close()
+                    logger.info(
+                        f"Closed and released shared BACnet Application "
+                        f"(port {cls._local_port})"
+                    )
+                except Exception as e:
+                    logger.error(f"Error closing shared app: {e}")
+                finally:
+                    cls._shared_app = None
+
+
 def _check_bacnet_available():
     global BACNET_AVAILABLE, _Application, _DeviceObject
     global _NetworkPortObject, _ErrorRejectAbortNack
@@ -162,7 +273,7 @@ class BACnetPlugin(SouthPluginBase):
         self._device_supports_batch: Optional[bool] = None
         
         self._points: List[Dict[str, Any]] = config.get("points", [])
-        self._app: Any = None
+        self._app: Any = None  # 将使用共享实例
         self._device_online = False
         self._offline_counter = 0
         self._last_reconnect_time: float = 0.0
@@ -174,19 +285,26 @@ class BACnetPlugin(SouthPluginBase):
             logger.warning(f"No points configured for BACnet device {self._asset_name}")
     
     async def connect(self) -> bool:
+        """
+        连接到 BACnet 设备
+        
+        使用共享的 Application 实例（端口 47809）
+        所有 BACnet 设备共享同一个 UDP socket
+        """
         if not _check_bacnet_available():
             logger.error("bacpypes3 is not installed. Install it with: pip install bacpypes3")
             return False
         
+        app_reference_obtained = False  # 标记变量：跟踪引用是否已获取
+        
         try:
             logger.info(f"Connecting to BACnet device at {self._host}:{self._port}...")
             
-            if not await self._create_client():
-                logger.error(f"Failed to create BACnet client for {self._host}:{self._port}")
-                self._connected = False
-                await self._create_offline_reading()
-                return False
+            # 获取共享的 Application 实例
+            self._app = await BACnetAppManager.get_shared_app()
+            app_reference_obtained = True  # 标记已成功获取引用
             
+            # 测试连接
             if await self._test_connection():
                 self._connected = True
                 self._device_online = True
@@ -194,28 +312,49 @@ class BACnetPlugin(SouthPluginBase):
                 
                 self._setup_point_mappings()
                 
-                logger.info(f"Connected to BACnet device {self._asset_name}")
+                logger.info(
+                    f"Connected to BACnet device {self._asset_name} "
+                    f"using shared app (port 47809)"
+                )
                 return True
             else:
                 logger.error(f"Failed to connect to BACnet device at {self._host}:{self._port}")
                 self._connected = False
+                # 连接失败，释放共享实例引用
+                await BACnetAppManager.release_shared_app()
+                self._app = None
                 await self._create_offline_reading()
                 return False
                 
         except Exception as e:
             logger.error(f"BACnet connection error: {e}")
             self._connected = False
+            
+            # 使用标记确保引用计数正确释放
+            if app_reference_obtained:
+                try:
+                    await BACnetAppManager.release_shared_app()
+                    logger.debug(f"Released shared app reference after exception for {self._asset_name}")
+                except Exception as release_error:
+                    logger.debug(f"Error releasing reference during exception handling: {release_error}")
+                finally:
+                    self._app = None
+            
             await self._create_offline_reading()
             return False
     
     async def disconnect(self) -> None:
-        """断开连接"""
+        """
+        断开连接
+        
+        释放共享 Application 实例的引用
+        """
         if self._app:
             try:
-                if hasattr(self._app, 'close'):
-                    await self._app.close()
+                # 释放共享实例引用
+                await BACnetAppManager.release_shared_app()
             except Exception as e:
-                logger.error(f"Error disconnecting: {e}")
+                logger.error(f"Error releasing shared app: {e}")
             finally:
                 self._app = None
                 self._connected = False
@@ -239,19 +378,17 @@ class BACnetPlugin(SouthPluginBase):
         
         try:
             if not await self._check_heartbeat():
+                # ✅ 只标记设备离线，不释放共享实例引用
+                # 共享实例是全局资源，单个设备的心跳失败不应影响其他设备
                 self._device_online = False
                 self._connected = False
-                logger.warning("Heartbeat check failed, device marked offline")
+                logger.warning(
+                    f"Heartbeat check failed, device {self._asset_name} marked offline "
+                    f"(shared app remains active for other devices)"
+                )
                 
-                if self._app:
-                    try:
-                        if hasattr(self._app, 'close'):
-                            await self._app.close()
-                    except Exception:
-                        logger.debug("Error closing BACnet app during heartbeat failure", exc_info=True)
-                    finally:
-                        self._app = None
-                
+                # ✅ 不调用 release_shared_app()
+                # 让 _ensure_connection() 使用现有引用尝试重连
                 return await self._create_offline_reading()
             
             self._device_online = True
@@ -327,33 +464,6 @@ class BACnetPlugin(SouthPluginBase):
             
         except Exception as e:
             logger.error(f"Write error for {point}: {e}")
-            return False
-    
-    async def _create_client(self) -> bool:
-        if not _check_bacnet_available():
-            return False
-        
-        try:
-            device_object = _DeviceObject(
-                objectIdentifier=("device", self._device_id),
-                objectName=f"XAgent_{self._asset_name}",
-            )
-            
-            local_address = "0.0.0.0"
-            
-            network_port_object = _NetworkPortObject(
-                local_address,
-                objectIdentifier=("network-port", 1),
-                objectName="NetworkPort-1",
-            )
-            
-            self._app = _Application.from_object_list(
-                [device_object, network_port_object]
-            )
-            
-            return True
-        except Exception as e:
-            logger.error(f"Failed to create BACnet client: {e}")
             return False
     
     async def _test_connection(self) -> bool:
@@ -438,18 +548,57 @@ class BACnetPlugin(SouthPluginBase):
         return True
     
     async def _ensure_connection(self) -> bool:
-        """确保连接可用，使用基于时间间隔的重连策略"""
+        """
+        确保连接可用，使用基于时间间隔的重连策略
+        
+        优化逻辑：
+        - 如果有共享实例引用，尝试重连（不重新获取）
+        - 如果没有引用，调用connect获取引用
+        - 区分"心跳失败"和"初始状态"两种场景
+        """
+        # ✅ 如果已连接且有app，直接返回
         if self._connected and self._app:
             return True
         
-        now = time.time()
-        elapsed = now - self._last_reconnect_time
+        # ✅ 如果有app但未连接（心跳失败场景），尝试测试连接
+        if self._app and not self._connected:
+            now = time.time()
+            elapsed = now - self._last_reconnect_time
+            
+            if elapsed >= self._reconnect_interval:
+                self._last_reconnect_time = now
+                self._offline_counter += 1
+                logger.info(f"Attempting reconnect for {self._asset_name} (attempt {self._offline_counter})")
+                
+                # ✅ 尝试测试连接，不重新获取引用
+                try:
+                    if await self._test_connection():
+                        self._connected = True
+                        self._device_online = True
+                        self._offline_counter = 0
+                        logger.info(f"Reconnected to {self._asset_name} using existing shared app reference")
+                        return True
+                    else:
+                        logger.warning(f"Reconnect test failed for {self._asset_name}")
+                        return False
+                except Exception as e:
+                    logger.error(f"Error during reconnect test for {self._asset_name}: {e}")
+                    return False
+            
+            return False
         
-        if elapsed >= self._reconnect_interval:
-            self._last_reconnect_time = now
-            self._offline_counter += 1
-            logger.info(f"Attempting reconnect (attempt {self._offline_counter})")
-            return await self.connect()
+        # ✅ 如果没有app（初始状态或disconnect后），调用connect
+        if not self._app:
+            now = time.time()
+            elapsed = now - self._last_reconnect_time
+            
+            if elapsed >= self._reconnect_interval:
+                self._last_reconnect_time = now
+                self._offline_counter += 1
+                logger.info(f"Attempting initial connect for {self._asset_name} (attempt {self._offline_counter})")
+                return await self.connect()
+            
+            return False
         
         return False
     

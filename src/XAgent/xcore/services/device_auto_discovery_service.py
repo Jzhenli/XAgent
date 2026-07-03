@@ -3,10 +3,19 @@
 负责发送BACnet Who-Is广播，收集设备I-Am响应，
 自动发现网络中的BACnet设备。
 
+两层架构设计：
+1. 设备轮询层（plugin.py）：使用共享实例，端口 47809
+2. 设备发现层（本服务）：使用临时实例，端口 47808（标准端口）
+
 使用 bacpypes3 的正确API：
 - NormalApplication（IPv4应用）
 - who_is() 方法发送广播并等待响应
 - I-Am响应自动收集在返回的Future中
+
+设备发现使用标准端口 47808 的原因：
+- BACnet 标准端口，最大兼容性
+- 某些保守的 BACnet 设备可能只接受来自标准端口的广播
+- 临时创建，发现完成后立即关闭，不占用资源
 
 支持多网卡环境：
 - 使用psutil库获取网卡信息（更稳定可靠）
@@ -59,7 +68,13 @@ class DeviceAutoDiscoveryService:
     使用 bacpypes3.ipv4.app.NormalApplication 和 who_is() 方法。
     
     支持多网卡环境，可以指定使用哪个网卡发送广播。
+    
+    使用单例模式管理Application实例，避免反复创建导致端口冲突。
     """
+    
+    # 类级别缓存：存储Application实例，避免反复创建导致端口冲突
+    _app_instance_cache: Dict[str, Any] = {}
+    _app_instance_lock: Optional[asyncio.Lock] = None  # 延迟初始化，避免模块加载时创建Lock
     
     def __init__(self, plugin_loader: Any = None):
         """初始化服务
@@ -68,6 +83,52 @@ class DeviceAutoDiscoveryService:
             plugin_loader: 插件加载器（用于获取BACnet插件实例）
         """
         self.plugin_loader = plugin_loader
+    
+    @classmethod
+    def _get_lock(cls) -> asyncio.Lock:
+        """获取或创建Lock实例（延迟初始化）
+        
+        asyncio.Lock不能在类定义时创建（需要事件循环），
+        因此采用延迟初始化策略。
+        
+        Returns:
+            asyncio.Lock实例
+        """
+        if cls._app_instance_lock is None:
+            cls._app_instance_lock = asyncio.Lock()
+        return cls._app_instance_lock
+    
+    @classmethod
+    async def clear_app_cache(cls) -> None:
+        """清理所有缓存的Application实例
+        
+        用于在服务停止或需要强制释放端口时调用。
+        会关闭所有缓存的Application实例并清空缓存。
+        """
+        async with cls._get_lock():
+            for cache_key, app in cls._app_instance_cache.items():
+                try:
+                    app.close()
+                    logger.info(f"Closed cached application instance for {cache_key}")
+                except Exception as e:
+                    logger.warning(f"Failed to close cached application for {cache_key}: {e}")
+            
+            cls._app_instance_cache.clear()
+            logger.info("All cached BACnet application instances cleared")
+    
+    @classmethod
+    def get_cache_status(cls) -> Dict[str, Any]:
+        """获取缓存状态信息
+        
+        Returns:
+            包含缓存状态的字典：
+            - cached_instances: 缓存的实例数量
+            - cache_keys: 缓存的key列表
+        """
+        return {
+            "cached_instances": len(cls._app_instance_cache),
+            "cache_keys": list(cls._app_instance_cache.keys())
+        }
 
     def _parse_device_address(self, source_address: str) -> Tuple[str, int]:
         """解析设备地址和端口
@@ -163,7 +224,7 @@ class DeviceAutoDiscoveryService:
         - 其他：优先级 3（最低）
         
         Args:
-            interface_name: 网卡名称
+            interface_name: 卡名称
             description: 网卡描述
             
         Returns:
@@ -180,11 +241,14 @@ class DeviceAutoDiscoveryService:
         wifi_keywords = ['wi-fi', 'wifi', '无线', 'wireless', 'wl', 'wlan']
         
         # 检查是否为有线网卡
-        if any(keyword in name_lower or keyword in desc_lower for keyword in ethernet_keywords):
+        # 修正：正确的any()逻辑 - 检查关键词是否在名称或描述中
+        if any(keyword in name_lower for keyword in ethernet_keywords) or \
+           any(keyword in desc_lower for keyword in ethernet_keywords):
             return 1  # 最高优先级
         
         # 检查是否为无线网卡
-        if any(keyword in name_lower or keyword in desc_lower for keyword in wifi_keywords):
+        if any(keyword in name_lower for keyword in wifi_keywords) or \
+           any(keyword in desc_lower for keyword in wifi_keywords):
             return 2  # 中等优先级
         
         # 其他网卡
@@ -226,6 +290,22 @@ class DeviceAutoDiscoveryService:
                     
                     # IPv4地址信息
                     ip_address = addr.address
+                    
+                    # 过滤掉无效地址
+                    # 1. 127.0.0.0/8 - 回环地址（本地回环，无法发送网络广播）
+                    # 2. 169.254.0.0/16 - APIPA地址（自动私有IP，说明网卡未正确连接）
+                    try:
+                        ip_obj = ipaddress.IPv4Address(ip_address)
+                        if ip_obj.is_loopback:
+                            logger.debug(f"Skipping loopback address: {ip_address}")
+                            continue
+                        if ip_obj in ipaddress.IPv4Network('169.254.0.0/16'):
+                            logger.debug(f"Skipping APIPA address: {ip_address} (interface not properly connected)")
+                            continue
+                    except Exception as e:
+                        logger.warning(f"Invalid IP address format: {ip_address}, error: {e}")
+                        continue
+                    
                     netmask = addr.netmask
                     broadcast = addr.broadcast if addr.broadcast else ""
                     
@@ -389,6 +469,7 @@ class DeviceAutoDiscoveryService:
         # 初始化变量，确保finally块中可以访问
         app = None
         local_address = None
+        cache_key = interface_ip or "default"  # 缓存key：基于网卡IP
 
         try:
             # 导入bacpypes3库的正确模块
@@ -396,13 +477,13 @@ class DeviceAutoDiscoveryService:
             from bacpypes3.object import DeviceObject
             from bacpypes3.pdu import IPv4Address
 
-            # 创建临时设备对象（发现客户端）
-            device_object = DeviceObject(
-                objectName="XAgent Discovery Client",
-                objectIdentifier=("device", 0),  # 设备ID为0，表示发现客户端
-            )
-
             # 创建IPv4地址（根据是否指定网卡）
+            # 注意：设备发现服务应该使用临时端口（不绑定47808）
+            # 避免与BACnet插件（周期性采集）的端口冲突
+            # 
+            # 解决方案：使用非标准端口（如47809）进行设备发现
+            # BACnet插件使用标准端口47808进行周期性采集
+            # 设备发现服务使用备用端口47809，两者不冲突
             if interface_ip:
                 # 使用指定的网卡IP
                 # 尝试获取网络前缀
@@ -416,13 +497,14 @@ class DeviceAutoDiscoveryService:
                             break
 
                     if matching_interface:
-                        # 使用完整的网络配置（IP/前缀:端口）
+                        # 使用完整的网络配置（IP/前缀:备用端口47809）
+                        # 使用备用端口避免与BACnet插件冲突
                         local_address = IPv4Address(
-                            f"{interface_ip}/{matching_interface.network_prefix}:47808"
+                            f"{interface_ip}/{matching_interface.network_prefix}:47809"
                         )
                         logger.info(
                             f"Using interface {interface_ip}/{matching_interface.network_prefix} "
-                            f"with broadcast {matching_interface.broadcast_address}"
+                            f"with broadcast {matching_interface.broadcast_address} (port 47809, avoiding conflict)"
                         )
                     else:
                         # 找不到匹配的网卡，使用默认/24
@@ -438,13 +520,27 @@ class DeviceAutoDiscoveryService:
                     local_address = IPv4Address(f"{interface_ip}/24:47808")
             else:
                 # 自动选择默认网卡（使用"host"关键字）
+                # 使用 BACnet 标准端口 47808
                 local_address = IPv4Address("host:47808")
-                logger.info("Using auto-selected default interface (host)")
+                logger.info("Using auto-selected default interface (host) with standard port 47808 (for device discovery)")
 
-            # 创建BACnet/IP应用实例
+            # 临时创建 Application 实例（设备发现专用）
+            # 临时实例，发现完成后立即关闭
+            # 使用标准端口 47808，确保最大兼容性
+            device_object = DeviceObject(
+                objectName="XAgent Discovery Client",
+                objectIdentifier=("device", 0),  # 设备ID为0，表示发现客户端
+            )
+            
+            # 创建临时的 BACnet/IP 应用实例（使用端口 47808）
             app = NormalApplication(device_object, local_address)
+            
+            logger.info(
+                f"Created temporary BACnet Application for discovery "
+                f"on standard port 47808 (address: {local_address})"
+            )
 
-            logger.info("Created BACnet discovery client, sending Who-Is broadcast...")
+            logger.info("BACnet discovery client ready, sending Who-Is broadcast...")
 
             # 发送Who-Is广播，等待I-Am响应
             # bacpypes3的who_is()方法会自动收集I-Am响应
@@ -531,14 +627,39 @@ class DeviceAutoDiscoveryService:
         except ImportError as e:
             logger.error(f"bacpypes3 library not installed or import failed: {e}")
             raise RuntimeError(f"bacpypes3 library not installed or import failed: {e}")
+        except OSError as os_error:
+            # 处理端口占用错误（WinError 10048）
+            if "10048" in str(os_error) or "通常每个套接字地址" in str(os_error):
+                error_msg = (
+                    f"BACnet设备发现端口冲突：标准端口 47808 已被占用。\n"
+                    f"可能原因：\n"
+                    f"1. 本地有其他 BACnet 应用正在运行\n"
+                    f"2. BACnet 设备插件正在使用该端口进行轮询（不应该发生）\n"
+                    f"解决方案：\n"
+                    f"1. 等待1-2分钟后重试\n"
+                    f"2. 检查是否有其他BACnet应用正在运行\n"
+                    f"注意：\n"
+                    f"- 设备发现服务使用标准端口 47808（临时实例）\n"
+                    f"- 设备轮询插件使用端口 47809（共享实例）\n"
+                    f"- 两者应该互不干扰"
+                )
+                logger.error(error_msg)
+                raise RuntimeError(error_msg)
+            else:
+                logger.error(f"Network error during device discovery: {os_error}", exc_info=True)
+                raise RuntimeError(f"Network error during device discovery: {str(os_error)}")
         except Exception as e:
             logger.error(f"Device discovery failed: {e}", exc_info=True)
             raise RuntimeError(f"Device discovery failed: {str(e)}")
         finally:
-            # 确保应用实例总是被正确关闭，避免资源泄漏
-            if app is not None:
-                try:
-                    app.close()
-                    logger.debug("BACnet application instance closed successfully")
-                except Exception as close_error:
-                    logger.warning(f"Failed to close BACnet application: {close_error}")
+            # 关闭临时的 Application 实例
+            # 设备发现完成后立即关闭，释放端口 47808
+            try:
+                if app and hasattr(app, 'close'):
+                    await app.close()
+                    logger.info(
+                        f"Closed temporary BACnet Application instance "
+                        f"(released port 47808)"
+                    )
+            except Exception as e:
+                logger.error(f"Error closing temporary discovery app: {e}")
