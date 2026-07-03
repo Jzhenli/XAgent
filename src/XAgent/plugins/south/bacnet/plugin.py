@@ -808,6 +808,20 @@ class BACnetPlugin(SouthPluginBase):
     
     # ========== 点位发现相关方法 ==========
     
+    def get_device_status(self) -> str:
+        """
+        获取设备状态（重写基类方法）
+
+        对于 BACnet 设备，除了检查基本状态外，还需要检查 _app 是否存在，
+        因为所有读取操作都需要 _app。
+
+        Returns:
+            "online" 或 "offline"
+        """
+        if self._running and self._connected and self._device_online and self._app:
+            return "online"
+        return "offline"
+
     async def read_object_list(self) -> List[tuple]:
         """
         读取设备的对象列表
