@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Upload } from '@element-plus/icons-vue'
+import { Search, RefreshRight, Plus, Edit, CircleCheck } from '@element-plus/icons-vue'
 import { deviceApi } from '@/api/devices'
 import type { DiscoveredDeviceResponse, DeviceConfig, NetworkInterfaceResponse } from '@/api/types'
 
@@ -18,6 +18,9 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+// 当前步骤 (0: 配置, 1: 搜索中, 2: 搜索结果)
+const currentStep = ref(0)
 
 // 网卡选择
 const networkInterfaces = ref<NetworkInterfaceResponse[]>([])
@@ -55,9 +58,15 @@ const handleSelectionChange = (selection: DiscoveredDeviceResponse[]) => {
 
 // 发现设备
 const handleDiscoverDevices = async () => {
+  // 切换到搜索中步骤
+  currentStep.value = 1
   searching.value = true
   discoveredDevices.value = []
   selectedDevices.value = []
+
+  // 记录开始时间，确保用户能看到搜索动画
+  const startTime = Date.now()
+  const minDisplayTime = 1500 // 最少显示1.5秒的搜索动画
 
   try {
     // 构建请求参数
@@ -79,15 +88,40 @@ const handleDiscoverDevices = async () => {
 
     const response = await deviceApi.discoverDevices(request)
 
+    // 计算已经过去的时间
+    const elapsedTime = Date.now() - startTime
+    // 如果搜索太快，等待剩余时间，确保用户能看到搜索动画
+    if (elapsedTime < minDisplayTime) {
+      await new Promise(resolve => setTimeout(resolve, minDisplayTime - elapsedTime))
+    }
+
     if (response.success) {
       discoveredDevices.value = response.devices
-      ElMessage.success(`发现 ${response.total} 个BACnet设备`)
+      // 切换到结果步骤（即使发现0个设备也显示结果页面）
+      currentStep.value = 2
+
+      if (response.total === 0) {
+        ElMessage.warning('未发现任何BACnet设备，请检查网络连接或调整搜索参数')
+      } else {
+        ElMessage.success(`发现 ${response.total} 个BACnet设备`)
+      }
     } else {
       ElMessage.error('设备发现失败')
+      // 返回配置步骤
+      currentStep.value = 0
     }
   } catch (error: any) {
+    // 计算已经过去的时间
+    const elapsedTime = Date.now() - startTime
+    // 如果搜索太快，等待剩余时间
+    if (elapsedTime < minDisplayTime) {
+      await new Promise(resolve => setTimeout(resolve, minDisplayTime - elapsedTime))
+    }
+
     const detail = error?.response?.data?.detail || error?.message || '未知错误'
     ElMessage.error(`设备发现失败: ${detail}`)
+    // 返回配置步骤
+    currentStep.value = 0
   } finally {
     searching.value = false
   }
@@ -196,7 +230,16 @@ const handleBatchAdd = async () => {
 }
 
 const handleClose = () => {
+  // 重置步骤状态
+  currentStep.value = 0
   emit('close')
+}
+
+// 重新搜索（返回配置步骤）
+const handleResearch = () => {
+  currentStep.value = 0
+  discoveredDevices.value = []
+  selectedDevices.value = []
 }
 
 // 监听对话框打开，获取网卡列表
@@ -223,189 +266,266 @@ watch(() => props.visible, async (visible) => {
 <template>
   <el-dialog
     v-model="props.visible"
-    title="设备发现 - 步骤 2/3"
-    width="700px"
+    title="BACnet 设备发现"
+    width="900px"
     @close="handleClose"
   >
-    <!-- 搜索配置 -->
-    <el-card shadow="never" class="mb-4">
-      <template #header>
-        <div class="card-header">
-          <span>发现配置</span>
-        </div>
-      </template>
+    <!-- 步骤条 -->
+    <el-steps :active="currentStep" align-center class="mb-6">
+      <el-step title="配置参数" description="设置搜索参数" />
+      <el-step title="搜索设备" description="发送广播搜索" />
+      <el-step title="查看结果" description="选择并添加设备" />
+    </el-steps>
 
-      <el-form label-width="120px">
-        <el-form-item label="选择网卡">
-          <el-select
-            v-model="selectedInterfaceIp"
-            placeholder="自动选择默认网卡"
-            clearable
-            class="w-full"
-          >
-            <el-option
-              v-for="nic in networkInterfaces"
-              :key="nic.ip_address"
-              :label="`${nic.name} (${nic.ip_address}/${nic.network_prefix})`"
-              :value="nic.ip_address"
+    <!-- 步骤 0: 配置参数 -->
+    <div v-show="currentStep === 0" class="step-content">
+      <el-card shadow="never">
+        <template #header>
+          <div class="card-header">
+            <span>搜索配置</span>
+          </div>
+        </template>
+
+        <el-form label-width="120px">
+          <el-form-item label="选择网卡">
+            <el-select
+              v-model="selectedInterfaceIp"
+              placeholder="请选择网卡或自动选择最优网卡"
+              clearable
+              class="w-full"
             >
-              <div style="display: flex; justify-content: space-between;">
-                <span>{{ nic.name }}</span>
-                <span style="color: #8492a6; font-size: 13px;">
-                  {{ nic.ip_address }}/{{ nic.network_prefix }}
-                  <el-tag v-if="nic.priority === 1" size="small" type="success">有线</el-tag>
-                  <el-tag v-if="nic.priority === 2" size="small" type="warning">无线</el-tag>
-                </span>
-              </div>
-            </el-option>
-          </el-select>
-          <el-text type="info" size="small" class="mt-1">
-            多网卡环境下建议指定网卡
-          </el-text>
-        </el-form-item>
+              <el-option
+                v-for="nic in networkInterfaces"
+                :key="nic.ip_address"
+                :label="`${nic.name} (${nic.ip_address}/${nic.network_prefix})`"
+                :value="nic.ip_address"
+              >
+                <div style="display: flex; justify-content: space-between;">
+                  <span>{{ nic.name }}</span>
+                  <span style="color: #8492a6; font-size: 13px;">
+                    {{ nic.ip_address }}/{{ nic.network_prefix }}
+                    <el-tag v-if="nic.priority === 1" size="small" type="success">有线</el-tag>
+                    <el-tag v-if="nic.priority === 2" size="small" type="warning">无线</el-tag>
+                  </span>
+                </div>
+              </el-option>
+            </el-select>
+            <el-text type="info" size="small" class="mt-1">
+              多网卡环境下建议指定网卡，默认自动选择有线网卡
+            </el-text>
+          </el-form-item>
 
-        <el-form-item label="网络范围">
-          <el-input
-            v-model="networkRange"
-            placeholder="如: 192.168.1.0/24 (可选)"
-            clearable
-          />
-          <el-text type="info" size="small" class="mt-1">
-            不填写则广播到所有网段
-          </el-text>
-        </el-form-item>
+          <el-form-item label="网络范围">
+            <el-input
+              v-model="networkRange"
+              placeholder="192.168.1.0/24 (可选，不填则全网广播)"
+              clearable
+            />
+          </el-form-item>
 
-        <el-form-item label="设备ID范围">
-          <el-row :gutter="10">
-            <el-col :span="12">
-              <el-input-number
-                v-model="deviceIdRangeMin"
-                placeholder="最小ID"
-                :min="0"
-                clearable
-              />
-            </el-col>
-            <el-col :span="12">
-              <el-input-number
-                v-model="deviceIdRangeMax"
-                placeholder="最大ID"
-                :min="0"
-                clearable
-              />
-            </el-col>
-          </el-row>
-          <el-text type="info" size="small" class="mt-1">
-            不填写则发现所有设备ID
-          </el-text>
-        </el-form-item>
+          <el-form-item label="设备ID范围">
+            <el-row :gutter="10">
+              <el-col :span="12">
+                <el-input-number
+                  v-model="deviceIdRangeMin"
+                  placeholder="最小值"
+                  :min="0"
+                  clearable
+                  class="w-full"
+                  controls-position="right"
+                />
+                <el-text type="info" size="small" class="mt-1">最小ID</el-text>
+              </el-col>
+              <el-col :span="12">
+                <el-input-number
+                  v-model="deviceIdRangeMax"
+                  placeholder="最大值"
+                  :min="0"
+                  clearable
+                  class="w-full"
+                  controls-position="right"
+                />
+                <el-text type="info" size="small" class="mt-1">最大ID</el-text>
+              </el-col>
+            </el-row>
+            <el-text type="info" size="small" class="mt-1 block">
+              不填写则搜索所有设备ID (范围: 0-4194303)
+            </el-text>
+          </el-form-item>
 
-        <el-form-item label="超时时间">
-          <el-input-number
-            v-model="timeout"
-            :min="0.1"
-            :max="30"
-            :step="0.5"
-            :precision="1"
-          />
-          <el-text type="info" size="small" class="ml-2">
-            秒 (推荐: 5-10秒)
-          </el-text>
-        </el-form-item>
-      </el-form>
-    </el-card>
+          <el-form-item label="超时时间">
+            <el-input-number
+              v-model="timeout"
+              :min="0.1"
+              :max="30"
+              :step="0.5"
+              :precision="1"
+              controls-position="right"
+            />
+            <span class="unit-text">秒</span>
+            <el-text type="info" size="small" class="ml-2">
+              推荐: 5-10秒
+            </el-text>
+          </el-form-item>
+        </el-form>
+      </el-card>
+    </div>
 
-    <!-- 搜索按钮和进度 -->
-    <el-card shadow="never" class="mb-4">
-      <el-button
-        type="primary"
-        :icon="Search"
-        :loading="searching"
-        @click="handleDiscoverDevices"
-        size="large"
-        class="w-full mb-4"
-      >
-        {{ searching ? '搜索中...' : '开始发现设备' }}
-      </el-button>
-
-      <!-- 实时显示发现数量 -->
-      <el-text v-if="searching" type="info" size="large">
-        正在发送Who-Is广播，等待设备响应...
-      </el-text>
-      <el-text v-else-if="discoveredDevices.length > 0" type="success" size="large">
-        已发现 {{ discoveredDevices.length }} 个设备
-      </el-text>
-    </el-card>
-
-    <!-- 发现的设备列表 -->
-    <el-card shadow="never" v-if="discoveredDevices.length > 0">
-      <template #header>
-        <div class="card-header">
-          <span>发现设备列表 (共 {{ discoveredDevices.length }} 个)</span>
-          <el-text type="info" size="small">已选择: {{ selectedCount }} 个</el-text>
+    <!-- 步骤 1: 搜索中 -->
+    <div v-show="currentStep === 1" class="step-content">
+      <el-card shadow="never" class="searching-card">
+        <div class="searching-animation">
+          <el-icon class="searching-icon" :size="80">
+            <Search />
+          </el-icon>
+          <div class="searching-text">
+            <h3>正在搜索 BACnet 设备...</h3>
+            <p class="sub-text">系统正在发送 Who-Is 广播，等待设备响应</p>
+            <p class="timeout-text">预计等待时间: {{ timeout }} 秒</p>
+          </div>
         </div>
-      </template>
+      </el-card>
+    </div>
 
-      <el-table
-        :data="discoveredDevices"
-        @selection-change="handleSelectionChange"
-        max-height="400"
-        stripe
-      >
-        <el-table-column type="selection" width="55" />
-        <el-table-column prop="device_id" label="设备ID" width="100" />
-        <el-table-column label="地址" width="180">
-          <template #default="{ row }">
-            {{ row.address }}:{{ row.port }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="device_name" label="设备名称" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="vendor_name" label="厂商" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="model_name" label="型号" min-width="120" show-overflow-tooltip />
+    <!-- 步骤 2: 搜索结果 -->
+    <div v-show="currentStep === 2" class="step-content">
+      <!-- 结果统计卡片 -->
+      <el-card shadow="never" class="mb-4 result-summary-card">
+        <div class="result-summary">
+          <div class="summary-item">
+            <el-icon :size="32" color="#67C23A"><Search /></el-icon>
+            <div class="summary-text">
+              <div class="summary-number">{{ discoveredDevices.length }}</div>
+              <div class="summary-label">发现设备</div>
+            </div>
+          </div>
+          <el-divider direction="vertical" />
+          <div class="summary-item">
+            <el-icon :size="32" color="#409EFF"><CircleCheck /></el-icon>
+            <div class="summary-text">
+              <div class="summary-number">{{ selectedCount }}</div>
+              <div class="summary-label">已选择</div>
+            </div>
+          </div>
+        </div>
+      </el-card>
 
-        <!-- 操作列 -->
-        <el-table-column label="操作" width="180" fixed="right">
-          <template #default="{ row }">
+      <!-- 设备列表 -->
+      <el-card shadow="never">
+        <template #header>
+          <div class="card-header">
+            <span>设备列表</span>
             <el-button
               type="primary"
+              :icon="RefreshRight"
               size="small"
-              @click="handleQuickAddDevice(row)"
+              @click="handleResearch"
             >
-              添加
+              重新搜索
             </el-button>
-            <el-button
-              type="warning"
-              size="small"
-              @click="handleCustomizeDevice(row)"
-            >
-              自定义
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          </div>
+        </template>
 
-      <div class="mt-4">
-        <el-checkbox
-          v-model="selectAll"
-          @change="handleSelectAll"
-          :indeterminate="selectedCount > 0 && selectedCount < discoveredDevices.length"
+        <!-- 空状态 -->
+        <el-empty
+          v-if="discoveredDevices.length === 0"
+          description="未发现任何BACnet设备"
+          :image-size="120"
         >
-          全选
-        </el-checkbox>
-      </div>
-    </el-card>
+          <el-button type="primary" @click="handleResearch">调整参数重新搜索</el-button>
+        </el-empty>
+
+        <!-- 设备表格 -->
+        <el-table
+          v-else
+          :data="discoveredDevices"
+          @selection-change="handleSelectionChange"
+          max-height="400"
+          stripe
+        >
+          <el-table-column type="selection" width="55" />
+          <el-table-column prop="device_id" label="设备ID" width="100" />
+          <el-table-column label="地址" width="180">
+            <template #default="{ row }">
+              {{ row.address }}:{{ row.port }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="device_name" label="设备名称" min-width="150" show-overflow-tooltip />
+          <el-table-column prop="vendor_name" label="厂商" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="model_name" label="型号" min-width="120" show-overflow-tooltip />
+
+          <!-- 操作列 -->
+          <el-table-column label="操作" width="100" fixed="right">
+            <template #default="{ row }">
+              <el-tooltip content="快速添加" placement="top">
+                <el-button
+                  type="primary"
+                  :icon="Plus"
+                  size="small"
+                  circle
+                  @click="handleQuickAddDevice(row)"
+                />
+              </el-tooltip>
+              <el-tooltip content="自定义添加" placement="top">
+                <el-button
+                  type="warning"
+                  :icon="Edit"
+                  size="small"
+                  circle
+                  @click="handleCustomizeDevice(row)"
+                  class="ml-2"
+                />
+              </el-tooltip>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div v-if="discoveredDevices.length > 0" class="mt-4">
+          <el-checkbox
+            v-model="selectAll"
+            @change="handleSelectAll"
+            :indeterminate="selectedCount > 0 && selectedCount < discoveredDevices.length"
+          >
+            全选
+          </el-checkbox>
+        </div>
+      </el-card>
+    </div>
 
     <!-- 底部操作按钮 -->
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">关闭</el-button>
-        <el-button
-          type="primary"
-          :icon="Upload"
-          @click="handleBatchAdd"
-          :disabled="selectedCount === 0"
-        >
-          批量添加全部 ({{ selectedCount }})
-        </el-button>
+        <!-- 步骤 0: 配置 -->
+        <template v-if="currentStep === 0">
+          <el-button @click="handleClose">取消</el-button>
+          <el-button
+            type="primary"
+            :icon="Search"
+            :loading="searching"
+            @click="handleDiscoverDevices"
+          >
+            开始发现设备
+          </el-button>
+        </template>
+
+        <!-- 步骤 1: 搜索中 -->
+        <template v-else-if="currentStep === 1">
+          <el-button @click="handleClose" :disabled="searching">取消</el-button>
+          <el-button type="primary" :loading="true">搜索中...</el-button>
+        </template>
+
+        <!-- 步骤 2: 结果 -->
+        <template v-else-if="currentStep === 2">
+          <el-button @click="handleClose">关闭</el-button>
+          <el-button
+            type="primary"
+            :icon="CircleCheck"
+            @click="handleBatchAdd"
+            :disabled="selectedCount === 0"
+          >
+            批量添加所选 ({{ selectedCount }})
+          </el-button>
+        </template>
       </div>
     </template>
   </el-dialog>
@@ -421,7 +541,7 @@ watch(() => props.visible, async (visible) => {
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 12px;
 }
 
 .w-full {
@@ -430,6 +550,10 @@ watch(() => props.visible, async (visible) => {
 
 .mb-4 {
   margin-bottom: 16px;
+}
+
+.mb-6 {
+  margin-bottom: 24px;
 }
 
 .mt-1 {
@@ -442,5 +566,113 @@ watch(() => props.visible, async (visible) => {
 
 .ml-2 {
   margin-left: 8px;
+}
+
+/* 单位文本 */
+.unit-text {
+  margin-left: 8px;
+  color: #606266;
+  font-size: 14px;
+}
+
+/* 块级元素 */
+.block {
+  display: block;
+  width: 100%;
+}
+
+/* 步骤内容 */
+.step-content {
+  min-height: 400px;
+}
+
+/* 搜索中动画 */
+.searching-card {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.searching-animation {
+  text-align: center;
+  padding: 60px 0;
+}
+
+.searching-icon {
+  animation: pulse 2s ease-in-out infinite;
+  color: #409EFF;
+  margin-bottom: 30px;
+}
+
+.searching-text h3 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.searching-text .sub-text {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #606266;
+}
+
+.searching-text .timeout-text {
+  margin: 0;
+  font-size: 13px;
+  color: #909399;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* 结果统计卡片 */
+.result-summary-card {
+  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+}
+
+.result-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 60px;
+  padding: 20px 0;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-number {
+  font-size: 28px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: #909399;
+}
+
+.el-divider--vertical {
+  height: 40px;
 }
 </style>
