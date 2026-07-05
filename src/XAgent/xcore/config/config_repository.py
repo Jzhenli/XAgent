@@ -178,7 +178,7 @@ class ConfigRepository:
 
         if existing_device:
             if existing_device['status'] == 'deleted':
-                return await self._restore_deleted_device(device, user)
+                return await self._restore_deleted_device(device, existing_device, user)
             else:
                 raise ValueError(f"Device '{device.asset}' already exists")
 
@@ -217,14 +217,14 @@ class ConfigRepository:
     async def _restore_deleted_device(
         self,
         device: DeviceConfig,
+        existing_device: Dict[str, Any],
         user: Optional[str] = None
     ) -> DeviceConfig:
         """恢复已删除的设备"""
         now = time.time()
         logger.info(f"Restoring deleted device: {device.asset}")
 
-        # 获取原始创建时间
-        existing_device = await self._get_device_record_include_deleted(device.asset)
+        # 复用调用方已查询的记录，避免重复 DB 往返
         original_created_at = existing_device['created_at'] if existing_device else now
 
         # 删除旧的点位记录
@@ -253,30 +253,33 @@ class ConfigRepository:
             )
         )
 
-        # 创建新的点位
+        await self._finalize_device_create(device, now, user, 'restore', original_created_at)
+        logger.info(f"Device restored: {device.asset} by {user}")
+        return device
+
+    async def _finalize_device_create(
+        self,
+        device: DeviceConfig,
+        now: float,
+        user: Optional[str],
+        action: str,
+        original_created_at: Optional[float] = None
+    ) -> None:
+        """设备创建/恢复后的收尾：建点位、存版本、提交、设属性"""
         for point in device.points:
             await self._create_point(device.asset, point, user)
 
-        # 保存配置版本
         await self._save_config_version(
-            'device', device.asset, device.to_dict(),
-            'restore', user, now
+            'device', device.asset, device.to_dict(), action, user, now
         )
-
         await self._db.commit()
 
-        # 设置设备属性（保留原始创建时间）
-        device.created_at = original_created_at
+        device.created_at = original_created_at if original_created_at is not None else now
         device.updated_at = now
         device.created_by = user
         device.updated_by = user
-
-        # 获取最新版本号
         versions = await self.get_config_versions('device', device.asset, limit=1)
         device.version = versions[0]['version'] if versions else 1
-
-        logger.info(f"Device restored: {device.asset} by {user}")
-        return device
 
     async def _create_new_device(
         self,
@@ -310,25 +313,7 @@ class ConfigRepository:
                 raise ValueError(f"Device '{device.asset}' already exists")
             raise ValueError(f"Failed to create device '{device.asset}': {e}")
 
-        # 创建点位
-        for point in device.points:
-            await self._create_point(device.asset, point, user)
-
-        # 保存配置版本
-        await self._save_config_version(
-            'device', device.asset, device.to_dict(),
-            'create', user, now
-        )
-
-        await self._db.commit()
-
-        # 设置设备属性
-        device.version = 1
-        device.created_at = now
-        device.updated_at = now
-        device.created_by = user
-        device.updated_by = user
-
+        await self._finalize_device_create(device, now, user, 'create')
         logger.info(f"Device created: {device.asset} by {user}")
         return device
     

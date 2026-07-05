@@ -550,57 +550,39 @@ class BACnetPlugin(SouthPluginBase):
     async def _ensure_connection(self) -> bool:
         """
         确保连接可用，使用基于时间间隔的重连策略
-        
-        优化逻辑：
-        - 如果有共享实例引用，尝试重连（不重新获取）
-        - 如果没有引用，调用connect获取引用
-        - 区分"心跳失败"和"初始状态"两种场景
+
+        - 有共享实例引用时尝试 test_connection 重连（心跳失败场景）
+        - 无引用时调用 connect 获取引用（初始状态或 disconnect 后）
         """
-        # ✅ 如果已连接且有app，直接返回
         if self._connected and self._app:
             return True
-        
-        # ✅ 如果有app但未连接（心跳失败场景），尝试测试连接
-        if self._app and not self._connected:
-            now = time.time()
-            elapsed = now - self._last_reconnect_time
-            
-            if elapsed >= self._reconnect_interval:
-                self._last_reconnect_time = now
-                self._offline_counter += 1
-                logger.info(f"Attempting reconnect for {self._asset_name} (attempt {self._offline_counter})")
-                
-                # ✅ 尝试测试连接，不重新获取引用
-                try:
-                    if await self._test_connection():
-                        self._connected = True
-                        self._device_online = True
-                        self._offline_counter = 0
-                        logger.info(f"Reconnected to {self._asset_name} using existing shared app reference")
-                        return True
-                    else:
-                        logger.warning(f"Reconnect test failed for {self._asset_name}")
-                        return False
-                except Exception as e:
-                    logger.error(f"Error during reconnect test for {self._asset_name}: {e}")
-                    return False
-            
+
+        now = time.time()
+        if now - self._last_reconnect_time < self._reconnect_interval:
             return False
-        
-        # ✅ 如果没有app（初始状态或disconnect后），调用connect
-        if not self._app:
-            now = time.time()
-            elapsed = now - self._last_reconnect_time
-            
-            if elapsed >= self._reconnect_interval:
-                self._last_reconnect_time = now
-                self._offline_counter += 1
-                logger.info(f"Attempting initial connect for {self._asset_name} (attempt {self._offline_counter})")
-                return await self.connect()
-            
-            return False
-        
-        return False
+
+        self._last_reconnect_time = now
+        self._offline_counter += 1
+
+        if self._app:
+            # 心跳失败：用现有引用重连
+            logger.info(f"Attempting reconnect for {self._asset_name} (attempt {self._offline_counter})")
+            try:
+                if await self._test_connection():
+                    self._connected = True
+                    self._device_online = True
+                    self._offline_counter = 0
+                    logger.info(f"Reconnected to {self._asset_name} using existing shared app reference")
+                    return True
+                logger.warning(f"Reconnect test failed for {self._asset_name}")
+                return False
+            except Exception as e:
+                logger.error(f"Error during reconnect test for {self._asset_name}: {e}")
+                return False
+
+        # 初始状态或 disconnect 后：获取引用
+        logger.info(f"Attempting initial connect for {self._asset_name} (attempt {self._offline_counter})")
+        return await self.connect()
     
     def _setup_point_mappings(self) -> None:
         """设置点位映射"""
@@ -1027,35 +1009,17 @@ class BACnetPlugin(SouthPluginBase):
                 logger.warning(f"Empty objectList response from device {self._device_id}")
                 return []
             
-            # 处理不同格式的响应
-            if isinstance(response, list):
-                # 直接是列表格式
-                for obj_id in response:
+            # 解包可能的包装对象，统一处理列表格式
+            actual = response.value if hasattr(response, 'value') else response
+            if isinstance(actual, list):
+                for obj_id in actual:
                     if isinstance(obj_id, tuple) and len(obj_id) == 2:
-                        object_type, instance = obj_id
-                        object_list.append((str(object_type), int(instance)))
+                        object_list.append((str(obj_id[0]), int(obj_id[1])))
                     elif isinstance(obj_id, str):
                         # 字符串格式："analogInput,1"
                         parts = obj_id.split(',')
                         if len(parts) == 2:
-                            object_type = parts[0].strip()
-                            instance = int(parts[1].strip())
-                            object_list.append((object_type, instance))
-            
-            elif hasattr(response, 'value'):
-                # 包装在对象中的值
-                actual_value = response.value
-                if isinstance(actual_value, list):
-                    for obj_id in actual_value:
-                        if isinstance(obj_id, tuple) and len(obj_id) == 2:
-                            object_type, instance = obj_id
-                            object_list.append((str(object_type), int(instance)))
-                        elif isinstance(obj_id, str):
-                            parts = obj_id.split(',')
-                            if len(parts) == 2:
-                                object_type = parts[0].strip()
-                                instance = int(parts[1].strip())
-                                object_list.append((object_type, instance))
+                            object_list.append((parts[0].strip(), int(parts[1].strip())))
             
             logger.info(
                 f"Successfully read {len(object_list)} objects "

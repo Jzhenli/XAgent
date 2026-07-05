@@ -31,7 +31,7 @@ import ipaddress
 import socket
 import psutil
 import re
-from typing import Dict, List, Optional, Tuple, Any
+from typing import List, Optional, Tuple, Any
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -68,14 +68,8 @@ class DeviceAutoDiscoveryService:
     使用 bacpypes3.ipv4.app.NormalApplication 和 who_is() 方法。
     
     支持多网卡环境，可以指定使用哪个网卡发送广播。
-    
-    使用单例模式管理Application实例，避免反复创建导致端口冲突。
     """
-    
-    # 类级别缓存：存储Application实例，避免反复创建导致端口冲突
-    _app_instance_cache: Dict[str, Any] = {}
-    _app_instance_lock: Optional[asyncio.Lock] = None  # 延迟初始化，避免模块加载时创建Lock
-    
+
     def __init__(self, plugin_loader: Any = None):
         """初始化服务
 
@@ -83,115 +77,31 @@ class DeviceAutoDiscoveryService:
             plugin_loader: 插件加载器（用于获取BACnet插件实例）
         """
         self.plugin_loader = plugin_loader
-    
-    @classmethod
-    def _get_lock(cls) -> asyncio.Lock:
-        """获取或创建Lock实例（延迟初始化）
-        
-        asyncio.Lock不能在类定义时创建（需要事件循环），
-        因此采用延迟初始化策略。
-        
-        Returns:
-            asyncio.Lock实例
-        """
-        if cls._app_instance_lock is None:
-            cls._app_instance_lock = asyncio.Lock()
-        return cls._app_instance_lock
-    
-    @classmethod
-    async def clear_app_cache(cls) -> None:
-        """清理所有缓存的Application实例
-        
-        用于在服务停止或需要强制释放端口时调用。
-        会关闭所有缓存的Application实例并清空缓存。
-        """
-        async with cls._get_lock():
-            for cache_key, app in cls._app_instance_cache.items():
-                try:
-                    app.close()
-                    logger.info(f"Closed cached application instance for {cache_key}")
-                except Exception as e:
-                    logger.warning(f"Failed to close cached application for {cache_key}: {e}")
-            
-            cls._app_instance_cache.clear()
-            logger.info("All cached BACnet application instances cleared")
-    
-    @classmethod
-    def get_cache_status(cls) -> Dict[str, Any]:
-        """获取缓存状态信息
-        
-        Returns:
-            包含缓存状态的字典：
-            - cached_instances: 缓存的实例数量
-            - cache_keys: 缓存的key列表
-        """
-        return {
-            "cached_instances": len(cls._app_instance_cache),
-            "cache_keys": list(cls._app_instance_cache.keys())
-        }
 
     def _parse_device_address(self, source_address: str) -> Tuple[str, int]:
         """解析设备地址和端口
 
-        bacpypes3 的 pduSource 可能是多种格式：
-        - "192.168.1.100" (仅IP地址)
-        - "192.168.1.100:47808" (IP:端口)
-        - "Address(...)" (Address对象字符串)
-        - 其他未知格式
-
-        Args:
-            source_address: 源地址字符串
-
-        Returns:
-            (address, port) 元组，address为字符串，port为整数
-
-        Raises:
-            ValueError: 无法解析地址格式
+        bacpypes3 的 pduSource 通常是 "IP:Port" 格式，
+        也可能是纯 IP 或 Address(...) 对象字符串。
         """
-        # 默认BACnet端口
         DEFAULT_PORT = 47808
 
-        try:
-            # 尝试解析标准格式 "IP:Port"
-            if ':' in source_address and not source_address.startswith('Address'):
-                # 分割地址和端口
-                parts = source_address.split(':')
-                if len(parts) == 2:
-                    address = parts[0]
-                    try:
-                        port = int(parts[1])
-                        # 验证IP地址格式
-                        ipaddress.ip_address(address)
-                        return address, port
-                    except ValueError:
-                        # 端口解析失败，使用默认端口
-                        logger.debug(f"Failed to parse port from {source_address}, using default {DEFAULT_PORT}")
-                        return address, DEFAULT_PORT
-
-            # 如果包含 "Address(" 关键字，说明是Address对象字符串
-            if 'Address' in source_address:
-                # 提取IP地址部分（简单的字符串处理）
-                # 格式可能是: Address('192.168.1.100') 或 Address(192.168.1.100)
-                import re
-                ip_pattern = r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'
-                match = re.search(ip_pattern, source_address)
-                if match:
-                    address = match.group(1)
-                    return address, DEFAULT_PORT
-
-            # 尝试直接解析为IP地址（无端口）
+        # 尝试 "IP:Port" 格式
+        if ':' in source_address:
+            parts = source_address.rsplit(':', 1)
             try:
-                ipaddress.ip_address(source_address)
-                return source_address, DEFAULT_PORT
+                port = int(parts[1])
+                ipaddress.ip_address(parts[0])  # 验证 IP 合法性
+                return parts[0], port
             except ValueError:
-                pass
+                pass  # 非标准格式，按无端口处理
 
-            # 所有解析方式都失败
-            raise ValueError(f"Cannot parse address format: {source_address}")
+        # 从任意格式中提取 IPv4 地址（兼容 Address('...') 等）
+        match = re.search(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', source_address)
+        if match:
+            return match.group(1), DEFAULT_PORT
 
-        except Exception as e:
-            logger.warning(f"Address parsing error: {e}")
-            raise ValueError(f"Failed to parse device address: {source_address}")
+        raise ValueError(f"Cannot parse address format: {source_address}")
     
     def _calculate_network_prefix(self, netmask: str) -> int:
         """从子网掩码计算网络前缀
@@ -203,14 +113,8 @@ class DeviceAutoDiscoveryService:
             网络前缀（如24）
         """
         try:
-            # 使用标准库方法计算网络前缀（更可靠）
-            # 方法1: 使用ipaddress.IPv4Network
             network = ipaddress.IPv4Network(f"0.0.0.0/{netmask}", strict=False)
             return network.prefixlen
-            
-            # 方法2（备用）: 手动计算二进制'1'的数量
-            # mask_bits = bin(int(ipaddress.IPv4Address(netmask))).count('1')
-            # return mask_bits  # count('1')已经跳过了'0b'前缀，不需要减去2
         except Exception as e:
             logger.warning(f"Failed to calculate network prefix from netmask {netmask}: {e}")
             return 24  # 默认返回24
@@ -469,7 +373,6 @@ class DeviceAutoDiscoveryService:
         # 初始化变量，确保finally块中可以访问
         app = None
         local_address = None
-        cache_key = interface_ip or "default"  # 缓存key：基于网卡IP
 
         try:
             # 导入bacpypes3库的正确模块
@@ -478,12 +381,7 @@ class DeviceAutoDiscoveryService:
             from bacpypes3.pdu import IPv4Address
 
             # 创建IPv4地址（根据是否指定网卡）
-            # 注意：设备发现服务应该使用临时端口（不绑定47808）
-            # 避免与BACnet插件（周期性采集）的端口冲突
-            # 
-            # 解决方案：使用非标准端口（如47809）进行设备发现
-            # BACnet插件使用标准端口47808进行周期性采集
-            # 设备发现服务使用备用端口47809，两者不冲突
+            # 设备发现层使用标准端口 47808（与轮询层 47809 隔离，避免冲突）
             if interface_ip:
                 # 使用指定的网卡IP
                 # 尝试获取网络前缀
@@ -497,14 +395,13 @@ class DeviceAutoDiscoveryService:
                             break
 
                     if matching_interface:
-                        # 使用完整的网络配置（IP/前缀:备用端口47809）
-                        # 使用备用端口避免与BACnet插件冲突
+                        # 使用完整的网络配置（IP/前缀:标准端口47808）
                         local_address = IPv4Address(
-                            f"{interface_ip}/{matching_interface.network_prefix}:47809"
+                            f"{interface_ip}/{matching_interface.network_prefix}:47808"
                         )
                         logger.info(
                             f"Using interface {interface_ip}/{matching_interface.network_prefix} "
-                            f"with broadcast {matching_interface.broadcast_address} (port 47809, avoiding conflict)"
+                            f"with broadcast {matching_interface.broadcast_address} (port 47808)"
                         )
                     else:
                         # 找不到匹配的网卡，使用默认/24

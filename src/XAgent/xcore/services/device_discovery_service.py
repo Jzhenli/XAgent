@@ -8,9 +8,7 @@
 
 import asyncio
 import logging
-import re
 from typing import Any, Dict, List, Optional, Tuple
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +53,6 @@ class DeviceDiscoveryService:
     # 分批读取配置
     BATCH_SIZE = 50  # 每批读取的对象数量
     BATCH_INTERVAL = 0.2  # 批次间隔（秒）
-    MAX_CONCURRENT_BATCHES = 3  # 最大并发批次数
-    TOTAL_TIMEOUT = 120  # 总超时时间（秒）
     
     # 数据类型映射规则
     DATA_TYPE_MAPPING = {
@@ -71,28 +67,6 @@ class DeviceDiscoveryService:
         "multiStateValue": "multistate",
     }
 
-    # BACnet标准对象类型名称映射（带连字符） -> 系统内部驼峰格式
-    OBJECT_TYPE_NAME_MAPPING = {
-        "analog-input": "analogInput",
-        "analog-output": "analogOutput",
-        "analog-value": "analogValue",
-        "binary-input": "binaryInput",
-        "binary-output": "binaryOutput",
-        "binary-value": "binaryValue",
-        "multi-state-input": "multiStateInput",
-        "multi-state-output": "multiStateOutput",
-        "multi-state-value": "multiStateValue",
-        # 其他对象类型（不是点位，但可能出现在objectList中）
-        "device": "device",
-        "network-port": "networkPort",
-        "file": "file",
-        "calendar": "calendar",
-        "schedule": "schedule",
-        "event-log": "eventLog",
-        "trend-log": "trendLog",
-        "trend-log-multiple": "trendLogMultiple",
-    }
-    
     # 默认可写性判断
     DEFAULT_WRITABLE_MAPPING = {
         "analogInput": False,
@@ -164,25 +138,19 @@ class DeviceDiscoveryService:
             object_list = await self._read_object_list(plugin_instance)
             logger.info(f"Read {len(object_list)} objects from device")
 
-            # 转换对象类型名称格式
-            normalized_object_list = [
-                (self._normalize_object_type(obj_type), obj_instance)
-                for obj_type, obj_instance in object_list
-            ]
-
             # 过滤对象类型
             if object_types:
-                normalized_object_list = [
-                    obj for obj in normalized_object_list
+                object_list = [
+                    obj for obj in object_list
                     if obj[0] in object_types
                 ]
-                logger.info(f"Filtered to {len(normalized_object_list)} objects matching types: {object_types}")
+                logger.info(f"Filtered to {len(object_list)} objects matching types: {object_types}")
 
             # 分批读取对象属性
-            logger.info(f"Reading properties for {len(normalized_object_list)} objects...")
+            logger.info(f"Reading properties for {len(object_list)} objects...")
             points = await self._batch_read_object_properties(
                 plugin_instance,
-                normalized_object_list
+                object_list
             )
             logger.info(f"Discovered {len(points)} points")
 
@@ -326,21 +294,16 @@ class DeviceDiscoveryService:
             点位信息字典
         """
         try:
-            # 转换为BACnet格式用于API调用
-            bacnet_object_type = self._convert_to_bacnet_format(object_type)
-
             # 读取对象名称和描述
             object_name = await self._read_property(
-                plugin_instance, bacnet_object_type, object_instance, "objectName"
+                plugin_instance, object_type, object_instance, "objectName", optional=True
             )
             description = await self._read_property(
-                plugin_instance, bacnet_object_type, object_instance, "description", optional=True
+                plugin_instance, object_type, object_instance, "description", optional=True
             )
 
-            # 判断可写性（传入驼峰格式）
-            writable = await self._check_writable(
-                plugin_instance, object_type, object_instance
-            )
+            # 默认可写性（基于对象类型语义）
+            writable = self._get_default_writable(object_type)
 
             # 数据类型映射
             data_type = self.DATA_TYPE_MAPPING.get(object_type, "unknown")
@@ -361,45 +324,6 @@ class DeviceDiscoveryService:
             logger.warning(f"Failed to read {object_type}:{object_instance}: {e}")
             return None
 
-    def _normalize_object_type(self, bacnet_type: str) -> str:
-        """将BACnet对象类型转换为系统内部驼峰格式
-
-        Args:
-            bacnet_type: BACnet标准格式（如 'binary-value'）
-
-        Returns:
-            系统内部驼峰格式（如 'binaryValue'）
-        """
-        # 使用映射表转换
-        normalized = self.OBJECT_TYPE_NAME_MAPPING.get(bacnet_type, bacnet_type)
-
-        # 如果不在映射表中，自动转换
-        if normalized == bacnet_type and '-' in bacnet_type:
-            parts = bacnet_type.split('-')
-            normalized = parts[0] + ''.join(part.capitalize() for part in parts[1:])
-
-        return normalized
-
-    def _convert_to_bacnet_format(self, camel_case_type: str) -> str:
-        """将驼峰格式的对象类型转换为BACnet标准格式（带连字符）
-
-        Args:
-            camel_case_type: 驼峰格式的对象类型（如 'analogInput'）
-
-        Returns:
-            BACnet标准格式的对象类型（如 'analog-input'）
-        """
-        # 反向查找映射表
-        for bacnet_type, camel_type in self.OBJECT_TYPE_NAME_MAPPING.items():
-            if camel_type == camel_case_type:
-                return bacnet_type
-
-        # 如果映射表中没有，尝试自动转换（驼峰转连字符）
-        # 在大写字母前插入连字符，然后全部转为小写
-        result = re.sub(r'([A-Z])', r'-\1', camel_case_type).lower()
-        logger.debug(f"Auto-converted object type to BACnet format: {camel_case_type} -> {result}")
-        return result
-    
     async def _read_property(
         self,
         plugin_instance: Any,
@@ -438,23 +362,8 @@ class DeviceDiscoveryService:
                 logger.error(f"Failed to read '{property_name}' from {object_type}:{object_instance}: {e}")
                 raise
     
-    async def _check_writable(
-        self,
-        plugin_instance: Any,
-        object_type: str,
-        object_instance: int
-    ) -> bool:
-        """检查对象是否可写
-
-        Args:
-            plugin_instance: BACnet插件实例
-            object_type: 对象类型（驼峰格式）
-            object_instance: 对象实例ID
-
-        Returns:
-            是否可写
-        """
-        # 基于BACnet对象类型语义判断可写性
+    def _get_default_writable(self, object_type: str) -> bool:
+        """基于BACnet对象类型语义返回默认可写性"""
         return self.DEFAULT_WRITABLE_MAPPING.get(object_type, False)
 
 
