@@ -1,19 +1,59 @@
+<template>
+  <div class="gauge-container">
+    <svg viewBox="0 0 100 70" class="gauge-svg">
+      <!-- Background arc -->
+      <path
+        d="M 10 60 A 40 40 0 0 1 90 60"
+        fill="none"
+        stroke="var(--border-base)"
+        stroke-width="8"
+        stroke-linecap="round"
+      />
+      <!-- Value arc -->
+      <path
+        d="M 10 60 A 40 40 0 0 1 90 60"
+        fill="none"
+        :stroke="currentColor"
+        stroke-width="8"
+        stroke-linecap="round"
+        :stroke-dasharray="strokeDasharray"
+        stroke-dashoffset="0"
+        transform="rotate(0, 50, 60)"
+        class="gauge-arc"
+      />
+      <!-- Center point -->
+      <circle cx="50" cy="60" r="3" :fill="currentColor" />
+    </svg>
+    
+    <div class="gauge-value" :style="{ color: currentColor }">
+      {{ displayValue }}
+      <span v-if="gaugeConfig?.unit" class="unit">{{ gaugeConfig.unit }}</span>
+    </div>
+    
+    <div v-if="binding" class="gauge-label">
+      {{ binding.pointDescription || binding.pointName }}
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed } from 'vue'
 import type { ScadaComponent } from '@/types/scada'
-import { usePointStore } from '@/stores/points'
+import { useComponentBinding } from '@/composables/useComponentBinding'
 
 const props = defineProps<{
   config: ScadaComponent
   editing?: boolean
 }>()
 
-const pointStore = usePointStore()
-
-const currentValue = ref(0)
-
 const gaugeConfig = computed(() => props.config.gaugeConfig)
 const binding = computed(() => props.config.binding)
+
+const { currentValue } = useComponentBinding(binding, {
+  autoRefresh: true,
+  refreshInterval: 5000,
+  transform: (value) => typeof value === 'number' ? value : 0
+})
 
 const percentage = computed(() => {
   if (!gaugeConfig.value) return 0
@@ -39,54 +79,11 @@ const strokeDasharray = computed(() => {
   return `${(percentage.value / 100) * circumference} ${circumference}`
 })
 
-onMounted(() => {
-  if (binding.value) {
-    const device = pointStore.devices.find(d => d.asset === binding.value!.deviceId || d.name === binding.value!.deviceId)
-    const point = device?.points.find(p => p.name === binding.value!.pointName)
-    if (point) {
-      currentValue.value = typeof point.currentValue === 'number' ? point.currentValue : 0
-    }
-  }
+const displayValue = computed(() => {
+  const val = currentValue.value
+  return typeof val === 'number' ? val.toFixed(1) : '0.0'
 })
 </script>
-
-<template>
-  <div class="gauge-container">
-    <svg viewBox="0 0 100 70" class="gauge-svg">
-      <!-- Background arc -->
-      <path
-        d="M 10 60 A 40 40 0 0 1 90 60"
-        fill="none"
-        stroke="#e0e0e0"
-        stroke-width="8"
-        stroke-linecap="round"
-      />
-      <!-- Value arc -->
-      <path
-        d="M 10 60 A 40 40 0 0 1 90 60"
-        fill="none"
-        :stroke="currentColor"
-        stroke-width="8"
-        stroke-linecap="round"
-        :stroke-dasharray="strokeDasharray"
-        stroke-dashoffset="0"
-        transform="rotate(0, 50, 60)"
-        class="gauge-arc"
-      />
-      <!-- Center point -->
-      <circle cx="50" cy="60" r="3" :fill="currentColor" />
-    </svg>
-    
-    <div class="gauge-value" :style="{ color: currentColor }">
-      {{ currentValue.toFixed(1) }}
-      <span v-if="gaugeConfig?.unit" class="unit">{{ gaugeConfig.unit }}</span>
-    </div>
-    
-    <div v-if="binding" class="gauge-label">
-      {{ binding.pointDescription || binding.pointName }}
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .gauge-container {
@@ -96,7 +93,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+  background: linear-gradient(135deg, var(--bg-container) 0%, var(--bg-hover) 100%);
   border-radius: 8px;
   padding: 10px;
 }
@@ -124,7 +121,7 @@ onMounted(() => {
 
 .gauge-label {
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
   margin-top: 4px;
   text-align: center;
   max-width: 90%;

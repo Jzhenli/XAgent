@@ -1,7 +1,55 @@
+<template>
+  <div class="editor-toolbar" :class="{ 'mobile-toolbar': isMobile, 'tablet-toolbar': isTablet }">
+    <div class="toolbar-left">
+      <h2 class="toolbar-title">{{ t('editorToolbar.title') }}</h2>
+    </div>
+    
+    <div v-if="showStats" class="toolbar-center">
+      <div class="stats">
+        <span class="stat-item">
+          <span class="stat-label">{{ t('editorToolbar.nodes') }}:</span>
+          <span class="stat-value">{{ nodeCount }}</span>
+        </span>
+        <span class="stat-item">
+          <span class="stat-label">{{ t('editorToolbar.edges') }}:</span>
+          <span class="stat-value">{{ edgeCount }}</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="toolbar-right">
+      <button class="toolbar-btn" @click="emit('import')" :title="t('editorToolbar.importRule')">
+        <span class="btn-icon">📥</span>
+        <span class="btn-text">{{ t('editorToolbar.import') }}</span>
+      </button>
+      <button class="toolbar-btn" @click="emit('export')" :title="t('editorToolbar.exportRule')">
+        <span class="btn-icon">📤</span>
+        <span class="btn-text">{{ t('editorToolbar.export') }}</span>
+      </button>
+      <button class="toolbar-btn danger" @click="emit('clear')" :title="t('editorToolbar.clearCanvas')">
+        <span class="btn-icon">🗑️</span>
+        <span class="btn-text">{{ t('editorToolbar.clear') }}</span>
+      </button>
+      <button 
+        class="toolbar-btn primary" 
+        @click="emit('save')"
+        :disabled="!canSave"
+        :title="t('editorToolbar.saveRule')"
+      >
+        <span class="btn-icon">💾</span>
+        <span class="btn-text">{{ t('editorToolbar.save') }}</span>
+      </button>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Rule } from '@/types/rule'
 import { useResponsive } from '@/utils/useResponsive'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   rule: Rule | null
@@ -28,60 +76,15 @@ const edgeCount = computed(() => {
 const showStats = computed(() => !isMobile.value)
 </script>
 
-<template>
-  <div class="editor-toolbar" :class="{ 'mobile-toolbar': isMobile, 'tablet-toolbar': isTablet }">
-    <div class="toolbar-left">
-      <h2 class="toolbar-title">场景联动规则编辑器</h2>
-    </div>
-    
-    <div v-if="showStats" class="toolbar-center">
-      <div class="stats">
-        <span class="stat-item">
-          <span class="stat-label">节点:</span>
-          <span class="stat-value">{{ nodeCount }}</span>
-        </span>
-        <span class="stat-item">
-          <span class="stat-label">连线:</span>
-          <span class="stat-value">{{ edgeCount }}</span>
-        </span>
-      </div>
-    </div>
-    
-    <div class="toolbar-right">
-      <button class="toolbar-btn" @click="emit('import')" title="导入规则">
-        <span class="btn-icon">📥</span>
-        <span class="btn-text">导入</span>
-      </button>
-      <button class="toolbar-btn" @click="emit('export')" title="导出规则">
-        <span class="btn-icon">📤</span>
-        <span class="btn-text">导出</span>
-      </button>
-      <button class="toolbar-btn danger" @click="emit('clear')" title="清空画布">
-        <span class="btn-icon">🗑️</span>
-        <span class="btn-text">清空</span>
-      </button>
-      <button 
-        class="toolbar-btn primary" 
-        @click="emit('save')"
-        :disabled="!canSave"
-        title="保存规则"
-      >
-        <span class="btn-icon">💾</span>
-        <span class="btn-text">保存</span>
-      </button>
-    </div>
-  </div>
-</template>
-
 <style scoped>
 .editor-toolbar {
   height: 56px;
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  background: var(--toolbar-bg);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--toolbar-shadow);
 }
 
 .toolbar-left {
@@ -93,7 +96,7 @@ const showStats = computed(() => !isMobile.value)
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #fff;
+  color: var(--toolbar-text);
   white-space: nowrap;
 }
 
@@ -111,17 +114,17 @@ const showStats = computed(() => !isMobile.value)
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #ecf0f1;
+  color: var(--toolbar-stat-text);
   font-size: 14px;
 }
 
 .stat-label {
-  color: #bdc3c7;
+  color: var(--toolbar-stat-label);
 }
 
 .stat-value {
   font-weight: 600;
-  color: #3498db;
+  color: var(--color-primary);
 }
 
 .toolbar-right {
@@ -140,14 +143,14 @@ const showStats = computed(() => !isMobile.value)
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--toolbar-btn-bg);
+  color: var(--toolbar-text);
   -webkit-user-select: none;
   user-select: none;
 }
 
 .toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--toolbar-btn-hover-bg);
   transform: translateY(-1px);
 }
 
@@ -162,19 +165,19 @@ const showStats = computed(() => !isMobile.value)
 }
 
 .toolbar-btn.primary {
-  background: #3498db;
+  background: var(--color-primary);
 }
 
 .toolbar-btn.primary:hover {
-  background: #2980b9;
+  background: var(--color-primary-hover);
 }
 
 .toolbar-btn.danger {
-  background: #e74c3c;
+  background: var(--color-danger);
 }
 
 .toolbar-btn.danger:hover {
-  background: #c0392b;
+  background: var(--color-danger-hover, #c0392b);
 }
 
 .btn-icon {

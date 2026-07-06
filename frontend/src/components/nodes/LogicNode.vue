@@ -1,8 +1,31 @@
+<template>
+  <div class="rule-node logic-node">
+    <Handle type="target" :position="Position.Top" />
+    <Handle type="target" :position="Position.Left" id="left" />
+    
+    <div class="node-header">
+      <span class="node-icon">🔀</span>
+      <span class="node-title">{{ t('nodeViews.logic') }}</span>
+    </div>
+    
+    <div class="node-body">
+      <div class="logic-operator" :style="{ color: operatorColor }">
+        {{ operatorLabel }}
+      </div>
+    </div>
+    
+    <Handle type="source" :position="Position.Bottom" />
+    <Handle type="target" :position="Position.Right" id="right" />
+  </div>
+</template>
+
 <script setup lang="ts">
 import { Handle, Position, useNode } from '@vue-flow/core'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { RuleNodeData } from '@/types/rule'
 
+const { t } = useI18n()
 const { node } = useNode<RuleNodeData>()
 
 const nodeData = computed(() => node.data?.logic)
@@ -28,31 +51,10 @@ const operatorColor = computed(() => {
 })
 </script>
 
-<template>
-  <div class="rule-node logic-node">
-    <Handle type="target" :position="Position.Top" />
-    <Handle type="target" :position="Position.Left" id="left" />
-    
-    <div class="node-header">
-      <span class="node-icon">🔀</span>
-      <span class="node-title">逻辑运算</span>
-    </div>
-    
-    <div class="node-body">
-      <div class="logic-operator" :style="{ color: operatorColor }">
-        {{ operatorLabel }}
-      </div>
-    </div>
-    
-    <Handle type="source" :position="Position.Bottom" />
-    <Handle type="target" :position="Position.Right" id="right" />
-  </div>
-</template>
-
 <style scoped>
 .logic-node {
-  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
-  border: 2px solid #d35400;
+  background: var(--node-logic-bg);
+  border: 2px solid var(--node-logic-border);
   min-width: 120px;
 }
 

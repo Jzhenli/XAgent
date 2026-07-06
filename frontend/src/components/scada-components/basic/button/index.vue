@@ -1,10 +1,25 @@
+<template>
+  <div class="button-container" @click="handleClick">
+    <el-button 
+      :type="buttonConfig?.type || 'primary'"
+      size="default"
+      :loading="writing"
+      style="width: 100%; height: 100%;"
+    >
+      {{ buttonConfig?.text || t('scadaComponents.defaultButton') }}
+    </el-button>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ScadaComponent } from '@/types/scada'
 import { usePointStore } from '@/stores/points'
 import { controlApi } from '@/api/control'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
+const { t } = useI18n()
 const props = defineProps<{
   config: ScadaComponent
   editing?: boolean
@@ -20,9 +35,9 @@ const handleClick = async () => {
   
   try {
     await ElMessageBox.confirm(
-      `确定要执行 "${buttonConfig.value?.text || '操作'}" 吗？`,
-      '操作确认',
-      { confirmButtonText: '确定', cancelButtonText: '取消' }
+      t('scadaComponents.confirmExecute', { action: buttonConfig.value?.text || t('scadaComponents.defaultButton') }),
+      t('scadaComponents.operationConfirm'),
+      { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
     )
   } catch {
     return
@@ -41,12 +56,12 @@ const handleClick = async () => {
         buttonConfig.value.writeValue
       )
       if (res.status === 'ACCEPTED') {
-        ElMessage.success('操作命令已下发')
+        ElMessage.success(t('scadaComponents.commandSent'))
       } else {
-        ElMessage.error(`命令状态异常: ${res.status}`)
+        ElMessage.error(`${t('scadaComponents.commandError')}: ${res.status}`)
       }
     } catch (e: unknown) {
-      const detail = (e as any)?.response?.data?.detail || (e instanceof Error ? e.message : '操作失败')
+      const detail = (e as any)?.response?.data?.detail || (e instanceof Error ? e.message : t('scadaComponents.operationFailed'))
       ElMessage.error(detail)
     } finally {
       writing.value = false
@@ -54,19 +69,6 @@ const handleClick = async () => {
   }
 }
 </script>
-
-<template>
-  <div class="button-container" @click="handleClick">
-    <el-button 
-      :type="buttonConfig?.type || 'primary'"
-      size="default"
-      :loading="writing"
-      style="width: 100%; height: 100%;"
-    >
-      {{ buttonConfig?.text || '按钮' }}
-    </el-button>
-  </div>
-</template>
 
 <style scoped>
 .button-container {

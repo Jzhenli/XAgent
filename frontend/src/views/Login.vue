@@ -1,39 +1,3 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useUserStore } from '@/stores/users'
-import { ElMessage } from 'element-plus'
-
-const router = useRouter()
-const route = useRoute()
-const userStore = useUserStore()
-
-const loginForm = ref({ username: '', password: '' })
-const loading = ref(false)
-
-async function handleLogin() {
-  if (!loginForm.value.username || !loginForm.value.password) {
-    ElMessage.warning('请输入用户名和密码')
-    return
-  }
-  loading.value = true
-  try {
-    const success = await userStore.login(loginForm.value.username, loginForm.value.password)
-    if (success) {
-      ElMessage.success('登录成功')
-      const redirect = (route.query.redirect as string) || '/dashboard'
-      router.push(redirect)
-    } else {
-      ElMessage.error('用户名或密码错误')
-    }
-  } catch {
-    ElMessage.error('登录失败，请检查网络连接')
-  } finally {
-    loading.value = false
-  }
-}
-</script>
-
 <template>
   <div class="login-page">
     <div class="login-bg">
@@ -45,14 +9,14 @@ async function handleLogin() {
           <div class="login-logo">
             <span class="logo-icon">⚡</span>
           </div>
-          <h1 class="login-title">XAgent</h1>
-          <p class="login-subtitle">IoT 网关控制台</p>
+          <h1 class="login-title">{{ $t('login.title') }}</h1>
+          <p class="login-subtitle">{{ $t('login.subtitle') }}</p>
         </div>
         <el-form class="login-form" @submit.prevent="handleLogin">
           <el-form-item>
             <el-input
               v-model="loginForm.username"
-              placeholder="用户名"
+              :placeholder="$t('login.username')"
               size="large"
               prefix-icon="User"
               @keyup.enter="handleLogin"
@@ -62,7 +26,7 @@ async function handleLogin() {
             <el-input
               v-model="loginForm.password"
               type="password"
-              placeholder="密码"
+              :placeholder="$t('login.password')"
               size="large"
               prefix-icon="Lock"
               show-password
@@ -77,17 +41,55 @@ async function handleLogin() {
               :loading="loading"
               @click="handleLogin"
             >
-              登 录
+              {{ $t('login.loginBtn') }}
             </el-button>
           </el-form-item>
         </el-form>
         <div class="login-footer">
-          <span>XAgent IoT Gateway v1.0</span>
+          <span>{{ $t('login.footer') }}</span>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/users'
+import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
+
+const loginForm = ref({ username: '', password: '' })
+const loading = ref(false)
+
+async function handleLogin() {
+  if (!loginForm.value.username || !loginForm.value.password) {
+    ElMessage.warning(t('login.pleaseEnterCredentials'))
+    return
+  }
+  loading.value = true
+  try {
+    const success = await userStore.login(loginForm.value.username, loginForm.value.password)
+    if (success) {
+      ElMessage.success(t('login.loginSuccess'))
+      const redirect = (route.query.redirect as string) || '/dashboard'
+      router.push(redirect)
+    } else {
+      ElMessage.error(t('login.loginFailed'))
+    }
+  } catch {
+    ElMessage.error(t('login.loginError'))
+  } finally {
+    loading.value = false
+  }
+}
+</script>
 
 <style scoped>
 .login-page {
@@ -106,7 +108,7 @@ async function handleLogin() {
 .login-bg {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #0d1b2a 0%, #1e3a5f 50%, #2c5f8a 100%);
+  background: var(--login-bg-gradient);
   z-index: 0;
 }
 
@@ -127,13 +129,11 @@ async function handleLogin() {
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--login-card-bg);
   backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: clamp(24px, 5vw, 40px) clamp(20px, 4vw, 36px) clamp(20px, 3vw, 32px);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: var(--login-card-shadow);
 }
 
 .login-header {
@@ -153,14 +153,14 @@ async function handleLogin() {
 .login-title {
   font-size: clamp(22px, 5vw, 28px);
   font-weight: 700;
-  color: #1e3a5f;
+  color: var(--login-title-color);
   margin: 0 0 4px 0;
   letter-spacing: 2px;
 }
 
 .login-subtitle {
   font-size: clamp(12px, 3vw, 14px);
-  color: #7f8c8d;
+  color: var(--login-subtitle-color);
   margin: 0;
 }
 
@@ -181,10 +181,10 @@ async function handleLogin() {
 
 .login-footer {
   text-align: center;
-  color: #bdc3c7;
+  color: var(--login-footer-color);
   font-size: 12px;
   padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--login-footer-border);
 }
 
 @media (max-height: 500px) {

@@ -1,5 +1,82 @@
+<template>
+  <div class="rule-editor-canvas">
+    <div class="editor-toolbar">
+      <div class="toolbar-left">
+        <el-input 
+          v-model="ruleName" 
+          :placeholder="t('ruleEditor.ruleName')" 
+          style="width: 200px"
+        />
+        <el-input 
+          v-model="ruleDescription" 
+          :placeholder="t('ruleEditor.ruleDescription')" 
+          style="width: 300px"
+        />
+      </div>
+      <div class="toolbar-right">
+        <span class="node-count">{{ t('ruleEditor.nodeCount') }}: {{ nodes.length }} | {{ t('ruleEditor.edgeCount') }}: {{ edges.length }}</span>
+        <el-button @click="handleClear" :disabled="loading">{{ t('ruleEditor.clear') }}</el-button>
+        <el-button type="primary" :disabled="!canSave" :loading="saving" @click="handleSave">
+          {{ saving ? t('ruleEditor.saving') : t('ruleEditor.save') }}
+        </el-button>
+      </div>
+    </div>
+    
+    <div v-if="loading" class="editor-loading">
+      <el-icon class="is-loading" :size="32"><Loading /></el-icon>
+      <span>{{ t('ruleEditor.loadingRule') }}</span>
+    </div>
+
+    <div v-else class="editor-main">
+      <NodePalette @drag-start="onDragStart" />
+      
+      <div class="editor-canvas" @drop="onDrop" @dragover="onDragOver">
+        <VueFlow
+          v-model:nodes="nodes"
+          v-model:edges="edges"
+          :node-types="nodeTypes"
+          :default-edge-options="{ type: 'smoothstep', animated: true }"
+          :fit-view-on-init="true"
+          :snap-to-grid="true"
+          :snap-grid="[15, 15]"
+          class="vue-flow-container"
+        >
+          <Background pattern-color="#aaa" :gap="20" />
+          <Controls />
+          <MiniMap />
+        </VueFlow>
+      </div>
+      
+      <div v-if="selectedNode" class="config-panel">
+        <div class="panel-header">
+          <span>{{ t('ruleEditor.nodeConfig') }}</span>
+          <el-button type="danger" link size="small" @click="handleNodeDelete(selectedNode.id)">
+            {{ t('ruleEditor.deleteNode') }}
+          </el-button>
+        </div>
+        <NodeConfigPanel
+          :node-id="selectedNode.id"
+          :node-type="selectedNode.type as NodeType"
+          :node-data="selectedNode.data ?? {}"
+          @update="handleNodeUpdate"
+          @delete="handleNodeDelete"
+        />
+      </div>
+      
+      <div v-else class="empty-panel">
+        <div class="empty-content">
+          <span class="empty-icon">📝</span>
+          <p>{{ t('ruleEditor.selectNodeHint') }}</p>
+          <p class="hint">{{ t('ruleEditor.dragHint') }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, computed, onMounted, markRaw, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { VueFlow, useVueFlow, type Connection, type NodeChange, type EdgeChange } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -19,6 +96,9 @@ import { createNode, validateGraph } from '@/utils/ruleConverter'
 import { graphToBackendCreate, graphToBackendUpdate, backendToGraph } from '@/utils/ruleBridge'
 import { useRuleStore } from '@/stores/rules'
 import { ElMessage } from 'element-plus'
+import { Loading } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   ruleId?: string | null
@@ -47,7 +127,7 @@ const {
 const nodes = ref<RuleNode[]>([])
 const edges = ref<RuleEdge[]>([])
 const selectedNodeId = ref<string | null>(null)
-const ruleName = ref('新规则')
+const ruleName = ref(t('ruleEditor.defaultRuleName'))
 const ruleDescription = ref('')
 const saving = ref(false)
 const loading = ref(false)
@@ -197,7 +277,7 @@ const handleSave = async () => {
         currentRule?.enabled ?? true
       )
       await ruleStore.updateRule(props.ruleId, updateData)
-      ElMessage.success('规则更新成功')
+      ElMessage.success(t('ruleEditor.ruleSaved'))
     } else {
       const createData = graphToBackendCreate(
         ruleName.value,
@@ -206,7 +286,7 @@ const handleSave = async () => {
         edges.value
       )
       await ruleStore.createRule(createData)
-      ElMessage.success('规则创建成功')
+      ElMessage.success(t('ruleEditor.ruleCreated'))
     }
     emit('saved')
     emit('close')
@@ -214,7 +294,7 @@ const handleSave = async () => {
     const detail = e.response?.data?.detail
     const msg = detail
       ? (Array.isArray(detail) ? detail.map((d: any) => d.msg || d).join('; ') : String(detail))
-      : e.message || '保存失败'
+      : t('ruleEditor.saveFailed')
     ElMessage.error(msg)
   } finally {
     saving.value = false
@@ -232,7 +312,7 @@ const loadRule = async (ruleId: string) => {
   try {
     const ruleResponse = await ruleStore.getRule(ruleId)
     if (!ruleResponse) {
-      ElMessage.error('加载规则失败：规则不存在')
+      ElMessage.error(t('ruleEditor.ruleNotFound'))
       return
     }
 
@@ -244,10 +324,10 @@ const loadRule = async (ruleId: string) => {
       ruleDescription.value = graphData.description
       setTimeout(() => fitView(), 100)
     } else {
-      ElMessage.warning('无法解析规则图形数据')
+      ElMessage.warning(t('ruleEditor.parseFailed'))
     }
   } catch (e: any) {
-    ElMessage.error('加载规则失败：' + (e.message || '未知错误'))
+    ElMessage.error(t('ruleEditor.loadFailed') + '：' + (e.message || t('common.unknownError')))
   } finally {
     loading.value = false
   }
@@ -267,94 +347,10 @@ watch(() => props.ruleId, (newId) => {
   } else {
     nodes.value = []
     edges.value = []
-    ruleName.value = '新规则'
+    ruleName.value = t('ruleEditor.defaultRuleName')
     ruleDescription.value = ''
   }
 }, { immediate: false })
-</script>
-
-<template>
-  <div class="rule-editor-canvas">
-    <div class="editor-toolbar">
-      <div class="toolbar-left">
-        <el-input 
-          v-model="ruleName" 
-          placeholder="规则名称" 
-          style="width: 200px"
-        />
-        <el-input 
-          v-model="ruleDescription" 
-          placeholder="规则描述" 
-          style="width: 300px"
-        />
-      </div>
-      <div class="toolbar-right">
-        <span class="node-count">节点: {{ nodes.length }} | 连线: {{ edges.length }}</span>
-        <el-button @click="handleClear" :disabled="loading">清空</el-button>
-        <el-button type="primary" :disabled="!canSave" :loading="saving" @click="handleSave">
-          {{ saving ? '保存中...' : '保存' }}
-        </el-button>
-      </div>
-    </div>
-    
-    <div v-if="loading" class="editor-loading">
-      <el-icon class="is-loading" :size="32"><Loading /></el-icon>
-      <span>加载规则中...</span>
-    </div>
-
-    <div v-else class="editor-main">
-      <NodePalette @drag-start="onDragStart" />
-      
-      <div class="editor-canvas" @drop="onDrop" @dragover="onDragOver">
-        <VueFlow
-          v-model:nodes="nodes"
-          v-model:edges="edges"
-          :node-types="nodeTypes"
-          :default-edge-options="{ type: 'smoothstep', animated: true }"
-          :fit-view-on-init="true"
-          :snap-to-grid="true"
-          :snap-grid="[15, 15]"
-          class="vue-flow-container"
-        >
-          <Background pattern-color="#aaa" :gap="20" />
-          <Controls />
-          <MiniMap />
-        </VueFlow>
-      </div>
-      
-      <div v-if="selectedNode" class="config-panel">
-        <div class="panel-header">
-          <span>节点配置</span>
-          <el-button type="danger" link size="small" @click="handleNodeDelete(selectedNode.id)">
-            删除节点
-          </el-button>
-        </div>
-        <NodeConfigPanel
-          :node-id="selectedNode.id"
-          :node-type="selectedNode.type as NodeType"
-          :node-data="selectedNode.data ?? {}"
-          @update="handleNodeUpdate"
-          @delete="handleNodeDelete"
-        />
-      </div>
-      
-      <div v-else class="empty-panel">
-        <div class="empty-content">
-          <span class="empty-icon">📝</span>
-          <p>选择节点进行配置</p>
-          <p class="hint">从左侧拖拽节点到画布</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script lang="ts">
-import { Loading } from '@element-plus/icons-vue'
-
-export default {
-  components: { Loading }
-}
 </script>
 
 <style scoped>
@@ -362,7 +358,7 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #f5f7fa;
+  background: var(--bg-secondary);
 }
 
 .editor-toolbar {
@@ -370,8 +366,8 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--bg-container);
+  border-bottom: 1px solid var(--border-base);
 }
 
 .toolbar-left {
@@ -387,7 +383,7 @@ export default {
 
 .node-count {
   font-size: 13px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
 }
 
 .editor-loading {
@@ -397,7 +393,7 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -419,8 +415,8 @@ export default {
 
 .config-panel {
   width: 320px;
-  background: #fff;
-  border-left: 1px solid #e0e0e0;
+  background: var(--bg-container);
+  border-left: 1px solid var(--border-base);
   display: flex;
   flex-direction: column;
 }
@@ -430,15 +426,15 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-base);
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .empty-panel {
   width: 320px;
-  background: #fff;
-  border-left: 1px solid #e0e0e0;
+  background: var(--bg-container);
+  border-left: 1px solid var(--border-base);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -457,11 +453,11 @@ export default {
 
 .empty-content p {
   margin: 4px 0;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .empty-content .hint {
   font-size: 12px;
-  color: #95a5a6;
+  color: var(--text-secondary);
 }
 </style>

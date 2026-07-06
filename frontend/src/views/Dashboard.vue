@@ -1,3 +1,300 @@
+<template>
+  <div class="dashboard">
+    <!-- 骨架屏：模拟真实内容布局 -->
+    <!-- 使用 v-show 而非 v-if 的原因：
+         1. 切换性能更好，避免 v-if 的重新渲染开销
+         2. 骨架屏和真实内容结构相似，内存开销可控
+         3. 平滑过渡，避免切换时的闪烁感
+         对于中等复杂度的 Dashboard 页面，这种实现方式是合理的性能与体验权衡
+    -->
+    <div
+      v-show="showSkeleton"
+      class="dashboard-skeleton"
+      role="region"
+      aria-busy="true"
+      :aria-label="$t('dashboard.ariaContentLoading')"
+    >
+      <el-row :gutter="isMobile ? 12 : 20" class="skeleton-cards">
+        <el-col :span="statCardSpan" v-for="i in 4" :key="i">
+          <el-card class="skeleton-card" shadow="hover">
+            <div class="skeleton-icon"></div>
+            <div class="skeleton-content">
+              <div class="skeleton-value"></div>
+              <div class="skeleton-label"></div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+      <el-row :gutter="isMobile ? 12 : 20" class="skeleton-chart-row">
+        <el-col :span="24">
+          <el-card class="skeleton-chart" shadow="hover">
+            <div class="skeleton-chart-header"></div>
+            <div class="skeleton-chart-body"></div>
+          </el-card>
+        </el-col>
+      </el-row>
+      <el-row :gutter="isMobile ? 12 : 20" class="skeleton-info-row">
+        <el-col :span="infoColSpan" v-for="i in 2" :key="i">
+          <el-card class="skeleton-info" shadow="hover">
+            <div class="skeleton-info-header"></div>
+            <div class="skeleton-info-body"></div>
+          </el-card>
+        </el-col>
+      </el-row>
+    </div>
+
+    <!-- 真实内容 -->
+    <div
+      v-show="showContent"
+      class="dashboard-content"
+      role="region"
+      :aria-busy="!showContent"
+      :aria-label="$t('dashboard.ariaDashboardContent')"
+    >
+    <div class="dashboard-toolbar">
+      <div class="toolbar-right">
+        <el-button
+          :icon="RefreshRight"
+          @click="refreshData"
+          :loading="refreshing"
+          circle
+          size="small"
+          :title="$t('dashboard.refreshData')"
+        />
+        <span class="update-time">{{ $t('dashboard.lastUpdate') }}: {{ lastUpdateTime }}</span>
+      </div>
+    </div>
+
+    <el-row :gutter="isMobile ? 12 : 20" class="stat-cards">
+      <el-col :span="statCardSpan">
+        <el-card class="stat-card alert-card-highlight" shadow="hover">
+          <div class="stat-icon alerts">
+            <span>🔔</span>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ alertStore.pendingAlerts }}</div>
+            <div class="stat-label">{{ $t('dashboard.pendingAlerts') }}</div>
+            <div class="stat-trend" :class="alertTrend.type">{{ alertTrend.text }}</div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="statCardSpan">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-icon devices">
+            <span>📱</span>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ deviceStore.onlineDevices }}/{{ deviceStore.totalDevices }}</div>
+            <div class="stat-label">{{ $t('dashboard.onlineDevices') }}</div>
+            <div class="stat-trend" :class="deviceTrend.type">{{ deviceTrend.text }}</div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="statCardSpan">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-icon channels">
+            <span>📤</span>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ channelStore.onlineChannels }}/{{ channelStore.totalChannels }}</div>
+            <div class="stat-label">{{ $t('dashboard.onlineChannels') }}</div>
+            <div class="stat-trend" :class="channelTrend.type">{{ channelTrend.text }}</div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="statCardSpan">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-icon rules">
+            <span>📋</span>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ ruleStore.activeRules }}/{{ ruleStore.totalRules }}</div>
+            <div class="stat-label">{{ $t('dashboard.activeRules') }}</div>
+            <div class="stat-trend" :class="ruleTrend.type">{{ ruleTrend.text }}</div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="isMobile ? 12 : 20" class="chart-row">
+      <el-col :span="24">
+        <el-card class="chart-card" shadow="hover" :style="{ height: chartHeight + 'px' }">
+          <template #header>
+            <div class="card-header">
+              <div class="header-left">
+                <span class="chart-title">{{ $t('dashboard.title') }}</span>
+                <el-radio-group v-model="timeRange" size="small" class="time-range-selector">
+                  <el-radio-button value="1h">{{ $t('dashboard.timeRange1h') }}</el-radio-button>
+                  <el-radio-button value="24h">{{ $t('dashboard.timeRange24h') }}</el-radio-button>
+                  <el-radio-button value="7d">{{ $t('dashboard.timeRange7d') }}</el-radio-button>
+                </el-radio-group>
+              </div>
+              <div class="chart-summary">
+                <span class="summary-item">
+                  <span class="label">{{ $t('dashboard.peak') }}:</span>
+                  <span class="value">{{ chartSummary.peak }} {{ $t('dashboard.itemsPerHour') }}</span>
+                </span>
+                <span class="summary-item">
+                  <span class="label">{{ $t('dashboard.average') }}:</span>
+                  <span class="value">{{ chartSummary.average }} {{ $t('dashboard.itemsPerHour') }}</span>
+                </span>
+              </div>
+            </div>
+          </template>
+          <v-chart :option="dataChartOption" class="chart" autoresize />
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="isMobile ? 12 : 20" class="info-row">
+      <el-col :span="infoColSpan">
+        <el-card class="info-card resource-panel" shadow="hover">
+          <template #header>
+            <div class="panel-title">
+              <span>{{ $t('dashboard.systemResource') }}</span>
+              <el-tag size="small" :type="systemStore.stats.cpuUsage > 80 ? 'danger' : 'success'">
+                {{ systemStore.stats.cpuUsage > 80 ? $t('dashboard.highLoad') : $t('dashboard.runningNormal') }}
+              </el-tag>
+            </div>
+          </template>
+          <div class="resource-gauges">
+            <div class="gauge-item">
+              <div class="gauge-chart">
+                <el-progress
+                  type="dashboard"
+                  :percentage="systemStore.stats.cpuUsage"
+                  :color="getProgressColor(systemStore.stats.cpuUsage)"
+                  :width="80"
+                />
+              </div>
+              <div class="gauge-label">{{ $t('dashboard.cpu') }}</div>
+            </div>
+            <div class="gauge-item">
+              <div class="gauge-chart">
+                <el-progress
+                  type="dashboard"
+                  :percentage="systemStore.stats.memoryUsage"
+                  :color="getProgressColor(systemStore.stats.memoryUsage)"
+                  :width="80"
+                />
+              </div>
+              <div class="gauge-label">{{ $t('dashboard.memory') }}</div>
+            </div>
+            <div class="gauge-item">
+              <div class="gauge-chart">
+                <el-progress
+                  type="dashboard"
+                  :percentage="systemStore.stats.diskUsage"
+                  :color="getProgressColor(systemStore.stats.diskUsage)"
+                  :width="80"
+                />
+              </div>
+              <div class="gauge-label">{{ $t('dashboard.disk') }}</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="infoColSpan" :class="{ 'mt-20': isMobile }">
+        <el-card class="info-card" shadow="hover">
+          <template #header>
+            <div class="panel-title">
+              <span>{{ $t('dashboard.channelUploadStats') }}</span>
+              <el-tag size="small" :type="channelStore.averageSuccessRate > 95 ? 'success' : 'warning'">
+                {{ channelStore.averageSuccessRate > 95 ? $t('dashboard.transmissionGood') : $t('dashboard.needsAttention') }}
+              </el-tag>
+            </div>
+          </template>
+          <div class="channel-stats">
+            <div class="channel-stat-item">
+              <span class="stat-label">{{ $t('dashboard.totalUploadRate') }}</span>
+              <span class="stat-value">{{ channelStore.totalUploadRate }} {{ $t('dashboard.itemsPerSecond') }}</span>
+            </div>
+            <div class="channel-stat-item">
+              <span class="stat-label">{{ $t('dashboard.averageSuccessRate') }}</span>
+              <span class="stat-value">{{ channelStore.averageSuccessRate }}%</span>
+            </div>
+            <div class="channel-stat-item">
+              <span class="stat-label">{{ $t('dashboard.dataBacklog') }}</span>
+              <span class="stat-value" :class="{ 'text-danger': channelStore.totalBacklog > 100 }">
+                {{ channelStore.totalBacklog }} {{ $t('dashboard.items') }}
+              </span>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="isMobile ? 12 : 20" class="info-row">
+      <el-col :span="infoColSpan">
+        <el-card class="info-card alert-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <span>{{ $t('dashboard.latestAlerts') }}</span>
+              <el-button type="primary" link size="small" @click="router.push('/alerts')">
+                {{ $t('dashboard.viewAll') }}
+              </el-button>
+            </div>
+          </template>
+          <div class="alert-list">
+            <div
+              v-for="alert in alertStore.alerts.slice(0, 3)"
+              :key="alert.id"
+              class="alert-item"
+              :class="alert.level"
+            >
+              <span class="alert-icon">
+                {{ alert.level === 'critical' ? '🚨' : alert.level === 'warning' ? '⚠️' : '💡' }}
+              </span>
+              <div class="alert-content">
+                <div class="alert-title">{{ alert.ruleName }}</div>
+                <div class="alert-desc">{{ alert.message }}</div>
+              </div>
+              <span class="alert-time">{{ alert.triggeredAt.split(' ')[1] }}</span>
+            </div>
+            <el-empty v-if="alertStore.alerts.length === 0" :description="$t('dashboard.noAlerts')" :image-size="60" />
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="infoColSpan" :class="{ 'mt-20': isMobile }">
+        <el-card class="info-card" shadow="hover">
+          <template #header>
+            <div class="panel-title">
+              <span>{{ $t('dashboard.systemInfo') }}</span>
+              <el-tag size="small" type="info">{{ $t('dashboard.details') }}</el-tag>
+            </div>
+          </template>
+          <div class="system-info">
+            <div class="info-item">
+              <span class="info-label">{{ $t('dashboard.uptime') }}</span>
+              <span class="info-value">{{ Math.floor(systemStore.stats.uptime / 3600) }} {{ $t('dashboard.hours') }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">{{ $t('dashboard.totalCollection') }}</span>
+              <span class="info-value">{{ systemStore.stats.totalReadings.toLocaleString() }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">{{ $t('dashboard.todayCollection') }}</span>
+              <span class="info-value">{{ systemStore.stats.todayReadings.toLocaleString() }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">{{ $t('dashboard.dataQuality') }}</span>
+              <span class="info-value" :class="{ 'text-success': systemStore.dataQuality.qualityRate > 95 }">
+                {{ systemStore.dataQuality.qualityRate }}%
+              </span>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+      </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, computed, onMounted, onActivated, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -26,6 +323,8 @@ import dayjs from 'dayjs'
 import { RefreshRight } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
+import { useI18n } from 'vue-i18n'
+
 use([
   CanvasRenderer,
   LineChart,
@@ -37,6 +336,7 @@ use([
   GridComponent
 ])
 
+const { t } = useI18n()
 const router = useRouter()
 const deviceStore = useDeviceStore()
 const ruleStore = useRuleStore()
@@ -76,42 +376,42 @@ const chartHeight = computed(() => {
 })
 
 function getProgressColor(percentage: number): string {
-  if (percentage > 80) return '#ef4444'
-  if (percentage > 60) return '#f59e0b'
-  return '#10b981'
+  if (percentage > 80) return 'var(--color-danger)'
+  if (percentage > 60) return 'var(--color-warning)'
+  return 'var(--color-success)'
 }
 
 const alertTrend = computed(() => {
   const pending = alertStore.pendingAlerts
-  if (pending > 0) return { text: `${pending} 条待处理`, type: 'danger' }
-  return { text: '无新增', type: 'success' }
+  if (pending > 0) return { text: t('dashboard.pendingAlerts') + ` (${pending})`, type: 'danger' }
+  return { text: t('dashboard.noNew'), type: 'success' }
 })
 
 const deviceTrend = computed(() => {
   const online = deviceStore.onlineDevices
   const total = deviceStore.totalDevices
-  if (total === 0) return { text: '无设备', type: 'info' }
+  if (total === 0) return { text: t('dashboard.noDevices'), type: 'info' }
   const percentage = Math.round((online / total) * 100)
-  if (percentage >= 80) return { text: '运行良好', type: 'success' }
-  if (percentage >= 50) return { text: '部分离线', type: 'warning' }
-  return { text: '多数离线', type: 'danger' }
+  if (percentage >= 80) return { text: t('dashboard.runningWell'), type: 'success' }
+  if (percentage >= 50) return { text: t('dashboard.partiallyOffline'), type: 'warning' }
+  return { text: t('dashboard.mostlyOffline'), type: 'danger' }
 })
 
 const channelTrend = computed(() => {
   const online = channelStore.onlineChannels
   const total = channelStore.totalChannels
-  if (total === 0) return { text: '无通道', type: 'info' }
+  if (total === 0) return { text: t('dashboard.noChannels'), type: 'info' }
   const percentage = Math.round((online / total) * 100)
-  if (percentage >= 80) return { text: '连接正常', type: 'success' }
-  if (percentage >= 50) return { text: '部分断开', type: 'warning' }
-  return { text: '多数断开', type: 'danger' }
+  if (percentage >= 80) return { text: t('dashboard.connectionNormal'), type: 'success' }
+  if (percentage >= 50) return { text: t('dashboard.partiallyDisconnected'), type: 'warning' }
+  return { text: t('dashboard.mostlyDisconnected'), type: 'danger' }
 })
 
 const ruleTrend = computed(() => {
   const active = ruleStore.activeRules
   const total = ruleStore.totalRules
-  if (total === 0) return { text: '无规则', type: 'info' }
-  return { text: `${active}/${total} 启用`, type: active > 0 ? 'success' : 'warning' }
+  if (total === 0) return { text: t('dashboard.noRules'), type: 'info' }
+  return { text: `${active}/${total} ` + t('dashboard.enabled'), type: active > 0 ? 'success' : 'warning' }
 })
 
 const chartSummary = computed(() => {
@@ -143,7 +443,7 @@ const dataChartOption = ref({
     type: 'value'
   },
   series: [{
-    name: '数据采集量',
+    name: t('dashboard.dataCollection'),
     type: 'line',
     smooth: true,
     areaStyle: {
@@ -181,7 +481,7 @@ async function fetchAllData() {
 
   } catch (error) {
     console.error('Failed to fetch data:', error)
-    ElMessage.error('数据加载失败')
+    ElMessage.error(t('dashboard.dataLoadFailed'))
   }
 }
 
@@ -195,7 +495,7 @@ async function updateChartData() {
     })
   } catch (error) {
     console.error('Failed to update chart data:', error)
-    ElMessage.error('获取数据采集统计失败')
+    ElMessage.error(t('dashboard.dataFetchFailed'))
   }
 }
 
@@ -211,7 +511,7 @@ async function refreshData() {
   try {
     await fetchAllData()
     lastUpdateTime.value = dayjs().format('YYYY-MM-DD HH:mm:ss')
-    ElMessage.success('数据已刷新')
+    ElMessage.success(t('dashboard.dataRefreshed'))
   } finally {
     refreshing.value = false
   }
@@ -260,7 +560,7 @@ onMounted(async () => {
     })
   } catch (error) {
     console.error('Failed to fetch data:', error)
-    ElMessage.error('数据加载失败')
+    ElMessage.error(t('dashboard.dataLoadFailed'))
     showSkeleton.value = false
     showContent.value = true
     isInitialized.value = true
@@ -285,303 +585,6 @@ onActivated(async () => {
   }
 })
 </script>
-
-<template>
-  <div class="dashboard">
-    <!-- 骨架屏：模拟真实内容布局 -->
-    <!-- 使用 v-show 而非 v-if 的原因：
-         1. 切换性能更好，避免 v-if 的重新渲染开销
-         2. 骨架屏和真实内容结构相似，内存开销可控
-         3. 平滑过渡，避免切换时的闪烁感
-         对于中等复杂度的 Dashboard 页面，这种实现方式是合理的性能与体验权衡
-    -->
-    <div
-      v-show="showSkeleton"
-      class="dashboard-skeleton"
-      role="region"
-      aria-busy="true"
-      aria-label="内容加载中"
-    >
-      <el-row :gutter="isMobile ? 12 : 20" class="skeleton-cards">
-        <el-col :span="statCardSpan" v-for="i in 4" :key="i">
-          <el-card class="skeleton-card" shadow="hover">
-            <div class="skeleton-icon"></div>
-            <div class="skeleton-content">
-              <div class="skeleton-value"></div>
-              <div class="skeleton-label"></div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-      <el-row :gutter="isMobile ? 12 : 20" class="skeleton-chart-row">
-        <el-col :span="24">
-          <el-card class="skeleton-chart" shadow="hover">
-            <div class="skeleton-chart-header"></div>
-            <div class="skeleton-chart-body"></div>
-          </el-card>
-        </el-col>
-      </el-row>
-      <el-row :gutter="isMobile ? 12 : 20" class="skeleton-info-row">
-        <el-col :span="infoColSpan" v-for="i in 2" :key="i">
-          <el-card class="skeleton-info" shadow="hover">
-            <div class="skeleton-info-header"></div>
-            <div class="skeleton-info-body"></div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
-
-    <!-- 真实内容 -->
-    <div
-      v-show="showContent"
-      class="dashboard-content"
-      role="region"
-      :aria-busy="!showContent"
-      aria-label="仪表盘内容"
-    >
-    <div class="dashboard-toolbar">
-      <div class="toolbar-right">
-        <el-button
-          :icon="RefreshRight"
-          @click="refreshData"
-          :loading="refreshing"
-          circle
-          size="small"
-          title="刷新数据"
-        />
-        <span class="update-time">最后更新: {{ lastUpdateTime }}</span>
-      </div>
-    </div>
-
-    <el-row :gutter="isMobile ? 12 : 20" class="stat-cards">
-      <el-col :span="statCardSpan">
-        <el-card class="stat-card alert-card-highlight" shadow="hover">
-          <div class="stat-icon alerts">
-            <span>🔔</span>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ alertStore.pendingAlerts }}</div>
-            <div class="stat-label">待处理告警</div>
-            <div class="stat-trend" :class="alertTrend.type">{{ alertTrend.text }}</div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :span="statCardSpan">
-        <el-card class="stat-card" shadow="hover">
-          <div class="stat-icon devices">
-            <span>📱</span>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ deviceStore.onlineDevices }}/{{ deviceStore.totalDevices }}</div>
-            <div class="stat-label">在线设备</div>
-            <div class="stat-trend" :class="deviceTrend.type">{{ deviceTrend.text }}</div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :span="statCardSpan">
-        <el-card class="stat-card" shadow="hover">
-          <div class="stat-icon channels">
-            <span>📤</span>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ channelStore.onlineChannels }}/{{ channelStore.totalChannels }}</div>
-            <div class="stat-label">在线通道</div>
-            <div class="stat-trend" :class="channelTrend.type">{{ channelTrend.text }}</div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :span="statCardSpan">
-        <el-card class="stat-card" shadow="hover">
-          <div class="stat-icon rules">
-            <span>📋</span>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ ruleStore.activeRules }}/{{ ruleStore.totalRules }}</div>
-            <div class="stat-label">活跃规则</div>
-            <div class="stat-trend" :class="ruleTrend.type">{{ ruleTrend.text }}</div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="isMobile ? 12 : 20" class="chart-row">
-      <el-col :span="24">
-        <el-card class="chart-card" shadow="hover" :style="{ height: chartHeight + 'px' }">
-          <template #header>
-            <div class="card-header">
-              <div class="header-left">
-                <span class="chart-title">数据采集趋势</span>
-                <el-radio-group v-model="timeRange" size="small" class="time-range-selector">
-                  <el-radio-button value="1h">1小时</el-radio-button>
-                  <el-radio-button value="24h">24小时</el-radio-button>
-                  <el-radio-button value="7d">7天</el-radio-button>
-                </el-radio-group>
-              </div>
-              <div class="chart-summary">
-                <span class="summary-item">
-                  <span class="label">峰值:</span>
-                  <span class="value">{{ chartSummary.peak }} 条/时</span>
-                </span>
-                <span class="summary-item">
-                  <span class="label">均值:</span>
-                  <span class="value">{{ chartSummary.average }} 条/时</span>
-                </span>
-              </div>
-            </div>
-          </template>
-          <v-chart :option="dataChartOption" class="chart" autoresize />
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="isMobile ? 12 : 20" class="info-row">
-      <el-col :span="infoColSpan">
-        <el-card class="info-card resource-panel" shadow="hover">
-          <template #header>
-            <div class="panel-title">
-              <span>系统资源</span>
-              <el-tag size="small" :type="systemStore.stats.cpuUsage > 80 ? 'danger' : 'success'">
-                {{ systemStore.stats.cpuUsage > 80 ? '负载较高' : '运行正常' }}
-              </el-tag>
-            </div>
-          </template>
-          <div class="resource-gauges">
-            <div class="gauge-item">
-              <div class="gauge-chart">
-                <el-progress
-                  type="dashboard"
-                  :percentage="systemStore.stats.cpuUsage"
-                  :color="getProgressColor(systemStore.stats.cpuUsage)"
-                  :width="80"
-                />
-              </div>
-              <div class="gauge-label">CPU</div>
-            </div>
-            <div class="gauge-item">
-              <div class="gauge-chart">
-                <el-progress
-                  type="dashboard"
-                  :percentage="systemStore.stats.memoryUsage"
-                  :color="getProgressColor(systemStore.stats.memoryUsage)"
-                  :width="80"
-                />
-              </div>
-              <div class="gauge-label">内存</div>
-            </div>
-            <div class="gauge-item">
-              <div class="gauge-chart">
-                <el-progress
-                  type="dashboard"
-                  :percentage="systemStore.stats.diskUsage"
-                  :color="getProgressColor(systemStore.stats.diskUsage)"
-                  :width="80"
-                />
-              </div>
-              <div class="gauge-label">磁盘</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :span="infoColSpan" :class="{ 'mt-20': isMobile }">
-        <el-card class="info-card" shadow="hover">
-          <template #header>
-            <div class="panel-title">
-              <span>通道上传统计</span>
-              <el-tag size="small" :type="channelStore.averageSuccessRate > 95 ? 'success' : 'warning'">
-                {{ channelStore.averageSuccessRate > 95 ? '传输良好' : '需要关注' }}
-              </el-tag>
-            </div>
-          </template>
-          <div class="channel-stats">
-            <div class="channel-stat-item">
-              <span class="stat-label">总上传速率</span>
-              <span class="stat-value">{{ channelStore.totalUploadRate }} 条/秒</span>
-            </div>
-            <div class="channel-stat-item">
-              <span class="stat-label">平均成功率</span>
-              <span class="stat-value">{{ channelStore.averageSuccessRate }}%</span>
-            </div>
-            <div class="channel-stat-item">
-              <span class="stat-label">数据积压</span>
-              <span class="stat-value" :class="{ 'text-danger': channelStore.totalBacklog > 100 }">
-                {{ channelStore.totalBacklog }} 条
-              </span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="isMobile ? 12 : 20" class="info-row">
-      <el-col :span="infoColSpan">
-        <el-card class="info-card alert-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>最新告警</span>
-              <el-button type="primary" link size="small" @click="router.push('/alerts')">
-                查看全部
-              </el-button>
-            </div>
-          </template>
-          <div class="alert-list">
-            <div
-              v-for="alert in alertStore.alerts.slice(0, 3)"
-              :key="alert.id"
-              class="alert-item"
-              :class="alert.level"
-            >
-              <span class="alert-icon">
-                {{ alert.level === 'critical' ? '🚨' : alert.level === 'warning' ? '⚠️' : '💡' }}
-              </span>
-              <div class="alert-content">
-                <div class="alert-title">{{ alert.ruleName }}</div>
-                <div class="alert-desc">{{ alert.message }}</div>
-              </div>
-              <span class="alert-time">{{ alert.triggeredAt.split(' ')[1] }}</span>
-            </div>
-            <el-empty v-if="alertStore.alerts.length === 0" description="暂无告警" :image-size="60" />
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :span="infoColSpan" :class="{ 'mt-20': isMobile }">
-        <el-card class="info-card" shadow="hover">
-          <template #header>
-            <div class="panel-title">
-              <span>系统信息</span>
-              <el-tag size="small" type="info">详情</el-tag>
-            </div>
-          </template>
-          <div class="system-info">
-            <div class="info-item">
-              <span class="info-label">运行时长</span>
-              <span class="info-value">{{ Math.floor(systemStore.stats.uptime / 3600) }} 小时</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">采集总量</span>
-              <span class="info-value">{{ systemStore.stats.totalReadings.toLocaleString() }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">今日采集</span>
-              <span class="info-value">{{ systemStore.stats.todayReadings.toLocaleString() }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">数据质量</span>
-              <span class="info-value" :class="{ 'text-success': systemStore.dataQuality.qualityRate > 95 }">
-                {{ systemStore.dataQuality.qualityRate }}%
-              </span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-      </div>
-  </div>
-</template>
 
 <style scoped>
 .dashboard {
@@ -612,7 +615,7 @@ onActivated(async () => {
   width: 48px;
   height: 48px;
   border-radius: 8px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--border-light) 50%, var(--bg-hover) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s infinite;
 }
@@ -626,7 +629,7 @@ onActivated(async () => {
   width: 60%;
   border-radius: 4px;
   margin-bottom: 8px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--border-light) 50%, var(--bg-hover) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s infinite;
 }
@@ -635,7 +638,7 @@ onActivated(async () => {
   height: 16px;
   width: 40%;
   border-radius: 4px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--border-light) 50%, var(--bg-hover) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s infinite;
 }
@@ -649,7 +652,7 @@ onActivated(async () => {
   width: 30%;
   border-radius: 4px;
   margin-bottom: 20px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--border-light) 50%, var(--bg-hover) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s infinite;
 }
@@ -657,7 +660,7 @@ onActivated(async () => {
 .skeleton-chart-body {
   height: 250px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--border-light) 50%, var(--bg-hover) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s infinite;
 }
@@ -671,7 +674,7 @@ onActivated(async () => {
   width: 25%;
   border-radius: 4px;
   margin-bottom: 20px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--border-light) 50%, var(--bg-hover) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s infinite;
 }
@@ -679,7 +682,7 @@ onActivated(async () => {
 .skeleton-info-body {
   height: 120px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--border-light) 50%, var(--bg-hover) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s infinite;
 }
@@ -702,7 +705,7 @@ onActivated(async () => {
   .skeleton-chart-body,
   .skeleton-info-header,
   .skeleton-info-body {
-    background: linear-gradient(90deg, #2d2d2d 25%, #3d3d3d 50%, #2d2d2d 75%);
+    background: linear-gradient(90deg, var(--bg-hover) 25%, var(--border-base) 50%, var(--bg-hover) 75%);
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s infinite;
   }
@@ -723,7 +726,7 @@ onActivated(async () => {
 }
 
 .update-time {
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -745,8 +748,8 @@ onActivated(async () => {
 }
 
 .alert-card-highlight {
-  border-left: 4px solid #ef4444;
-  background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+  border-left: 4px solid var(--color-danger);
+  background: var(--color-danger-light);
 }
 
 .alert-card-highlight .stat-icon.alerts {
@@ -775,19 +778,19 @@ onActivated(async () => {
 }
 
 .stat-icon.devices {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--color-primary);
 }
 
 .stat-icon.channels {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  background: var(--color-info, #8b5cf6);
 }
 
 .stat-icon.rules {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: var(--color-success);
 }
 
 .stat-icon.alerts {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: var(--color-danger);
 }
 
 .stat-content {
@@ -798,13 +801,13 @@ onActivated(async () => {
 .stat-value {
   font-size: 28px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
 .stat-label {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-secondary);
   margin-top: 4px;
 }
 
@@ -815,19 +818,19 @@ onActivated(async () => {
 }
 
 .stat-trend.success {
-  color: #10b981;
+  color: var(--color-success);
 }
 
 .stat-trend.warning {
-  color: #f59e0b;
+  color: var(--color-warning);
 }
 
 .stat-trend.danger {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .stat-trend.info {
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .chart-row {
@@ -840,7 +843,7 @@ onActivated(async () => {
 
 .chart-card :deep(.el-card__header) {
   padding: 16px 20px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .chart-card :deep(.el-card__body) {
@@ -863,7 +866,7 @@ onActivated(async () => {
 .chart-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .time-range-selector {
@@ -883,13 +886,13 @@ onActivated(async () => {
 
 .summary-item .label {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .summary-item .value {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .chart {
@@ -908,7 +911,7 @@ onActivated(async () => {
 
 .info-card :deep(.el-card__header) {
   padding: 16px 20px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .info-card :deep(.el-card__body) {
@@ -948,7 +951,7 @@ onActivated(async () => {
 .gauge-label {
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .channel-stats {
@@ -962,27 +965,27 @@ onActivated(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: #f8fafc;
+  background: var(--bg-hover);
   border-radius: 8px;
 }
 
 .channel-stat-item .stat-label {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .channel-stat-item .stat-value {
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .text-danger {
-  color: #ef4444 !important;
+  color: var(--color-danger) !important;
 }
 
 .text-success {
-  color: #10b981 !important;
+  color: var(--color-success) !important;
 }
 
 .alert-card :deep(.el-card__header) {
@@ -1001,22 +1004,22 @@ onActivated(async () => {
   gap: 12px;
   padding: 12px;
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--bg-hover);
   transition: all 0.2s ease;
 }
 
 .alert-item:hover {
-  background: #f1f5f9;
+  background: var(--border-light);
 }
 
 .alert-item.critical {
-  background: #fef2f2;
-  border-left: 3px solid #ef4444;
+  background: var(--color-danger-light);
+  border-left: 3px solid var(--color-danger);
 }
 
 .alert-item.warning {
-  background: #fffbeb;
-  border-left: 3px solid #f59e0b;
+  background: var(--color-warning-light);
+  border-left: 3px solid var(--color-warning);
 }
 
 .alert-icon {
@@ -1031,12 +1034,12 @@ onActivated(async () => {
 .alert-title {
   font-size: 14px;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .alert-desc {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-secondary);
   margin-top: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1045,7 +1048,7 @@ onActivated(async () => {
 
 .alert-time {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-tertiary, #94a3b8);
 }
 
 .system-info {
@@ -1059,19 +1062,19 @@ onActivated(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 10px 16px;
-  background: #f8fafc;
+  background: var(--bg-hover);
   border-radius: 8px;
 }
 
 .info-label {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .info-value {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .mt-20 {
@@ -1304,7 +1307,7 @@ onActivated(async () => {
   transform: translateY(-10px);
 }
 
-/* 优化loading遮罩的过渡 */
+/* 优化 loading遮罩的过渡 */
 .dashboard :deep(.el-loading-mask) {
   transition: opacity 0.3s ease-in-out;
 }

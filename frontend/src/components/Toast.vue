@@ -1,10 +1,3 @@
-<script setup lang="ts">
-defineProps<{
-  message: string
-  type: 'success' | 'error' | 'warning' | 'info'
-}>()
-</script>
-
 <template>
   <div class="toast" :class="type">
     <span class="toast-icon">
@@ -16,6 +9,13 @@ defineProps<{
     <span class="toast-message">{{ message }}</span>
   </div>
 </template>
+
+<script setup lang="ts">
+defineProps<{
+  message: string
+  type: 'success' | 'error' | 'warning' | 'info'
+}>()
+</script>
 
 <style scoped>
 .toast {
@@ -45,23 +45,23 @@ defineProps<{
 }
 
 .toast.success {
-  background: #27ae60;
-  color: #fff;
+  background: var(--color-success);
+  color: var(--text-white);
 }
 
 .toast.error {
-  background: #e74c3c;
-  color: #fff;
+  background: var(--color-danger);
+  color: var(--text-white);
 }
 
 .toast.warning {
-  background: #f39c12;
-  color: #fff;
+  background: var(--color-warning);
+  color: var(--text-white);
 }
 
 .toast.info {
-  background: #3498db;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--text-white);
 }
 
 .toast-icon {

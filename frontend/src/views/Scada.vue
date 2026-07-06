@@ -1,39 +1,154 @@
+<template>
+  <div class="scada-page" :class="{ 'preview-mode': isPreviewMode }">
+    <div v-if="!isPreviewMode" class="page-header">
+      <div class="header-left">
+        <el-button :icon="ArrowLeft" @click="handleGoBack">{{ $t('scada.backToList') }}</el-button>
+        <span class="project-name">{{ currentPanel?.name }}</span>
+      </div>
+      <div class="header-actions">
+        <el-button :icon="View" @click="handlePreview">{{ $t('scada.preview') }}</el-button>
+        <el-button :icon="FullScreen" @click="handleFullscreen">{{ $t('scada.fullscreen') }}</el-button>
+        <el-button @click="handleExport">{{ $t('common.export') }}</el-button>
+        <el-button type="primary" :icon="Upload" v-if="userStore.hasPermission('scada', 'update')" @click="handlePublish">{{ $t('scada.publish') }}</el-button>
+        <el-button v-if="userStore.hasPermission('scada', 'update')" @click="handleSave">{{ $t('common.save') }}</el-button>
+      </div>
+    </div>
+    
+    <div v-if="isPreviewMode" class="preview-header">
+      <span class="preview-title">{{ currentPanel?.name }}</span>
+      <div class="preview-actions">
+        <el-button size="small" @click="handleExitPreview">{{ $t('scada.exitPreview') }}</el-button>
+      </div>
+    </div>
+    
+    <div v-if="currentPanel" class="scada-editor">
+      <div v-if="!isPreviewMode" class="editor-left">
+        <ComponentPalette :showComponentList="showComponentList" @toggleList="showComponentList = !showComponentList" />
+      </div>
+      
+      <div v-if="!isPreviewMode" class="editor-list" :class="{ collapsed: !showComponentList }">
+        <div v-if="showComponentList" class="list-panel">
+          <ComponentList />
+        </div>
+      </div>
+      
+      <div class="editor-center">
+        <div v-if="!isPreviewMode" class="editor-toolbar">
+          <div class="toolbar-left">
+            <el-button-group>
+              <el-button size="small" @click="handleZoomOut">-</el-button>
+              <el-button size="small" @click="handleZoomReset">{{ Math.round(scadaStore.zoom * 100) }}%</el-button>
+              <el-button size="small" @click="handleZoomIn">+</el-button>
+            </el-button-group>
+            <el-checkbox v-model="scadaStore.showGrid" size="small">{{ $t('scada.showGrid') }}</el-checkbox>
+            <el-checkbox v-model="scadaStore.isEditing" size="small">{{ $t('scada.editMode') }}</el-checkbox>
+            <el-popover
+              placement="bottom-start"
+              :width="320"
+              trigger="hover"
+            >
+              <template #reference>
+                <el-button size="small" text class="shortcut-btn">
+                  ⌨️ {{ $t('scada.shortcuts') }}
+                </el-button>
+              </template>
+              <div class="shortcut-list">
+                <div class="shortcut-item">
+                  <span class="key-group"><kbd>Ctrl</kbd> + <kbd>C</kbd></span>
+                  <span class="desc">{{ $t('scada.copy') }}</span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="key-group"><kbd>Ctrl</kbd> + <kbd>V</kbd></span>
+                  <span class="desc">{{ $t('scada.paste') }}</span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="key-group"><kbd>Ctrl</kbd> + <kbd>D</kbd></span>
+                  <span class="desc">{{ $t('scada.duplicate') }}</span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="key-group"><kbd>Delete</kbd></span>
+                  <span class="desc">{{ $t('scada.delete') }}</span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="key-group"><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd></span>
+                  <span class="desc">{{ $t('scada.move') }}</span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="key-group"><kbd>Esc</kbd></span>
+                  <span class="desc">{{ $t('scada.closeMenu') }}</span>
+                </div>
+              </div>
+            </el-popover>
+          </div>
+          <div class="toolbar-right">
+            <span class="component-count">{{ $t('scada.componentCount', { count: currentPanel.components.length }) }}</span>
+          </div>
+        </div>
+        
+        <div class="canvas-wrapper">
+          <ScadaCanvas />
+        </div>
+      </div>
+      
+      <div v-if="!isPreviewMode" class="editor-right">
+        <ComponentConfig />
+      </div>
+    </div>
+    
+    <div v-else class="empty-state">
+      <el-empty :description="$t('scada.projectNotExist')">
+        <el-button type="primary" @click="handleGoBack">{{ $t('scada.backToProjectList') }}</el-button>
+      </el-empty>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useScadaStore } from '@/stores/scada'
 import { useUserStore } from '@/stores/users'
+import { usePointStore } from '@/stores/points'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { FullScreen, View, Upload } from '@element-plus/icons-vue'
+import { FullScreen, View, Upload, ArrowLeft } from '@element-plus/icons-vue'
 import ComponentPalette from '@/components/ComponentPalette.vue'
+import ComponentList from '@/components/ComponentList.vue'
 import ScadaCanvas from '@/components/ScadaCanvas.vue'
 import ComponentConfig from '@/components/ComponentConfig.vue'
 
+const { t } = useI18n()
+
+const route = useRoute()
+const router = useRouter()
 const scadaStore = useScadaStore()
 const userStore = useUserStore()
+const pointStore = usePointStore()
 
-const showNewPanelDialog = ref(false)
-const newPanelName = ref('')
-const newPanelDescription = ref('')
-const newPanelWidth = ref(1200)
-const newPanelHeight = ref(800)
 const isPreviewMode = ref(false)
-const canvasWidth = ref(1200)
-const canvasHeight = ref(800)
+const showComponentList = ref(false)
 
-const panels = computed(() => scadaStore.panels)
 const currentPanel = computed(() => scadaStore.currentPanel)
 
-onMounted(() => {
-  if (panels.value.length > 0 && !scadaStore.currentPanelId) {
-    scadaStore.selectPanel(panels.value[0].id)
+// Get project ID from route params and select it
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    scadaStore.selectPanel(newId as string)
   }
-  
+}, { immediate: true })
+
+onMounted(async () => {
   document.addEventListener('fullscreenchange', handleFullscreenChange)
+  await pointStore.fetchDevicesWithPoints()
 })
 
 onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
 })
+
+const handleGoBack = () => {
+  router.push({ name: 'ScadaList' })
+}
 
 const handleFullscreenChange = () => {
   if (!document.fullscreenElement && scadaStore.isFullscreenPreview) {
@@ -41,45 +156,6 @@ const handleFullscreenChange = () => {
     isPreviewMode.value = false
     scadaStore.isEditing = true
   }
-}
-
-const handleSelectPanel = (id: string) => {
-  scadaStore.selectPanel(id)
-  if (currentPanel.value) {
-    canvasWidth.value = currentPanel.value.width
-    canvasHeight.value = currentPanel.value.height
-  }
-}
-
-const handleCreatePanel = () => {
-  if (!newPanelName.value.trim()) {
-    ElMessage.warning('请输入面板名称')
-    return
-  }
-  
-  const panel = scadaStore.createPanel(newPanelName.value, newPanelDescription.value, newPanelWidth.value, newPanelHeight.value)
-  scadaStore.selectPanel(panel.id)
-  canvasWidth.value = newPanelWidth.value
-  canvasHeight.value = newPanelHeight.value
-  
-  newPanelName.value = ''
-  newPanelDescription.value = ''
-  newPanelWidth.value = 1200
-  newPanelHeight.value = 800
-  showNewPanelDialog.value = false
-  
-  ElMessage.success('面板创建成功')
-}
-
-const handleDeletePanel = (id: string, name: string) => {
-  ElMessageBox.confirm(
-    `确定要删除面板 "${name}" 吗？`,
-    '删除确认',
-    { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
-  ).then(() => {
-    scadaStore.deletePanel(id)
-    ElMessage.success('面板已删除')
-  }).catch(() => {})
 }
 
 const handleZoomIn = () => {
@@ -95,7 +171,7 @@ const handleZoomReset = () => {
 }
 
 const handleSave = () => {
-  ElMessage.success('面板已保存')
+  ElMessage.success(t('scada.savePanelSuccess'))
 }
 
 const handlePreview = () => {
@@ -125,11 +201,11 @@ const handleFullscreen = () => {
 
 const handlePublish = () => {
   ElMessageBox.confirm(
-    '确定要发布当前面板吗？发布后其他用户将可以看到此面板。',
-    '发布确认',
-    { confirmButtonText: '发布', cancelButtonText: '取消', type: 'info' }
+    t('scada.publishConfirm'),
+    t('scada.publishConfirmTitle'),
+    { confirmButtonText: t('scada.publish'), cancelButtonText: t('common.cancel'), type: 'info' }
   ).then(() => {
-    ElMessage.success('面板已发布成功！')
+    ElMessage.success(t('scada.publishSuccess'))
   }).catch(() => {})
 }
 
@@ -144,104 +220,15 @@ const handleExport = () => {
   a.download = `${currentPanel.value.name}.json`
   a.click()
   URL.revokeObjectURL(url)
-  ElMessage.success('面板已导出')
+  ElMessage.success(t('scada.exportSuccess'))
 }
 </script>
-
-<template>
-  <div class="scada-page" :class="{ 'preview-mode': isPreviewMode }">
-    <div v-if="!isPreviewMode" class="page-header">
-      <div class="header-actions">
-        <el-button :icon="View" @click="handlePreview">预览</el-button>
-        <el-button :icon="FullScreen" @click="handleFullscreen">全屏</el-button>
-        <el-button @click="handleExport">导出</el-button>
-        <el-button type="primary" :icon="Upload" v-if="userStore.hasPermission('scada', 'update')" @click="handlePublish">发布</el-button>
-        <el-button type="primary" v-if="userStore.hasPermission('scada', 'create')" @click="showNewPanelDialog = true">
-          + 新建面板
-        </el-button>
-        <el-button v-if="userStore.hasPermission('scada', 'update')" @click="handleSave">保存</el-button>
-      </div>
-    </div>
-    
-    <div v-if="isPreviewMode" class="preview-header">
-      <span class="preview-title">{{ currentPanel?.name }}</span>
-      <div class="preview-actions">
-        <el-button size="small" @click="handleExitPreview">退出预览</el-button>
-      </div>
-    </div>
-    
-    <div v-if="!isPreviewMode" class="panel-tabs">
-      <div 
-        v-for="panel in panels" 
-        :key="panel.id"
-        class="panel-tab"
-        :class="{ active: scadaStore.currentPanelId === panel.id }"
-        @click="handleSelectPanel(panel.id)"
-      >
-        <span class="tab-name">{{ panel.name }}</span>
-        <span class="tab-close" v-if="userStore.hasPermission('scada', 'delete')" @click.stop="handleDeletePanel(panel.id, panel.name)">×</span>
-      </div>
-    </div>
-    
-    <div v-if="currentPanel" class="scada-editor">
-      <div v-if="!isPreviewMode" class="editor-left">
-        <ComponentPalette />
-      </div>
-      
-      <div class="editor-center">
-        <div v-if="!isPreviewMode" class="editor-toolbar">
-          <div class="toolbar-left">
-            <el-button-group>
-              <el-button size="small" @click="handleZoomOut">-</el-button>
-              <el-button size="small" @click="handleZoomReset">{{ Math.round(scadaStore.zoom * 100) }}%</el-button>
-              <el-button size="small" @click="handleZoomIn">+</el-button>
-            </el-button-group>
-            <el-checkbox v-model="scadaStore.showGrid" size="small">显示网格</el-checkbox>
-            <el-checkbox v-model="scadaStore.isEditing" size="small">编辑模式</el-checkbox>
-          </div>
-          <div class="toolbar-right">
-            <span class="component-count">组件: {{ currentPanel.components.length }}</span>
-          </div>
-        </div>
-        
-        <div class="canvas-wrapper">
-          <ScadaCanvas />
-        </div>
-      </div>
-      
-      <div v-if="!isPreviewMode" class="editor-right">
-        <ComponentConfig />
-      </div>
-    </div>
-    
-    <div v-else class="empty-state">
-      <span class="empty-icon">📊</span>
-      <p>请选择或创建一个组态面板</p>
-      <el-button type="primary" v-if="userStore.hasPermission('scada', 'create')" @click="showNewPanelDialog = true">创建面板</el-button>
-    </div>
-    
-    <el-dialog v-model="showNewPanelDialog" title="新建组态面板" width="min(400px, 90vw)">
-      <el-form label-width="80px">
-        <el-form-item label="面板名称">
-          <el-input v-model="newPanelName" placeholder="请输入面板名称" />
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="newPanelDescription" type="textarea" placeholder="可选描述" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showNewPanelDialog = false">取消</el-button>
-        <el-button type="primary" v-if="userStore.hasPermission('scada', 'create')" @click="handleCreatePanel">创建</el-button>
-      </template>
-    </el-dialog>
-  </div>
-</template>
 
 <style scoped>
 .scada-page {
   display: flex;
   flex-direction: column;
-  background: #f5f7fa;
+  background: var(--bg-secondary);
   position: relative;
   z-index: 1;
   height: 100%;
@@ -253,12 +240,24 @@ const handleExport = () => {
 
 .page-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   padding: 12px 20px;
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--bg-container);
+  border-bottom: 1px solid var(--border-base);
   flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.project-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
 .header-actions {
@@ -294,8 +293,8 @@ const handleExport = () => {
   display: flex;
   gap: 4px;
   padding: 8px 16px;
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--bg-container);
+  border-bottom: 1px solid var(--border-base);
   overflow-x: auto;
   flex-shrink: 0;
 }
@@ -305,8 +304,8 @@ const handleExport = () => {
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  background: #f5f7fa;
-  border: 1px solid #e0e0e0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-base);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
@@ -314,13 +313,13 @@ const handleExport = () => {
 }
 
 .panel-tab:hover {
-  background: #e8f4fc;
+  background: var(--bg-hover);
 }
 
 .panel-tab.active {
-  background: #3498db;
+  background: var(--color-primary);
   color: #fff;
-  border-color: #3498db;
+  border-color: var(--color-primary);
 }
 
 .tab-name {
@@ -347,7 +346,7 @@ const handleExport = () => {
   flex: 1;
   display: flex;
   min-height: 0;
-  background: #e8e8e8;
+  background: var(--bg-secondary);
   position: relative;
 }
 
@@ -356,10 +355,56 @@ const handleExport = () => {
 }
 
 .editor-left {
-  width: 200px;
+  width: 280px;
   flex-shrink: 0;
-  background: #fff;
-  border-right: 1px solid #dce1e6;
+  background: var(--bg-container);
+  border-right: 1px solid var(--border-base);
+}
+
+.editor-list {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg-container);
+  border-right: 1px solid var(--border-base);
+  transition: width 0.2s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-list.collapsed {
+  width: 0;
+  overflow: hidden;
+}
+
+.editor-list .list-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-list .list-toggle {
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-container);
+  border: 1px solid var(--border-base);
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  z-index: 10;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.editor-list .list-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--color-primary);
 }
 
 .editor-center {
@@ -371,12 +416,13 @@ const handleExport = () => {
 }
 
 .editor-toolbar {
+  height: 44px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 0 12px;
+  background: var(--bg-container);
+  border-bottom: 1px solid var(--border-base);
   flex-shrink: 0;
 }
 
@@ -384,6 +430,55 @@ const handleExport = () => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.shortcut-btn {
+  font-size: 12px;
+  padding: 0 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.shortcut-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.key-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-base);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  min-width: 20px;
+  height: 20px;
+}
+
+.desc {
+  color: var(--text-secondary);
 }
 
 .toolbar-right {
@@ -394,7 +489,7 @@ const handleExport = () => {
 
 .component-count {
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
 }
 
 .canvas-wrapper {
@@ -409,8 +504,8 @@ const handleExport = () => {
 .editor-right {
   width: 280px;
   flex-shrink: 0;
-  background: #fff;
-  border-left: 1px solid #dce1e6;
+  background: var(--bg-container);
+  border-left: 1px solid var(--border-base);
 }
 
 .empty-state {
@@ -419,8 +514,8 @@ const handleExport = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #95a5a6;
-  background: #f5f7fa;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
 }
 
 .empty-icon {

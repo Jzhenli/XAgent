@@ -1,15 +1,3 @@
-<script setup lang="ts">
-import { computed } from 'vue'
-import type { ScadaComponent } from '@/types/scada'
-
-const props = defineProps<{
-  config: ScadaComponent
-  editing?: boolean
-}>()
-
-const textConfig = computed(() => props.config.textConfig)
-</script>
-
 <template>
   <div 
     class="text-container"
@@ -20,9 +8,24 @@ const textConfig = computed(() => props.config.textConfig)
       textAlign: textConfig?.textAlign || 'center'
     }"
   >
-    {{ textConfig?.content || '文本' }}
+    {{ textConfig?.content || t('scadaComponents.defaultText') }}
   </div>
 </template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import type { ScadaComponent } from '@/types/scada'
+
+const { t } = useI18n()
+
+const props = defineProps<{
+  config: ScadaComponent
+  editing?: boolean
+}>()
+
+const textConfig = computed(() => props.config.textConfig)
+</script>
 
 <style scoped>
 .text-container {

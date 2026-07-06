@@ -1,240 +1,48 @@
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRuleStore, type RuleViewItem } from '@/stores/rules'
-import { useUserStore } from '@/stores/users'
-import { 
-  Plus, 
-  Upload, 
-  Download, 
-  Refresh,
-  CircleCheck,
-  CircleClose,
-  Edit,
-  CopyDocument,
-  Delete
-} from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-
-const ruleStore = useRuleStore()
-const userStore = useUserStore()
-
-const searchQuery = ref('')
-const typeFilter = ref('')
-
-const filteredRules = computed(() => {
-  let rules = [...ruleStore.rules]
-  
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    rules = rules.filter(r => 
-      r.name.toLowerCase().includes(query) || 
-      r.description?.toLowerCase().includes(query)
-    )
-  }
-  
-  if (typeFilter.value) {
-    rules = rules.filter(r => r.type === typeFilter.value)
-  }
-  
-  return rules
-})
-
-const getTypeLabel = (type: string) => {
-  const labels: Record<string, string> = {
-    scene: '场景联动',
-    alert: '告警规则',
-    schedule: '定时任务'
-  }
-  return labels[type] || type
-}
-
-const getTypeTag = (type: string) => {
-  const tags: Record<string, string> = {
-    scene: 'primary',
-    alert: 'danger',
-    schedule: 'warning'
-  }
-  return tags[type] || 'info'
-}
-
-const handleToggleRule = async (id: string) => {
-  try {
-    await ruleStore.toggleRule(id)
-    const rule = ruleStore.rules.find(r => r.id === id)
-    if (rule) {
-      ElMessage.success(rule.enabled ? '规则已启用' : '规则已禁用')
-    }
-  } catch {
-    ElMessage.error('操作失败')
-  }
-}
-
-const handleCopyRule = async (rule: RuleViewItem) => {
-  try {
-    await ruleStore.copyRule(rule.id)
-    ElMessage.success('规则已复制')
-  } catch {
-    ElMessage.error('复制规则失败')
-  }
-}
-
-const handleDeleteRule = (id: string, name: string) => {
-  ElMessageBox.confirm(
-    `确定要删除规则 "${name}" 吗？`,
-    '删除确认',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      await ruleStore.deleteRule(id)
-      ElMessage.success('规则已删除')
-    } catch {
-      ElMessage.error('删除规则失败')
-    }
-  }).catch(() => {})
-}
-
-const handleRefresh = async () => {
-  await ruleStore.fetchRules()
-  ElMessage.success('规则列表已刷新')
-}
-
-const handleExportRules = () => {
-  const rules = ruleStore.rules
-  if (rules.length === 0) {
-    ElMessage.warning('没有可导出的规则')
-    return
-  }
-
-  const json = JSON.stringify(rules, null, 2)
-  const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `rules-export-${new Date().toISOString().slice(0, 10)}.json`
-  a.click()
-  URL.revokeObjectURL(url)
-  ElMessage.success(`已导出 ${rules.length} 条规则`)
-}
-
-const handleImportRules = () => {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.json'
-
-  input.onchange = async (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0]
-    if (!file) return
-
-    try {
-      const text = await file.text()
-      const importedRules = JSON.parse(text)
-
-      if (!Array.isArray(importedRules)) {
-        throw new Error('无效的规则文件格式')
-      }
-
-      let successCount = 0
-      let failCount = 0
-
-      for (const rule of importedRules) {
-        try {
-          const createData = {
-            id: rule.id || `rule-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            name: rule.name || '导入的规则',
-            description: rule.description,
-            enabled: rule.enabled ?? false,
-            plugin: rule.plugin || { name: 'threshold_rule', config: {} },
-            data_subscriptions: rule.data_subscriptions,
-            notification: rule.notification,
-            pipeline_id: rule.pipeline_id,
-            channel_ids: rule.channel_ids,
-          }
-          await ruleStore.createRule(createData)
-          successCount++
-        } catch {
-          failCount++
-        }
-      }
-
-      if (successCount > 0) {
-        ElMessage.success(`成功导入 ${successCount} 条规则${failCount > 0 ? `，${failCount} 条失败` : ''}`)
-      } else {
-        ElMessage.error('导入失败')
-      }
-    } catch (error) {
-      ElMessage.error('导入失败：' + (error as Error).message)
-    }
-  }
-
-  input.click()
-}
-
-const showEditor = ref(false)
-const currentRuleId = ref<string | null>(null)
-
-const openEditor = (ruleId?: string) => {
-  currentRuleId.value = ruleId || null
-  showEditor.value = true
-}
-
-const handleEditorSaved = () => {
-  ruleStore.fetchRules()
-}
-
-onMounted(() => {
-  ruleStore.fetchRules()
-})
-</script>
-
 <template>
   <div class="rules-page">
     <div class="toolbar">
       <div class="toolbar-left">
         <el-input
           v-model="searchQuery"
-          placeholder="搜索规则..."
+          :placeholder="$t('rules.searchPlaceholder')"
           :prefix-icon="Search"
           clearable
           class="toolbar-search"
         />
         <el-select 
           v-model="typeFilter" 
-          placeholder="类型筛选" 
+          :placeholder="$t('rules.typeFilter')" 
           clearable
           class="toolbar-filter"
         >
-          <el-option label="全部类型" value="" />
-          <el-option label="场景联动" value="scene" />
-          <el-option label="告警规则" value="alert" />
-          <el-option label="定时任务" value="schedule" />
+          <el-option :label="$t('rules.allTypes')" value="" />
+          <el-option :label="$t('rules.typeScene')" value="scene" />
+          <el-option :label="$t('rules.typeAlert')" value="alert" />
+          <el-option :label="$t('rules.typeSchedule')" value="schedule" />
         </el-select>
       </div>
       <div class="toolbar-right">
         <el-button type="primary" :icon="Plus" @click="openEditor()" v-if="userStore.hasPermission('rules', 'create')">
-          新建规则
+          {{ $t('rules.createNew') }}
         </el-button>
-        <el-button :icon="Upload" @click="handleImportRules" v-if="userStore.hasPermission('rules', 'create')">导入</el-button>
-        <el-button :icon="Download" @click="handleExportRules">导出</el-button>
+        <el-button :icon="Upload" @click="handleImportRules" v-if="userStore.hasPermission('rules', 'create')">{{ $t('common.import') }}</el-button>
+        <el-button :icon="Download" @click="handleExportRules">{{ $t('common.export') }}</el-button>
         <el-button :icon="Refresh" circle @click="handleRefresh" :loading="ruleStore.loading" />
       </div>
     </div>
 
     <div v-if="ruleStore.loading && ruleStore.rules.length === 0" class="loading-state">
       <el-icon class="is-loading" :size="24"><Loading /></el-icon>
-      <span>加载规则列表中...</span>
+      <span>{{ $t('rules.loadingMessage') }}</span>
     </div>
 
     <div v-else-if="ruleStore.error" class="error-state">
       <span>{{ ruleStore.error }}</span>
-      <el-button size="small" @click="ruleStore.fetchRules()">重试</el-button>
+      <el-button size="small" @click="ruleStore.fetchRules()">{{ $t('common.retry') }}</el-button>
     </div>
 
     <div v-else-if="filteredRules.length === 0" class="empty-state">
-      <span>{{ searchQuery || typeFilter ? '没有匹配的规则' : '暂无规则，点击"新建规则"开始创建' }}</span>
+      <span>{{ searchQuery || typeFilter ? $t('rules.noMatchingRules') : $t('rules.emptyMessage') }}</span>
     </div>
     
     <div v-else class="rules-list">
@@ -265,26 +73,26 @@ onMounted(() => {
         </div>
         
         <div class="rule-expression">
-          <code>{{ rule.expression || '无表达式' }}</code>
+          <code>{{ rule.expression || $t('rules.noExpression') }}</code>
         </div>
         
         <div class="rule-meta">
           <span class="meta-item">
-            <span class="meta-label">执行次数:</span>
-            <span class="meta-value">{{ rule.executionCount }} 次</span>
+            <span class="meta-label">{{ $t('rules.executionCount') }}:</span>
+            <span class="meta-value">{{ rule.executionCount }} {{ $t('rules.times') }}</span>
           </span>
           <span class="meta-item">
-            <span class="meta-label">最后触发:</span>
-            <span class="meta-value">{{ rule.lastTriggered || '从未触发' }}</span>
+            <span class="meta-label">{{ $t('rules.lastTriggered') }}:</span>
+            <span class="meta-value">{{ rule.lastTriggered || $t('rules.neverTriggered') }}</span>
           </span>
         </div>
         
         <div class="rule-actions">
           <el-button type="primary" :icon="Edit" size="small" @click="openEditor(rule.id)" v-if="userStore.hasPermission('rules', 'update')">
-            编辑
+            {{ $t('rules.edit') }}
           </el-button>
           <el-button :icon="CopyDocument" size="small" @click="handleCopyRule(rule)" v-if="userStore.hasPermission('rules', 'create')">
-            复制
+            {{ $t('rules.copy') }}
           </el-button>
           <el-button 
             :type="rule.enabled ? 'warning' : 'success'" 
@@ -292,10 +100,10 @@ onMounted(() => {
             @click="handleToggleRule(rule.id)"
             v-if="userStore.hasPermission('rules', 'update')"
           >
-            {{ rule.enabled ? '禁用' : '启用' }}
+            {{ rule.enabled ? $t('rules.disable') : $t('rules.enable') }}
           </el-button>
           <el-button type="danger" :icon="Delete" size="small" @click="handleDeleteRule(rule.id, rule.name)" v-if="userStore.hasPermission('rules', 'delete')">
-            删除
+            {{ $t('rules.delete') }}
           </el-button>
         </div>
       </el-card>
@@ -303,7 +111,7 @@ onMounted(() => {
     
     <el-drawer
       v-model="showEditor"
-      :title="currentRuleId ? '编辑规则' : '新建规则'"
+      :title="currentRuleId ? $t('rules.editRule') : $t('rules.newRule')"
       direction="rtl"
       size="80%"
       :with-header="true"
@@ -313,13 +121,202 @@ onMounted(() => {
   </div>
 </template>
 
-<script lang="ts">
-import { Search, Loading } from '@element-plus/icons-vue'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRuleStore, type RuleViewItem } from '@/stores/rules'
+import { useUserStore } from '@/stores/users'
+import { 
+  Plus, 
+  Upload, 
+  Download, 
+  Refresh,
+  CircleCheck,
+  CircleClose,
+  Edit,
+  CopyDocument,
+  Delete,
+  Search,
+  Loading
+} from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import RuleEditorCanvas from '@/components/RuleEditorCanvas.vue'
 
-export default {
-  components: { Search, Loading, RuleEditorCanvas }
+const { t } = useI18n()
+
+const ruleStore = useRuleStore()
+const userStore = useUserStore()
+
+const searchQuery = ref('')
+const typeFilter = ref('')
+
+const filteredRules = computed(() => {
+  let rules = [...ruleStore.rules]
+  
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    rules = rules.filter(r => 
+      r.name.toLowerCase().includes(query) || 
+      r.description?.toLowerCase().includes(query)
+    )
+  }
+  
+  if (typeFilter.value) {
+    rules = rules.filter(r => r.type === typeFilter.value)
+  }
+  
+  return rules
+})
+
+const getTypeLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    scene: t('rules.typeScene'),
+    alert: t('rules.typeAlert'),
+    schedule: t('rules.typeSchedule')
+  }
+  return labels[type] || type
 }
+
+const getTypeTag = (type: string) => {
+  const tags: Record<string, string> = {
+    scene: 'primary',
+    alert: 'danger',
+    schedule: 'warning'
+  }
+  return tags[type] || 'info'
+}
+
+const handleToggleRule = async (id: string) => {
+  try {
+    await ruleStore.toggleRule(id)
+    const rule = ruleStore.rules.find(r => r.id === id)
+    if (rule) {
+      ElMessage.success(rule.enabled ? t('rules.ruleEnabled') : t('rules.ruleDisabled'))
+    }
+  } catch {
+    ElMessage.error(t('common.operationFailed'))
+  }
+}
+
+const handleCopyRule = async (rule: RuleViewItem) => {
+  try {
+    await ruleStore.copyRule(rule.id)
+    ElMessage.success(t('rules.ruleCopied'))
+  } catch {
+    ElMessage.error(t('rules.copyFailed'))
+  }
+}
+
+const handleDeleteRule = (id: string, name: string) => {
+  ElMessageBox.confirm(
+    t('rules.deleteConfirmMessage', { name }),
+    t('rules.deleteConfirmTitle'),
+    {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      await ruleStore.deleteRule(id)
+      ElMessage.success(t('rules.ruleDeleted'))
+    } catch {
+      ElMessage.error(t('rules.deleteFailed'))
+    }
+  }).catch(() => {})
+}
+
+const handleRefresh = async () => {
+  await ruleStore.fetchRules()
+  ElMessage.success(t('rules.refreshSuccess'))
+}
+
+const handleExportRules = () => {
+  const rules = ruleStore.rules
+  if (rules.length === 0) {
+    ElMessage.warning(t('rules.noExportableRules'))
+    return
+  }
+
+  const json = JSON.stringify(rules, null, 2)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `rules-export-${new Date().toISOString().slice(0, 10)}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success(t('rules.exportSuccess', { count: rules.length }))
+}
+
+const handleImportRules = () => {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.json'
+
+  input.onchange = async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (!file) return
+
+    try {
+      const text = await file.text()
+      const importedRules = JSON.parse(text)
+
+      if (!Array.isArray(importedRules)) {
+        throw new Error(t('rules.invalidFormat'))
+      }
+
+      let successCount = 0
+      let failCount = 0
+
+      for (const rule of importedRules) {
+        try {
+          const createData = {
+            id: rule.id || `rule-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            name: rule.name || t('rules.importedRule'),
+            description: rule.description,
+            enabled: rule.enabled ?? false,
+            plugin: rule.plugin || { name: 'threshold_rule', config: {} },
+            data_subscriptions: rule.data_subscriptions,
+            notification: rule.notification,
+            pipeline_id: rule.pipeline_id,
+            channel_ids: rule.channel_ids,
+          }
+          await ruleStore.createRule(createData)
+          successCount++
+        } catch {
+          failCount++
+        }
+      }
+
+      if (successCount > 0) {
+        ElMessage.success(failCount > 0 ? t('rules.importPartialSuccess', { success: successCount, fail: failCount }) : t('rules.importSuccess', { count: successCount }))
+      } else {
+        ElMessage.error(t('rules.importFailed'))
+      }
+    } catch (error) {
+      ElMessage.error(t('rules.importError', { message: (error as Error).message }))
+    }
+  }
+
+  input.click()
+}
+
+const showEditor = ref(false)
+const currentRuleId = ref<string | null>(null)
+
+const openEditor = (ruleId?: string) => {
+  currentRuleId.value = ruleId || null
+  showEditor.value = true
+}
+
+const handleEditorSaved = () => {
+  ruleStore.fetchRules()
+}
+
+onMounted(() => {
+  ruleStore.fetchRules()
+})
 </script>
 
 <style scoped>
@@ -335,9 +332,9 @@ export default {
   gap: 12px;
   margin-bottom: 20px;
   padding: 16px;
-  background: #fff;
+  background: var(--settings-toolbar-bg);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--settings-toolbar-shadow);
 }
 
 .toolbar-left {
@@ -368,7 +365,7 @@ export default {
   justify-content: center;
   gap: 12px;
   padding: 48px;
-  color: #7f8c8d;
+  color: var(--rule-loading-color);
   font-size: 14px;
 }
 
@@ -404,13 +401,13 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffebee;
-  color: #e74c3c;
+  background: var(--rule-status-inactive-bg);
+  color: var(--rule-status-inactive-color);
 }
 
 .rule-status.active {
-  background: #e8f5e9;
-  color: #27ae60;
+  background: var(--rule-status-active-bg);
+  color: var(--rule-status-active-color);
 }
 
 .rule-title {
@@ -423,11 +420,11 @@ export default {
 .rule-name {
   font-size: 16px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--rule-name-color);
 }
 
 .rule-expression {
-  background: #f8f9fa;
+  background: var(--rule-expression-bg);
   padding: 12px 16px;
   border-radius: 6px;
   margin-bottom: 12px;
@@ -436,7 +433,7 @@ export default {
 .rule-expression code {
   font-family: 'Fira Code', monospace;
   font-size: 13px;
-  color: #3498db;
+  color: var(--rule-expression-color);
 }
 
 .rule-meta {
@@ -444,7 +441,7 @@ export default {
   gap: 24px;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--rule-meta-border);
 }
 
 .meta-item {
@@ -454,11 +451,11 @@ export default {
 }
 
 .meta-label {
-  color: #7f8c8d;
+  color: var(--rule-meta-label-color);
 }
 
 .meta-value {
-  color: #2c3e50;
+  color: var(--rule-meta-value-color);
   font-weight: 500;
 }
 

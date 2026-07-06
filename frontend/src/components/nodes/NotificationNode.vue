@@ -1,30 +1,55 @@
+<template>
+  <div class="rule-node notification-node">
+    <Handle type="target" :position="Position.Top" />
+
+    <div class="node-header">
+      <span class="node-icon">📢</span>
+      <span class="node-title">{{ t('nodeViews.notification') }}</span>
+      <span class="level-badge" :style="{ background: levelColor }">{{ nodeData?.level || 'warning' }}</span>
+    </div>
+
+    <div class="node-body">
+      <div class="node-info">
+        <div class="info-row">
+          <span class="info-label">{{ t('nodeViews.channel') }}:</span>
+          <span class="info-value">{{ channelLabel }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">{{ t('nodeViews.level') }}:</span>
+          <span class="info-value">{{ levelLabel }}</span>
+        </div>
+      </div>
+    </div>
+
+    <Handle type="source" :position="Position.Bottom" />
+  </div>
+</template>
+
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+import { Handle, Position, useNode } from '@vue-flow/core'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { RuleNodeData } from '@/types/rule'
 
-const props = defineProps<{
-  id: string
-  data: RuleNodeData
-  selected?: boolean
-}>()
+const { t } = useI18n()
+const { node } = useNode<RuleNodeData>()
 
-const nodeData = computed(() => props.data.notification)
+const nodeData = computed(() => node.data?.notification)
 
 const channelLabel = computed(() => {
-  if (nodeData.value?.channel_type === 'system') return '🔔 系统通知'
-  if (nodeData.value?.channel_type === 'email') return '📧 邮件'
-  if (nodeData.value?.channel_type === 'webhook') return '🔗 Webhook'
-  return '未配置'
+  if (nodeData.value?.channel_type === 'system') return '🔔 ' + t('ruleNodes.systemNotification')
+  if (nodeData.value?.channel_type === 'email') return '📧 ' + t('ruleNodes.email')
+  if (nodeData.value?.channel_type === 'webhook') return '🔗 ' + t('ruleNodes.webhook')
+  return t('nodeViews.notConfigured')
 })
 
 const levelLabel = computed(() => {
   const level = nodeData.value?.level || 'warning'
   const labels: Record<string, string> = {
-    info: '💡 提示',
-    warning: '⚠️ 警告',
-    error: '🔴 错误',
-    critical: '🚨 紧急'
+    info: '💡 ' + t('ruleNodes.levelInfo'),
+    warning: '⚠️ ' + t('ruleNodes.levelWarning'),
+    error: '🔴 ' + t('ruleNodes.levelError'),
+    critical: '🚨 ' + t('ruleNodes.levelCritical')
   }
   return labels[level] || level
 })
@@ -41,37 +66,10 @@ const levelColor = computed(() => {
 })
 </script>
 
-<template>
-  <div class="rule-node notification-node">
-    <Handle type="target" :position="Position.Top" />
-
-    <div class="node-header">
-      <span class="node-icon">📢</span>
-      <span class="node-title">通知告警</span>
-      <span class="level-badge" :style="{ background: levelColor }">{{ nodeData?.level || 'warning' }}</span>
-    </div>
-
-    <div class="node-body">
-      <div class="node-info">
-        <div class="info-row">
-          <span class="info-label">渠道:</span>
-          <span class="info-value">{{ channelLabel }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">级别:</span>
-          <span class="info-value">{{ levelLabel }}</span>
-        </div>
-      </div>
-    </div>
-
-    <Handle type="source" :position="Position.Bottom" />
-  </div>
-</template>
-
 <style scoped>
 .notification-node {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  border: 2px solid #c0392b;
+  background: var(--node-notification-bg);
+  border: 2px solid var(--node-notification-border);
 }
 
 .level-badge {
@@ -79,7 +77,7 @@ const levelColor = computed(() => {
   padding: 1px 8px;
   border-radius: 10px;
   font-size: 10px;
-  color: #fff;
+  color: var(--text-white);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;

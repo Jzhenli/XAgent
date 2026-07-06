@@ -1,9 +1,426 @@
+<template>
+  <div class="node-config-panel">
+    <div class="panel-header">
+      <h3>{{ panelTitle }}</h3>
+      <button class="delete-btn" @click="handleDelete" :title="t('nodeConfig.deleteNode')">
+        🗑️
+      </button>
+    </div>
+    
+    <div class="panel-body">
+      <!-- 数据触发器配置 -->
+      <template v-if="nodeType === 'trigger' && localData.trigger">
+        <div class="form-group">
+          <label>{{ t('nodeConfig.dataSourceDevice') }}</label>
+          <el-select
+            v-model="selectedTriggerDevice"
+            :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.dataSourceDevice') })"
+            filterable
+            clearable
+            value-key="asset"
+            style="width: 100%"
+            @change="updateData"
+          >
+            <el-option
+              v-for="device in triggerDevices"
+              :key="device.asset"
+              :label="`${device.name || device.asset} (${device.plugin?.name})`"
+              :value="device"
+            >
+              <div class="device-option">
+                <span class="device-name">{{ device.name || device.asset }}</span>
+                <span class="device-meta">{{ device.plugin?.name }} · {{ device.points?.length || 0 }} {{ t('nodeConfig.points') }}</span>
+              </div>
+            </el-option>
+          </el-select>
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.dataPoint') }}</label>
+          <el-select
+            v-model="localData.trigger.field"
+            :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.dataPoint') })"
+            filterable
+            clearable
+            :disabled="!selectedTriggerDevice"
+            style="width: 100%"
+            @change="updateData"
+          >
+            <el-option
+              v-for="point in triggerPoints"
+              :key="point.name"
+              :label="`${point.description || point.name}${point.unit ? ' (' + point.unit + ')' : ''}`"
+              :value="point.name"
+            >
+              <div class="point-option">
+                <span class="point-name">{{ point.name }}</span>
+                <span class="point-meta">
+                  {{ point.data_type }}{{ point.unit ? ' · ' + point.unit : '' }}
+                </span>
+              </div>
+            </el-option>
+          </el-select>
+        </div>
+        <div v-if="localData.trigger.sourceService" class="form-group info-group">
+          <label>{{ t('nodeConfig.southPlugin') }}</label>
+          <div class="info-value">{{ localData.trigger.sourceService }}</div>
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.description') }}</label>
+          <textarea
+            v-model="localData.trigger.description"
+            :placeholder="t('nodeConfig.optionalDesc')"
+            @input="updateData"
+          ></textarea>
+        </div>
+      </template>
+      
+      <!-- 定时触发器配置 -->
+      <template v-if="nodeType === 'schedule-trigger' && localData.scheduleTrigger">
+        <div class="form-group">
+          <label>{{ t('nodeConfig.triggerMode') }}</label>
+          <select v-model="localData.scheduleTrigger.mode" @change="updateData">
+            <option v-for="mode in SCHEDULE_MODES" :key="mode.value" :value="mode.value">
+              {{ t(mode.labelKey) }}
+            </option>
+          </select>
+        </div>
+        
+        <template v-if="localData.scheduleTrigger.mode === 'periodic'">
+          <div class="form-group">
+            <label>{{ t('nodeConfig.executionFrequency') }}</label>
+            <select v-model="localData.scheduleTrigger.frequency" @change="updateData">
+              <option v-for="freq in SCHEDULE_FREQUENCIES" :key="freq.value" :value="freq.value">
+                {{ t(freq.labelKey) }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>{{ t('nodeConfig.executionTime') }}</label>
+            <input 
+              v-model="localData.scheduleTrigger.time" 
+              type="time" 
+              @input="updateData"
+            >
+          </div>
+          
+          <div v-if="localData.scheduleTrigger.frequency === 'weekly'" class="form-group">
+            <label>{{ t('nodeConfig.selectWeekday') }}</label>
+            <div class="weekday-selector">
+              <button 
+                v-for="day in WEEKDAYS" 
+                :key="day.value"
+                class="weekday-btn"
+                :class="{ active: isDaySelected(day.value) }"
+                @click="toggleDay(day.value)"
+              >
+                {{ t(day.labelKey) }}
+              </button>
+            </div>
+          </div>
+        </template>
+        
+        <template v-if="localData.scheduleTrigger.mode === 'once'">
+          <div class="form-group">
+            <label>{{ t('nodeConfig.executionTime') }}</label>
+            <input 
+              v-model="localData.scheduleTrigger.time" 
+              type="time" 
+              @input="updateData"
+            >
+          </div>
+          <div class="form-group">
+            <label>{{ t('nodeConfig.executionDate') }}</label>
+            <input 
+              v-model="localData.scheduleTrigger.startDate" 
+              type="date" 
+              @input="updateData"
+            >
+          </div>
+        </template>
+        
+        <template v-if="localData.scheduleTrigger.mode === 'cron'">
+          <div class="form-group">
+            <label>{{ t('nodeConfig.cronExpression') }}</label>
+            <input 
+              v-model="localData.scheduleTrigger.cron" 
+              type="text" 
+              :placeholder="t('nodeConfig.cronFormat')"
+              @input="updateData"
+            >
+            <span class="hint">{{ t('nodeConfig.cronFormat') }}</span>
+          </div>
+          <div class="cron-examples">
+            <p><strong>{{ t('nodeConfig.cronExample') }}:</strong></p>
+            <p>0 0 8 * * ? - {{ t('ruleEditor.executionTime') }}8:00</p>
+            <p>0 30 18 * * ? - {{ t('ruleEditor.executionTime') }}18:30</p>
+            <p>0 0 9 ? * MON-FRI - {{ t('ruleEditor.executionTime') }}9:00</p>
+          </div>
+        </template>
+        
+        <div class="form-group">
+          <label>{{ t('nodeConfig.effectiveDateRange') }}</label>
+          <div class="date-range">
+            <input 
+              v-model="localData.scheduleTrigger.startDate" 
+              type="date" 
+              @input="updateData"
+              :placeholder="t('nodeConfig.startDate')"
+            >
+            <span>{{ t('nodeConfig.to') }}</span>
+            <input 
+              v-model="localData.scheduleTrigger.endDate" 
+              type="date" 
+              @input="updateData"
+              :placeholder="t('nodeConfig.endDate')"
+            >
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>{{ t('nodeConfig.description') }}</label>
+          <textarea 
+            v-model="localData.scheduleTrigger.description" 
+            :placeholder="t('nodeConfig.optionalDesc')"
+            @input="updateData"
+          ></textarea>
+        </div>
+      </template>
+      
+      <!-- 条件判断配置 -->
+      <template v-if="nodeType === 'condition' && localData.condition">
+        <div class="form-group">
+          <label>{{ t('nodeConfig.fieldName') }}</label>
+          <el-select
+            v-if="triggerPoints.length > 0"
+            v-model="localData.condition.field"
+            :placeholder="t('nodeConfig.selectOrEnterField')"
+            filterable
+            allow-create
+            clearable
+            style="width: 100%"
+            @change="updateData"
+          >
+            <el-option
+              v-for="point in triggerPoints"
+              :key="point.name"
+              :label="point.description || point.name"
+              :value="point.name"
+            />
+          </el-select>
+          <input
+            v-else
+            v-model="localData.condition.field"
+            type="text"
+            placeholder="e.g. temperature"
+            @input="updateData"
+          >
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.operator') }}</label>
+          <select v-model="localData.condition.operator" @change="updateData">
+            <option v-for="op in OPERATORS" :key="op.value" :value="op.value">
+              {{ t(op.labelKey) }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.comparisonValue') }}</label>
+          <input 
+            v-model="localData.condition.value" 
+            type="text" 
+            placeholder="e.g. 30"
+            @input="updateData"
+          >
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.duration') }}</label>
+          <input 
+            v-model.number="localData.condition.duration" 
+            type="number" 
+            min="0"
+            :placeholder="t('nodeConfig.instantTrigger')"
+            @input="updateData"
+          >
+          <span class="hint">0 = {{ t('nodeConfig.instantTrigger') }}</span>
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.description') }}</label>
+          <textarea 
+            v-model="localData.condition.description" 
+            :placeholder="t('nodeConfig.optionalDesc')"
+            @input="updateData"
+          ></textarea>
+        </div>
+      </template>
+      
+      <!-- 逻辑运算配置 -->
+      <template v-if="nodeType === 'logic' && localData.logic">
+        <div class="form-group">
+          <label>{{ t('nodeConfig.logicOperator') }}</label>
+          <select v-model="localData.logic.operator" @change="updateData">
+            <option v-for="op in LOGIC_OPERATORS" :key="op.value" :value="op.value">
+              {{ t(op.labelKey) }}
+            </option>
+          </select>
+        </div>
+        <div class="logic-hint">
+          <p><strong>AND:</strong> {{ t('nodeConfig.logicAnd') }}</p>
+          <p><strong>OR:</strong> {{ t('nodeConfig.logicOr') }}</p>
+          <p><strong>NOT:</strong> {{ t('nodeConfig.logicNot') }}</p>
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.description') }}</label>
+          <textarea 
+            v-model="localData.logic.description" 
+            :placeholder="t('nodeConfig.optionalDesc')"
+            @input="updateData"
+          ></textarea>
+        </div>
+      </template>
+      
+      <!-- 执行动作配置 -->
+      <template v-if="nodeType === 'action' && localData.action">
+        <div class="form-group">
+          <label>{{ t('nodeConfig.targetDevice') }}</label>
+          <el-select
+            v-model="selectedActionDevice"
+            :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.targetDevice') })"
+            filterable
+            clearable
+            value-key="asset"
+            style="width: 100%"
+            @change="updateData"
+          >
+            <el-option
+              v-for="device in actionDevices"
+              :key="device.asset"
+              :label="`${device.name || device.asset} (${device.plugin?.name})`"
+              :value="device"
+            >
+              <div class="device-option">
+                <span class="device-name">{{ device.name || device.asset }}</span>
+                <span class="device-meta">{{ device.plugin?.name }} · {{ device.points?.length || 0 }} {{ t('nodeConfig.points') }}</span>
+              </div>
+            </el-option>
+          </el-select>
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.operationType') }}</label>
+          <el-select
+            v-model="localData.action.operation"
+            :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.operationType') })"
+            style="width: 100%"
+            @change="updateData"
+          >
+            <el-option :label="t('nodeConfig.writeSetpoint')" value="write_setpoint" />
+            <el-option :label="t('nodeConfig.executeOperation')" value="execute_operation" />
+          </el-select>
+        </div>
+        <template v-if="localData.action.operation === 'write_setpoint'">
+          <div class="form-group">
+            <label>{{ t('nodeConfig.writePoint') }}</label>
+            <el-select
+              v-model="selectedActionPoint"
+              :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.writePoint') })"
+              filterable
+              clearable
+              :disabled="!selectedActionDevice"
+              style="width: 100%"
+              @change="updateData"
+            >
+              <el-option
+                v-for="point in actionPoints"
+                :key="point.name"
+                :label="`${point.description || point.name}${point.unit ? ' (' + point.unit + ')' : ''}`"
+                :value="point.name"
+              >
+                <div class="point-option">
+                  <span class="point-name">{{ point.name }}</span>
+                  <span class="point-meta">{{ point.data_type }}{{ point.unit ? ' · ' + point.unit : '' }}</span>
+                </div>
+              </el-option>
+            </el-select>
+          </div>
+          <div class="form-group">
+            <label>{{ t('nodeConfig.writeValue') }}</label>
+            <input 
+              v-model="actionValue"
+              type="text"
+              placeholder="e.g. true / 1 / 25.5"
+              @input="updateData"
+            >
+          </div>
+        </template>
+        <div v-if="localData.action.targetService" class="form-group info-group">
+          <label>{{ t('nodeConfig.southPlugin') }}</label>
+          <div class="info-value">{{ localData.action.targetService }}</div>
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.delayExecution') }}</label>
+          <input 
+            v-model.number="localData.action.delay" 
+            type="number" 
+            min="0"
+            :placeholder="t('nodeConfig.immediateExecution')"
+            @input="updateData"
+          >
+          <span class="hint">0 = {{ t('nodeConfig.immediateExecution') }}</span>
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.description') }}</label>
+          <textarea 
+            v-model="localData.action.description" 
+            :placeholder="t('nodeConfig.optionalDesc')"
+            @input="updateData"
+          ></textarea>
+        </div>
+      </template>
+
+      <!-- 通知告警配置 -->
+      <template v-if="nodeType === 'notification' && localData.notification">
+        <div class="form-group">
+          <label>{{ t('nodeConfig.notificationLevel') }}</label>
+          <select v-model="localData.notification.level" @change="updateData">
+            <option v-for="lv in NOTIFICATION_LEVELS" :key="lv.value" :value="lv.value">
+              {{ t(lv.labelKey) }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.notificationChannel') }}</label>
+          <select v-model="localData.notification.channel_type" @change="updateData">
+            <option v-for="ct in NOTIFICATION_CHANNEL_TYPES" :key="ct.value" :value="ct.value">
+              {{ t(ct.labelKey) }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group info-box">
+          <span class="info-icon">💡</span>
+          <span>{{ t('nodeConfig.channelConfigHint') }}</span>
+        </div>
+        <div class="form-group">
+          <label>{{ t('nodeConfig.description') }}</label>
+          <textarea
+            v-model="localData.notification.description"
+            :placeholder="t('nodeConfig.optionalDesc')"
+            @input="updateData"
+          ></textarea>
+        </div>
+      </template>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { RuleNodeData, NodeType } from '@/types/rule'
 import { OPERATORS, LOGIC_OPERATORS, SCHEDULE_MODES, SCHEDULE_FREQUENCIES, WEEKDAYS, NOTIFICATION_LEVELS, NOTIFICATION_CHANNEL_TYPES } from '@/types/rule'
 import { useDeviceStore } from '@/stores/devices'
 import type { DeviceConfig, PointConfig } from '@/api/types'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   nodeId: string
@@ -134,12 +551,12 @@ const actionValue = computed<string>({
 
 const panelTitle = computed(() => {
   const titles: Record<NodeType, string> = {
-    trigger: '🎯 数据触发器配置',
-    'schedule-trigger': '⏰ 定时触发器配置',
-    condition: '⚙️ 条件判断配置',
-    logic: '🔀 逻辑运算配置',
-    action: '⚡ 执行动作配置',
-    notification: '📢 通知告警配置'
+    trigger: t('nodeConfig.triggerTitle'),
+    'schedule-trigger': t('nodeConfig.scheduleTitle'),
+    condition: t('nodeConfig.conditionTitle'),
+    logic: t('nodeConfig.logicTitle'),
+    action: t('nodeConfig.actionTitle'),
+    notification: t('nodeConfig.notificationTitle')
   }
   return titles[props.nodeType]
 })
@@ -169,433 +586,19 @@ const isDaySelected = (day: number) => {
 }
 </script>
 
-<template>
-  <div class="node-config-panel">
-    <div class="panel-header">
-      <h3>{{ panelTitle }}</h3>
-      <button class="delete-btn" @click="handleDelete" title="删除节点">
-        🗑️
-      </button>
-    </div>
-    
-    <div class="panel-body">
-      <!-- 数据触发器配置 -->
-      <template v-if="nodeType === 'trigger' && localData.trigger">
-        <div class="form-group">
-          <label>数据源设备</label>
-          <el-select
-            v-model="selectedTriggerDevice"
-            placeholder="选择设备"
-            filterable
-            clearable
-            value-key="asset"
-            style="width: 100%"
-            @change="updateData"
-          >
-            <el-option
-              v-for="device in triggerDevices"
-              :key="device.asset"
-              :label="`${device.name || device.asset} (${device.plugin?.name})`"
-              :value="device"
-            >
-              <div class="device-option">
-                <span class="device-name">{{ device.name || device.asset }}</span>
-                <span class="device-meta">{{ device.plugin?.name }} · {{ device.points?.length || 0 }} 点位</span>
-              </div>
-            </el-option>
-          </el-select>
-        </div>
-        <div class="form-group">
-          <label>数据点位</label>
-          <el-select
-            v-model="localData.trigger.field"
-            placeholder="选择点位"
-            filterable
-            clearable
-            :disabled="!selectedTriggerDevice"
-            style="width: 100%"
-            @change="updateData"
-          >
-            <el-option
-              v-for="point in triggerPoints"
-              :key="point.name"
-              :label="`${point.description || point.name}${point.unit ? ' (' + point.unit + ')' : ''}`"
-              :value="point.name"
-            >
-              <div class="point-option">
-                <span class="point-name">{{ point.name }}</span>
-                <span class="point-meta">
-                  {{ point.data_type }}{{ point.unit ? ' · ' + point.unit : '' }}
-                </span>
-              </div>
-            </el-option>
-          </el-select>
-        </div>
-        <div v-if="localData.trigger.sourceService" class="form-group info-group">
-          <label>南向插件</label>
-          <div class="info-value">{{ localData.trigger.sourceService }}</div>
-        </div>
-        <div class="form-group">
-          <label>描述</label>
-          <textarea
-            v-model="localData.trigger.description"
-            placeholder="可选描述"
-            @input="updateData"
-          ></textarea>
-        </div>
-      </template>
-      
-      <!-- 定时触发器配置 -->
-      <template v-if="nodeType === 'schedule-trigger' && localData.scheduleTrigger">
-        <div class="form-group">
-          <label>触发模式</label>
-          <select v-model="localData.scheduleTrigger.mode" @change="updateData">
-            <option v-for="mode in SCHEDULE_MODES" :key="mode.value" :value="mode.value">
-              {{ mode.label }}
-            </option>
-          </select>
-        </div>
-        
-        <template v-if="localData.scheduleTrigger.mode === 'periodic'">
-          <div class="form-group">
-            <label>执行频率</label>
-            <select v-model="localData.scheduleTrigger.frequency" @change="updateData">
-              <option v-for="freq in SCHEDULE_FREQUENCIES" :key="freq.value" :value="freq.value">
-                {{ freq.label }}
-              </option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>执行时间</label>
-            <input 
-              v-model="localData.scheduleTrigger.time" 
-              type="time" 
-              @input="updateData"
-            >
-          </div>
-          
-          <div v-if="localData.scheduleTrigger.frequency === 'weekly'" class="form-group">
-            <label>选择星期</label>
-            <div class="weekday-selector">
-              <button 
-                v-for="day in WEEKDAYS" 
-                :key="day.value"
-                class="weekday-btn"
-                :class="{ active: isDaySelected(day.value) }"
-                @click="toggleDay(day.value)"
-              >
-                {{ day.label }}
-              </button>
-            </div>
-          </div>
-        </template>
-        
-        <template v-if="localData.scheduleTrigger.mode === 'once'">
-          <div class="form-group">
-            <label>执行时间</label>
-            <input 
-              v-model="localData.scheduleTrigger.time" 
-              type="time" 
-              @input="updateData"
-            >
-          </div>
-          <div class="form-group">
-            <label>执行日期</label>
-            <input 
-              v-model="localData.scheduleTrigger.startDate" 
-              type="date" 
-              @input="updateData"
-            >
-          </div>
-        </template>
-        
-        <template v-if="localData.scheduleTrigger.mode === 'cron'">
-          <div class="form-group">
-            <label>Cron表达式</label>
-            <input 
-              v-model="localData.scheduleTrigger.cron" 
-              type="text" 
-              placeholder="例如: 0 0 8 * * ?"
-              @input="updateData"
-            >
-            <span class="hint">格式: 秒 分 时 日 月 周</span>
-          </div>
-          <div class="cron-examples">
-            <p><strong>示例:</strong></p>
-            <p>0 0 8 * * ? - 每天8:00</p>
-            <p>0 30 18 * * ? - 每天18:30</p>
-            <p>0 0 9 ? * MON-FRI - 工作日9:00</p>
-          </div>
-        </template>
-        
-        <div class="form-group">
-          <label>生效日期范围</label>
-          <div class="date-range">
-            <input 
-              v-model="localData.scheduleTrigger.startDate" 
-              type="date" 
-              @input="updateData"
-              placeholder="开始日期"
-            >
-            <span>至</span>
-            <input 
-              v-model="localData.scheduleTrigger.endDate" 
-              type="date" 
-              @input="updateData"
-              placeholder="结束日期"
-            >
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label>描述</label>
-          <textarea 
-            v-model="localData.scheduleTrigger.description" 
-            placeholder="可选描述"
-            @input="updateData"
-          ></textarea>
-        </div>
-      </template>
-      
-      <!-- 条件判断配置 -->
-      <template v-if="nodeType === 'condition' && localData.condition">
-        <div class="form-group">
-          <label>字段名</label>
-          <el-select
-            v-if="triggerPoints.length > 0"
-            v-model="localData.condition.field"
-            placeholder="选择或输入字段"
-            filterable
-            allow-create
-            clearable
-            style="width: 100%"
-            @change="updateData"
-          >
-            <el-option
-              v-for="point in triggerPoints"
-              :key="point.name"
-              :label="point.description || point.name"
-              :value="point.name"
-            />
-          </el-select>
-          <input
-            v-else
-            v-model="localData.condition.field"
-            type="text"
-            placeholder="例如: temperature"
-            @input="updateData"
-          >
-        </div>
-        <div class="form-group">
-          <label>运算符</label>
-          <select v-model="localData.condition.operator" @change="updateData">
-            <option v-for="op in OPERATORS" :key="op.value" :value="op.value">
-              {{ op.label }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>比较值</label>
-          <input 
-            v-model="localData.condition.value" 
-            type="text" 
-            placeholder="例如: 30"
-            @input="updateData"
-          >
-        </div>
-        <div class="form-group">
-          <label>持续时间 (秒)</label>
-          <input 
-            v-model.number="localData.condition.duration" 
-            type="number" 
-            min="0"
-            placeholder="0 表示即时触发"
-            @input="updateData"
-          >
-          <span class="hint">0 = 即时触发</span>
-        </div>
-        <div class="form-group">
-          <label>描述</label>
-          <textarea 
-            v-model="localData.condition.description" 
-            placeholder="可选描述"
-            @input="updateData"
-          ></textarea>
-        </div>
-      </template>
-      
-      <!-- 逻辑运算配置 -->
-      <template v-if="nodeType === 'logic' && localData.logic">
-        <div class="form-group">
-          <label>逻辑运算符</label>
-          <select v-model="localData.logic.operator" @change="updateData">
-            <option v-for="op in LOGIC_OPERATORS" :key="op.value" :value="op.value">
-              {{ op.label }}
-            </option>
-          </select>
-        </div>
-        <div class="logic-hint">
-          <p><strong>AND:</strong> 所有条件都满足</p>
-          <p><strong>OR:</strong> 任一条件满足</p>
-          <p><strong>NOT:</strong> 条件不满足</p>
-        </div>
-        <div class="form-group">
-          <label>描述</label>
-          <textarea 
-            v-model="localData.logic.description" 
-            placeholder="可选描述"
-            @input="updateData"
-          ></textarea>
-        </div>
-      </template>
-      
-      <!-- 执行动作配置 -->
-      <template v-if="nodeType === 'action' && localData.action">
-        <div class="form-group">
-          <label>目标设备</label>
-          <el-select
-            v-model="selectedActionDevice"
-            placeholder="选择设备"
-            filterable
-            clearable
-            value-key="asset"
-            style="width: 100%"
-            @change="updateData"
-          >
-            <el-option
-              v-for="device in actionDevices"
-              :key="device.asset"
-              :label="`${device.name || device.asset} (${device.plugin?.name})`"
-              :value="device"
-            >
-              <div class="device-option">
-                <span class="device-name">{{ device.name || device.asset }}</span>
-                <span class="device-meta">{{ device.plugin?.name }} · {{ device.points?.length || 0 }} 点位</span>
-              </div>
-            </el-option>
-          </el-select>
-        </div>
-        <div class="form-group">
-          <label>操作类型</label>
-          <el-select
-            v-model="localData.action.operation"
-            placeholder="选择操作"
-            style="width: 100%"
-            @change="updateData"
-          >
-            <el-option label="写入设定值" value="write_setpoint" />
-            <el-option label="执行操作" value="execute_operation" />
-          </el-select>
-        </div>
-        <template v-if="localData.action.operation === 'write_setpoint'">
-          <div class="form-group">
-            <label>写入点位</label>
-            <el-select
-              v-model="selectedActionPoint"
-              placeholder="选择点位"
-              filterable
-              clearable
-              :disabled="!selectedActionDevice"
-              style="width: 100%"
-              @change="updateData"
-            >
-              <el-option
-                v-for="point in actionPoints"
-                :key="point.name"
-                :label="`${point.description || point.name}${point.unit ? ' (' + point.unit + ')' : ''}`"
-                :value="point.name"
-              >
-                <div class="point-option">
-                  <span class="point-name">{{ point.name }}</span>
-                  <span class="point-meta">{{ point.data_type }}{{ point.unit ? ' · ' + point.unit : '' }}</span>
-                </div>
-              </el-option>
-            </el-select>
-          </div>
-          <div class="form-group">
-            <label>写入值</label>
-            <input 
-              v-model="actionValue"
-              type="text"
-              placeholder="例如: true / 1 / 25.5"
-              @input="updateData"
-            >
-          </div>
-        </template>
-        <div v-if="localData.action.targetService" class="form-group info-group">
-          <label>南向插件</label>
-          <div class="info-value">{{ localData.action.targetService }}</div>
-        </div>
-        <div class="form-group">
-          <label>延迟执行 (秒)</label>
-          <input 
-            v-model.number="localData.action.delay" 
-            type="number" 
-            min="0"
-            placeholder="0 表示立即执行"
-            @input="updateData"
-          >
-          <span class="hint">0 = 立即执行</span>
-        </div>
-        <div class="form-group">
-          <label>描述</label>
-          <textarea 
-            v-model="localData.action.description" 
-            placeholder="可选描述"
-            @input="updateData"
-          ></textarea>
-        </div>
-      </template>
-
-      <!-- 通知告警配置 -->
-      <template v-if="nodeType === 'notification' && localData.notification">
-        <div class="form-group">
-          <label>告警级别</label>
-          <select v-model="localData.notification.level" @change="updateData">
-            <option v-for="lv in NOTIFICATION_LEVELS" :key="lv.value" :value="lv.value">
-              {{ lv.label }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>通知渠道</label>
-          <select v-model="localData.notification.channel_type" @change="updateData">
-            <option v-for="ct in NOTIFICATION_CHANNEL_TYPES" :key="ct.value" :value="ct.value">
-              {{ ct.label }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group info-box">
-          <span class="info-icon">💡</span>
-          <span>通知渠道的详细配置（收件人、SMTP、Webhook 等）请在告警配置页面中统一管理</span>
-        </div>
-        <div class="form-group">
-          <label>描述</label>
-          <textarea
-            v-model="localData.notification.description"
-            placeholder="可选描述"
-            @input="updateData"
-          ></textarea>
-        </div>
-      </template>
-    </div>
-  </div>
-</template>
-
 <style scoped>
 .node-config-panel {
   width: 280px;
-  background: #fff;
-  border-left: 1px solid #e0e0e0;
+  background: var(--bg-container);
+  border-left: 1px solid var(--border-base);
   display: flex;
   flex-direction: column;
 }
 
 .panel-header {
   padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #f8f9fa;
+  border-bottom: 1px solid var(--border-base);
+  background: var(--bg-hover);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -604,14 +607,14 @@ const isDaySelected = (day: number) => {
 .panel-header h3 {
   margin: 0;
   font-size: 15px;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .delete-btn {
   padding: 4px 8px;
   border: none;
-  background: #e74c3c;
-  color: #fff;
+  background: var(--color-danger);
+  color: var(--text-white);
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
@@ -619,7 +622,7 @@ const isDaySelected = (day: number) => {
 }
 
 .delete-btn:hover {
-  background: #c0392b;
+  background: var(--color-danger-dark, #c0392b);
 }
 
 .panel-body {
@@ -637,7 +640,7 @@ const isDaySelected = (day: number) => {
   margin-bottom: 6px;
   font-size: 13px;
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .form-group input,
@@ -645,7 +648,7 @@ const isDaySelected = (day: number) => {
 .form-group textarea {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #dce1e6;
+  border: 1px solid var(--border-base);
   border-radius: 6px;
   font-size: 13px;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -656,8 +659,8 @@ const isDaySelected = (day: number) => {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .form-group textarea {
@@ -669,16 +672,16 @@ const isDaySelected = (day: number) => {
   display: block;
   margin-top: 4px;
   font-size: 11px;
-  color: #95a5a6;
+  color: var(--text-secondary);
 }
 
 .info-group .info-value {
   padding: 8px 12px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
+  background: var(--color-info-light, #f0f9ff);
+  border: 1px solid var(--color-info-border, #bae6fd);
   border-radius: 6px;
   font-size: 13px;
-  color: #0369a1;
+  color: var(--color-info-text, #0369a1);
 }
 
 .device-option {
@@ -689,12 +692,12 @@ const isDaySelected = (day: number) => {
 
 .device-option .device-name {
   font-size: 13px;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .device-option .device-meta {
   font-size: 11px;
-  color: #95a5a6;
+  color: var(--text-secondary);
 }
 
 .point-option {
@@ -705,17 +708,17 @@ const isDaySelected = (day: number) => {
 
 .point-option .point-name {
   font-size: 13px;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .point-option .point-meta {
   font-size: 11px;
-  color: #95a5a6;
+  color: var(--text-secondary);
 }
 
 .logic-hint {
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--bg-hover);
   border-radius: 6px;
   margin-bottom: 16px;
 }
@@ -723,7 +726,7 @@ const isDaySelected = (day: number) => {
 .logic-hint p {
   margin: 4px 0;
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
 }
 
 .weekday-selector {
@@ -734,22 +737,22 @@ const isDaySelected = (day: number) => {
 
 .weekday-btn {
   padding: 6px 10px;
-  border: 1px solid #dce1e6;
+  border: 1px solid var(--border-base);
   border-radius: 4px;
-  background: #fff;
+  background: var(--bg-container);
   cursor: pointer;
   font-size: 12px;
   transition: all 0.2s;
 }
 
 .weekday-btn:hover {
-  border-color: #3498db;
+  border-color: var(--color-primary);
 }
 
 .weekday-btn.active {
-  background: #3498db;
-  color: #fff;
-  border-color: #3498db;
+  background: var(--color-primary);
+  color: var(--text-white);
+  border-color: var(--color-primary);
 }
 
 .date-range {
@@ -763,17 +766,17 @@ const isDaySelected = (day: number) => {
 }
 
 .date-range span {
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-size: 12px;
 }
 
 .cron-examples {
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--bg-hover);
   border-radius: 6px;
   margin-bottom: 16px;
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
 }
 
 .cron-examples p {
@@ -796,11 +799,11 @@ const isDaySelected = (day: number) => {
   align-items: flex-start;
   gap: 6px;
   padding: 8px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
+  background: var(--color-info-light, #f0f9ff);
+  border: 1px solid var(--color-info-border, #bae6fd);
   border-radius: 6px;
   font-size: 12px;
-  color: #0369a1;
+  color: var(--color-info-text, #0369a1);
   line-height: 1.4;
 }
 

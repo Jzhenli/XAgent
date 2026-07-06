@@ -1,8 +1,36 @@
+<template>
+  <div class="rule-node condition-node">
+    <Handle type="target" :position="Position.Top" />
+    
+    <div class="node-header">
+      <span class="node-icon">⚙️</span>
+      <span class="node-title">{{ t('nodeViews.condition') }}</span>
+    </div>
+    
+    <div class="node-body">
+      <div class="node-info" :class="{ 'has-data': hasValidData }">
+        <div class="condition-expression">
+          <span class="field">{{ nodeData?.field || t('nodeViews.triggerField') }}</span>
+          <span class="operator">{{ operatorSymbol }}</span>
+          <span class="value">{{ nodeData?.value || t('ruleNodes.conditionValue') }}</span>
+        </div>
+        <div class="duration-badge" v-if="nodeData?.duration">
+          {{ t('nodeViews.duration') }}: {{ durationText }}
+        </div>
+      </div>
+    </div>
+    
+    <Handle type="source" :position="Position.Bottom" />
+  </div>
+</template>
+
 <script setup lang="ts">
 import { Handle, Position, useNode } from '@vue-flow/core'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { RuleNodeData } from '@/types/rule'
 
+const { t } = useI18n()
 const { node } = useNode<RuleNodeData>()
 
 const nodeData = computed(() => node.data?.condition)
@@ -26,43 +54,17 @@ const operatorSymbol = computed(() => {
 
 const durationText = computed(() => {
   const duration = nodeData.value?.duration || 0
-  if (duration === 0) return '即时'
-  if (duration < 60) return `${duration}秒`
-  if (duration < 3600) return `${Math.floor(duration / 60)}分钟`
-  return `${Math.floor(duration / 3600)}小时`
+  if (duration === 0) return t('nodeViews.instant')
+  if (duration < 60) return `${duration}${t('nodeViews.seconds')}`
+  if (duration < 3600) return `${Math.floor(duration / 60)}${t('nodeViews.minutes')}`
+  return `${Math.floor(duration / 3600)}${t('nodeViews.hours')}`
 })
 </script>
 
-<template>
-  <div class="rule-node condition-node">
-    <Handle type="target" :position="Position.Top" />
-    
-    <div class="node-header">
-      <span class="node-icon">⚙️</span>
-      <span class="node-title">条件判断</span>
-    </div>
-    
-    <div class="node-body">
-      <div class="node-info" :class="{ 'has-data': hasValidData }">
-        <div class="condition-expression">
-          <span class="field">{{ nodeData?.field || '字段' }}</span>
-          <span class="operator">{{ operatorSymbol }}</span>
-          <span class="value">{{ nodeData?.value || '值' }}</span>
-        </div>
-        <div class="duration-badge" v-if="nodeData?.duration">
-          持续: {{ durationText }}
-        </div>
-      </div>
-    </div>
-    
-    <Handle type="source" :position="Position.Bottom" />
-  </div>
-</template>
-
 <style scoped>
 .condition-node {
-  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
-  border: 2px solid #8e44ad;
+  background: var(--node-condition-bg);
+  border: 2px solid var(--node-condition-border);
 }
 
 .condition-expression {
@@ -74,17 +76,17 @@ const durationText = computed(() => {
 }
 
 .condition-expression .field {
-  color: #fff;
+  color: var(--text-white);
   font-weight: 600;
 }
 
 .condition-expression .operator {
-  color: #f1c40f;
+  color: var(--color-warning);
   font-weight: bold;
 }
 
 .condition-expression .value {
-  color: #2ecc71;
+  color: var(--color-success);
   font-weight: 600;
 }
 
@@ -94,6 +96,6 @@ const durationText = computed(() => {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
   font-size: 11px;
-  color: #ecf0f1;
+  color: var(--text-white);
 }
 </style>

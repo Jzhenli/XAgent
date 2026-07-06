@@ -1,5 +1,153 @@
+<template>
+  <div class="point-trend">
+    <div class="trend-header">
+      <div class="header-left">
+        <h3>{{ t('pointTrend.title') }}</h3>
+        <span v-if="pointStore.selectedPoint" class="point-info">
+          {{ pointStore.selectedDeviceAsset }} / {{ pointStore.selectedPoint.name }}
+        </span>
+        <el-tag v-if="pointStore.historyLoading" type="info" size="small">{{ t('pointTrend.loading') }}</el-tag>
+      </div>
+      <div class="header-right">
+        <el-select v-model="pointStore.trendTimeRange" style="width: 100px">
+          <el-option
+            v-for="opt in timeRangeOptions"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          />
+        </el-select>
+        <el-select v-model="pointStore.trendAggregation" style="width: 100px">
+          <el-option
+            v-for="opt in aggregationOptions"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          />
+        </el-select>
+        <el-button @click="loadData" :loading="pointStore.historyLoading">{{ t('pointTrend.refresh') }}</el-button>
+        <el-button @click="showConfig = !showConfig">
+          ⚙️ {{ t('pointTrend.config') }}
+        </el-button>
+        <el-button @click="emit('close')">✕ {{ t('pointTrend.close') }}</el-button>
+      </div>
+    </div>
+    
+    <div v-if="showConfig" class="config-panel">
+      <div class="config-row">
+        <label>{{ t('pointTrend.autoRefresh') }}</label>
+        <el-switch v-model="autoRefresh" />
+      </div>
+      <div class="config-row">
+        <label>{{ t('pointTrend.refreshInterval') }}</label>
+        <el-input-number v-model="refreshInterval" :min="5" :max="300" :disabled="!autoRefresh" />
+      </div>
+      <div class="config-row">
+        <label>{{ t('pointTrend.showMinMax') }}</label>
+        <el-switch v-model="showMinMax" />
+      </div>
+      <div class="config-row">
+        <label>{{ t('pointTrend.showAvgLine') }}</label>
+        <el-switch v-model="showAvgLine" />
+      </div>
+      <div class="config-row">
+        <label>{{ t('pointTrend.showDataPoints') }}</label>
+        <el-switch v-model="showDataPoints" />
+      </div>
+    </div>
+    
+    <div v-if="pointStore.selectedPoint" class="trend-content">
+      <div class="chart-container">
+        <v-chart :option="chartOption" class="trend-chart" autoresize />
+      </div>
+      
+      <div class="statistics-panel">
+        <div class="stat-card">
+          <span class="stat-label">{{ t('pointTrend.currentValue') }}</span>
+          <span class="stat-value current">
+            <template v-if="statisticsInfo?.isDigital">
+              {{ pointStore.selectedPoint.currentValue === true || pointStore.selectedPoint.currentValue === 1 ? t('pointTrend.on') : t('pointTrend.off') }}
+            </template>
+            <template v-else>
+              {{ pointStore.selectedPoint.currentValue ?? '--' }} {{ pointStore.selectedPoint.unit }}
+            </template>
+          </span>
+        </div>
+        
+        <template v-if="statisticsInfo?.isDigital">
+          <div class="stat-card">
+            <span class="stat-label">{{ t('pointTrend.onCount') }}</span>
+            <span class="stat-value on">{{ statisticsInfo?.onCount ?? 0 }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">{{ t('pointTrend.offCount') }}</span>
+            <span class="stat-value off">{{ statisticsInfo?.offCount ?? 0 }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">{{ t('pointTrend.onRate') }}</span>
+            <span class="stat-value percentage">{{ statisticsInfo?.onPercentage ?? 0 }}%</span>
+          </div>
+        </template>
+        
+        <template v-else>
+          <div class="stat-card">
+            <span class="stat-label">{{ t('pointTrend.minValue') }}</span>
+            <span class="stat-value min">{{ statisticsInfo?.min ?? '--' }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">{{ t('pointTrend.maxValue') }}</span>
+            <span class="stat-value max">{{ statisticsInfo?.max ?? '--' }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">{{ t('pointTrend.avgValue') }}</span>
+            <span class="stat-value avg">{{ statisticsInfo?.avg ?? '--' }}</span>
+          </div>
+        </template>
+        
+        <div class="stat-card">
+          <span class="stat-label">{{ t('pointTrend.dataPoints') }}</span>
+          <span class="stat-value">{{ statisticsInfo?.count ?? 0 }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">{{ t('pointTrend.timeRange') }}</span>
+          <span class="stat-value time">{{ statisticsInfo?.start ?? '--' }} ~ {{ statisticsInfo?.end ?? '--' }}</span>
+        </div>
+      </div>
+      
+      <div class="point-meta">
+        <div class="meta-item">
+          <span class="meta-label">{{ t('pointTrend.pointType') }}:</span>
+          <el-tag size="small">{{ pointStore.selectedPoint.type === 'analog' ? t('pointTrend.analog') : t('pointTrend.digital') }}</el-tag>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">{{ t('pointTrend.dataQuality') }}:</span>
+          <el-tag :type="pointStore.selectedPoint.quality === 'good' ? 'success' : 'warning'" size="small">
+            {{ pointStore.selectedPoint.quality === 'good' ? t('pointTrend.good') : t('pointTrend.uncertain') }}
+          </el-tag>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">{{ t('pointTrend.range') }}:</span>
+          <span>{{ pointStore.selectedPoint.minValue ?? '--' }} ~ {{ pointStore.selectedPoint.maxValue ?? '--' }} {{ pointStore.selectedPoint.unit }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">{{ t('pointTrend.trendRecord') }}:</span>
+          <el-tag :type="pointStore.selectedPoint.trend?.enabled ? 'success' : 'info'" size="small">
+            {{ pointStore.selectedPoint.trend?.enabled ? t('pointTrend.enabled') : t('pointTrend.disabled') }}
+          </el-tag>
+        </div>
+      </div>
+    </div>
+    
+    <div v-else class="empty-state">
+      <span class="empty-icon">📊</span>
+      <p>{{ t('pointTrend.selectPointHint') }}</p>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePointStore } from '@/stores/points'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -16,6 +164,8 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import dayjs from 'dayjs'
+
+const { t } = useI18n()
 
 use([
   CanvasRenderer,
@@ -43,21 +193,21 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
-const timeRangeOptions = [
-  { value: '1h', label: '1小时' },
-  { value: '6h', label: '6小时' },
-  { value: '24h', label: '24小时' },
-  { value: '7d', label: '7天' },
-  { value: '30d', label: '30天' }
-]
+const timeRangeOptions = computed(() => [
+  { value: '1h', label: t('dashboard.timeRange1h') },
+  { value: '6h', label: t('pointTrend.timeRange6h') },
+  { value: '24h', label: t('dashboard.timeRange24h') },
+  { value: '7d', label: t('dashboard.timeRange7d') },
+  { value: '30d', label: t('pointTrend.timeRange30d') }
+])
 
-const aggregationOptions = [
-  { value: 'none', label: '原始数据' },
-  { value: '1min', label: '1分钟' },
-  { value: '5min', label: '5分钟' },
-  { value: '15min', label: '15分钟' },
-  { value: '1h', label: '1小时' }
-]
+const aggregationOptions = computed(() => [
+  { value: 'none', label: t('pointTrend.originalData') },
+  { value: '1min', label: t('pointTrend.aggregation1min') },
+  { value: '5min', label: t('pointTrend.aggregation5min') },
+  { value: '15min', label: t('pointTrend.aggregation15min') },
+  { value: '1h', label: t('pointTrend.aggregation1h') }
+])
 
 const showConfig = ref(false)
 const autoRefresh = ref(true)
@@ -107,29 +257,31 @@ const chartOption = computed(() => {
   if (!isDigital) {
     if (showAvgLine.value && data.length > 0) {
       markLine.push({
-        name: '平均值',
+        name: t('pointTrend.averageLabel'),
         yAxis: statistics.avg,
         lineStyle: { color: '#f39c12', type: 'dashed' },
-        label: { formatter: `平均: ${statistics.avg.toFixed(2)}` }
+        label: { formatter: `${t('pointTrend.averageLabel')}: ${statistics.avg.toFixed(2)}` }
       })
     }
     if (showMinMax.value && point.maxValue !== undefined) {
       markLine.push({
-        name: '上限',
+        name: t('pointTrend.upperLimit'),
         yAxis: point.maxValue,
         lineStyle: { color: '#e74c3c', type: 'dashed' },
-        label: { formatter: `上限: ${point.maxValue}` }
+        label: { formatter: `${t('pointTrend.upperLimit')}: ${point.maxValue}` }
       })
     }
     if (showMinMax.value && point.minValue !== undefined) {
       markLine.push({
-        name: '下限',
+        name: t('pointTrend.lowerLimit'),
         yAxis: point.minValue,
         lineStyle: { color: '#3498db', type: 'dashed' },
-        label: { formatter: `下限: ${point.minValue}` }
+        label: { formatter: `${t('pointTrend.lowerLimit')}: ${point.minValue}` }
       })
     }
   }
+  
+  const isDigitalLabel = isDigital ? t('pointTrend.status') : t('pointTrend.value')
   
   return {
     title: {
@@ -142,12 +294,12 @@ const chartOption = computed(() => {
       formatter: (params: any) => {
         const d = params[0]
         const time = dayjs(d.value[0]).format('MM-DD HH:mm:ss')
-        const value = isDigital ? (d.value[1] === 1 ? '开' : '关') : d.value[1]
-        return `${time}<br/>值: ${value} ${point.unit || ''}`
+        const value = isDigital ? (d.value[1] === 1 ? t('pointTrend.on') : t('pointTrend.off')) : d.value[1]
+        return `${time}<br/>${t('pointTrend.value')}: ${value} ${point.unit || ''}`
       }
     },
     legend: {
-      data: isDigital ? ['状态'] : ['数值', '平均值', '上限', '下限'],
+      data: isDigital ? [isDigitalLabel] : [t('pointTrend.value'), t('pointTrend.averageLabel'), t('pointTrend.upperLimit'), t('pointTrend.lowerLimit')],
       bottom: 10
     },
     grid: {
@@ -187,14 +339,14 @@ const chartOption = computed(() => {
       name: isDigital ? '' : (point.unit || ''),
       min: isDigital ? undefined : (value: any) => Math.floor(value.min * 0.9),
       max: isDigital ? undefined : (value: any) => Math.ceil(value.max * 1.1),
-      data: isDigital ? ['关', '开'] : undefined,
+      data: isDigital ? [t('pointTrend.off'), t('pointTrend.on')] : undefined,
       axisLabel: {
         formatter: isDigital ? (value: string) => value : undefined
       }
     },
     series: [
       {
-        name: isDigital ? '状态' : '数值',
+        name: isDigitalLabel,
         type: 'line',
         smooth: !isDigital,
         step: isDigital ? 'middle' : undefined,
@@ -233,8 +385,8 @@ const chartOption = computed(() => {
         },
         markPoint: !isDigital && showMinMax.value && data.length > 0 ? {
           data: [
-            { type: 'max', name: '最大值', itemStyle: { color: '#e74c3c' } },
-            { type: 'min', name: '最小值', itemStyle: { color: '#27ae60' } }
+            { type: 'max', name: t('pointTrend.maxValue'), itemStyle: { color: '#e74c3c' } },
+            { type: 'min', name: t('pointTrend.minValue'), itemStyle: { color: '#27ae60' } }
           ]
         } : undefined
       }
@@ -306,159 +458,12 @@ onUnmounted(() => {
 })
 </script>
 
-<template>
-  <div class="point-trend">
-    <div class="trend-header">
-      <div class="header-left">
-        <h3>📈 点位趋势</h3>
-        <span v-if="pointStore.selectedPoint" class="point-info">
-          {{ pointStore.selectedDeviceAsset }} / {{ pointStore.selectedPoint.name }}
-        </span>
-        <el-tag v-if="pointStore.historyLoading" type="info" size="small">加载中...</el-tag>
-      </div>
-      <div class="header-right">
-        <el-select v-model="pointStore.trendTimeRange" style="width: 100px">
-          <el-option
-            v-for="opt in timeRangeOptions"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
-        <el-select v-model="pointStore.trendAggregation" style="width: 100px">
-          <el-option
-            v-for="opt in aggregationOptions"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
-        <el-button @click="loadData" :loading="pointStore.historyLoading">刷新</el-button>
-        <el-button @click="showConfig = !showConfig">
-          ⚙️ 配置
-        </el-button>
-        <el-button @click="emit('close')">✕ 关闭</el-button>
-      </div>
-    </div>
-    
-    <div v-if="showConfig" class="config-panel">
-      <div class="config-row">
-        <label>自动刷新</label>
-        <el-switch v-model="autoRefresh" />
-      </div>
-      <div class="config-row">
-        <label>刷新间隔(秒)</label>
-        <el-input-number v-model="refreshInterval" :min="5" :max="300" :disabled="!autoRefresh" />
-      </div>
-      <div class="config-row">
-        <label>显示上下限</label>
-        <el-switch v-model="showMinMax" />
-      </div>
-      <div class="config-row">
-        <label>显示平均线</label>
-        <el-switch v-model="showAvgLine" />
-      </div>
-      <div class="config-row">
-        <label>显示数据点</label>
-        <el-switch v-model="showDataPoints" />
-      </div>
-    </div>
-    
-    <div v-if="pointStore.selectedPoint" class="trend-content">
-      <div class="chart-container">
-        <v-chart :option="chartOption" class="trend-chart" autoresize />
-      </div>
-      
-      <div class="statistics-panel">
-        <div class="stat-card">
-          <span class="stat-label">当前值</span>
-          <span class="stat-value current">
-            <template v-if="statisticsInfo?.isDigital">
-              {{ pointStore.selectedPoint.currentValue === true || pointStore.selectedPoint.currentValue === 1 ? '开' : '关' }}
-            </template>
-            <template v-else>
-              {{ pointStore.selectedPoint.currentValue ?? '--' }} {{ pointStore.selectedPoint.unit }}
-            </template>
-          </span>
-        </div>
-        
-        <template v-if="statisticsInfo?.isDigital">
-          <div class="stat-card">
-            <span class="stat-label">开启次数</span>
-            <span class="stat-value on">{{ statisticsInfo?.onCount ?? 0 }}</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">关闭次数</span>
-            <span class="stat-value off">{{ statisticsInfo?.offCount ?? 0 }}</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">开启率</span>
-            <span class="stat-value percentage">{{ statisticsInfo?.onPercentage ?? 0 }}%</span>
-          </div>
-        </template>
-        
-        <template v-else>
-          <div class="stat-card">
-            <span class="stat-label">最小值</span>
-            <span class="stat-value min">{{ statisticsInfo?.min ?? '--' }}</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">最大值</span>
-            <span class="stat-value max">{{ statisticsInfo?.max ?? '--' }}</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">平均值</span>
-            <span class="stat-value avg">{{ statisticsInfo?.avg ?? '--' }}</span>
-          </div>
-        </template>
-        
-        <div class="stat-card">
-          <span class="stat-label">数据点数</span>
-          <span class="stat-value">{{ statisticsInfo?.count ?? 0 }}</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">时间范围</span>
-          <span class="stat-value time">{{ statisticsInfo?.start ?? '--' }} ~ {{ statisticsInfo?.end ?? '--' }}</span>
-        </div>
-      </div>
-      
-      <div class="point-meta">
-        <div class="meta-item">
-          <span class="meta-label">点位类型:</span>
-          <el-tag size="small">{{ pointStore.selectedPoint.type === 'analog' ? '模拟量' : '数字量' }}</el-tag>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">数据质量:</span>
-          <el-tag :type="pointStore.selectedPoint.quality === 'good' ? 'success' : 'warning'" size="small">
-            {{ pointStore.selectedPoint.quality === 'good' ? '良好' : '不确定' }}
-          </el-tag>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">量程:</span>
-          <span>{{ pointStore.selectedPoint.minValue ?? '--' }} ~ {{ pointStore.selectedPoint.maxValue ?? '--' }} {{ pointStore.selectedPoint.unit }}</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">趋势记录:</span>
-          <el-tag :type="pointStore.selectedPoint.trend?.enabled ? 'success' : 'info'" size="small">
-            {{ pointStore.selectedPoint.trend?.enabled ? '已启用' : '未启用' }}
-          </el-tag>
-        </div>
-      </div>
-    </div>
-    
-    <div v-else class="empty-state">
-      <span class="empty-icon">📊</span>
-      <p>请从设备列表中选择一个点位查看趋势</p>
-    </div>
-  </div>
-</template>
-
 <style scoped>
 .point-trend {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg-container);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -468,8 +473,8 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border-base);
 }
 
 .header-left {
@@ -481,13 +486,13 @@ onUnmounted(() => {
 .header-left h3 {
   margin: 0;
   font-size: 16px;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .point-info {
   font-size: 13px;
-  color: #7f8c8d;
-  background: #fff;
+  color: var(--text-secondary);
+  background: var(--bg-container);
   padding: 4px 8px;
   border-radius: 4px;
 }
@@ -502,8 +507,8 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 16px;
   padding: 12px 16px;
-  background: #f0f2f5;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-base);
 }
 
 .config-row {
@@ -514,7 +519,7 @@ onUnmounted(() => {
 
 .config-row label {
   font-size: 13px;
-  color: #2c3e50;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
@@ -540,7 +545,7 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   padding: 12px 0;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border-base);
   margin-top: 12px;
 }
 
@@ -548,14 +553,14 @@ onUnmounted(() => {
   flex: 1;
   text-align: center;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--bg-hover);
   border-radius: 8px;
 }
 
 .stat-label {
   display: block;
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
   margin-bottom: 4px;
 }
 
@@ -563,31 +568,31 @@ onUnmounted(() => {
   display: block;
   font-size: 18px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .stat-value.current {
-  color: #3498db;
+  color: var(--color-primary);
 }
 
 .stat-value.min {
-  color: #27ae60;
+  color: var(--color-success);
 }
 
 .stat-value.max {
-  color: #e74c3c;
+  color: var(--color-danger);
 }
 
 .stat-value.avg {
-  color: #f39c12;
+  color: var(--color-warning);
 }
 
 .stat-value.on {
-  color: #27ae60;
+  color: var(--color-success);
 }
 
 .stat-value.off {
-  color: #e74c3c;
+  color: var(--color-danger);
 }
 
 .stat-value.percentage {
@@ -596,7 +601,7 @@ onUnmounted(() => {
 
 .stat-value.time {
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
 }
 
 .point-meta {
@@ -604,7 +609,7 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 16px;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--bg-hover);
   border-radius: 8px;
   margin-top: 12px;
 }
@@ -617,7 +622,7 @@ onUnmounted(() => {
 }
 
 .meta-label {
-  color: #7f8c8d;
+  color: var(--text-secondary);
 }
 
 .empty-state {
@@ -626,7 +631,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #95a5a6;
+  color: var(--text-secondary);
 }
 
 .empty-icon {
