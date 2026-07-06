@@ -138,6 +138,11 @@ class DeviceDiscoveryService:
             object_list = await self._read_object_list(plugin_instance)
             logger.info(f"Read {len(object_list)} objects from device")
 
+            # 记录实际的对象类型，用于调试
+            if object_list:
+                unique_types = set(obj[0] for obj in object_list)
+                logger.info(f"Object types found in device: {sorted(unique_types)}")
+
             # 过滤对象类型
             if object_types:
                 object_list = [

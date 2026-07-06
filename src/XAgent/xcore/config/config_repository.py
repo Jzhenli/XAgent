@@ -247,7 +247,7 @@ class ConfigRepository:
             """,
             (
                 device.name, device.description,
-                device.plugin.name, device.plugin.name, json.dumps(device.plugin.config),
+                device.plugin_name, device.plugin_name, json.dumps(device.plugin_config),
                 device.enabled, json.dumps(device.metadata), json.dumps(device.tags),
                 config_hash, now, device.asset
             )
@@ -302,7 +302,7 @@ class ConfigRepository:
                 """,
                 (
                     device.asset, device.name, device.description,
-                    device.plugin.name, device.plugin.name, json.dumps(device.plugin.config),
+                    device.plugin_name, device.plugin_name, json.dumps(device.plugin_config),
                     device.enabled, device.status,
                     json.dumps(device.metadata), json.dumps(device.tags),
                     config_hash, now, now
@@ -366,7 +366,7 @@ class ConfigRepository:
             """,
             (
                 device.name, device.description,
-                device.plugin.name, device.plugin.name, json.dumps(device.plugin.config),
+                device.plugin_name, device.plugin_name, json.dumps(device.plugin_config),
                 device.enabled, device.status,
                 json.dumps(device.metadata), json.dumps(device.tags),
                 config_hash, now, asset

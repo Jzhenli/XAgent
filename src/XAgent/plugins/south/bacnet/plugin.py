@@ -953,6 +953,41 @@ class BACnetPlugin(SouthPluginBase):
             return "online"
         return "offline"
 
+    def _normalize_object_type(self, obj_type: Any) -> str:
+        """标准化对象类型名称
+
+        将bacpypes3返回的对象类型转换为标准的小驼峰格式。
+
+        Args:
+            obj_type: 原始对象类型（可能是枚举、字符串等）
+
+        Returns:
+            标准化的对象类型字符串（小驼峰格式）
+        """
+        # 转换为字符串
+        type_str = str(obj_type)
+
+        # 如果是枚举类型，可能格式为 "ObjectType.analogInput"
+        # 需要提取最后一部分
+        if '.' in type_str:
+            type_str = type_str.split('.')[-1]
+
+        # 如果包含连字符（如 "analog-input"），转换为小驼峰
+        if '-' in type_str:
+            parts = type_str.split('-')
+            type_str = parts[0] + ''.join(word.capitalize() for word in parts[1:])
+
+        # 如果是全大写（如 "ANALOG_INPUT"），转换为小驼峰
+        if '_' in type_str and type_str.isupper():
+            parts = type_str.split('_')
+            type_str = parts[0].lower() + ''.join(word.capitalize() for word in parts[1:])
+
+        # 确保首字母小写（小驼峰格式）
+        if type_str and type_str[0].isupper():
+            type_str = type_str[0].lower() + type_str[1:]
+
+        return type_str
+
     async def read_object_list(self) -> List[tuple]:
         """
         读取设备的对象列表
@@ -1014,12 +1049,21 @@ class BACnetPlugin(SouthPluginBase):
             if isinstance(actual, list):
                 for obj_id in actual:
                     if isinstance(obj_id, tuple) and len(obj_id) == 2:
-                        object_list.append((str(obj_id[0]), int(obj_id[1])))
+                        # 记录原始对象类型，用于调试
+                        original_type = obj_id[0]
+                        converted_type = self._normalize_object_type(obj_id[0])
+                        logger.debug(
+                            f"Object type conversion: original={original_type} "
+                            f"(type={type(original_type).__name__}), "
+                            f"converted={converted_type}"
+                        )
+                        object_list.append((converted_type, int(obj_id[1])))
                     elif isinstance(obj_id, str):
                         # 字符串格式："analogInput,1"
                         parts = obj_id.split(',')
                         if len(parts) == 2:
-                            object_list.append((parts[0].strip(), int(parts[1].strip())))
+                            normalized_type = self._normalize_object_type(parts[0].strip())
+                            object_list.append((normalized_type, int(parts[1].strip())))
             
             logger.info(
                 f"Successfully read {len(object_list)} objects "
