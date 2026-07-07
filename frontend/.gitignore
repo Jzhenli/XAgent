@@ -57,3 +57,4 @@ vite.config.ts.timestamp-*
 !graphic/
 !graphic/business/**
 !graphic/service/**
+!graphic/graphic-editor/**
