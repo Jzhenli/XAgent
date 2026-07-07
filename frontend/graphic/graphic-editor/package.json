@@ -1,0 +1,11 @@
+{
+  "name": "@x-plateform-mono/graphic-editor",
+  "version": "1.0.6",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@x-plateform-mono/business": "^1.0.0",
+    "@x-plateform-mono/common": "^1.0.1",
+    "@x-plateform-mono/service": "^1.0.0"
+  }
+}

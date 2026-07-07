@@ -52,3 +52,7 @@ coverage/
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Include graphic directory
+!graphic/
+!graphic/business/**
