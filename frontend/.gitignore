@@ -56,3 +56,4 @@ vite.config.ts.timestamp-*
 # Include graphic directory
 !graphic/
 !graphic/business/**
+!graphic/service/**

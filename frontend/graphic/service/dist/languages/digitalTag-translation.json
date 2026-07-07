@@ -1,0 +1,167 @@
+{
+    "能源": {
+        "en-US": "Energy",
+        "zh-TW": "能源",
+        "zh-CN": "能源"
+    },
+    "电力": {
+        "en-US": "Electricity",
+        "zh-TW": "電力",
+        "zh-CN": "电力"
+    },
+    "照明": {
+        "en-US": "Lighting",
+        "zh-TW": "照明",
+        "zh-CN": "照明"
+    },
+    "一般照明": {
+        "en-US": "General Lighting",
+        "zh-TW": "一般照明",
+        "zh-CN": "一般照明"
+    },
+    "公共区域照明": {
+        "en-US": "Public Area Lighting",
+        "zh-TW": "公共區域照明",
+        "zh-CN": "公共区域照明"
+    },
+    "景观照明": {
+        "en-US": "Landscape Lighting",
+        "zh-TW": "景觀照明",
+        "zh-CN": "景观照明"
+    },
+    "专用插座": {
+        "en-US": "Dedicated Sockets",
+        "zh-TW": "專用插座",
+        "zh-CN": "专用插座"
+    },
+    "暖通空调用电": {
+        "en-US": "HVAC Electricity",
+        "zh-TW": "暖通空調用電",
+        "zh-CN": "暖通空调用电"
+    },
+    "冷机": {
+        "en-US": "Chiller",
+        "zh-TW": "冷機",
+        "zh-CN": "冷机"
+    },
+    "锅炉": {
+        "en-US": "Boiler",
+        "zh-TW": "鍋爐",
+        "zh-CN": "锅炉"
+    },
+    "冷却塔": {
+        "en-US": "Cooling Tower",
+        "zh-TW": "冷卻塔",
+        "zh-CN": "冷却塔"
+    },
+    "水泵": {
+        "en-US": "Water Pump",
+        "zh-TW": "水泵",
+        "zh-CN": "水泵"
+    },
+    "空气处理机组": {
+        "en-US": "Air Handling Unit",
+        "zh-TW": "空氣處理機組",
+        "zh-CN": "空气处理机组"
+    },
+    "送排风机": {
+        "en-US": "Supply and Exhaust Fan",
+        "zh-TW": "送排風機",
+        "zh-CN": "送排风机"
+    },
+    "风机盘管": {
+        "en-US": "Fan Coil Unit",
+        "zh-TW": "風機盤管",
+        "zh-CN": "风机盘管"
+    },
+    "变频器": {
+        "en-US": "Frequency Converter",
+        "zh-TW": "變頻器",
+        "zh-CN": "变频器"
+    },
+    "工业用电": {
+        "en-US": "Industrial Electricity",
+        "zh-TW": "工業用電",
+        "zh-CN": "工业用电"
+    },
+    "机器设备": {
+        "en-US": "Machinery and Equipment",
+        "zh-TW": "機器設備",
+        "zh-CN": "机器设备"
+    },
+    "生产线": {
+        "en-US": "Production Line",
+        "zh-TW": "生產線",
+        "zh-CN": "生产线"
+    },
+    "电动机": {
+        "en-US": "Electric Motor",
+        "zh-TW": "電動機",
+        "zh-CN": "电动机"
+    },
+    "照明系统": {
+        "en-US": "Lighting System",
+        "zh-TW": "照明系統",
+        "zh-CN": "照明系统"
+    },
+    "辅助设施": {
+        "en-US": "Auxiliary Facilities",
+        "zh-TW": "輔助設施",
+        "zh-CN": "辅助设施"
+    },
+    "特殊用电": {
+        "en-US": "Special Electricity",
+        "zh-TW": "特殊用電",
+        "zh-CN": "特殊用电"
+    },
+    "用水": {
+        "en-US": "Water Usage",
+        "zh-TW": "用水",
+        "zh-CN": "用水"
+    },
+    "燃气": {
+        "en-US": "Gas",
+        "zh-TW": "燃氣",
+        "zh-CN": "燃气"
+    },
+    "煤": {
+        "en-US": "Coal",
+        "zh-TW": "煤",
+        "zh-CN": "煤"
+    },
+    "环境": {
+        "en-US": "Environment",
+        "zh-TW": "環境",
+        "zh-CN": "环境"
+    },
+    "温度": {
+        "en-US": "Temperature",
+        "zh-TW": "溫度",
+        "zh-CN": "温度"
+    },
+    "湿度": {
+        "en-US": "Humidity",
+        "zh-TW": "濕度",
+        "zh-CN": "湿度"
+    },
+    "压力": {
+        "en-US": "Pressure",
+        "zh-TW": "壓力",
+        "zh-CN": "压力"
+    },
+    "一氧化碳浓度": {
+        "en-US": "Carbon Monoxide Concentration",
+        "zh-TW": "一氧化碳濃度",
+        "zh-CN": "一氧化碳浓度"
+    },
+    "PM2.5": {
+        "en-US": "PM2.5",
+        "zh-TW": "PM2.5",
+        "zh-CN": "PM2.5"
+    },
+    "PM10": {
+        "en-US": "PM10",
+        "zh-TW": "PM10",
+        "zh-CN": "PM10"
+    }
+}
