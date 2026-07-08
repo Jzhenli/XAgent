@@ -7,6 +7,19 @@ function generateId(): string {
   return `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
+/** 深拷贝并生成新的组件副本，可覆盖部分属性 */
+function cloneComponent(
+  source: ScadaComponent,
+  overrides: Partial<ScadaComponent> = {}
+): ScadaComponent {
+  return {
+    ...JSON.parse(JSON.stringify(source)),
+    id: generateId(),
+    name: `${source.name} (副本)`,
+    ...overrides
+  }
+}
+
 // 生成样例面板数据
 function generateSamplePanels(): ScadaPanel[] {
   const panelNames = [
@@ -249,13 +262,10 @@ export const useScadaStore = defineStore(
 
     const component = currentPanel.value.components.find(c => c.id === id)
     if (component) {
-      const newComponent: ScadaComponent = {
-        ...JSON.parse(JSON.stringify(component)),
-        id: generateId(),
+      const newComponent = cloneComponent(component, {
         x: component.x + 20,
-        y: component.y + 20,
-        name: `${component.name} (副本)`
-      }
+        y: component.y + 20
+      })
       currentPanel.value.components.push(newComponent)
       currentPanel.value.updatedAt = Date.now()
     }
@@ -280,20 +290,18 @@ export const useScadaStore = defineStore(
 
   const pasteComponent = (x?: number, y?: number) => {
     if (!currentPanel.value || clipboard.value.length === 0) return
-    
+
     const newIds: string[] = []
     clipboard.value.forEach((clipComp, index) => {
-      const newComponent: ScadaComponent = {
-        ...clipComp,
-        id: generateId(),
-        x: x !== undefined ? x + (index * 20) : clipComp.x + 20,
-        y: y !== undefined ? y + (index * 20) : clipComp.y + 20,
-        name: `${clipComp.name} (副本)`
-      }
+      const offset = index * 20
+      const newComponent = cloneComponent(clipComp, {
+        x: x !== undefined ? x + offset : clipComp.x + 20,
+        y: y !== undefined ? y + offset : clipComp.y + 20
+      })
       currentPanel.value!.components.push(newComponent)
       newIds.push(newComponent.id)
     })
-    
+
     currentPanel.value.updatedAt = Date.now()
     selectedComponentIds.value = newIds
     if (newIds.length > 0) {
@@ -310,27 +318,25 @@ export const useScadaStore = defineStore(
     }
   }
 
-  const bringToFront = (id: string) => {
+  /** 调整组件在数组中的顺序，true 表示移到最前，false 表示移到最后 */
+  const reorderComponent = (id: string, toFront: boolean) => {
     if (!currentPanel.value) return
 
     const index = currentPanel.value.components.findIndex(c => c.id === id)
-    if (index !== -1) {
-      const component = currentPanel.value.components.splice(index, 1)[0]
+    if (index === -1) return
+
+    const [component] = currentPanel.value.components.splice(index, 1)
+    if (toFront) {
       currentPanel.value.components.push(component)
-      currentPanel.value.updatedAt = Date.now()
-    }
-  }
-
-  const sendToBack = (id: string) => {
-    if (!currentPanel.value) return
-
-    const index = currentPanel.value.components.findIndex(c => c.id === id)
-    if (index !== -1) {
-      const component = currentPanel.value.components.splice(index, 1)[0]
+    } else {
       currentPanel.value.components.unshift(component)
-      currentPanel.value.updatedAt = Date.now()
     }
+    currentPanel.value.updatedAt = Date.now()
   }
+
+  const bringToFront = (id: string) => reorderComponent(id, true)
+
+  const sendToBack = (id: string) => reorderComponent(id, false)
 
   const scrollToComponentId = ref<string | null>(null)
 

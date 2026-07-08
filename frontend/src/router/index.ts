@@ -109,7 +109,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/scada/:id',
         name: 'ScadaEdit',
-        component: () => import('@/views/Scada.vue'),
+        component: () => import('@/views/ScadaEditor/index.vue'),
         meta: { title: '组态编辑', icon: 'PictureFilled' }
       },
       {

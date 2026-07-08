@@ -34,7 +34,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScadaStore } from '@/stores/scada'
 import { ArrowLeft, FullScreen } from '@element-plus/icons-vue'
-import ScadaCanvas from '@/components/ScadaCanvas.vue'
+import ScadaCanvas from '@/views/ScadaEditor/components/ScadaCanvas.vue'
 
 useI18n()
 const route = useRoute()

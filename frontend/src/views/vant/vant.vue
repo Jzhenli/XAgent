@@ -44,7 +44,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useScadaStore } from "@/stores/scada";
 import { ArrowLeft } from "@element-plus/icons-vue";
-import ScadaCanvas from "@/components/ScadaCanvas.vue";
+import ScadaCanvas from "@/views/ScadaEditor/components/ScadaCanvas.vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
 import { listenTo } from "./utils/events";
 import { useSwipe } from "./composables/useSwipe";
