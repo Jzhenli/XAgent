@@ -1,5 +1,4 @@
-import type { StyleConfig, ScadaComponentMeta } from '../../types'
-import type { SliderConfig } from '../../registry'
+import type { StyleConfig, ScadaComponentMeta, SliderConfig } from '../../types'
 import ScadaSlider from './index.vue'
 
 export const sliderMeta: ScadaComponentMeta = {

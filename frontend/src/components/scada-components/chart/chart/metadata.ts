@@ -1,5 +1,4 @@
-import type { StyleConfig, ScadaComponentMeta } from '../../types'
-import type { ChartConfig } from '../../registry'
+import type { StyleConfig, ScadaComponentMeta, ChartConfig } from '../../types'
 import ScadaChart from './index.vue'
 import ChartConfigPanel from './ConfigPanel.vue'
 

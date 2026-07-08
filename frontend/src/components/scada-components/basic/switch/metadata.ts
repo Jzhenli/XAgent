@@ -1,5 +1,4 @@
-import type { StyleConfig, ScadaComponentMeta } from '../../types'
-import type { SwitchConfig } from '../../registry'
+import type { StyleConfig, ScadaComponentMeta, SwitchConfig } from '../../types'
 import ScadaSwitch from './index.vue'
 
 export const switchMeta: ScadaComponentMeta = {

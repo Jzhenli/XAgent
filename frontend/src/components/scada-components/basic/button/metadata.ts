@@ -1,5 +1,4 @@
-import type { StyleConfig, ScadaComponentMeta } from '../../types'
-import type { ButtonConfig } from '../../registry'
+import type { StyleConfig, ScadaComponentMeta, ButtonConfig } from '../../types'
 import ScadaButton from './index.vue'
 
 export const buttonMeta: ScadaComponentMeta = {

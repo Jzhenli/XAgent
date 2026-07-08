@@ -278,8 +278,8 @@ const toggleDrawer = () => {
 
 const isFullscreenMode = computed(() => scadaStore.isFullscreenPreview)
 
-const showSidebar = computed(() => !isTablet.value && !isMobile.value && route.path !== '/login')
-const showDrawer = computed(() => (isTablet.value || isMobile.value) && route.path !== '/login')
+const showSidebar = computed(() => !isTablet.value && !isMobile.value && route.path !== '/login' && !isFullscreenMode.value)
+const showDrawer = computed(() => (isTablet.value || isMobile.value) && route.path !== '/login' && !isFullscreenMode.value)
 const isLoginPage = computed(() => route.path === '/login')
 
 function handleLogout() {
@@ -485,21 +485,16 @@ onUnmounted(() => {
 }
 
 .app-main.fullscreen-main {
-  padding: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  flex: 1;
+  height: 100vh !important;
 }
 
 .login-main {
   padding: 0;
   background: transparent;
-}
-
-.fullscreen-mode {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
 }
 
 .app-footer {

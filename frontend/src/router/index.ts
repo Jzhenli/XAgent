@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/users'
 
 const ROUTE_PERMISSION_MAP: Record<string, string> = {
@@ -35,7 +35,7 @@ function matchRoute(path: string): string | null {
   return null
 }
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'Login',
@@ -46,77 +46,85 @@ const routes = [
     path: '/',
     redirect: '/dashboard'
   },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/Dashboard.vue'),
-    meta: { title: '监控面板', icon: 'Odometer' }
-  },
-  {
-    path: '/devices',
-    name: 'Devices',
-    component: () => import('@/views/Devices.vue'),
-    meta: { title: '设备管理', icon: 'Monitor' }
-  },
-  {
-    path: '/channels',
-    name: 'NorthChannels',
-    component: () => import('@/views/NorthChannels.vue'),
-    meta: { title: '通道管理', icon: 'Connection' }
-  },
-  {
-    path: '/rules',
-    name: 'Rules',
-    component: () => import('@/views/Rules.vue'),
-    meta: { title: '规则引擎', icon: 'Connection' }
-  },
-  {
-    path: '/alerts',
-    name: 'Alerts',
-    component: () => import('@/views/Alerts.vue'),
-    meta: { title: '告警配置', icon: 'Bell' }
-  },
-  {
-    path: '/scada',
-    name: 'ScadaList',
-    component: () => import('@/views/ProjectList/index.vue'),
-    meta: { title: '项目管理', icon: 'Folder' }
-  },
+  // 预览相关路由 - 独立布局，不使用 MainLayout
   {
     path: '/scada/slideshow',
     name: 'SlideshowPreview',
-    component: () => import('@/views/vant/SlideshowPreview.vue'),
-    meta: { title: '幻灯片预览', icon: 'PictureFilled', public: true }
-  },
-  {
-    path: '/scada/:id',
-    name: 'ScadaEdit',
-    component: () => import('@/views/Scada.vue'),
-    meta: { title: '组态编辑', icon: 'PictureFilled' }
+    component: () => import('@/views/vant/vant.vue'),
+    meta: { title: '幻灯片预览', public: true }
   },
   {
     path: '/scada/:id/preview',
     name: 'ScadaPreview',
     component: () => import('@/views/ScadaPreview.vue'),
-    meta: { title: '组态预览', icon: 'PictureFilled', public: true }
-  },
-  {
-    path: '/graphic/:id',
-    name: 'GraphicEdit',
-    component: () => import('@/views/Graphic/index.vue'),
-    meta: { title: '图形编辑', icon: 'PictureFilled' }
+    meta: { title: '组态预览', public: true }
   },
   {
     path: '/graphic/:id/preview',
     name: 'GraphicPreview',
     component: () => import('@/views/GraphicPreview/index.vue'),
-    meta: { title: '图形预览', icon: 'PictureFilled', public: true }
+    meta: { title: '图形预览', public: true }
   },
+  // 主应用路由 - 使用 MainLayout
   {
-    path: '/settings',
-    name: 'Settings',
-    component: () => import('@/views/Settings.vue'),
-    meta: { title: '系统设置', icon: 'Setting' }
+    path: '',
+    component: () => import('@/layouts/MainLayout.vue'),
+    children: [
+      {
+        path: '/dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/Dashboard.vue'),
+        meta: { title: '监控面板', icon: 'Odometer' }
+      },
+      {
+        path: '/devices',
+        name: 'Devices',
+        component: () => import('@/views/Devices.vue'),
+        meta: { title: '设备管理', icon: 'Monitor' }
+      },
+      {
+        path: '/channels',
+        name: 'NorthChannels',
+        component: () => import('@/views/NorthChannels.vue'),
+        meta: { title: '通道管理', icon: 'Connection' }
+      },
+      {
+        path: '/rules',
+        name: 'Rules',
+        component: () => import('@/views/Rules.vue'),
+        meta: { title: '规则引擎', icon: 'Connection' }
+      },
+      {
+        path: '/alerts',
+        name: 'Alerts',
+        component: () => import('@/views/Alerts.vue'),
+        meta: { title: '告警配置', icon: 'Bell' }
+      },
+      {
+        path: '/scada',
+        name: 'ScadaList',
+        component: () => import('@/views/ProjectList/index.vue'),
+        meta: { title: '项目管理', icon: 'Folder' }
+      },
+      {
+        path: '/scada/:id',
+        name: 'ScadaEdit',
+        component: () => import('@/views/Scada.vue'),
+        meta: { title: '组态编辑', icon: 'PictureFilled' }
+      },
+      {
+        path: '/graphic/:id',
+        name: 'GraphicEdit',
+        component: () => import('@/views/Graphic/index.vue'),
+        meta: { title: '图形编辑', icon: 'PictureFilled' }
+      },
+      {
+        path: '/settings',
+        name: 'Settings',
+        component: () => import('@/views/Settings.vue'),
+        meta: { title: '系统设置', icon: 'Setting' }
+      }
+    ]
   }
 ]
 

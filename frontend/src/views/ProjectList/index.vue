@@ -3,7 +3,7 @@
     <div class="header">
       <h2>{{ $t('scada.title') }}</h2>
       <div class="header-actions">
-        <el-button type="success" :icon="VideoPlay" @click="showSlideshowConfig = true">
+        <el-button type="success" :icon="VideoPlay" @click="handleStartSlideshow">
           {{ $t('scada.previewAll') }}
         </el-button>
         <el-button type="primary" :icon="Plus" @click="showCreateDialog = true">
@@ -50,16 +50,12 @@
       @save="handleSaveEdit"
     />
 
-    <SlideshowConfig
-      v-model="showSlideshowConfig"
-      @start="handleStartSlideshow"
-    />
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { Plus, VideoPlay } from '@element-plus/icons-vue'
-import SlideshowConfig from '../vant/SlideshowConfig.vue'
 import ProjectCard from './components/ProjectCard.vue'
 import CreateDialog from './components/CreateDialog.vue'
 import EditDialog from './components/EditDialog.vue'

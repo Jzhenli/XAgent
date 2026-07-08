@@ -1,9 +1,9 @@
 <template>
-  <MainLayout />
+  <router-view />
 </template>
 
 <script setup lang="ts">
-import MainLayout from '@/layouts/MainLayout.vue'
+// App.vue 只作为路由容器，具体布局由各路由组件决定
 </script>
 
 <style>

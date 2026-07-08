@@ -1,5 +1,4 @@
-import type { ScadaComponentMeta } from '../../types'
-import type { TextConfig } from '../../registry'
+import type { ScadaComponentMeta, TextConfig } from '../../types'
 import ScadaText from './index.vue'
 
 export const textMeta: ScadaComponentMeta = {

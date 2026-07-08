@@ -9,8 +9,7 @@ export type { StyleConfig, PointBinding, ComponentTemplate } from '@/components/
 export type { ComponentType } from '@/components/scada-components/registry'
 
 // 导入公共类型和组件配置类型
-import type { StyleConfig, PointBinding } from '@/components/scada-components/types'
-import type { ComponentType,
+import type { StyleConfig, PointBinding,
   GaugeConfig,
   ChartConfig,
   IndicatorConfig,
@@ -18,7 +17,8 @@ import type { ComponentType,
   SliderConfig,
   TextConfig,
   ButtonConfig
-} from '@/components/scada-components/registry'
+} from '@/components/scada-components/types'
+import type { ComponentType } from '@/components/scada-components/registry'
 
 export type {
   GaugeConfig,
@@ -31,7 +31,7 @@ export type {
 }
 
 // 重新导出组件模板列表
-export { COMPONENT_TEMPLATES } from '@/components/scada-components'
+export { COMPONENT_TEMPLATES } from '@/components/scada-components/registry'
 
 export interface ScadaComponent {
   id: string

@@ -53,3 +53,62 @@ export interface ComponentTemplate {
   defaultStyle: StyleConfig
   defaultConfig: Record<string, any>
 }
+
+// ─── 组件配置接口定义 ──────────────────────────────────────────
+// 集中定义所有组件的配置类型，新增组件时在此添加对应接口
+
+/** 仪表盘配置 */
+export interface GaugeConfig {
+  min: number
+  max: number
+  unit: string
+  thresholds: { value: number; color: string }[]
+  showValue: boolean
+}
+
+/** 图表配置 */
+export interface ChartConfig {
+  timeRange: '1h' | '6h' | '24h' | '7d'
+  lineColor: string
+  areaFill: boolean
+  showLegend: boolean
+}
+
+/** 指示灯配置 */
+export interface IndicatorConfig {
+  onColor: string
+  offColor: string
+  blinkOnAlarm: boolean
+}
+
+/** 开关配置 */
+export interface SwitchConfig {
+  onText: string
+  offText: string
+  confirmRequired: boolean
+  writePoint: PointBinding | null
+}
+
+/** 滑块配置 */
+export interface SliderConfig {
+  min: number
+  max: number
+  step: number
+}
+
+/** 文本配置 */
+export interface TextConfig {
+  content: string
+  fontSize: number
+  fontColor: string
+  fontWeight: 'normal' | 'bold'
+  textAlign: 'left' | 'center' | 'right'
+}
+
+/** 按钮配置 */
+export interface ButtonConfig {
+  text: string
+  type: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+  writeValue: number | boolean | string
+  writePoint: PointBinding | null
+}

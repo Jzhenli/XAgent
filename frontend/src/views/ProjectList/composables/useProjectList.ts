@@ -3,7 +3,6 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScadaStore } from '@/stores/scada'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { SlideshowConfig as SlideshowConfigType } from '../../vant/SlideshowConfig.vue'
 
 export function useProjectList() {
   const { t } = useI18n()
@@ -58,16 +57,9 @@ export function useProjectList() {
     }
   }
 
-  const handleStartSlideshow = (config: SlideshowConfigType) => {
+  const handleStartSlideshow = () => {
     router.push({
       name: 'SlideshowPreview',
-      query: {
-        interval: String(config.interval),
-        loop: config.loop ? 'true' : 'false',
-        autoPlay: config.autoPlay ? 'true' : 'false',
-        transition: config.transition,
-        scope: config.scope,
-      },
     })
   }
 

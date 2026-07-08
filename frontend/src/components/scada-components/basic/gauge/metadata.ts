@@ -1,5 +1,4 @@
-import type { StyleConfig, ScadaComponentMeta } from '../../types'
-import type { GaugeConfig } from '../../registry'
+import type { StyleConfig, ScadaComponentMeta, GaugeConfig } from '../../types'
 import ScadaGauge from './index.vue'
 import GaugeConfigPanel from './ConfigPanel.vue'
 

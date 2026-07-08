@@ -7,7 +7,7 @@ export type {
 } from './types'
 export type { ComponentType } from './registry'
 
-// 导出各组件配置类型（统一从 registry 导出）
+// 导出各组件配置类型（统一从 types 导出）
 export type {
   GaugeConfig,
   ChartConfig,
@@ -16,7 +16,7 @@ export type {
   SliderConfig,
   TextConfig,
   ButtonConfig
-} from './registry'
+} from './types'
 
 // 导出统一注册表
 export {

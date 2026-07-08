@@ -1,5 +1,4 @@
-import type { StyleConfig, ScadaComponentMeta } from '../../types'
-import type { IndicatorConfig } from '../../registry'
+import type { StyleConfig, ScadaComponentMeta, IndicatorConfig } from '../../types'
 import ScadaIndicator from './index.vue'
 import IndicatorConfigPanel from './ConfigPanel.vue'
 
