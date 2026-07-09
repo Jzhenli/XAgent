@@ -19,7 +19,7 @@ from ..models.device import (
     StandardDataType
 )
 from ...core.metadata import MetadataManager
-from ...config.config_repository import ConfigRepository as DbConfigRepository
+from ...api.repositories.device_repository import ConfigRepository as DbConfigRepository
 from ...services.config_service import ConfigService
 from ...services.audit_service import AuditService
 
@@ -370,7 +370,7 @@ class DeviceService:
         Returns:
             数据库设备配置
         """
-        from ...config.config_repository import DeviceConfig as DbDeviceConfig
+        from ...config.device_config import DeviceConfig as DbDeviceConfig
         
         points = []
         for point in api_device.points:

@@ -560,7 +560,7 @@ class ConfigSyncService:
         
         for device_data in devices:
             try:
-                from ..config.config_repository import DeviceConfig
+                from ..config.device_config import DeviceConfig
                 device = DeviceConfig.from_dict(device_data)
                 
                 existing = await self.config_repo.get_device(device.asset)

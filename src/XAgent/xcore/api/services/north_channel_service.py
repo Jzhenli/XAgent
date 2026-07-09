@@ -19,7 +19,8 @@ from ..models.north_channel import (
     NorthChannelAdapter,
     NorthChannelUploadStrategy
 )
-from ...config.config_repository import ServiceRepository, ServiceConfig
+from ...config.service_config import ServiceConfig
+from ...api.repositories.service_repository import ServiceRepository
 from ...core.plugin_loader import PluginLoader
 
 logger = logging.getLogger(__name__)

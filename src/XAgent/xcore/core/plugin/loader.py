@@ -345,7 +345,7 @@ class PluginLoader(ILifecycle):
             logger.debug("MetadataManager not available, skipping plugin registry sync")
             return
 
-        from ...config.config_repository import ConfigRepository
+        from ...api.repositories.device_repository import ConfigRepository
 
         config_repo = ConfigRepository(self.metadata_manager.db)
 

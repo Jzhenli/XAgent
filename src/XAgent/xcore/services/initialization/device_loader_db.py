@@ -7,7 +7,9 @@
 import logging
 from typing import List, Optional, TYPE_CHECKING
 
-from ...config.config_repository import ConfigRepository, ServiceRepository, ServiceConfig
+from ...config.service_config import ServiceConfig
+from ...api.repositories.device_repository import ConfigRepository
+from ...api.repositories.service_repository import ServiceRepository
 from ...core.plugin_loader import PluginType
 from ...domain.models import PluginStartupResult
 

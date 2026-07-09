@@ -1,5 +1,6 @@
-"""配置管理模块"""
+"""配置模块"""
 
-from .config_repository import ConfigRepository, DeviceConfig
+from .device_config import DeviceConfig
+from .service_config import ServiceConfig
 
-__all__ = ['ConfigRepository', 'DeviceConfig']
+__all__ = ["DeviceConfig", "ServiceConfig"]

@@ -13,7 +13,8 @@ from typing import Any, Dict, List, Optional
 from pathlib import Path
 import yaml
 
-from ..config.config_repository import ConfigRepository, DeviceConfig
+from ..config.device_config import DeviceConfig
+from ..api.repositories.device_repository import ConfigRepository
 from ..services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)

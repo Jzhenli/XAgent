@@ -37,7 +37,7 @@ def _get_config_service() -> ConfigService:
     state = get_app_state()
     config_repo = None
     if state.metadata_manager:
-        from ...config.config_repository import ConfigRepository
+        from ...api.repositories.device_repository import ConfigRepository
         config_repo = ConfigRepository(state.metadata_manager.db)
     return ConfigService(config_repo=config_repo)
 
