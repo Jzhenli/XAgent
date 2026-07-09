@@ -65,9 +65,7 @@ class SQLiteStorage(StorageInterface):
         """)
         
         await self._create_metadata_tables()
-        
-        await self._run_migrations()
-        
+
         await self._db.commit()
         self._initialized = True
         logger.info(f"SQLite storage initialized: {self._database_path}")
@@ -217,6 +215,25 @@ class SQLiteStorage(StorageInterface):
             );
             
             CREATE INDEX IF NOT EXISTS idx_config_versions_entity ON config_versions(entity_type, entity_id);
+
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                action TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT NOT NULL,
+                user TEXT,
+                ip_address TEXT,
+                details TEXT,
+                old_value TEXT,
+                new_value TEXT,
+                timestamp REAL NOT NULL,
+                success BOOLEAN DEFAULT TRUE,
+                error_message TEXT
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_time ON audit_logs(timestamp);
         """)
         logger.info("Metadata tables created/verified")
 
@@ -247,7 +264,12 @@ class SQLiteStorage(StorageInterface):
                 'enabled': 'BOOLEAN DEFAULT TRUE',
                 'metadata': 'TEXT',
                 'tags': 'TEXT',
-                'config_path': 'TEXT'
+                'config_path': 'TEXT',
+                'version': 'INTEGER DEFAULT 1',
+                'created_by': 'TEXT',
+                'updated_by': 'TEXT',
+                'last_reload_at': 'REAL',
+                'reload_count': 'INTEGER DEFAULT 0'
             }
             
             for col_name, col_type in device_new_columns.items():
@@ -263,7 +285,11 @@ class SQLiteStorage(StorageInterface):
                 'config': 'TEXT',
                 'metadata': 'TEXT',
                 'tags': 'TEXT',
-                'enabled': 'BOOLEAN DEFAULT TRUE'
+                'enabled': 'BOOLEAN DEFAULT TRUE',
+                'standard_data_type': 'TEXT',
+                'version': 'INTEGER DEFAULT 1',
+                'created_by': 'TEXT',
+                'updated_by': 'TEXT'
             }
             
             for col_name, col_type in point_new_columns.items():
@@ -745,15 +771,7 @@ class SQLiteStorage(StorageInterface):
             stacklevel=2,
         )
         return self._db
-    
-    async def _run_migrations(self) -> None:
-        """运行数据库迁移"""
-        try:
-            from .migrations.v2_config_versioning import run_migration
-            await run_migration(self._db)
-        except Exception as e:
-            logger.warning(f"Migration check failed (this is normal for new databases): {e}")
-    
+
     @property
     def is_initialized(self) -> bool:
         return self._initialized
