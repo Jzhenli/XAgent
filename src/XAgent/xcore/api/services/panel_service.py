@@ -8,8 +8,7 @@ from ..models.panel import (
     PanelCreate,
     PanelUpdate,
     PanelResponse,
-    PanelType,
-    PanelData
+    PanelType
 )
 from ..repositories.panel_repository import PanelRepository
 
@@ -52,7 +51,7 @@ class PanelService:
             raise ValueError(f"Panel {panel.id} already exists")
         
         # 使用默认配置或提供的配置
-        data = panel.data or PanelData()
+        data = panel.data or {}
         
         # 调用 Repository 创建
         result = await self._repo.create(

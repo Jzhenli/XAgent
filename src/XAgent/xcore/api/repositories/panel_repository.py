@@ -7,7 +7,6 @@ from typing import List, Optional
 
 from ..models.panel import (
     PanelType,
-    PanelData,
     PanelResponse
 )
 
@@ -48,7 +47,7 @@ class PanelRepository:
         name: str,
         type: PanelType,
         description: Optional[str],
-        data: PanelData,
+        data: dict,
         enabled: bool,
         created_at: float,
         updated_at: float
@@ -60,7 +59,7 @@ class PanelRepository:
             name: 项目名称
             type: 项目类型
             description: 项目描述
-            data: 项目数据
+            data: 项目数据（JSON）
             enabled: 是否启用
             created_at: 创建时间戳
             updated_at: 更新时间戳
@@ -79,7 +78,7 @@ class PanelRepository:
                 name,
                 type.value,
                 description,
-                data.model_dump_json(),
+                json.dumps(data),
                 enabled,
                 created_at,
                 updated_at
@@ -168,7 +167,7 @@ class PanelRepository:
         panel_id: str,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        data: Optional[PanelData] = None,
+        data: Optional[dict] = None,
         enabled: Optional[bool] = None,
         updated_at: float = None
     ) -> Optional[PanelResponse]:
@@ -188,7 +187,7 @@ class PanelRepository:
         # 构建更新字段
         data_json = None
         if data:
-            data_json = data.model_dump_json()
+            data_json = json.dumps(data)
         
         await self._db.execute(
             """
@@ -254,7 +253,7 @@ class PanelRepository:
             name=row[1],
             type=PanelType(row[2]),
             description=row[3],
-            data=PanelData(**data_dict),
+            data=data_dict,
             enabled=row[5],
             createdAt=row[6],
             updatedAt=row[7]
