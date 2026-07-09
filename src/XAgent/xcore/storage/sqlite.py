@@ -163,6 +163,24 @@ class SQLiteStorage(StorageInterface):
             CREATE INDEX IF NOT EXISTS idx_service_protocol ON service_registry(protocol);
             CREATE INDEX IF NOT EXISTS idx_service_enabled ON service_registry(enabled);
             CREATE INDEX IF NOT EXISTS idx_service_status ON service_registry(status);
+
+            CREATE TABLE IF NOT EXISTS panel_registry (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                panel_id TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                type TEXT NOT NULL,
+                description TEXT,
+                data TEXT NOT NULL DEFAULT '{}',
+                enabled BOOLEAN DEFAULT TRUE,
+                created_at REAL NOT NULL,
+                updated_at REAL NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_panel_id ON panel_registry(panel_id);
+            CREATE INDEX IF NOT EXISTS idx_panel_enabled ON panel_registry(enabled);
+            CREATE INDEX IF NOT EXISTS idx_panel_type ON panel_registry(type);
+            CREATE INDEX IF NOT EXISTS idx_panel_created ON panel_registry(created_at);
+            CREATE INDEX IF NOT EXISTS idx_panel_updated ON panel_registry(updated_at);
             
             CREATE TABLE IF NOT EXISTS mapping_registry (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -763,6 +781,7 @@ class SQLiteStorage(StorageInterface):
             'rule_registry',
             'channel_registry',
             'pipeline_registry',
+            'panel_registry',
             'config_versions',
             'audit_logs',
             'mapping_registry'
@@ -923,6 +942,7 @@ class SQLiteStorage(StorageInterface):
             'rule_registry',
             'channel_registry',
             'pipeline_registry',
+            'panel_registry',
             'config_versions',
             'audit_logs',
             'mapping_registry'
