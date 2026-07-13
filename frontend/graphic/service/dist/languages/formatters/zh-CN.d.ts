@@ -1,9 +1,0 @@
-/**
- 
-    格式化器用来对翻译文本内容中的插值变量进行处理
-
-    如何编写格式器请参阅官网！
-    
- */
-declare const _default: {};
-export default _default;
