@@ -177,7 +177,7 @@ import { useUserStore } from '@/stores/users'
 import { useResponsive } from '@/utils/useResponsive'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import { ElMessage } from 'element-plus'
-import '@x-plateform/graphic-editor/dist/style.css'
+//import '@x-plateform/graphic-editor/dist/style.css'
 import '@x-plateform-mono/common/dist/index.css'
 
 const { t, locale } = useI18n()

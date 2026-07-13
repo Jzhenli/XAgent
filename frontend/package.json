@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "python copy_graphic_modules.py && vite",
-    "build": "python copy_graphic_modules.py && vite build",
+    "dev": "vite",
+    "build": "vite build",
     "deploy": "vite build && node deploy.mjs",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit"
