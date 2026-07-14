@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import type { PointBinding } from '@/types/scada'
 import { usePointStore } from '@/stores/points'
 import { useScadaEditor } from './useScadaEditor'
-import { ScadaPointReaderKey } from '@/utils/scadaPointReader'
+import { ScadaPointReaderKey, type ScadaPointReader } from '@/utils/scadaPointReader'
 import { usePolling } from '@/hooks/usePolling'
 import type { PointDisplay } from '@/stores/points'
 import type { ScadaComponent } from '../types'
@@ -188,6 +188,8 @@ export interface UseScadaPollingOptions {
   immediate?: boolean
   /** 自定义要轮询的设备 asset 列表；默认从当前面板组件绑定中提取 */
   assets?: () => string[]
+  /** 显式传入的点位读取器，用于在同一组件中使用 provide/inject 的场景 */
+  reader?: ScadaPointReader | null
 }
 
 /**
@@ -202,11 +204,12 @@ export interface UseScadaPollingOptions {
  * @param options 轮询配置
  */
 export function useScadaPolling(options: UseScadaPollingOptions = {}) {
-  const { interval = 5000, immediate = true, assets } = options
+  const { interval = 5000, immediate = true, assets, reader } = options
 
   const scada = useScadaEditor()
   const pointStore = usePointStore()
   const injectedReader = inject(ScadaPointReaderKey, null)
+  const effectiveReader = reader ?? injectedReader
 
   /** 当前需要轮询的设备 asset 列表 */
   const boundAssets = computed(() => {
@@ -223,7 +226,7 @@ export function useScadaPolling(options: UseScadaPollingOptions = {}) {
     if (targets.length === 0) return
 
     const fetcher = (asset: string) =>
-      injectedReader ? injectedReader.fetchDevicePoints(asset) : pointStore.fetchDevicePoints(asset)
+      effectiveReader ? effectiveReader.fetchDevicePoints(asset) : pointStore.fetchDevicePoints(asset)
 
     await Promise.allSettled(targets.map(fetcher))
   }

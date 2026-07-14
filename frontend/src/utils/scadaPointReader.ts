@@ -40,6 +40,9 @@ const historyLoading = ref(false)
 const trendTimeRange = ref<'1h' | '6h' | '24h' | '7d' | '30d'>('24h')
 const trendAggregation = ref<'none' | '1min' | '5min' | '15min' | '1h'>('5min')
 
+const writeProtectionMap = new Map<string, { value: any; expiresAt: number }>()
+const WRITE_PROTECTION_DURATION = 10000
+
 /**
  * 将后端读数数据转换为以 asset 为 key 的 Map
  * @param readings 后端设备读数列表
@@ -94,8 +97,24 @@ export function useScadaPointReader(): ScadaPointReader {
       const readingList = readingResult.status === 'fulfilled' ? readingResult.value.devices : []
 
       const readingMap = buildReadingMap(readingList)
+      const now = Date.now()
 
-      devices.value = deviceList.map(device => mapDeviceWithPoints(device, readingMap.get(device.asset)))
+      devices.value = deviceList.map(device => {
+        const mappedDevice = mapDeviceWithPoints(device, readingMap.get(device.asset))
+        mappedDevice.points = mappedDevice.points.map(point => {
+          const protectionKey = `${device.asset}:${point.name}`
+          const protection = writeProtectionMap.get(protectionKey)
+          
+          if (protection && now < protection.expiresAt) {
+            return { ...point, currentValue: protection.value }
+          } else if (protection) {
+            writeProtectionMap.delete(protectionKey)
+          }
+          
+          return point
+        })
+        return mappedDevice
+      })
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : '获取设备点位失败'
       error.value = message
@@ -126,7 +145,20 @@ export function useScadaPointReader(): ScadaPointReader {
         readingData = { data: reading.data || {}, standardPoints, timestamp }
       }
 
-      const mappedPoints = points.map(point => mapPointToDisplay(point, readingData))
+      const now = Date.now()
+      const mappedPoints = points.map(point => {
+        const result = mapPointToDisplay(point, readingData)
+        const protectionKey = `${asset}:${point.name}`
+        const protection = writeProtectionMap.get(protectionKey)
+        
+        if (protection && now < protection.expiresAt) {
+          result.currentValue = protection.value
+        } else if (protection) {
+          writeProtectionMap.delete(protectionKey)
+        }
+        
+        return result
+      })
 
       const deviceIndex = devices.value.findIndex(d => d.asset === asset)
 
@@ -289,6 +321,29 @@ export function useScadaPointReader(): ScadaPointReader {
       )
 
       if (response.status === 'ACCEPTED') {
+        const protectionKey = `${deviceAsset}:${pointName}`
+        writeProtectionMap.set(protectionKey, {
+          value,
+          expiresAt: Date.now() + WRITE_PROTECTION_DURATION
+        })
+
+        const deviceIndex = devices.value.findIndex(d => d.asset === deviceAsset)
+        if (deviceIndex !== -1) {
+          const device = devices.value[deviceIndex]
+          const pointIndex = device.points.findIndex(p => p.name === pointName)
+          if (pointIndex !== -1) {
+            const updatedPoints = [...device.points]
+            updatedPoints[pointIndex] = {
+              ...updatedPoints[pointIndex],
+              currentValue: value
+            }
+            devices.value[deviceIndex] = {
+              ...device,
+              points: updatedPoints
+            }
+          }
+        }
+
         setTimeout(() => fetchDevicePoints(deviceAsset), 2000)
         return {
           success: true,
