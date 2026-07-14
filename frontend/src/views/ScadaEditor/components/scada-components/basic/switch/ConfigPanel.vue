@@ -2,13 +2,11 @@
   <div class="config-section">
     <div class="section-title">{{ t("componentConfig.switchConfig") }}</div>
 
+    <!-- 数据绑定：当前值与通断映射 -->
     <div class="subsection-title">{{ t("componentConfig.dataSection") }}</div>
     <div class="form-group">
       <label>{{ t("componentConfig.currentValue") }}</label>
-      <select
-        :value="currentValueBoolean ? 'true' : 'false'"
-        @change="updateBooleanValue($event)"
-      >
+      <select v-model="currentValueModel">
         <option value="true">{{ t("common.on") }}</option>
         <option value="false">{{ t("common.off") }}</option>
       </select>
@@ -16,71 +14,27 @@
     <div class="form-row">
       <div class="form-group">
         <label>{{ t("componentConfig.onValue") }}</label>
-        <input
-          type="text"
-          :value="formatValue(config.onValue)"
-          @change="
-            updateConfig(
-              'onValue',
-              parseValue(($event.target as HTMLInputElement).value),
-            )
-          "
-        />
+        <input v-model.lazy="onValueModel" type="text" />
       </div>
       <div class="form-group">
         <label>{{ t("componentConfig.offValue") }}</label>
-        <input
-          type="text"
-          :value="formatValue(config.offValue)"
-          @change="
-            updateConfig(
-              'offValue',
-              parseValue(($event.target as HTMLInputElement).value),
-            )
-          "
-        />
+        <input v-model.lazy="offValueModel" type="text" />
       </div>
     </div>
 
+    <!-- 样式：颜色选择器 -->
     <div class="subsection-title">{{ t("componentConfig.styleSection") }}</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>{{ t("componentConfig.thumbColor") }}</label>
+    <div
+      v-for="(group, groupIndex) in colorPickerGroups"
+      :key="groupIndex"
+      class="form-row"
+    >
+      <div v-for="item in group" :key="item.key" class="form-group">
+        <label>{{ t(item.labelKey) }}</label>
         <el-color-picker
-          :model-value="config.thumbColor"
+          :model-value="config[item.key]"
           show-alpha
-          @change="updateConfig('thumbColor', $event)"
-        />
-      </div>
-      <div class="form-group">
-        <label>{{ t("componentConfig.onColor") }}</label>
-        <el-color-picker
-          :model-value="config.onColor"
-          show-alpha
-          @change="updateConfig('onColor', $event)"
-        />
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>{{ t("componentConfig.offColor") }}</label>
-        <el-color-picker
-          :model-value="config.offColor"
-          show-alpha
-          @change="updateConfig('offColor', $event)"
-        />
-      </div>
-      <div class="form-group">
-        <label>{{ t("componentConfig.borderRadius") }}</label>
-        <input
-          type="number"
-          :value="config.borderRadius"
-          @input="
-            updateConfig(
-              'borderRadius',
-              +($event.target as HTMLInputElement).value,
-            )
-          "
+          @change="updateConfig(item.key, $event)"
         />
       </div>
     </div>
@@ -91,7 +45,7 @@
 import { useI18n } from "vue-i18n";
 import { computed } from "vue";
 import { useScadaConfig } from "../../../../hooks/useScadaEditor";
-import type { ScadaComponent } from "../../../../types";
+import type { ScadaComponent, ComponentConfig } from "../../../../types";
 
 const { t } = useI18n();
 
@@ -103,25 +57,63 @@ const { config, updateConfig, updateValue } = useScadaConfig(
   props.component as ScadaComponent<"switch">,
 );
 
-const currentValueBoolean = computed(
+/** 开关当前是否处于“开启”状态 */
+const isOn = computed(
   () => config.value.value === true || config.value.value === 1,
 );
 
-const updateBooleanValue = (e: Event) => {
-  const value = (e.target as HTMLSelectElement).value === "true";
-  updateValue(value);
-};
+/** 当前值 select 的 v-model 桥接（字符串 option 与布尔值互转） */
+const currentValueModel = computed({
+  get: () => (isOn.value ? "true" : "false"),
+  set: (value: string) => updateValue(value === "true"),
+});
 
-const parseValue = (raw: string): number | boolean | string => {
+/** 通值输入框的 v-model 桥接 */
+const onValueModel = computed({
+  get: () => formatTypedValue(config.value.onValue),
+  set: (value: string) => updateConfig("onValue", parseTypedValue(value)),
+});
+
+/** 断值输入框的 v-model 桥接 */
+const offValueModel = computed({
+  get: () => formatTypedValue(config.value.offValue),
+  set: (value: string) => updateConfig("offValue", parseTypedValue(value)),
+});
+
+/** 颜色选择器配置分组 */
+type SwitchConfig = ComponentConfig<"switch">;
+type ColorKey = keyof Pick<SwitchConfig, "thumbColor" | "onColor" | "offColor">;
+
+interface ColorPickerItem {
+  key: ColorKey;
+  labelKey: string;
+}
+
+const colorPickerGroups: ColorPickerItem[][] = [
+  [
+    { key: "thumbColor", labelKey: "componentConfig.thumbColor" },
+    { key: "onColor", labelKey: "componentConfig.onColor" },
+  ],
+  [{ key: "offColor", labelKey: "componentConfig.offColor" }],
+];
+
+/**
+ * 将用户输入的字符串解析为强类型值。
+ * 支持布尔字面量、数字以及普通字符串。
+ */
+const parseTypedValue = (raw: string): number | boolean | string => {
   const trimmed = raw.trim();
   if (trimmed === "true") return true;
   if (trimmed === "false") return false;
   const numeric = Number(trimmed);
-  if (trimmed !== "" && !isNaN(numeric)) return numeric;
+  if (trimmed !== "" && !Number.isNaN(numeric)) return numeric;
   return trimmed;
 };
 
-const formatValue = (
+/**
+ * 将强类型值格式化为字符串，供文本输入框展示。
+ */
+const formatTypedValue = (
   value: number | boolean | string | undefined | null,
 ): string => {
   if (value === null || value === undefined) return "";
