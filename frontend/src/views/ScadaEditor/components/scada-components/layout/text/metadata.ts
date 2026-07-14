@@ -9,7 +9,7 @@ const defaultConfig: TextComponentConfig = {
   borderRadius: 4,
   fontSize: 14,
   fontColor: '#2c3e50',
-  content: 'scadaComponents.textLabel',
+  content: 'Text',
   fontWeight: 'normal',
   textAlign: 'center'
 }

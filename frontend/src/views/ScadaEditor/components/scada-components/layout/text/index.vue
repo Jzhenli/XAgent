@@ -9,10 +9,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import type { ScadaComponent } from '@/types/scada'
-
-const { t } = useI18n()
 
 const props = defineProps<{
   config: ScadaComponent
@@ -20,15 +17,11 @@ const props = defineProps<{
 }>()
 
 const textConfig = computed(() => (props.config as ScadaComponent<'text'>).config)
-const currentValue = computed(() => props.config.config.value)
 
 const displayContent = computed(() => {
-  if (currentValue.value !== undefined && currentValue.value !== null && currentValue.value !== '') {
-    return String(currentValue.value)
-  }
   const content = textConfig.value?.content
-  if (!content) return t('scadaComponents.defaultText')
-  return t(content)
+  if (!content) return 'Text'
+  return content
 })
 
 const justifyMap: Record<string, string> = {

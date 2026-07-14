@@ -2,11 +2,6 @@
   <div class="config-section">
     <div class="section-title">{{ t('componentConfig.textConfig') }}</div>
 
-    <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
-    <div class="form-group">
-      <label>{{ t('componentConfig.currentValue') }}</label>
-      <input type="text" :value="config.value ?? ''" @input="updateValue(($event.target as HTMLInputElement).value || null)">
-    </div>
     <div class="form-group">
       <label>{{ t('componentConfig.content') }}</label>
       <input type="text" :value="config.content" @input="updateConfig('content', ($event.target as HTMLInputElement).value)">
@@ -64,7 +59,7 @@ const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const { config, updateConfig, updateValue } = useScadaConfig(props.component as ScadaComponent<'text'>)
+const { config, updateConfig } = useScadaConfig(props.component as ScadaComponent<'text'>)
 </script>
 
 <style scoped>
