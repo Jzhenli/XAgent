@@ -1,609 +1,803 @@
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useScadaStore } from '@/stores/scada'
-import type { ScadaComponent, GuideLine, CanvasPosition, ResizeHandle } from '../types'
-import { getCanvasPosition, getCanvasPositionFromEvent } from '../utils/dom'
-import { clamp } from '../utils/math'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useScadaEditor } from './useScadaEditor'
+import type { ScadaComponent, CanvasPosition, DragState, BoxSelectState, ResizeState, ResizeHandle, GuideLine, ContextMenuState, ContextAction } from '../types'
+import type { ComponentType } from '../registry'
 
-export function useScadaCanvas(canvasRef: { value: HTMLElement | null }) {
-  const scadaStore = useScadaStore()
+/**
+ * Scada画布交互Hook
+ * 负责画布上的拖拽、框选、缩放、辅助线、键盘快捷键等交互逻辑
+ */
+export function useScadaCanvas() {
+  const scada = useScadaEditor()
 
-  const isDragging = ref(false)
-  const isResizing = ref(false)
-  const dragStartPos = ref<CanvasPosition>({ x: 0, y: 0 })
-  const componentStartPos = ref<CanvasPosition>({ x: 0, y: 0 })
-  const resizeStartSize = ref({ width: 0, height: 0 })
-  const resizeHandle = ref<ResizeHandle | null>(null)
-
-  const isBoxSelecting = ref(false)
-  const boxSelectStart = ref<CanvasPosition>({ x: 0, y: 0 })
-  const boxSelectEnd = ref<CanvasPosition>({ x: 0, y: 0 })
-  const justFinishedBoxSelect = ref(false)
-
-  let multiDragStartPositions: Map<string, CanvasPosition> = new Map()
-  let multiDragStartBBox: {
-    minX: number
-    centerX: number
-    maxX: number
-    minY: number
-    middleY: number
-    maxY: number
-  } | null = null
-
-  const guideLines = ref<GuideLine[]>([])
-
-  const mouseCanvasPos = ref<CanvasPosition>({ x: 0, y: 0 })
+  /** 画布DOM引用 */
+  const canvasRef = ref<HTMLDivElement | null>(null)
+  
+  /** 鼠标在画布内的坐标 */
+  const mousePosition = ref<CanvasPosition>({ x: 0, y: 0 })
+  
+  /** 鼠标是否在画布上 */
   const isMouseOnCanvas = ref(false)
-
-  const contextMenuVisible = ref(false)
-  const contextMenuPosition = ref<CanvasPosition>({ x: 0, y: 0 })
-  const contextMenuTargetId = ref<string | null>(null)
-  const contextMenuType = ref<'node' | 'canvas'>('canvas')
-
-  const panel = computed(() => scadaStore.currentPanel)
-  const components = computed(() => panel.value?.components || [])
-  const selectedId = computed(() => scadaStore.selectedComponentId)
-  const selectedIds = computed(() => scadaStore.selectedComponentIds)
-  const isEditing = computed(() => scadaStore.isEditing)
-
-  const targetComponent = computed(() => {
-    if (!contextMenuTargetId.value || !panel.value) return null
-    return panel.value.components.find(c => c.id === contextMenuTargetId.value) || null
+  
+  /** 拖拽状态 */
+  const dragState = ref<DragState>({
+    active: false,
+    startPos: { x: 0, y: 0 },
+    componentStartPos: { x: 0, y: 0 },
+    multiStartPositions: new Map(),
+    multiStartBBox: null
+  })
+  
+  /** 框选状态 */
+  const boxSelectState = ref<BoxSelectState>({
+    active: false,
+    start: { x: 0, y: 0 },
+    end: { x: 0, y: 0 }
+  })
+  
+  /** 调整尺寸状态 */
+  const resizeState = ref<ResizeState>({
+    active: false,
+    handle: null,
+    componentId: null,
+    startSize: { width: 0, height: 0 },
+    startPos: { x: 0, y: 0 },
+    componentStartPos: { x: 0, y: 0 }
+  })
+  
+  /** 对齐辅助线 */
+  const guideLines = ref<GuideLine[]>([])
+  
+  /** 右键菜单状态 */
+  const contextMenu = ref<ContextMenuState>({
+    visible: false,
+    position: { x: 0, y: 0 },
+    targetId: null,
+    type: 'canvas'
   })
 
-  const getComponentStyle = (comp: ScadaComponent) => ({
-    left: `${comp.x}px`,
-    top: `${comp.y}px`,
-    width: `${comp.style.width}px`,
-    height: `${comp.style.height}px`,
-    opacity: comp.style.opacity || 1,
-    zIndex: components.value.indexOf(comp)
+  // ─── 计算属性 ──────────────────────────────────────────────────────
+
+  /** 当前面板数据 */
+  const currentPanel = computed(() => scada.currentPanel.value)
+  
+  /** 当前选中组件 */
+  const selectedComponent = computed(() => scada.selectedComponent.value)
+  
+  /** 当前选中组件ID列表 */
+  const selectedComponentIds = computed(() => scada.selectedComponentIds.value)
+
+  /** 画布宽度 */
+  const canvasWidth = computed(() => currentPanel.value?.width || 1200)
+  
+  /** 画布高度 */
+  const canvasHeight = computed(() => currentPanel.value?.height || 800)
+
+  /** 网格大小 */
+  const gridSize = computed(() => {
+    if (!currentPanel.value) return 20
+    return currentPanel.value.grid
   })
 
-  const handleCanvasMouseMove = (e: MouseEvent) => {
-    if (!canvasRef.value) return
-    mouseCanvasPos.value = getCanvasPositionFromEvent(canvasRef.value, e, scadaStore.zoom)
+  /** 是否处于编辑模式 */
+  const isEditing = computed(() => scada.isEditing.value)
+  
+  /** 缩放比例 */
+  const zoom = computed(() => scada.zoom.value)
+  
+  /** 是否显示网格 */
+  const showGrid = computed(() => scada.showGrid.value)
+
+  // ─── 画布坐标计算 ──────────────────────────────────────────────────
+
+  /**
+   * 获取画布DOM的边界矩形
+   */
+  const getCanvasRect = () => {
+    if (!canvasRef.value) return null
+    return canvasRef.value.getBoundingClientRect()
   }
 
-  const handleCanvasMouseEnter = () => {
-    isMouseOnCanvas.value = true
-  }
-
-  const handleCanvasMouseLeave = () => {
-    isMouseOnCanvas.value = false
-  }
-
-  const collectAlignmentTargets = (excludeIds: string[]) => {
-    const targets: { x: number[]; y: number[] }[] = []
-    components.value.forEach(c => {
-      if (excludeIds.includes(c.id)) return
-      targets.push({
-        x: [c.x, c.x + c.style.width / 2, c.x + c.style.width],
-        y: [c.y, c.y + c.style.height / 2, c.y + c.style.height]
-      })
-    })
-    return targets
-  }
-
-  const snapOffset = (
-    positions: number[],
-    targets: number[],
-    threshold: number
-  ): { offset: number; linePos: number | null } => {
-    let bestDelta = 0
-    let bestDist = threshold + 1
-    let bestTarget: number | null = null
-
-    positions.forEach(pos => {
-      targets.forEach(target => {
-        const delta = pos - target
-        const dist = Math.abs(delta)
-        if (dist <= threshold && dist < bestDist) {
-          bestDist = dist
-          bestDelta = delta
-          bestTarget = target
-        }
-      })
-    })
-
-    return { offset: -bestDelta, linePos: bestTarget }
-  }
-
-  const computeSingleSnap = (comp: ScadaComponent, rawX: number, rawY: number) => {
-    const w = comp.style.width
-    const h = comp.style.height
-    const threshold = 5 / scadaStore.zoom
-    const targets = collectAlignmentTargets([comp.id])
-    const xTargets = targets.map(t => t.x).flat()
-    const yTargets = targets.map(t => t.y).flat()
-
-    if (panel.value) {
-      xTargets.push(panel.value.width / 2)
-      yTargets.push(panel.value.height / 2)
-    }
-
-    const snapX = snapOffset([rawX, rawX + w / 2, rawX + w], xTargets, threshold)
-    const snapY = snapOffset([rawY, rawY + h / 2, rawY + h], yTargets, threshold)
-
-    const lines: GuideLine[] = []
-    if (snapX.linePos !== null) lines.push({ type: 'x', pos: snapX.linePos })
-    if (snapY.linePos !== null) lines.push({ type: 'y', pos: snapY.linePos })
-
-    return { x: rawX + snapX.offset, y: rawY + snapY.offset, lines }
-  }
-
-  const computeMultiSnap = (dx: number, dy: number) => {
-    if (!multiDragStartBBox) return { snapDx: dx, snapDy: dy, lines: [] as GuideLine[] }
-
-    const threshold = 5 / scadaStore.zoom
-    const targets = collectAlignmentTargets(selectedIds.value)
-    const xTargets = targets.map(t => t.x).flat()
-    const yTargets = targets.map(t => t.y).flat()
-
-    if (panel.value) {
-      xTargets.push(panel.value.width / 2)
-      yTargets.push(panel.value.height / 2)
-    }
-
-    const snapX = snapOffset(
-      [
-        multiDragStartBBox.minX + dx,
-        multiDragStartBBox.centerX + dx,
-        multiDragStartBBox.maxX + dx
-      ],
-      xTargets,
-      threshold
-    )
-    const snapY = snapOffset(
-      [
-        multiDragStartBBox.minY + dy,
-        multiDragStartBBox.middleY + dy,
-        multiDragStartBBox.maxY + dy
-      ],
-      yTargets,
-      threshold
-    )
-
-    const lines: GuideLine[] = []
-    if (snapX.linePos !== null) lines.push({ type: 'x', pos: snapX.linePos })
-    if (snapY.linePos !== null) lines.push({ type: 'y', pos: snapY.linePos })
-
-    return { snapDx: dx + snapX.offset, snapDy: dy + snapY.offset, lines }
-  }
-
-  const handleDragMove = (dx: number, dy: number) => {
-    guideLines.value = []
-
-    if (selectedIds.value.length > 1 && multiDragStartPositions.size > 0) {
-      const { snapDx, snapDy, lines } = computeMultiSnap(dx, dy)
-      guideLines.value = lines
-      selectedIds.value.forEach(id => {
-        const startPos = multiDragStartPositions.get(id)
-        if (startPos) {
-          scadaStore.moveComponent(id, Math.max(0, startPos.x + snapDx), Math.max(0, startPos.y + snapDy))
-        }
-      })
-      return
-    }
-
-    const comp = scadaStore.selectedComponent
-    if (!selectedId.value || !comp) return
-
-    const rawX = componentStartPos.value.x + dx
-    const rawY = componentStartPos.value.y + dy
-    const { x: snapX, y: snapY, lines } = computeSingleSnap(comp, rawX, rawY)
-    guideLines.value = lines
-
-    const newX = clamp(snapX, 0, panel.value!.width - comp.style.width)
-    const newY = clamp(snapY, 0, panel.value!.height - comp.style.height)
-    scadaStore.moveComponent(selectedId.value, newX, newY)
-  }
-
-  const handleResizeMove = (dx: number, dy: number) => {
-    const comp = scadaStore.selectedComponent
-    if (!comp || !resizeHandle.value || !selectedId.value) return
-
-    let newWidth = resizeStartSize.value.width
-    let newHeight = resizeStartSize.value.height
-
-    if (resizeHandle.value.includes('e')) {
-      newWidth = Math.max(50, resizeStartSize.value.width + dx)
-    }
-    if (resizeHandle.value.includes('s')) {
-      newHeight = Math.max(50, resizeStartSize.value.height + dy)
-    }
-    if (resizeHandle.value.includes('w')) {
-      newWidth = Math.max(50, resizeStartSize.value.width - dx)
-    }
-    if (resizeHandle.value.includes('n')) {
-      newHeight = Math.max(50, resizeStartSize.value.height - dy)
-    }
-
-    scadaStore.resizeComponent(selectedId.value, newWidth, newHeight)
-  }
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!selectedId.value || !panel.value) return
-
-    const dx = (e.clientX - dragStartPos.value.x) / scadaStore.zoom
-    const dy = (e.clientY - dragStartPos.value.y) / scadaStore.zoom
-
-    if (isDragging.value) {
-      handleDragMove(dx, dy)
-    } else if (isResizing.value && resizeHandle.value) {
-      handleResizeMove(dx, dy)
+  /**
+   * 将屏幕坐标转换为画布坐标（考虑缩放）
+   * @param screenX - 屏幕X坐标
+   * @param screenY - 屏幕Y坐标
+   */
+  const screenToCanvas = (screenX: number, screenY: number): CanvasPosition => {
+    const rect = getCanvasRect()
+    if (!rect) return { x: 0, y: 0 }
+    return {
+      x: (screenX - rect.left) / zoom.value,
+      y: (screenY - rect.top) / zoom.value
     }
   }
 
-  const handleMouseUp = () => {
-    isDragging.value = false
-    isResizing.value = false
-    resizeHandle.value = null
-    multiDragStartPositions = new Map()
-    multiDragStartBBox = null
-    guideLines.value = []
-    document.removeEventListener('mousemove', handleMouseMove)
-    document.removeEventListener('mouseup', handleMouseUp)
-  }
+  // ─── 鼠标事件处理 ──────────────────────────────────────────────────
 
-  const handleComponentMouseDown = (e: MouseEvent, comp: ScadaComponent) => {
-    if (!isEditing.value || comp.locked) return
-    e.stopPropagation()
+  /**
+   * 处理鼠标按下事件
+   * @param e - 鼠标事件
+   */
+  const handleMouseDown = (e: MouseEvent) => {
+    if (!isEditing.value) return
 
-    if (selectedIds.value.length > 1 && selectedIds.value.includes(comp.id)) {
-      isDragging.value = true
-      dragStartPos.value = { x: e.clientX, y: e.clientY }
+    const pos = screenToCanvas(e.clientX, e.clientY)
 
-      multiDragStartPositions = new Map()
-      let minX = Infinity,
-        minY = Infinity,
-        maxX = -Infinity,
-        maxY = -Infinity
-      selectedIds.value.forEach(id => {
-        const c = components.value.find(c => c.id === id)
-        if (c) {
-          multiDragStartPositions.set(id, { x: c.x, y: c.y })
-          minX = Math.min(minX, c.x)
-          minY = Math.min(minY, c.y)
-          maxX = Math.max(maxX, c.x + c.style.width)
-          maxY = Math.max(maxY, c.y + c.style.height)
-        }
-      })
-      multiDragStartBBox = { minX, centerX: (minX + maxX) / 2, maxX, minY, middleY: (minY + maxY) / 2, maxY }
-
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
-      return
-    }
-
-    scadaStore.selectComponent(comp.id)
-    isDragging.value = true
-    dragStartPos.value = { x: e.clientX, y: e.clientY }
-    componentStartPos.value = { x: comp.x, y: comp.y }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }
-
-  const handleResizeStart = (e: MouseEvent, handle: ResizeHandle) => {
-    if (!isEditing.value || !scadaStore.selectedComponent) return
-    e.stopPropagation()
-
-    isResizing.value = true
-    resizeHandle.value = handle
-    dragStartPos.value = { x: e.clientX, y: e.clientY }
-    resizeStartSize.value = {
-      width: scadaStore.selectedComponent.style.width,
-      height: scadaStore.selectedComponent.style.height
-    }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }
-
-  const handleCanvasClick = (e: MouseEvent) => {
-    if (justFinishedBoxSelect.value) {
-      justFinishedBoxSelect.value = false
-      return
-    }
-
-    if (e.target === canvasRef.value) {
-      scadaStore.selectComponent(null)
-    }
-    hideContextMenu()
-  }
-
-  const handleCanvasMouseDown = (e: MouseEvent) => {
-    if (!isEditing.value || e.target !== canvasRef.value) return
-    if (e.button === 0 && !e.ctrlKey && !e.shiftKey && !e.metaKey) {
-      e.preventDefault()
-      isBoxSelecting.value = true
-      boxSelectStart.value = getCanvasPositionFromEvent(canvasRef.value, e, scadaStore.zoom)
-      boxSelectEnd.value = { ...boxSelectStart.value }
-
-      scadaStore.clearSelection()
-
-      document.addEventListener('mousemove', handleBoxSelectMove)
-      document.addEventListener('mouseup', handleBoxSelectUp)
-    }
-  }
-
-  const handleBoxSelectMove = (e: MouseEvent) => {
-    if (!isBoxSelecting.value || !canvasRef.value) return
-
-    boxSelectEnd.value = getCanvasPositionFromEvent(canvasRef.value, e, scadaStore.zoom)
-
-    const x1 = Math.min(boxSelectStart.value.x, boxSelectEnd.value.x)
-    const y1 = Math.min(boxSelectStart.value.y, boxSelectEnd.value.y)
-    const x2 = Math.max(boxSelectStart.value.x, boxSelectEnd.value.x)
-    const y2 = Math.max(boxSelectStart.value.y, boxSelectEnd.value.y)
-
-    const selectedIds: string[] = []
-    components.value.forEach(comp => {
-      const compX2 = comp.x + comp.style.width
-      const compY2 = comp.y + comp.style.height
-
-      if (compX2 > x1 && comp.x < x2 && compY2 > y1 && comp.y < y2) {
-        selectedIds.push(comp.id)
-      }
-    })
-
-    if (selectedIds.length > 0) {
-      scadaStore.selectComponent(selectedIds[0])
-      scadaStore.selectedComponentIds = selectedIds
-    } else {
-      scadaStore.clearSelection()
-    }
-  }
-
-  const handleBoxSelectUp = () => {
-    isBoxSelecting.value = false
-    justFinishedBoxSelect.value = true
-    document.removeEventListener('mousemove', handleBoxSelectMove)
-    document.removeEventListener('mouseup', handleBoxSelectUp)
-  }
-
-  const handleComponentClick = (e: MouseEvent, comp: ScadaComponent) => {
-    if (!isEditing.value || comp.locked) return
-
-    if (e.ctrlKey || e.metaKey) {
-      e.stopPropagation()
-      const idx = selectedIds.value.indexOf(comp.id)
-      if (idx >= 0) {
-        const newIds = selectedIds.value.filter(id => id !== comp.id)
-        if (newIds.length > 0) {
-          scadaStore.selectComponent(newIds[0])
-          scadaStore.selectedComponentIds = newIds
+    if (e.button === 0) {
+      const target = e.target as HTMLElement
+      const componentEl = target.closest('[data-component-id]') as HTMLElement
+      
+      if (componentEl) {
+        const componentId = componentEl.dataset.componentId!
+        
+        if (selectedComponentIds.value.includes(componentId)) {
+          startDrag(componentId, pos)
         } else {
-          scadaStore.clearSelection()
+          scada.selectComponent(componentId)
+          startDrag(componentId, pos)
         }
       } else {
-        scadaStore.selectComponent(comp.id)
-        scadaStore.selectedComponentIds = [...selectedIds.value, comp.id]
+        scada.clearSelection()
+        startBoxSelect(pos)
       }
-      return
-    }
-
-    if (e.shiftKey && selectedId.value) {
-      e.stopPropagation()
-      const allIds = components.value.map(c => c.id)
-      const startIdx = allIds.indexOf(selectedId.value)
-      const endIdx = allIds.indexOf(comp.id)
-      if (startIdx >= 0 && endIdx >= 0) {
-        const minIdx = Math.min(startIdx, endIdx)
-        const maxIdx = Math.max(startIdx, endIdx)
-        const rangeIds = allIds.slice(minIdx, maxIdx + 1)
-        scadaStore.selectComponent(comp.id)
-        scadaStore.selectedComponentIds = rangeIds
-      }
-      return
     }
   }
 
-  const handleContextMenu = (e: MouseEvent, comp: ScadaComponent) => {
+  /**
+   * 开始拖拽
+   * @param componentId - 被拖拽的组件ID
+   * @param startPos - 拖拽起始位置
+   */
+  const startDrag = (componentId: string, startPos: CanvasPosition) => {
+    dragState.value.active = true
+    dragState.value.startPos = startPos
+    
+    const panel = currentPanel.value
+    const component = panel?.components.find(c => c.id === componentId)
+    
+    if (component) {
+      dragState.value.componentStartPos = { x: component.x, y: component.y }
+    }
+
+    // 多选拖拽时记录所有选中组件的起始位置
+    if (selectedComponentIds.value.length > 1) {
+      const bbox = getSelectionBBox()
+      dragState.value.multiStartBBox = bbox
+      dragState.value.multiStartPositions.clear()
+      selectedComponentIds.value.forEach(id => {
+        const comp = panel?.components.find(c => c.id === id)
+        if (comp) {
+          dragState.value.multiStartPositions.set(id, { x: comp.x, y: comp.y })
+        }
+      })
+    }
+
+    scada.pushUndoOperation('move', '移动组件', [...selectedComponentIds.value])
+  }
+
+  /**
+   * 开始框选
+   * @param startPos - 框选起始位置
+   */
+  const startBoxSelect = (startPos: CanvasPosition) => {
+    boxSelectState.value.active = true
+    boxSelectState.value.start = startPos
+    boxSelectState.value.end = startPos
+  }
+
+  /**
+   * 处理鼠标移动事件
+   * @param e - 鼠标事件
+   */
+  const handleMouseMove = (e: MouseEvent) => {
+    const pos = screenToCanvas(e.clientX, e.clientY)
+    mousePosition.value = pos
+    isMouseOnCanvas.value = true
+
+    if (resizeState.value.active) {
+      handleResize(pos)
+    } else if (dragState.value.active) {
+      handleDrag(pos)
+    } else if (boxSelectState.value.active) {
+      boxSelectState.value.end = pos
+    }
+  }
+
+  /**
+   * 处理拖拽移动
+   * @param currentPos - 当前鼠标位置
+   */
+  const handleDrag = (currentPos: CanvasPosition) => {
+    const dx = currentPos.x - dragState.value.startPos.x
+    const dy = currentPos.y - dragState.value.startPos.y
+
+    // 多选拖拽
+    if (selectedComponentIds.value.length > 1 && dragState.value.multiStartBBox) {
+      const bbox = dragState.value.multiStartBBox
+      const rawMinX = bbox.minX + dx
+      const rawCenterX = bbox.centerX + dx
+      const rawMaxX = bbox.maxX + dx
+      const rawMinY = bbox.minY + dy
+      const rawMiddleY = bbox.middleY + dy
+      const rawMaxY = bbox.maxY + dy
+      const snapX = computeSnapOffset([rawMinX, rawCenterX, rawMaxX], 'x')
+      const snapY = computeSnapOffset([rawMinY, rawMiddleY, rawMaxY], 'y')
+
+      selectedComponentIds.value.forEach(id => {
+        const startPos = dragState.value.multiStartPositions.get(id)
+        if (startPos) {
+          scada.updateComponent(id, {
+            x: startPos.x + dx + snapX,
+            y: startPos.y + dy + snapY
+          }, true)
+        }
+      })
+    }
+    // 单选拖拽
+    else if (selectedComponent.value) {
+      const comp = selectedComponent.value
+      const rawX = dragState.value.componentStartPos.x + dx
+      const rawY = dragState.value.componentStartPos.y + dy
+      const snapX = computeSnapOffset([rawX, rawX + comp.config.width / 2, rawX + comp.config.width], 'x')
+      const snapY = computeSnapOffset([rawY, rawY + comp.config.height / 2, rawY + comp.config.height], 'y')
+
+      scada.updateComponent(comp.id, {
+        x: rawX + snapX,
+        y: rawY + snapY
+      }, true)
+    }
+
+    showGuideLines()
+  }
+
+  /**
+   * 计算对齐吸附偏移量
+   * @param refPositions - 参考边/中心位置
+   * @param axis - 坐标轴
+   */
+  const computeSnapOffset = (refPositions: number[], axis: 'x' | 'y'): number => {
+    if (!currentPanel.value) return 0
+    const threshold = 3
+    let bestOffset = 0
+    let bestDist = threshold
+
+    // 与其他组件的边线及中心线对齐
+    currentPanel.value.components.forEach(comp => {
+      if (selectedComponentIds.value.includes(comp.id)) return
+      const targets = axis === 'x'
+        ? [comp.x, comp.x + comp.config.width / 2, comp.x + comp.config.width]
+        : [comp.y, comp.y + comp.config.height / 2, comp.y + comp.config.height]
+
+      targets.forEach(target => {
+        refPositions.forEach(ref => {
+          const offset = target - ref
+          const dist = Math.abs(offset)
+          if (dist < bestDist) {
+            bestDist = dist
+            bestOffset = offset
+          }
+        })
+      })
+    })
+
+    // 与网格对齐
+    const grid = gridSize.value
+    refPositions.forEach(ref => {
+      const target = Math.round(ref / grid) * grid
+      const offset = target - ref
+      const dist = Math.abs(offset)
+      if (dist < bestDist) {
+        bestDist = dist
+        bestOffset = offset
+      }
+    })
+
+    return bestOffset
+  }
+
+  /**
+   * 开始调整尺寸
+   * @param handle - 调整手柄
+   * @param componentId - 被调整组件ID
+   * @param e - 鼠标事件
+   */
+  const startResize = (handle: ResizeHandle, componentId: string, e: MouseEvent) => {
     if (!isEditing.value) return
-    e.preventDefault()
+
+    const panel = currentPanel.value
+    const comp = panel?.components.find(c => c.id === componentId)
+    if (!comp || comp.locked) return
+
     e.stopPropagation()
+    scada.selectComponent(componentId)
 
-    scadaStore.selectComponent(comp.id)
-    contextMenuTargetId.value = comp.id
-    contextMenuPosition.value = { x: e.clientX, y: e.clientY }
-    contextMenuType.value = 'node'
-    contextMenuVisible.value = true
+    scada.pushUndoOperation('resize', '调整尺寸', [componentId])
+
+    resizeState.value = {
+      active: true,
+      handle,
+      componentId,
+      startSize: { width: comp.config.width, height: comp.config.height },
+      startPos: screenToCanvas(e.clientX, e.clientY),
+      componentStartPos: { x: comp.x, y: comp.y }
+    }
   }
 
-  const handleCanvasContextMenu = (e: MouseEvent) => {
+  /**
+   * 处理调整尺寸移动
+   * @param currentPos - 当前鼠标位置
+   */
+  const handleResize = (currentPos: CanvasPosition) => {
+    if (!resizeState.value.active || !resizeState.value.handle || !resizeState.value.componentId || !currentPanel.value) return
+
+    const handle = resizeState.value.handle
+    const componentId = resizeState.value.componentId
+    const comp = currentPanel.value.components.find(c => c.id === componentId)
+    if (!comp) return
+
+    const dx = currentPos.x - resizeState.value.startPos.x
+    const dy = currentPos.y - resizeState.value.startPos.y
+    const startW = resizeState.value.startSize.width
+    const startH = resizeState.value.startSize.height
+    const startX = resizeState.value.componentStartPos.x
+    const startY = resizeState.value.componentStartPos.y
+    const grid = gridSize.value
+
+    let newX = startX
+    let newY = startY
+    let newW = startW
+    let newH = startH
+
+    if (handle.includes('e')) newW = startW + dx
+    if (handle.includes('s')) newH = startH + dy
+    if (handle.includes('w')) {
+      newW = startW - dx
+      newX = startX + dx
+    }
+    if (handle.includes('n')) {
+      newH = startH - dy
+      newY = startY + dy
+    }
+
+    newW = Math.max(grid, Math.round(newW / grid) * grid)
+    newH = Math.max(grid, Math.round(newH / grid) * grid)
+
+    if (handle.includes('w')) newX = startX + startW - newW
+    if (handle.includes('n')) newY = startY + startH - newH
+
+    scada.updateComponent(componentId, {
+      x: newX,
+      y: newY,
+      config: { ...comp.config, width: newW, height: newH }
+    }, true)
+
+    showGuideLines()
+  }
+
+  /**
+   * 显示对齐辅助线
+   */
+  const showGuideLines = () => {
+    guideLines.value = []
+    if (!currentPanel.value || selectedComponentIds.value.length === 0) return
+
+    const panel = currentPanel.value
+
+    // 单选时使用组件本身，多选时使用选中包围盒作为对齐基准
+    let refX = 0
+    let refY = 0
+    let refRight = 0
+    let refBottom = 0
+    let refCenterX = 0
+    let refCenterY = 0
+
+    if (selectedComponentIds.value.length > 1) {
+      const bbox = getSelectionBBox()
+      if (!bbox) return
+      refX = bbox.minX
+      refY = bbox.minY
+      refRight = bbox.maxX
+      refBottom = bbox.maxY
+      refCenterX = bbox.centerX
+      refCenterY = bbox.middleY
+    } else if (selectedComponent.value) {
+      const comp = selectedComponent.value
+      refX = comp.x
+      refY = comp.y
+      refRight = comp.x + comp.config.width
+      refBottom = comp.y + comp.config.height
+      refCenterX = comp.x + comp.config.width / 2
+      refCenterY = comp.y + comp.config.height / 2
+    } else {
+      return
+    }
+
+    // 与其他组件的边线及中心线对齐
+    panel.components.forEach(comp => {
+      if (selectedComponentIds.value.includes(comp.id)) return
+
+      const compRight = comp.x + comp.config.width
+      const compBottom = comp.y + comp.config.height
+      const compCenterX = comp.x + comp.config.width / 2
+      const compCenterY = comp.y + comp.config.height / 2
+
+      if (Math.abs(comp.x - refX) < 3) {
+        guideLines.value.push({ type: 'x', pos: comp.x })
+      }
+      if (Math.abs(compCenterX - refCenterX) < 3) {
+        guideLines.value.push({ type: 'x', pos: compCenterX })
+      }
+      if (Math.abs(compRight - refRight) < 3) {
+        guideLines.value.push({ type: 'x', pos: compRight })
+      }
+
+      if (Math.abs(comp.y - refY) < 3) {
+        guideLines.value.push({ type: 'y', pos: comp.y })
+      }
+      if (Math.abs(compCenterY - refCenterY) < 3) {
+        guideLines.value.push({ type: 'y', pos: compCenterY })
+      }
+      if (Math.abs(compBottom - refBottom) < 3) {
+        guideLines.value.push({ type: 'y', pos: compBottom })
+      }
+    })
+
+    // 与网格对齐（边线及中心线）
+    if (Math.abs(refX % gridSize.value) < 3) {
+      guideLines.value.push({ type: 'x', pos: Math.round(refX / gridSize.value) * gridSize.value })
+    }
+    if (Math.abs(refCenterX % gridSize.value) < 3) {
+      guideLines.value.push({ type: 'x', pos: Math.round(refCenterX / gridSize.value) * gridSize.value })
+    }
+    if (Math.abs(refY % gridSize.value) < 3) {
+      guideLines.value.push({ type: 'y', pos: Math.round(refY / gridSize.value) * gridSize.value })
+    }
+    if (Math.abs(refCenterY % gridSize.value) < 3) {
+      guideLines.value.push({ type: 'y', pos: Math.round(refCenterY / gridSize.value) * gridSize.value })
+    }
+  }
+
+  /**
+   * 完成框选并选中框内的组件
+   */
+  const finishBoxSelect = () => {
+    if (!boxSelectState.value.active || !currentPanel.value) return
+
+    const start = boxSelectState.value.start
+    const end = boxSelectState.value.end
+    const minX = Math.min(start.x, end.x)
+    const maxX = Math.max(start.x, end.x)
+    const minY = Math.min(start.y, end.y)
+    const maxY = Math.max(start.y, end.y)
+
+    // 框选区域过小时视为点击空白，清空选择
+    if (maxX - minX < 2 && maxY - minY < 2) {
+      scada.clearSelection()
+      return
+    }
+
+    const selectedIds = currentPanel.value.components
+      .filter(comp => {
+        const compRight = comp.x + comp.config.width
+        const compBottom = comp.y + comp.config.height
+        return comp.x < maxX && compRight > minX && comp.y < maxY && compBottom > minY
+      })
+      .map(comp => comp.id)
+
+    scada.selectComponents(selectedIds)
+  }
+
+  /**
+   * 处理鼠标松开事件
+   */
+  const handleMouseUp = () => {
+    if (boxSelectState.value.active) {
+      finishBoxSelect()
+    }
+
+    if (dragState.value.active) {
+      const hasMoved = selectedComponentIds.value.length > 1
+        ? Array.from(dragState.value.multiStartPositions.entries()).some(([id, startPos]) => {
+            const comp = currentPanel.value?.components.find(c => c.id === id)
+            return comp && (comp.x !== startPos.x || comp.y !== startPos.y)
+          })
+        : selectedComponent.value && (
+            selectedComponent.value.x !== dragState.value.componentStartPos.x ||
+            selectedComponent.value.y !== dragState.value.componentStartPos.y
+          )
+
+      if (!hasMoved) {
+        scada.popLastUndoOperation()
+      }
+    }
+
+    if (resizeState.value.active && resizeState.value.componentId) {
+      const comp = currentPanel.value?.components.find(c => c.id === resizeState.value.componentId)
+      const startSize = resizeState.value.startSize
+      const startPos = resizeState.value.componentStartPos
+      const hasResized = comp && (
+        comp.config.width !== startSize.width ||
+        comp.config.height !== startSize.height ||
+        comp.x !== startPos.x ||
+        comp.y !== startPos.y
+      )
+
+      if (!hasResized) {
+        scada.popLastUndoOperation()
+      }
+    }
+
+    dragState.value.active = false
+    boxSelectState.value.active = false
+    resizeState.value.active = false
+    guideLines.value = []
+  }
+
+  /**
+   * 处理鼠标离开画布事件
+   */
+  const handleMouseLeave = () => {
+    isMouseOnCanvas.value = false
+    if (!dragState.value.active) {
+      contextMenu.value.visible = false
+    }
+  }
+
+  /**
+   * 处理双击事件
+   * @param e - 鼠标事件
+   */
+  const handleDoubleClick = (e: MouseEvent) => {
     if (!isEditing.value) return
+    const target = e.target as HTMLElement
+    const componentEl = target.closest('[data-component-id]') as HTMLElement
+    
+    if (componentEl) {
+      const componentId = componentEl.dataset.componentId!
+      scada.selectComponent(componentId)
+    }
+  }
+
+  /**
+   * 处理右键菜单事件
+   * @param e - 鼠标事件
+   */
+  const handleContextMenu = (e: MouseEvent) => {
     e.preventDefault()
+    if (!isEditing.value) return
 
-    contextMenuTargetId.value = null
-    contextMenuPosition.value = { x: e.clientX, y: e.clientY }
-    contextMenuType.value = 'canvas'
-    contextMenuVisible.value = true
+    const target = e.target as HTMLElement
+    const componentEl = target.closest('[data-component-id]') as HTMLElement
+    
+    contextMenu.value.position = { x: e.clientX, y: e.clientY }
+    
+    if (componentEl) {
+      const componentId = componentEl.dataset.componentId!
+      contextMenu.value.targetId = componentId
+      contextMenu.value.type = 'node'
+      if (!selectedComponentIds.value.includes(componentId)) {
+        scada.selectComponent(componentId)
+      }
+    } else {
+      contextMenu.value.targetId = null
+      contextMenu.value.type = 'canvas'
+    }
   }
 
-  const hideContextMenu = () => {
-    contextMenuVisible.value = false
-    contextMenuTargetId.value = null
+  /**
+   * 关闭右键菜单
+   */
+  const closeContextMenu = () => {
+    contextMenu.value.visible = false
   }
 
-  const handleContextAction = (action: string) => {
+  /**
+   * 处理右键菜单项点击
+   * @param action - 操作类型
+   */
+  const handleContextAction = (action: ContextAction) => {
+    if (!contextMenu.value.targetId && action !== 'paste') {
+      return
+    }
+
     switch (action) {
       case 'copy':
-        if (contextMenuTargetId.value) {
-          scadaStore.copyComponent(contextMenuTargetId.value)
+        if (contextMenu.value.targetId) {
+          scada.copyComponent(contextMenu.value.targetId)
         }
         break
-      case 'paste': {
-        if (!canvasRef.value) break
-        const pos = getCanvasPosition(
-          canvasRef.value,
-          contextMenuPosition.value.x,
-          contextMenuPosition.value.y,
-          scadaStore.zoom
-        )
-        scadaStore.pasteComponent(pos.x, pos.y)
+      case 'paste':
+        scada.pasteComponent(mousePosition.value.x, mousePosition.value.y)
         break
-      }
       case 'lock':
+        if (contextMenu.value.targetId) {
+          scada.toggleLock(contextMenu.value.targetId)
+        }
+        break
       case 'unlock':
-        if (contextMenuTargetId.value) {
-          scadaStore.toggleLock(contextMenuTargetId.value)
+        if (contextMenu.value.targetId) {
+          scada.toggleLock(contextMenu.value.targetId)
         }
         break
       case 'delete':
-        if (contextMenuTargetId.value) {
-          scadaStore.deleteComponent(contextMenuTargetId.value)
+        if (contextMenu.value.type === 'node' && contextMenu.value.targetId) {
+          scada.deleteComponent(contextMenu.value.targetId)
+        } else if (contextMenu.value.type === 'canvas') {
+          scada.deleteSelectedComponents()
         }
         break
       case 'bringToFront':
-        if (contextMenuTargetId.value) {
-          scadaStore.bringToFront(contextMenuTargetId.value)
+        if (contextMenu.value.targetId) {
+          scada.bringToFront(contextMenu.value.targetId)
         }
         break
       case 'sendToBack':
-        if (contextMenuTargetId.value) {
-          scadaStore.sendToBack(contextMenuTargetId.value)
+        if (contextMenu.value.targetId) {
+          scada.sendToBack(contextMenu.value.targetId)
         }
         break
     }
 
-    hideContextMenu()
+    closeContextMenu()
   }
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && contextMenuVisible.value) {
-      hideContextMenu()
-      return
-    }
+  // ─── 选择区域计算 ──────────────────────────────────────────────────
 
-    if (!isEditing.value || !isMouseOnCanvas.value) return
+  /**
+   * 获取选中组件的边界框
+   */
+  const getSelectionBBox = () => {
+    if (!currentPanel.value || selectedComponentIds.value.length === 0) return null
 
-    if (e.ctrlKey && e.key === 'a') {
-      e.preventDefault()
-      scadaStore.selectAllComponents()
-      return
-    }
+    const components = currentPanel.value.components.filter(c => 
+      selectedComponentIds.value.includes(c.id)
+    )
 
-    if (e.ctrlKey && e.key === 'z') {
-      e.preventDefault()
-      return
-    }
+    if (components.length === 0) return null
 
-    if (e.ctrlKey && e.key === 'y') {
-      e.preventDefault()
-      return
-    }
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
 
-    if (e.ctrlKey && e.key === 'c' && selectedId.value && !contextMenuVisible.value) {
-      e.preventDefault()
-      if (selectedIds.value.length > 1) {
-        scadaStore.copySelectedComponents()
-      } else {
-        scadaStore.copyComponent(selectedId.value)
-      }
-      return
-    }
-
-    if (e.ctrlKey && e.key === 'v' && !contextMenuVisible.value) {
-      e.preventDefault()
-      scadaStore.pasteComponent(mouseCanvasPos.value.x, mouseCanvasPos.value.y)
-      return
-    }
-
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId.value) {
-      e.preventDefault()
-      if (selectedIds.value.length > 1) {
-        scadaStore.deleteSelectedComponents()
-      } else {
-        scadaStore.deleteComponent(selectedId.value)
-      }
-      return
-    }
-
-    if (e.ctrlKey && e.key === 'd' && selectedId.value) {
-      e.preventDefault()
-      scadaStore.duplicateComponent(selectedId.value)
-      return
-    }
-
-    if (!selectedId.value) return
-
-    const comp = scadaStore.selectedComponent
-    if (!comp || comp.locked) return
-
-    const step = panel.value?.grid || 20
-
-    const moveSelectedBy = (dx: number, dy: number) => {
-      if (selectedIds.value.length > 1) {
-        selectedIds.value.forEach(id => {
-          const c = components.value.find(comp => comp.id === id)
-          if (c && !c.locked) {
-            scadaStore.moveComponent(id, c.x + dx, c.y + dy)
-          }
-        })
-      } else if (selectedId.value) {
-        scadaStore.moveComponent(selectedId.value, comp.x + dx, comp.y + dy)
-      }
-    }
-
-    switch (e.key) {
-      case 'ArrowLeft':
-        moveSelectedBy(-step, 0)
-        e.preventDefault()
-        break
-      case 'ArrowRight':
-        moveSelectedBy(step, 0)
-        e.preventDefault()
-        break
-      case 'ArrowUp':
-        moveSelectedBy(0, -step)
-        e.preventDefault()
-        break
-      case 'ArrowDown':
-        moveSelectedBy(0, step)
-        e.preventDefault()
-        break
-    }
-  }
-
-  const handleScrollToComponent = async () => {
-    const targetId = scadaStore.scrollToComponentId ?? null
-    if (!targetId || !canvasRef.value) return
-
-    const component = components.value.find(c => c.id === targetId)
-    if (!component) return
-
-    await nextTick()
-
-    const canvasContainer = canvasRef.value.closest('.canvas-wrapper')
-    if (!canvasContainer) return
-
-    const containerRect = canvasContainer.getBoundingClientRect()
-
-    const scaledX = component.x * scadaStore.zoom
-    const scaledY = component.y * scadaStore.zoom
-    const scaledWidth = component.style.width * scadaStore.zoom
-    const scaledHeight = component.style.height * scadaStore.zoom
-
-    const componentCenterX = scaledX + scaledWidth / 2
-    const componentCenterY = scaledY + scaledHeight / 2
-
-    const containerCenterX = containerRect.width / 2
-    const containerCenterY = containerRect.height / 2
-
-    const scrollLeft = componentCenterX - containerCenterX
-    const scrollTop = componentCenterY - containerCenterY
-
-    canvasContainer.scrollTo({
-      left: scrollLeft,
-      top: scrollTop,
-      behavior: 'smooth'
+    components.forEach(comp => {
+      minX = Math.min(minX, comp.x)
+      maxX = Math.max(maxX, comp.x + comp.config.width)
+      minY = Math.min(minY, comp.y)
+      maxY = Math.max(maxY, comp.y + comp.config.height)
     })
 
-    scadaStore.clearScrollTarget()
+    return {
+      minX,
+      centerX: (minX + maxX) / 2,
+      maxX,
+      minY,
+      middleY: (minY + maxY) / 2,
+      maxY
+    }
   }
 
-  watch(() => scadaStore.scrollToComponentId, handleScrollToComponent)
+  // ─── 键盘事件处理 ──────────────────────────────────────────────────
+
+  /**
+   * 处理键盘按键事件
+   * @param e - 键盘事件
+   */
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!isEditing.value) return
+
+    const target = e.target as HTMLElement | null
+    const isFormElementFocused = target && (
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.tagName === 'SELECT' ||
+      target.isContentEditable ||
+      target.closest('input, textarea, select, [contenteditable]') !== null
+    )
+    if (isFormElementFocused) return
+
+    // Ctrl+C 复制
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+      e.preventDefault()
+      scada.copySelectedComponents()
+    }
+
+    // Ctrl+V 粘贴
+    if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+      e.preventDefault()
+      scada.pasteComponent(mousePosition.value.x, mousePosition.value.y)
+    }
+
+    // Ctrl+D 复制
+    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      e.preventDefault()
+      if (selectedComponent.value) {
+        scada.duplicateComponent(selectedComponent.value.id)
+      }
+    }
+
+    // Delete/Backspace 删除
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault()
+      scada.deleteSelectedComponents()
+    }
+
+    // Escape 取消选择/关闭菜单
+    if (e.key === 'Escape') {
+      scada.clearSelection()
+      closeContextMenu()
+    }
+
+    // Ctrl+A 全选
+    if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      scada.selectAllComponents()
+    }
+
+    // Ctrl+Z 撤销
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      e.preventDefault()
+      scada.undo()
+    }
+
+    // Ctrl+Y 重做
+    if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+      e.preventDefault()
+      scada.redo()
+    }
+
+    // 方向键移动选中组件
+    if (selectedComponent.value && !selectedComponent.value.locked) {
+      const step = gridSize.value
+      const keyMap: Record<string, { dx: number; dy: number }> = {
+        ArrowUp: { dx: 0, dy: -step },
+        ArrowDown: { dx: 0, dy: step },
+        ArrowLeft: { dx: -step, dy: 0 },
+        ArrowRight: { dx: step, dy: 0 }
+      }
+
+      const delta = keyMap[e.key]
+      if (delta) {
+        e.preventDefault()
+        scada.moveComponent(selectedComponent.value.id, selectedComponent.value.x + delta.dx, selectedComponent.value.y + delta.dy)
+      }
+    }
+  }
+
+  // ─── 拖拽组件到画布 ──────────────────────────────────────────────────
+
+  /**
+   * 处理拖拽进入画布事件
+   * @param e - 拖拽事件
+   */
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault()
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy'
+    }
+  }
+
+  /**
+   * 处理拖拽离开画布事件
+   * @param e - 拖拽事件
+   */
+  const handleDragLeave = (e: DragEvent) => {
+    e.preventDefault()
+  }
+
+  /**
+   * 处理放置组件到画布事件
+   * @param e - 拖拽事件
+   */
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault()
+    if (!isEditing.value) return
+
+    const componentType = e.dataTransfer?.getData('component-type') as ComponentType
+    if (!componentType) return
+
+    const pos = screenToCanvas(e.clientX, e.clientY)
+    scada.addComponent(componentType, pos.x, pos.y)
+  }
+
+  // ─── 生命周期 ──────────────────────────────────────────────────────
 
   onMounted(() => {
     document.addEventListener('keydown', handleKeyDown)
@@ -614,35 +808,40 @@ export function useScadaCanvas(canvasRef: { value: HTMLElement | null }) {
   })
 
   return {
-    isDragging,
-    isResizing,
-    isBoxSelecting,
-    boxSelectStart,
-    boxSelectEnd,
-    guideLines,
-    mouseCanvasPos,
+    // 状态引用
+    canvasRef,
+    mousePosition,
     isMouseOnCanvas,
-    contextMenuVisible,
-    contextMenuPosition,
-    contextMenuType,
-    targetComponent,
-    panel,
-    components,
-    selectedId,
-    selectedIds,
+    dragState,
+    boxSelectState,
+    resizeState,
+    guideLines,
+    contextMenu,
+    // 计算属性
+    currentPanel,
+    selectedComponent,
+    selectedComponentIds,
+    canvasWidth,
+    canvasHeight,
+    gridSize,
     isEditing,
-    getComponentStyle,
-    handleCanvasMouseMove,
-    handleCanvasMouseEnter,
-    handleCanvasMouseLeave,
-    handleComponentMouseDown,
-    handleResizeStart,
-    handleCanvasClick,
-    handleCanvasMouseDown,
-    handleComponentClick,
+    zoom,
+    showGrid,
+    // 事件处理函数
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleMouseLeave,
+    handleDoubleClick,
     handleContextMenu,
-    handleCanvasContextMenu,
-    hideContextMenu,
-    handleContextAction
+    closeContextMenu,
+    handleContextAction,
+    handleKeyDown,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    startResize,
+    // 工具函数
+    screenToCanvas
   }
 }

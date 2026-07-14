@@ -1,17 +1,17 @@
 <template>
   <div class="switch-container" @click="handleToggle">
-    <div class="switch-label">{{ switchConfig?.onText || t('scadaComponents.switchOn') }}</div>
+    <div class="switch-label">{{ onText }}</div>
     <div class="switch-track" :class="{ on: currentValue, writing }">
       <div class="switch-thumb" :class="{ on: currentValue }"></div>
     </div>
-    <div class="switch-label">{{ switchConfig?.offText || t('scadaComponents.switchOff') }}</div>
+    <div class="switch-label">{{ offText }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { ScadaComponent } from '@/types/scada'
+import type { ScadaComponent, SwitchComponentConfig } from '@/types/scada'
 import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
@@ -21,14 +21,23 @@ const props = defineProps<{
   editing?: boolean
 }>()
 
-const switchConfig = computed(() => props.config.switchConfig)
+const switchConfig = computed(() => props.config.config as SwitchComponentConfig)
 const binding = computed(() => props.config.binding)
+const fallbackValue = computed(() => props.config.config.value)
+
+const onText = computed(() => {
+  const text = switchConfig.value?.onText
+  return text ? t(text) : t('scadaComponents.switchOn')
+})
+
+const offText = computed(() => {
+  const text = switchConfig.value?.offText
+  return text ? t(text) : t('scadaComponents.switchOff')
+})
 
 const { currentValue, writeValue } = useScadaBinding(binding, {
-  autoRefresh: true,
-  refreshInterval: 3000,
   transform: (value) => value === true || value === 1
-})
+}, fallbackValue)
 
 const writing = ref(false)
 

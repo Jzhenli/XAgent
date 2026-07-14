@@ -1,8 +1,17 @@
-import type { StyleConfig, ScadaComponentMeta, ChartConfig } from '../../../../types'
+import type { ScadaComponentMeta, ChartComponentConfig } from '../../../../types'
 import ScadaChart from './index.vue'
 import ChartConfigPanel from './ConfigPanel.vue'
 
-const defaultStyle: StyleConfig = { width: 300, height: 200 }
+const defaultConfig: ChartComponentConfig = {
+  width: 300,
+  height: 200,
+  backgroundColor: '#ffffff',
+  borderRadius: 8,
+  timeRange: '24h',
+  lineColor: '#3498db',
+  areaFill: true,
+  showLegend: true
+}
 
 export const chartLineMeta: ScadaComponentMeta = {
   type: 'chart-line',
@@ -12,18 +21,10 @@ export const chartLineMeta: ScadaComponentMeta = {
     name: 'scadaComponentNames.chartLine',
     icon: '📈',
     category: 'scadaComponentCategories.chart',
-    defaultStyle,
-    defaultConfig: {
-      chartConfig: {
-        timeRange: '24h',
-        lineColor: '#3498db',
-        areaFill: true,
-        showLegend: true
-      }
-    }
+    defaultConfig
   },
   configTypes: {
-    ChartConfig: null as unknown as ChartConfig
+    ChartComponentConfig: null as unknown as ChartComponentConfig
   }
 }
 
@@ -35,17 +36,13 @@ export const chartBarMeta: ScadaComponentMeta = {
     name: 'scadaComponentNames.chartBar',
     icon: '📊',
     category: 'scadaComponentCategories.chart',
-    defaultStyle,
     defaultConfig: {
-      chartConfig: {
-        timeRange: '24h',
-        lineColor: '#27ae60',
-        areaFill: false,
-        showLegend: true
-      }
+      ...defaultConfig,
+      lineColor: '#27ae60',
+      areaFill: false
     }
   },
   configTypes: {
-    ChartConfig: null as unknown as ChartConfig
+    ChartComponentConfig: null as unknown as ChartComponentConfig
   }
 }

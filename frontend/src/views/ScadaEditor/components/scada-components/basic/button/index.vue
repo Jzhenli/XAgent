@@ -6,16 +6,17 @@
       :loading="writing"
       style="width: 100%; height: 100%;"
     >
-      {{ buttonConfig?.text || t('scadaComponents.defaultButton') }}
+      {{ displayText }}
     </el-button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { ScadaComponent } from '@/types/scada'
+import type { ScadaComponent, ButtonComponentConfig } from '@/types/scada'
 import { usePointStore } from '@/stores/points'
+import { ScadaPointReaderKey } from '@/utils/scadaPointReader'
 import { controlApi } from '@/api/control'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
@@ -26,9 +27,16 @@ const props = defineProps<{
 }>()
 
 const pointStore = usePointStore()
+const injectedReader = inject(ScadaPointReaderKey, null)
+const devices = computed(() => injectedReader ? injectedReader.devices.value : pointStore.devices)
 const writing = ref(false)
 
-const buttonConfig = computed(() => props.config.buttonConfig)
+const buttonConfig = computed(() => props.config.config as ButtonComponentConfig)
+
+const displayText = computed(() => {
+  const text = buttonConfig.value?.text
+  return text ? t(text) : t('scadaComponents.defaultButton')
+})
 
 const handleClick = async () => {
   if (props.editing) return
@@ -47,7 +55,7 @@ const handleClick = async () => {
   if (writeTarget && buttonConfig.value?.writeValue !== undefined) {
     writing.value = true
     try {
-      const device = pointStore.devices.find(d => d.asset === writeTarget.deviceId || d.name === writeTarget.deviceId)
+      const device = devices.value.find(d => d.asset === writeTarget.deviceId || d.name === writeTarget.deviceId)
       const pluginName = device?.pluginName || ''
       const res = await controlApi.writeSetpoint(
         pluginName,

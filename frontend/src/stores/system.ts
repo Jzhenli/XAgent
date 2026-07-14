@@ -23,6 +23,10 @@ export interface DataQualityStats {
   qualityRate: number
 }
 
+export interface VisualizationConfig {
+  pollingInterval: number
+}
+
 export const useSystemStore = defineStore('system', () => {
   const stats = ref<SystemStats>({
     cpuUsage: 0,
@@ -42,6 +46,10 @@ export const useSystemStore = defineStore('system', () => {
     uncertain: 0,
     total: 0,
     qualityRate: 0
+  })
+
+  const visualizationConfig = ref<VisualizationConfig>({
+    pollingInterval: 3000
   })
 
   const loading = ref(false)
@@ -159,6 +167,7 @@ export const useSystemStore = defineStore('system', () => {
   return {
     stats,
     dataQuality,
+    visualizationConfig,
     loading,
     error,
     fetchSystemStats,
@@ -173,6 +182,6 @@ export const useSystemStore = defineStore('system', () => {
     storage: sessionStorage,
     // 系统统计数据时效性较短，可选择不持久化
     // 但为了优化页面切换体验，保留持久化
-    paths: ['stats', 'dataQuality']
+    paths: ['stats', 'dataQuality', 'visualizationConfig']
   }
 })

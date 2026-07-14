@@ -2,23 +2,23 @@
   <el-card class="project-card" shadow="hover">
     <div class="project-info">
       <div class="project-title-row">
-        <h3 class="project-name">{{ panel.name }}</h3>
-        <el-tag :type="panel.type === 'Dashboard' ? 'info' : 'warning'" size="small" class="type-tag">
-          {{ panel.type === 'Dashboard' ? $t('scada.dashboardType') : $t('scada.graphicType') }}
+        <h3 class="project-name">{{ project.name }}</h3>
+        <el-tag :type="project.type === 'Dashboard' ? 'info' : 'warning'" size="small" class="type-tag">
+          {{ project.type === 'Dashboard' ? $t('scada.dashboardType') : $t('scada.graphicType') }}
         </el-tag>
         <el-button
           type="success"
           :icon="View"
           size="small"
           circle
-          @click="$emit('preview', panel)"
+          @click="$emit('preview', project)"
           class="preview-btn"
         />
       </div>
-      <p class="project-desc">{{ panel.description || $t('scada.noDescription') }}</p>
+      <p class="project-desc">{{ project.description || $t('scada.noDescription') }}</p>
       <div class="project-meta">
-        <span>{{ $t('scada.componentCount') }}: {{ panel.components?.length || 0 }}</span>
-        <span>{{ $t('scada.createTime') }}: {{ formatTime(panel.createdAt) }}</span>
+        <span>{{ $t('scada.createTime') }}: {{ formatTime(project.createdAt) }}</span>
+        <span>{{ $t('scada.updateTime') }}: {{ formatTime(project.updatedAt) }}</span>
       </div>
     </div>
     <div class="project-actions">
@@ -26,7 +26,7 @@
         type="primary"
         :icon="Edit"
         size="small"
-        @click="$emit('edit', panel)"
+        @click="$emit('edit', project)"
       >
         {{ $t('scada.edit') }}
       </el-button>
@@ -34,7 +34,7 @@
         type="warning"
         :icon="Setting"
         size="small"
-        @click="$emit('settings', panel)"
+        @click="$emit('settings', project)"
       >
         {{ $t('scada.settings') }}
       </el-button>
@@ -42,7 +42,7 @@
         type="danger"
         :icon="Delete"
         size="small"
-        @click="$emit('delete', panel.id)"
+        @click="$emit('delete', project.id)"
       >
         {{ $t('scada.delete') }}
       </el-button>
@@ -52,16 +52,17 @@
 
 <script setup lang="ts">
 import { Edit, Delete, Setting, View } from '@element-plus/icons-vue'
+import type { Project } from '@/types/project'
 
 defineProps<{
-  panel: any
+  project: Project
   formatTime: (timestamp: number) => string
 }>()
 
 defineEmits<{
-  (e: 'preview', panel: any): void
-  (e: 'edit', panel: any): void
-  (e: 'settings', panel: any): void
+  (e: 'preview', project: Project): void
+  (e: 'edit', project: Project): void
+  (e: 'settings', project: Project): void
   (e: 'delete', id: string): void
 }>()
 </script>

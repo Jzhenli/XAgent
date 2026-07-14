@@ -1,5 +1,8 @@
 
 import DataManager from './DataManager'
+import { deviceApi } from '@/api/devices'
+import { parseStandardPoints } from '@/utils/pointMapping'
+import { useSystemStore } from '@/stores/system'
 
 export enum PointAttrValueType {
   Analog = 'Analog',
@@ -47,12 +50,14 @@ export default class DataHandleManager extends DataManager {
     // 收集有效点ID
     const pointIds = new Set<string>()
 
+    //console.log('setPointBindings', bindingPairs)
     bindingPairs.forEach(([binding, callback]) => {
       if (!binding || !callback) return
 
       const parts = binding.pointRef.split(',')
       if (parts.length < 2) return
 
+      //pointRef 第一个参数是设备ID，第二个参数是点名称
       const pointId = parts[1]
       if (!pointId) return
 
@@ -83,9 +88,10 @@ export default class DataHandleManager extends DataManager {
     }
 
     // 设置定时轮询
-    // this.intervalId = window.setInterval(() => {
-    //   this.fetchAndUpdatePoints(uniquePointIds, callbackMap)
-    // }, IntervalTimeOut())
+    const systemStore = useSystemStore()
+    this.intervalId = window.setInterval(() => {
+      this.fetchAndUpdatePoints(uniquePointIds, callbackMap)
+    }, systemStore.visualizationConfig.pollingInterval)
 
     return []
   }
@@ -94,34 +100,60 @@ export default class DataHandleManager extends DataManager {
     pointIds: string[],
     callbackMap: Map<string, PointCallbackInfo[]>
   ) {
-    console.log('fetchAndUpdatePoints', pointIds, callbackMap)
     try {
-    //   const res = await readPointsDataById(pointIds)
-    //   if (!res.data || !Array.isArray(res.data)) {
-    //     console.warn('Invalid points data response', res)
-    //     return
-    //   }
+      const res = await deviceApi.getLatest(false)
+      if (!res.devices || !Array.isArray(res.devices)) {
+        console.warn('Invalid points data response', res)
+        return
+      }
 
-    //   //console.log('Fetched points data:', res.data, pointIds)
-    //   res.data.forEach((item: any) => {
-    //     const callbackInfos = callbackMap.get(item.metric_id)
-    //     if (!callbackInfos) return
+      //console.log('fetchAndUpdatePoints', res.devices, new Date().toISOString())
 
-    //     callbackInfos.forEach(({ callback, pointType }) => {
-    //       try {
-    //         let load = cloneDeep(item.value)
-    //         if (item.value === true || item.value === 'true') {
-    //           load = 1
-    //         } else if (item.value === false || item.value === 'false') {
-    //           load = 0
-    //         }
-    //         //console.log(`Updating point ${item.metric_id} with value:`, load, pointType)
-    //         callback(load, pointType)
-    //       } catch (err) {
-    //         console.error(`Error executing callback for point ${item.metric_id}`, err)
-    //       }
-    //     })
-    //   })
+      for (const device of res.devices) {
+        const { standardPoints } = parseStandardPoints(device.standard_points)
+
+        for (const [pointName, standardPoint] of standardPoints) {
+          const callbackInfos = callbackMap.get(pointName)
+          if (!callbackInfos) continue
+
+          callbackInfos.forEach(({ callback, pointType }) => {
+            try {
+              let value = standardPoint.value
+              if (value === true || value === 'true') {
+                value = 1
+              } else if (value === false || value === 'false') {
+                value = 0
+              }
+              callback(value, pointType)
+            } catch (err) {
+              console.error(`Error executing callback for point ${pointName}`, err)
+            }
+          })
+        }
+
+        if (device.data) {
+          for (const [pointName, rawValue] of Object.entries(device.data)) {
+            if (standardPoints.has(pointName)) continue
+
+            const callbackInfos = callbackMap.get(pointName)
+            if (!callbackInfos) continue
+
+            callbackInfos.forEach(({ callback, pointType }) => {
+              try {
+                let value = rawValue
+                if (value === true || value === 'true') {
+                  value = 1
+                } else if (value === false || value === 'false') {
+                  value = 0
+                }
+                callback(value, pointType)
+              } catch (err) {
+                console.error(`Error executing callback for point ${pointName}`, err)
+              }
+            })
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch points data', err)
     }

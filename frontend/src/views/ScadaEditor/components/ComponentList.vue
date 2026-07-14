@@ -21,25 +21,38 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Delete } from '@element-plus/icons-vue'
-import { useScadaElement } from '../hooks'
-import type { ScadaComponent } from '@/types/scada'
+import { useScadaEditor } from '../hooks/useScadaEditor'
+import { getComponentMeta } from '../registry'
+import type { ScadaComponent } from '../types'
 
 const { t } = useI18n()
+const scada = useScadaEditor()
 
-const { components, selectedIds, selectComponent, deleteComponent, scrollToComponent, resolveComponentName, getComponentIcon } = useScadaElement()
+const components = computed(() => scada.currentPanel.value?.components || [])
+const selectedIds = computed(() => scada.selectedComponentIds.value)
 
-const getComponentName = (comp: ScadaComponent) => resolveComponentName(comp, t)
+const getComponentIcon = (type: string) => {
+  return getComponentMeta(type as any)?.template.icon || '📦'
+}
+
+const getComponentName = (comp: ScadaComponent) => {
+  if (comp.name?.startsWith('scadaComponentNames.')) {
+    return t(comp.name)
+  }
+  return comp.name || comp.type
+}
 
 const handleLocateComponent = (component: ScadaComponent) => {
-  selectComponent(component.id)
-  scrollToComponent(component.id)
+  scada.selectComponent(component.id)
+  scada.scrollToComponent(component.id)
 }
 
 const handleDeleteComponent = (component: ScadaComponent, event: Event) => {
   event.stopPropagation()
-  deleteComponent(component.id)
+  scada.deleteComponent(component.id)
 }
 </script>
 

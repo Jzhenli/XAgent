@@ -24,6 +24,10 @@
               <el-icon><Lock /></el-icon>
               <span>{{ $t('settings.menu.permissions') }}</span>
             </el-menu-item>
+            <el-menu-item index="visualization">
+              <el-icon><Document /></el-icon>
+              <span>{{ $t('settings.menu.visualization') }}</span>
+            </el-menu-item>
           </el-menu>
         </div>
       </template>
@@ -73,6 +77,14 @@
           >
             <el-icon><Lock /></el-icon>
             <span>{{ $t('settings.menu.permissions') }}</span>
+          </div>
+          <div 
+            class="settings-tab" 
+            :class="{ active: activeMenu === 'visualization' }"
+            @click="activeMenu = 'visualization'"
+          >
+            <el-icon><Document /></el-icon>
+            <span>{{ $t('settings.menu.visualization') }}</span>
           </div>
         </div>
       </template>
@@ -289,6 +301,24 @@
           </div>
         </div>
 
+        <div v-if="activeMenu === 'visualization'" class="settings-section">
+          <h3>{{ $t('settings.menu.visualization') }}</h3>
+          <el-form label-width="160px" class="settings-form">
+            <el-form-item :label="$t('settings.visualization.polling_interval')">
+              <el-input-number 
+                v-model="systemStore.visualizationConfig.pollingInterval" 
+                :min="1000" 
+                :max="30000" 
+                :step="500"
+              />
+              <span style="margin-left: 8px; color: var(--text-secondary); font-size: 14px;">{{ $t('settings.visualization.milliseconds') }}</span>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="handleSaveVisualization">{{ $t('settings.general.save_config') }}</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+
         <div v-if="activeMenu === 'permissions'" class="settings-section">
           <h3>{{ $t('settings.menu.permissions') }}</h3>
           <div class="permission-section">
@@ -448,6 +478,7 @@ import {
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import { useUserStore } from '@/stores/users'
+import { useSystemStore } from '@/stores/system'
 import { useResponsive } from '@/utils/useResponsive'
 import type { UserInfo, RoleInfo } from '@/api/users'
 import { configApi, type ConfigBackup } from '@/api/config'
@@ -480,7 +511,12 @@ const handleSave = () => {
   ElMessage.success(t('settings.config_saved'))
 }
 
+const handleSaveVisualization = () => {
+  ElMessage.success(t('settings.config_saved'))
+}
+
 const userStore = useUserStore()
+const systemStore = useSystemStore()
 
 const RESOURCE_LABELS: Record<string, string> = {
   dashboard: t('settings.resources.dashboard'),

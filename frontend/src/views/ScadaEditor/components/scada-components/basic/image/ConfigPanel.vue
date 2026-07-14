@@ -1,15 +1,21 @@
 <template>
   <div class="config-section">
     <div class="section-title">{{ t('componentConfig.imageConfig') }}</div>
+
+    <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
+    <div class="form-group">
+      <label>{{ t('componentConfig.currentValue') }}</label>
+      <input type="text" :value="config.value ?? ''" @input="updateValue(($event.target as HTMLInputElement).value || null)">
+    </div>
     <div class="form-group">
       <label>{{ t('componentConfig.imageSource') }}</label>
-      <div v-if="component.imageConfig?.url" class="bg-image-card">
+      <div v-if="config.url" class="bg-image-card">
         <div class="bg-image-preview">
-          <img :src="component.imageConfig.url" alt="image">
+          <img :src="config.url" alt="image">
         </div>
         <div class="bg-image-actions">
           <el-button size="small" @click="triggerImageUpload">{{ t('componentConfig.changeImage') }}</el-button>
-          <el-button size="small" type="danger" @click="removeImage">{{ t('componentConfig.removeImage') }}</el-button>
+          <el-button size="small" type="danger" @click="updateConfig('url', undefined)">{{ t('componentConfig.removeImage') }}</el-button>
         </div>
       </div>
       <div v-else class="bg-upload-area" @click="triggerImageUpload">
@@ -24,13 +30,31 @@
         @change="handleImageUpload"
       />
     </div>
-    <div class="form-group">
-      <label>{{ t('componentConfig.imageFit') }}</label>
-      <select :value="component.imageConfig?.fit || 'contain'" @change="updateConfig('fit', ($event.target as HTMLSelectElement).value)">
-        <option value="contain">{{ t('componentConfig.fitContain') }}</option>
-        <option value="cover">{{ t('componentConfig.fitCover') }}</option>
-        <option value="fill">{{ t('componentConfig.fitFill') }}</option>
-      </select>
+
+    <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.imageFit') }}</label>
+        <select :value="config.fit || 'contain'" @change="updateConfig('fit', ($event.target as HTMLSelectElement).value as ImageComponentConfig['fit'])">
+          <option value="contain">{{ t('componentConfig.fitContain') }}</option>
+          <option value="cover">{{ t('componentConfig.fitCover') }}</option>
+          <option value="fill">{{ t('componentConfig.fitFill') }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.backgroundColor') }}</label>
+        <el-color-picker :model-value="config.backgroundColor" show-alpha @active-change="updateConfig('backgroundColor', $event)" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.borderRadius') }}</label>
+        <input type="number" :value="config.borderRadius" @input="updateConfig('borderRadius', +($event.target as HTMLInputElement).value)">
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.opacity') }}</label>
+        <input type="number" :value="config.opacity" min="0" max="1" step="0.1" @input="updateConfig('opacity', +($event.target as HTMLInputElement).value)">
+      </div>
     </div>
   </div>
 </template>
@@ -38,24 +62,18 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useScadaStore } from '@/stores/scada'
-import type { ScadaComponent } from '@/types/scada'
+import { useScadaConfig } from '../../../../hooks/useScadaEditor'
+import type { ScadaComponent, ImageComponentConfig } from '../../../../types'
 
 const { t } = useI18n()
-const scadaStore = useScadaStore()
 
 const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const imageFileInput = ref<HTMLInputElement | null>(null)
+const { config, updateConfig, updateValue } = useScadaConfig(props.component as ScadaComponent<'image'>)
 
-const updateConfig = (key: string, value: any) => {
-  const config = props.component.imageConfig || {}
-  scadaStore.updateComponent(props.component.id, {
-    imageConfig: { ...config, [key]: value }
-  })
-}
+const imageFileInput = ref<HTMLInputElement | null>(null)
 
 const handleImageUpload = (e: Event) => {
   const input = e.target as HTMLInputElement
@@ -72,10 +90,6 @@ const handleImageUpload = (e: Event) => {
   reader.readAsDataURL(file)
   
   input.value = ''
-}
-
-const removeImage = () => {
-  updateConfig('url', undefined)
 }
 
 const triggerImageUpload = () => {
@@ -102,6 +116,15 @@ const triggerImageUpload = () => {
   margin-bottom: 10px;
 }
 
+.subsection-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 12px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--border-light);
+}
+
 .form-group {
   margin-bottom: 10px;
 }
@@ -117,6 +140,7 @@ const triggerImageUpload = () => {
   display: none;
 }
 
+.form-group input,
 .form-group select {
   width: 100%;
   padding: 6px 8px;
@@ -125,9 +149,23 @@ const triggerImageUpload = () => {
   font-size: 13px;
 }
 
+.form-group input:focus,
 .form-group select:focus {
   outline: none;
   border-color: var(--color-primary);
+}
+
+.form-group :deep(.el-color-picker__trigger) {
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
+  gap: 8px;
+}
+
+.form-row .form-group {
+  flex: 1;
 }
 
 .bg-image-card {

@@ -1,5 +1,14 @@
-import type { StyleConfig, ScadaComponentMeta, SwitchConfig } from '../../../../types'
+import type { ScadaComponentMeta, SwitchComponentConfig } from '../../../../types'
 import ScadaSwitch from './index.vue'
+
+const defaultConfig: SwitchComponentConfig = {
+  width: 100,
+  height: 50,
+  onText: 'scadaComponents.switchOn',
+  offText: 'scadaComponents.switchOff',
+  confirmRequired: true,
+  writePoint: null
+}
 
 export const switchMeta: ScadaComponentMeta = {
   type: 'switch',
@@ -8,17 +17,9 @@ export const switchMeta: ScadaComponentMeta = {
     name: 'scadaComponentNames.switch',
     icon: '🔘',
     category: 'scadaComponentCategories.basic',
-    defaultStyle: { width: 100, height: 50 },
-    defaultConfig: {
-      switchConfig: {
-        onText: '开',
-        offText: '关',
-        confirmRequired: true,
-        writePoint: null
-      }
-    }
+    defaultConfig
   },
   configTypes: {
-    SwitchConfig: null as unknown as SwitchConfig
+    SwitchComponentConfig: null as unknown as SwitchComponentConfig
   }
 }

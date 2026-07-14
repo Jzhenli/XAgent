@@ -39,7 +39,11 @@
     "test": "测试",
     "yes": "是",
     "no": "否",
-    "retry": "重试"
+    "retry": "重试",
+    "on": "开",
+    "off": "关",
+    "tip": "提示",
+    "duplicateSuffix": " (副本)"
   },
   "layout": {
     "dashboard": "监控面板",
@@ -566,6 +570,7 @@
     "fileName": "文件名",
     "size": "大小",
     "createTime": "创建时间",
+    "updateTime": "更新时间",
     "actions_label": "操作",
     "restore": "恢复",
     "download": "下载",
@@ -692,7 +697,8 @@
       "logs": "日志",
       "backup": "备份",
       "users": "用户",
-      "permissions": "权限"
+      "permissions": "权限",
+      "visualization": "可视化"
     },
     "general": {
       "log_level": "日志级别",
@@ -768,6 +774,10 @@
       "denied": "拒绝",
       "update_success": "权限更新成功",
       "update_failed": "权限更新失败"
+    },
+    "visualization": {
+      "polling_interval": "读值周期",
+      "milliseconds": "毫秒"
     },
     "config_saved": "配置已保存",
     "operation_failed": "操作失败",
@@ -1170,6 +1180,7 @@
   },
   "scada": {
     "title": "项目管理",
+    "loading": "加载中...",
     "newProject": "新建项目",
     "createProject": "创建项目",
     "noProjects": "暂无项目，请点击右上角创建新项目",
@@ -1180,6 +1191,7 @@
     "noDescription": "暂无描述",
     "componentCount": "组件: {count}",
     "createTime": "创建时间",
+    "updateTime": "更新时间",
     "editProject": "编辑项目",
     "edit": "编辑",
     "settings": "设置",
@@ -1203,6 +1215,8 @@
     "zoomReset": "重置缩放",
     "showGrid": "显示网格",
     "editMode": "编辑模式",
+    "undo": "撤销",
+    "redo": "重做",
     "setBackgroundImage": "设置背景图",
     "removeBgImage": "移除背景图",
     "removeBgImageSuccess": "背景图已移除",
@@ -1221,7 +1235,24 @@
     "publishConfirmTitle": "发布确认",
     "publishSuccess": "面板已发布成功！",
     "exportSuccess": "面板已导出",
+    "importSuccess": "面板已导入",
+    "importFailed": "面板导入失败",
+    "invalidPanelFile": "无效的面板文件格式",
+    "invalidPanelId": "无效的面板ID",
+    "loadPanelFailed": "面板加载失败",
+    "refreshSuccess": "项目列表已刷新",
+    "importConfirm": "即将导入 {count} 个项目，是否继续？",
+    "importConfirmTitle": "导入确认",
+    "projectsImported": "成功导入 {count} 个项目",
+    "projectsImportPartial": "导入完成：成功 {success}，失败 {failed}",
+    "projectsExported": "已导出 {count} 个项目",
+    "noExportableProjects": "没有可导出的项目",
+    "invalidProjectsFile": "无效的项目文件格式",
     "savePanelSuccess": "面板已保存",
+    "exitConfirm": "当前面板有未保存的更改，确定要离开吗？",
+    "exitConfirmTitle": "确认离开",
+    "saveBeforeExit": "是否保存当前更改？",
+    "discardChanges": "不保存",
     "projectType": "项目类型",
     "selectProjectType": "请选择项目类型",
     "dashboardType": "Dashboard",
@@ -1246,7 +1277,30 @@
     "slideshowScopeGraphic": "仅 Graphic",
     "slideshowStart": "开始预览",
     "slideshowPlay": "播放",
-    "slideshowPause": "暂停"
+    "slideshowPause": "暂停",
+    "writeValueDialog": {
+      "title": "写值",
+      "placeholder": "请输入数值",
+      "success": "写值成功",
+      "failed": "写值失败",
+      "result": "写值结果:"
+    },
+    "undoOperations": {
+      "add": "添加组件 {name}",
+      "delete": "删除组件 {name}",
+      "deleteMultiple": "删除 {count} 个组件",
+      "update": "更新组件",
+      "move": "移动组件",
+      "resize": "调整尺寸",
+      "bind": "绑定点位",
+      "duplicate": "复制组件 {name}",
+      "paste": "粘贴 {count} 个组件",
+      "lock": "锁定组件",
+      "unlock": "解锁组件",
+      "reorder": "调整图层顺序",
+      "bringToFront": "置于顶层",
+      "sendToBack": "置于底层"
+    }
   },
   "ruleEditor": {
     "defaultRuleName": "新规则",
@@ -1372,7 +1426,9 @@
   },
   "componentPalette": {
     "title": "📦 组件库",
-    "dragHint": "拖拽到画布"
+    "dragHint": "拖拽到画布",
+    "hideComponentList": "隐藏组件列表",
+    "showComponentList": "显示组件列表"
   },
   "componentConfig": {
     "componentConfig": "组件配置",
@@ -1391,6 +1447,23 @@
     "minValue": "最小值",
     "maxValue": "最大值",
     "unit": "单位",
+    "currentValue": "当前值",
+    "dataSection": "数据",
+    "styleSection": "样式",
+    "fontSize": "字体大小",
+    "fontColor": "字体颜色",
+    "borderRadius": "圆角",
+    "opacity": "透明度",
+    "borderColor": "边框颜色",
+    "borderWidth": "边框宽度",
+    "content": "内容",
+    "fontWeight": "字体粗细",
+    "fontWeightNormal": "常规",
+    "fontWeightBold": "加粗",
+    "textAlign": "对齐方式",
+    "alignLeft": "左对齐",
+    "alignCenter": "居中",
+    "alignRight": "右对齐",
     "chartConfig": "图表配置",
     "timeRange": "时间范围",
     "lineColor": "线条颜色",
@@ -1406,6 +1479,8 @@
     "fitContain": "适应",
     "fitCover": "覆盖",
     "fitFill": "拉伸",
+    "textConfig": "文本配置",
+    "containerConfig": "容器配置",
     "operations": "操作",
     "duplicate": "复制",
     "bringToFront": "置顶",
@@ -1521,12 +1596,21 @@
     "commandError": "命令状态异常",
     "operationFailed": "操作失败",
     "defaultButton": "按钮",
+    "buttonText": "按钮",
     "switchOn": "开",
     "switchOff": "关",
     "confirmToggle": "确定要",
     "confirmToggleSuffix": "？",
     "defaultText": "文本",
+    "textLabel": "文本",
+    "containerPlaceholder": "容器",
+    "sliderWriteSuccess": "写入成功",
+    "imagePlaceholder": "图片",
     "valueRangeError": "请确认写入值在合理范围内"
+  },
+  "scadaBinding": {
+    "noBoundPoint": "未绑定点位",
+    "pointNotWritable": "点位 {name} 不可写"
   },
   "confirmDialog": {
     "confirm": "确定",

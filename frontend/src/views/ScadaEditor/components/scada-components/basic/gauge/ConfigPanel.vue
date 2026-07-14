@@ -1,40 +1,69 @@
 <template>
   <div class="config-section">
     <div class="section-title">{{ t('componentConfig.gaugeConfig') }}</div>
+
+    <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.currentValue') }}</label>
+        <input type="number" :value="config.value ?? 0" @input="updateNumericValue($event)">
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.unit') }}</label>
+        <input type="text" :value="config.unit" @input="updateConfig('unit', ($event.target as HTMLInputElement).value)">
+      </div>
+    </div>
     <div class="form-row">
       <div class="form-group">
         <label>{{ t('componentConfig.minValue') }}</label>
-        <input type="number" :value="component.gaugeConfig?.min ?? 0" @input="updateConfig('min', +($event.target as HTMLInputElement).value)">
+        <input type="number" :value="config.min" @input="updateConfig('min', +($event.target as HTMLInputElement).value)">
       </div>
       <div class="form-group">
         <label>{{ t('componentConfig.maxValue') }}</label>
-        <input type="number" :value="component.gaugeConfig?.max ?? 100" @input="updateConfig('max', +($event.target as HTMLInputElement).value)">
+        <input type="number" :value="config.max" @input="updateConfig('max', +($event.target as HTMLInputElement).value)">
       </div>
     </div>
-    <div class="form-group">
-      <label>{{ t('componentConfig.unit') }}</label>
-      <input type="text" :value="component.gaugeConfig?.unit ?? ''" @input="updateConfig('unit', ($event.target as HTMLInputElement).value)">
+
+    <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.backgroundColor') }}</label>
+        <el-color-picker :model-value="config.backgroundColor" show-alpha @active-change="updateConfig('backgroundColor', $event)" />
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.borderRadius') }}</label>
+        <input type="number" :value="config.borderRadius" @input="updateConfig('borderRadius', +($event.target as HTMLInputElement).value)">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.fontSize') }}</label>
+        <input type="number" :value="config.fontSize" @input="updateConfig('fontSize', +($event.target as HTMLInputElement).value)">
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.fontColor') }}</label>
+        <el-color-picker :model-value="config.fontColor" show-alpha @active-change="updateConfig('fontColor', $event)" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { useScadaStore } from '@/stores/scada'
-import type { ScadaComponent } from '@/types/scada'
+import { useScadaConfig } from '../../../../hooks/useScadaEditor'
+import type { ScadaComponent } from '../../../../types'
 
 const { t } = useI18n()
-const scadaStore = useScadaStore()
 
 const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const updateConfig = (key: string, value: any) => {
-  const config = props.component.gaugeConfig || { min: 0, max: 100, unit: '', thresholds: [], showValue: true }
-  scadaStore.updateComponent(props.component.id, {
-    gaugeConfig: { ...config, [key]: value }
-  })
+const { config, updateConfig, updateValue } = useScadaConfig(props.component as ScadaComponent<'gauge'>)
+
+const updateNumericValue = (e: Event) => {
+  const value = +((e.target as HTMLInputElement).value)
+  updateValue(isNaN(value) ? 0 : value)
 }
 </script>
 
@@ -55,6 +84,15 @@ const updateConfig = (key: string, value: any) => {
   color: var(--text-secondary);
   text-transform: uppercase;
   margin-bottom: 10px;
+}
+
+.subsection-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 12px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--border-light);
 }
 
 .form-group {
@@ -79,6 +117,10 @@ const updateConfig = (key: string, value: any) => {
 .form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
+}
+
+.form-group :deep(.el-color-picker__trigger) {
+  width: 100%;
 }
 
 .form-row {

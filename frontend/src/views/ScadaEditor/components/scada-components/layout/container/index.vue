@@ -1,7 +1,8 @@
 <template>
   <div class="container-wrapper" :style="containerStyle">
     <div v-if="editing" class="container-placeholder">
-      <span>容器</span>
+      <span>{{ t('scadaComponents.containerPlaceholder') }}</span>
+      <span v-if="currentValue" class="container-value">{{ currentValue }}</span>
     </div>
     <slot />
   </div>
@@ -9,19 +10,26 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ScadaComponent } from '@/types/scada'
+import { useI18n } from 'vue-i18n'
+import type { ScadaComponent, ContainerComponentConfig } from '@/types/scada'
 
 const props = defineProps<{
   config: ScadaComponent
   editing?: boolean
 }>()
 
+const { t } = useI18n()
+
+const containerConfig = computed(() => props.config.config as ContainerComponentConfig)
+
 const containerStyle = computed(() => ({
-  backgroundColor: props.config.style.backgroundColor || 'transparent',
-  borderColor: props.config.style.borderColor || 'var(--border-base)',
-  borderWidth: `${props.config.style.borderWidth || 1}px`,
-  borderRadius: `${props.config.style.borderRadius || 4}px`,
+  backgroundColor: containerConfig.value?.backgroundColor || 'transparent',
+  borderColor: containerConfig.value?.borderColor || 'var(--border-base)',
+  borderWidth: `${containerConfig.value?.borderWidth || 1}px`,
+  borderRadius: `${containerConfig.value?.borderRadius || 4}px`
 }))
+
+const currentValue = computed(() => props.config.config.value)
 </script>
 
 <style scoped>
@@ -42,5 +50,12 @@ const containerStyle = computed(() => ({
   font-size: 14px;
   pointer-events: none;
   opacity: 0.5;
+  text-align: center;
+}
+
+.container-value {
+  display: block;
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>

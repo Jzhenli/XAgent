@@ -1,8 +1,24 @@
-import type { StyleConfig, ScadaComponentMeta, GaugeConfig } from '../../../../types'
+import type { ScadaComponentMeta, GaugeComponentConfig } from '../../../../types'
 import ScadaGauge from './index.vue'
 import GaugeConfigPanel from './ConfigPanel.vue'
 
-const defaultStyle: StyleConfig = { width: 150, height: 150 }
+const defaultConfig: GaugeComponentConfig = {
+  width: 150,
+  height: 150,
+  backgroundColor: '#f5f7fa',
+  borderRadius: 8,
+  fontSize: 24,
+  fontColor: '#2c3e50',
+  min: 0,
+  max: 100,
+  unit: '',
+  thresholds: [
+    { value: 30, color: '#27ae60' },
+    { value: 70, color: '#f39c12' },
+    { value: 100, color: '#e74c3c' }
+  ],
+  showValue: true
+}
 
 export const gaugeMeta: ScadaComponentMeta = {
   type: 'gauge',
@@ -12,22 +28,9 @@ export const gaugeMeta: ScadaComponentMeta = {
     name: 'scadaComponentNames.gauge',
     icon: '🎯',
     category: 'scadaComponentCategories.basic',
-    defaultStyle,
-    defaultConfig: {
-      gaugeConfig: {
-        min: 0,
-        max: 100,
-        unit: '',
-        thresholds: [
-          { value: 30, color: '#27ae60' },
-          { value: 70, color: '#f39c12' },
-          { value: 100, color: '#e74c3c' }
-        ],
-        showValue: true
-      }
-    }
+    defaultConfig
   },
   configTypes: {
-    GaugeConfig: null as unknown as GaugeConfig
+    GaugeComponentConfig: null as unknown as GaugeComponentConfig
   }
 }

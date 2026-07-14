@@ -39,7 +39,11 @@
     "test": "Test",
     "yes": "Yes",
     "no": "No",
-    "retry": "Retry"
+    "retry": "Retry",
+    "on": "On",
+    "off": "Off",
+    "tip": "Tip",
+    "duplicateSuffix": " (copy)"
   },
   "layout": {
     "dashboard": "Dashboard",
@@ -566,6 +570,7 @@
     "fileName": "File Name",
     "size": "Size",
     "createTime": "Created At",
+    "updateTime": "Updated At",
     "actions_label": "Actions",
     "restore": "Restore",
     "download": "Download",
@@ -692,7 +697,8 @@
       "logs": "Logs",
       "backup": "Backup",
       "users": "Users",
-      "permissions": "Permissions"
+      "permissions": "Permissions",
+      "visualization": "Visualization"
     },
     "general": {
       "log_level": "Log Level",
@@ -768,6 +774,10 @@
       "denied": "Denied",
       "update_success": "Permission Updated Successfully",
       "update_failed": "Permission Update Failed"
+    },
+    "visualization": {
+      "polling_interval": "Polling Interval",
+      "milliseconds": "ms"
     },
     "config_saved": "Config Saved",
     "operation_failed": "Operation Failed",
@@ -1170,6 +1180,7 @@
   },
   "scada": {
     "title": "Project Management",
+    "loading": "Loading...",
     "newProject": "New Project",
     "createProject": "Create Project",
     "noProjects": "No projects, please click the top right corner to create a new project",
@@ -1180,6 +1191,7 @@
     "noDescription": "No description",
     "componentCount": "Components: {count}",
     "createTime": "Created At",
+    "updateTime": "Updated At",
     "editProject": "Edit Project",
     "edit": "Edit",
     "settings": "Settings",
@@ -1202,6 +1214,8 @@
     "zoomReset": "Reset Zoom",
     "showGrid": "Show Grid",
     "editMode": "Edit Mode",
+    "undo": "Undo",
+    "redo": "Redo",
     "setBackgroundImage": "Set Background Image",
     "removeBgImage": "Remove Background",
     "removeBgImageSuccess": "Background image removed",
@@ -1221,7 +1235,24 @@
     "publishConfirmTitle": "Publish Confirmation",
     "publishSuccess": "Panel published successfully!",
     "exportSuccess": "Panel exported",
+    "importSuccess": "Panel imported",
+    "importFailed": "Failed to import panel",
+    "invalidPanelFile": "Invalid panel file format",
+    "invalidPanelId": "Invalid panel ID",
+    "loadPanelFailed": "Failed to load panel",
+    "refreshSuccess": "Project list refreshed",
+    "importConfirm": "About to import {count} projects. Continue?",
+    "importConfirmTitle": "Import Confirmation",
+    "projectsImported": "Successfully imported {count} projects",
+    "projectsImportPartial": "Import complete: {success} succeeded, {failed} failed",
+    "projectsExported": "Exported {count} projects",
+    "noExportableProjects": "No projects to export",
+    "invalidProjectsFile": "Invalid project file format",
     "savePanelSuccess": "Panel saved",
+    "exitConfirm": "There are unsaved changes in the current panel. Are you sure you want to leave?",
+    "exitConfirmTitle": "Confirm Leave",
+    "saveBeforeExit": "Do you want to save the current changes?",
+    "discardChanges": "Don't Save",
     "projectType": "Project Type",
     "selectProjectType": "Please select project type",
     "dashboardType": "Dashboard",
@@ -1246,7 +1277,30 @@
     "slideshowScopeGraphic": "Graphic Only",
     "slideshowStart": "Start Preview",
     "slideshowPlay": "Play",
-    "slideshowPause": "Pause"
+    "slideshowPause": "Pause",
+    "writeValueDialog": {
+      "title": "Write Value",
+      "placeholder": "Enter value",
+      "success": "Write value successful",
+      "failed": "Write value failed",
+      "result": "Write value result:"
+    },
+    "undoOperations": {
+      "add": "Add component {name}",
+      "delete": "Delete component {name}",
+      "deleteMultiple": "Delete {count} components",
+      "update": "Update component",
+      "move": "Move component",
+      "resize": "Resize component",
+      "bind": "Bind point",
+      "duplicate": "Duplicate component {name}",
+      "paste": "Paste {count} components",
+      "lock": "Lock component",
+      "unlock": "Unlock component",
+      "reorder": "Reorder layers",
+      "bringToFront": "Bring to front",
+      "sendToBack": "Send to back"
+    }
   },
   "ruleEditor": {
     "defaultRuleName": "New Rule",
@@ -1372,7 +1426,9 @@
   },
   "componentPalette": {
     "title": "📦 Component Library",
-    "dragHint": "Drag to canvas"
+    "dragHint": "Drag to canvas",
+    "hideComponentList": "Hide component list",
+    "showComponentList": "Show component list"
   },
   "componentConfig": {
     "componentConfig": "Component Config",
@@ -1391,6 +1447,23 @@
     "minValue": "Min Value",
     "maxValue": "Max Value",
     "unit": "Unit",
+    "currentValue": "Current Value",
+    "dataSection": "Data",
+    "styleSection": "Style",
+    "fontSize": "Font Size",
+    "fontColor": "Font Color",
+    "borderRadius": "Border Radius",
+    "opacity": "Opacity",
+    "borderColor": "Border Color",
+    "borderWidth": "Border Width",
+    "content": "Content",
+    "fontWeight": "Font Weight",
+    "fontWeightNormal": "Normal",
+    "fontWeightBold": "Bold",
+    "textAlign": "Text Align",
+    "alignLeft": "Left",
+    "alignCenter": "Center",
+    "alignRight": "Right",
     "chartConfig": "Chart Config",
     "timeRange": "Time Range",
     "lineColor": "Line Color",
@@ -1406,6 +1479,8 @@
     "fitContain": "Contain",
     "fitCover": "Cover",
     "fitFill": "Fill",
+    "textConfig": "Text Config",
+    "containerConfig": "Container Config",
     "operations": "Actions",
     "duplicate": "Duplicate",
     "bringToFront": "Bring to Front",
@@ -1521,12 +1596,21 @@
     "commandError": "Command status abnormal",
     "operationFailed": "Operation failed",
     "defaultButton": "Button",
+    "buttonText": "Button",
     "switchOn": "On",
     "switchOff": "Off",
     "confirmToggle": "Are you sure you want to turn",
     "confirmToggleSuffix": "?",
     "defaultText": "Text",
+    "textLabel": "Text",
+    "containerPlaceholder": "Container",
+    "sliderWriteSuccess": "Write successful",
+    "imagePlaceholder": "Image",
     "valueRangeError": "Please confirm the write value is within a reasonable range"
+  },
+  "scadaBinding": {
+    "noBoundPoint": "No bound point",
+    "pointNotWritable": "Point {name} is not writable"
   },
   "confirmDialog": {
     "confirm": "Confirm",

@@ -1,124 +1,180 @@
 import { ref, computed, watch } from 'vue'
-import { useScadaStore } from '@/stores/scada'
+import { useScadaEditor } from './useScadaEditor'
 import { usePointStore } from '@/stores/points'
 import type { PointBinding, PanelPreset } from '../types'
-import { readInputNumber, readFileAsDataURL } from '../utils/dom'
 
+/**
+ * 预设面板尺寸列表
+ */
+const presetSizes: PanelPreset[] = [
+  { key: 'small', name: 'Small', width: 800, height: 600 },
+  { key: 'medium', name: 'Medium', width: 1200, height: 800 },
+  { key: 'large', name: 'Large', width: 1920, height: 1080 },
+  { key: 'extraWide', name: 'Extra Wide', width: 2560, height: 1440 }
+]
+
+/**
+ * Scada属性配置Hook
+ * 负责组件属性编辑、面板配置、点位绑定等表单交互逻辑
+ */
 export function useScadaProps() {
-  const scadaStore = useScadaStore()
+  const scada = useScadaEditor()
   const pointStore = usePointStore()
 
+  /** 当前选中的设备ID */
   const selectedDevice = ref<string>('')
+  
+  /** 当前选中的点位名称 */
   const selectedPoint = ref<string>('')
 
-  const component = computed(() => scadaStore.selectedComponent)
-  const currentPanel = computed(() => scadaStore.currentPanel)
-  const currentBinding = computed(() => component.value?.binding)
+  /** 当前选中的组件 */
+  const component = computed(() => scada.selectedComponent.value)
+  
+  /** 当前面板 */
+  const currentPanel = computed(() => scada.currentPanel.value)
 
-  const panelWidth = ref(1200)
-  const panelHeight = ref(800)
+  /** 面板宽度 */
+  const panelWidth = ref(1920)
+  
+  /** 面板高度 */
+  const panelHeight = ref(1080)
+  
+  /** 面板背景颜色 */
   const panelBgColor = ref('#f0f2f5')
+  
+  /** 网格大小 */
   const panelGrid = ref(20)
-  const panelBgImage = ref<string | undefined>(undefined)
+  
+  /** 背景图片URL */
+  const panelBgImage = ref<string>('')
+  
+  /** 背景类型（颜色/图片） */
   const panelBgType = ref<'color' | 'image'>('color')
 
-  watch(
-    currentPanel,
-    (panel) => {
-      if (panel) {
-        panelWidth.value = panel.width
-        panelHeight.value = panel.height
-        panelBgColor.value = panel.backgroundColor
-        panelGrid.value = panel.grid
-        panelBgImage.value = panel.backgroundImage
-        panelBgType.value = panel.backgroundImage ? 'image' : 'color'
-      }
-    },
-    { immediate: true }
-  )
+  /**
+   * 监听面板变化，同步面板配置
+   */
+  watch(currentPanel, (panel) => {
+    if (panel) {
+      panelWidth.value = panel.width
+      panelHeight.value = panel.height
+      panelBgColor.value = panel.backgroundColor
+      panelGrid.value = panel.grid
+      panelBgImage.value = panel.backgroundImage || ''
+      panelBgType.value = panel.backgroundImage ? 'image' : 'color'
+    }
+  }, { immediate: true })
 
-  watch(
-    currentBinding,
-    (binding) => {
-      if (binding) {
-        selectedDevice.value = binding.deviceId
-        selectedPoint.value = binding.pointName
-      } else {
-        selectedDevice.value = ''
-        selectedPoint.value = ''
-      }
-    },
-    { immediate: true }
-  )
-
+  /**
+   * 当前设备的可用点位列表
+   */
   const availablePoints = computed(() => {
     if (!selectedDevice.value) return []
-    const device = pointStore.devices.find(
-      (d) => d.asset === selectedDevice.value || d.name === selectedDevice.value
-    )
+    const device = pointStore.devices.find(d => d.asset === selectedDevice.value || d.name === selectedDevice.value)
     return device?.points || []
   })
 
-  const handleDeviceChange = () => {
+  /**
+   * 监听组件变化，同步绑定信息
+   */
+  watch(component, (comp) => {
+    if (comp?.binding) {
+      selectedDevice.value = comp.binding.deviceId
+      selectedPoint.value = comp.binding.pointName
+    } else {
+      selectedDevice.value = ''
+      selectedPoint.value = ''
+    }
+  }, { immediate: true })
+
+  /**
+   * 处理设备选择变化
+   * @param deviceId - 设备ID
+   */
+  const handleDeviceChange = (deviceId: string) => {
+    selectedDevice.value = deviceId
     selectedPoint.value = ''
-    if (!component.value) return
-    if (!selectedDevice.value) {
-      scadaStore.bindPoint(component.value.id, null)
+    if (component.value) {
+      const binding = component.value.binding || { deviceId: '', pointName: '' }
+      scada.updateComponent(component.value.id, {
+        binding: { ...binding, deviceId }
+      })
     }
   }
 
-  const handlePointChange = () => {
-    if (!component.value) return
-
-    if (!selectedDevice.value || !selectedPoint.value) {
-      scadaStore.bindPoint(component.value.id, null)
-      return
+  /**
+   * 处理点位选择变化
+   * @param pointName - 点位名称
+   */
+  const handlePointChange = (pointName: string) => {
+    selectedPoint.value = pointName
+    if (component.value) {
+      const binding = component.value.binding || { deviceId: selectedDevice.value, pointName: '' }
+      const point = availablePoints.value.find(p => p.name === pointName)
+      scada.updateComponent(component.value.id, {
+        binding: {
+          ...binding,
+          pointName,
+          pointDescription: point?.description,
+          unit: point?.unit
+        }
+      })
     }
+  }
 
-    const point = availablePoints.value.find((p) => p.name === selectedPoint.value)
-    if (!point) return
-
-    const binding: PointBinding = {
-      deviceId: selectedDevice.value,
-      pointName: selectedPoint.value,
-      pointDescription: point.description,
-      unit: point.unit
+  /**
+   * 更新组件名称
+   * @param e - 输入事件
+   */
+  const updateName = (e: Event) => {
+    const value = (e.target as HTMLInputElement).value
+    if (component.value) {
+      scada.updateComponent(component.value.id, { name: value })
     }
-
-    scadaStore.bindPoint(component.value.id, binding)
   }
 
-  const updateStyle = (key: string, value: any) => {
-    if (!component.value) return
-    scadaStore.updateComponent(component.value.id, {
-      style: { ...component.value.style, [key]: value }
-    })
+  /**
+   * 更新组件位置
+   * @param axis - 坐标轴（x/y）
+   * @param e - 输入事件
+   */
+  const updatePosition = (axis: 'x' | 'y', e: Event) => {
+    const value = parseFloat((e.target as HTMLInputElement).value)
+    if (!isNaN(value) && component.value) {
+      const currentX = component.value.x
+      const currentY = component.value.y
+      scada.updateComponent(component.value.id, {
+        x: axis === 'x' ? value : currentX,
+        y: axis === 'y' ? value : currentY
+      })
+    }
   }
 
-  const updateName = (event: Event) => {
-    if (!component.value) return
-    scadaStore.updateComponent(component.value.id, {
-      name: (event.target as HTMLInputElement).value
-    })
+  /**
+   * 更新组件尺寸
+   * @param dim - 尺寸类型（width/height）
+   * @param e - 输入事件
+   */
+  const updateDimension = (dim: 'width' | 'height', e: Event) => {
+    const value = parseFloat((e.target as HTMLInputElement).value)
+    if (!isNaN(value) && component.value) {
+      const currentWidth = component.value.config.width
+      const currentHeight = component.value.config.height
+      scada.updateComponent(component.value.id, {
+        config: {
+          ...component.value.config,
+          width: dim === 'width' ? value : currentWidth,
+          height: dim === 'height' ? value : currentHeight
+        }
+      })
+    }
   }
 
-  const updatePosition = (axis: 'x' | 'y', event: Event) => {
-    const value = readInputNumber(event)
-    if (value === null || !component.value) return
-    const x = axis === 'x' ? value : component.value.x
-    const y = axis === 'y' ? value : component.value.y
-    scadaStore.moveComponent(component.value.id, x, y)
-  }
-
-  const updateDimension = (key: 'width' | 'height', event: Event) => {
-    const value = readInputNumber(event)
-    if (value === null || !component.value) return
-    updateStyle(key, value)
-  }
-
+  /**
+   * 更新面板尺寸和样式
+   */
   const updatePanelSize = () => {
-    if (!currentPanel.value) return
-    scadaStore.updatePanel({
+    scada.updatePanel({
       width: panelWidth.value,
       height: panelHeight.value,
       backgroundColor: panelBgColor.value,
@@ -127,87 +183,61 @@ export function useScadaProps() {
     })
   }
 
+  /**
+   * 切换背景类型
+   * @param type - 背景类型（color/image）
+   */
   const onBgTypeChange = (type: 'color' | 'image') => {
+    panelBgType.value = type
     if (type === 'color') {
-      panelBgImage.value = undefined
+      panelBgImage.value = ''
+      updatePanelSize()
     }
-    updatePanelSize()
   }
 
-  const handleBgImageUpload = async (e: Event) => {
+  /**
+   * 处理背景图片上传
+   * @param e - 文件选择事件
+   */
+  const handleBgImageUpload = (e: Event) => {
     const input = e.target as HTMLInputElement
     const file = input.files?.[0]
-    if (!file) return
-
-    try {
-      const result = await readFileAsDataURL(file)
-      panelBgImage.value = result
-      panelBgType.value = 'image'
-      updatePanelSize()
-    } catch {
-      //
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        panelBgImage.value = event.target?.result as string
+        panelBgType.value = 'image'
+        updatePanelSize()
+      }
+      reader.readAsDataURL(file)
     }
-
-    input.value = ''
   }
 
+  /**
+   * 移除背景图片
+   */
   const removeBgImage = () => {
-    panelBgImage.value = undefined
+    panelBgImage.value = ''
     panelBgType.value = 'color'
     updatePanelSize()
   }
 
-  const presetSizes: PanelPreset[] = [
-    { key: 'small', name: 'componentConfig.small', width: 800, height: 600 },
-    { key: 'medium', name: 'componentConfig.medium', width: 1200, height: 800 },
-    { key: 'large', name: 'componentConfig.large', width: 1920, height: 1080 },
-    { key: 'extraWide', name: 'componentConfig.extraWide', width: 2560, height: 1080 }
-  ]
-
+  /**
+   * 应用预设尺寸
+   * @param preset - 预设配置
+   */
   const applyPreset = (preset: PanelPreset) => {
     panelWidth.value = preset.width
     panelHeight.value = preset.height
     updatePanelSize()
   }
 
-  const validatePosition = (x: number, y: number): { valid: boolean; x: number; y: number } => {
-    if (!currentPanel.value) return { valid: true, x, y }
-    return {
-      valid: x >= 0 && y >= 0,
-      x: Math.max(0, x),
-      y: Math.max(0, y)
-    }
-  }
-
-  const validateDimension = (width: number, height: number): { valid: boolean; width: number; height: number } => {
-    return {
-      valid: width >= 50 && height >= 50,
-      width: Math.max(50, width),
-      height: Math.max(50, height)
-    }
-  }
-
-  const validatePanelSize = (width: number, height: number): { valid: boolean; width: number; height: number } => {
-    return {
-      valid: width >= 400 && width <= 4096 && height >= 300 && height <= 4096,
-      width: Math.max(400, Math.min(4096, width)),
-      height: Math.max(300, Math.min(4096, height))
-    }
-  }
-
-  const validateGridSize = (grid: number): { valid: boolean; grid: number } => {
-    return {
-      valid: grid >= 10 && grid <= 50,
-      grid: Math.max(10, Math.min(50, grid))
-    }
-  }
-
   return {
+    // 状态
     selectedDevice,
     selectedPoint,
     component,
     currentPanel,
-    currentBinding,
     panelWidth,
     panelHeight,
     panelBgColor,
@@ -216,9 +246,9 @@ export function useScadaProps() {
     panelBgType,
     availablePoints,
     presetSizes,
+    // 方法
     handleDeviceChange,
     handlePointChange,
-    updateStyle,
     updateName,
     updatePosition,
     updateDimension,
@@ -226,10 +256,6 @@ export function useScadaProps() {
     onBgTypeChange,
     handleBgImageUpload,
     removeBgImage,
-    applyPreset,
-    validatePosition,
-    validateDimension,
-    validatePanelSize,
-    validateGridSize
+    applyPreset
   }
 }

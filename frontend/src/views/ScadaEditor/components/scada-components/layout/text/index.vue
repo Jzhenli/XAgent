@@ -1,14 +1,9 @@
 <template>
   <div 
     class="text-container"
-    :style="{
-      fontSize: `${textConfig?.fontSize || 14}px`,
-      color: textConfig?.fontColor || '#2c3e50',
-      fontWeight: textConfig?.fontWeight || 'normal',
-      textAlign: textConfig?.textAlign || 'center'
-    }"
+    :style="containerStyle"
   >
-    {{ textConfig?.content || t('scadaComponents.defaultText') }}
+    {{ displayContent }}
   </div>
 </template>
 
@@ -24,7 +19,33 @@ const props = defineProps<{
   editing?: boolean
 }>()
 
-const textConfig = computed(() => props.config.textConfig)
+const textConfig = computed(() => (props.config as ScadaComponent<'text'>).config)
+const currentValue = computed(() => props.config.config.value)
+
+const displayContent = computed(() => {
+  if (currentValue.value !== undefined && currentValue.value !== null && currentValue.value !== '') {
+    return String(currentValue.value)
+  }
+  const content = textConfig.value?.content
+  if (!content) return t('scadaComponents.defaultText')
+  return t(content)
+})
+
+const justifyMap: Record<string, string> = {
+  left: 'flex-start',
+  center: 'center',
+  right: 'flex-end'
+}
+
+const containerStyle = computed(() => ({
+  fontSize: `${textConfig.value?.fontSize || 14}px`,
+  color: textConfig.value?.fontColor || '#2c3e50',
+  fontWeight: textConfig.value?.fontWeight || 'normal',
+  textAlign: textConfig.value?.textAlign || 'center',
+  justifyContent: justifyMap[textConfig.value?.textAlign || 'center'],
+  backgroundColor: textConfig.value?.backgroundColor || undefined,
+  borderRadius: `${textConfig.value?.borderRadius ?? 4}px`
+}))
 </script>
 
 <style scoped>
@@ -33,7 +54,6 @@ const textConfig = computed(() => props.config.textConfig)
   height: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
   padding: 8px;
   word-break: break-word;
 }

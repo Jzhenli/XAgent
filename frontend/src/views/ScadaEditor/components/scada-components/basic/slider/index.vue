@@ -20,7 +20,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ScadaComponent } from '@/types/scada'
+import { useI18n } from 'vue-i18n'
+import type { ScadaComponent, SliderComponentConfig } from '@/types/scada'
 import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 import { ElSlider, ElMessage } from 'element-plus'
 
@@ -29,14 +30,15 @@ const props = defineProps<{
   editing?: boolean
 }>()
 
-const sliderConfig = computed(() => props.config.sliderConfig)
+const { t } = useI18n()
+
+const sliderConfig = computed(() => props.config.config as SliderComponentConfig)
 const binding = computed(() => props.config.binding)
+const fallbackValue = computed(() => props.config.config.value)
 
 const { currentValue, boundPoint, writeValue } = useScadaBinding(binding, {
-  autoRefresh: true,
-  refreshInterval: 3000,
   transform: (value) => typeof value === 'number' ? value : 0
-})
+}, fallbackValue)
 
 const min = computed(() => sliderConfig.value?.min ?? 0)
 const max = computed(() => sliderConfig.value?.max ?? 100)
@@ -45,11 +47,11 @@ const step = computed(() => sliderConfig.value?.step ?? 1)
 const sliderValue = computed({
   get: () => currentValue.value,
   set: (val: number) => {
-    if (!props.editing && boundPoint.value) {
-      writeValue(val)
-      ElMessage.success('已写入')
+      if (!props.editing && boundPoint.value) {
+        writeValue(val)
+        ElMessage.success(t('scadaComponents.sliderWriteSuccess'))
+      }
     }
-  }
 })
 </script>
 

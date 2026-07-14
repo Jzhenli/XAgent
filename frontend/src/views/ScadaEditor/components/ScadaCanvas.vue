@@ -2,358 +2,231 @@
   <div
     ref="canvasRef"
     class="scada-canvas"
-    :style="{
-      width: `${panel?.width || 1200}px`,
-      height: `${panel?.height || 800}px`,
-      backgroundColor: panel?.backgroundColor || '#f0f2f5',
-      backgroundImage: panel?.backgroundImage ? `url(${panel.backgroundImage})` : 'none',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      transform: `scale(${scadaStore.zoom})`,
-      transformOrigin: 'top left'
-    }"
-    @drop="handleDrop"
+    :style="canvasStyle"
+    @mousedown="handleMouseDown"
+    @mousemove="handleMouseMove"
+    @mouseup="handleMouseUp"
+    @mouseleave="handleMouseLeave"
+    @dblclick="handleDoubleClick"
+    @contextmenu="handleContextMenu"
     @dragover="handleDragOver"
-    @click="handleCanvasClick"
-    @contextmenu.prevent="handleCanvasContextMenu"
-    @mousedown="handleCanvasMouseDown"
-    @mousemove="handleCanvasMouseMove"
-    @mouseenter="handleCanvasMouseEnter"
-    @mouseleave="handleCanvasMouseLeave"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
   >
-    <div v-if="scadaStore.showGrid && isEditing" class="canvas-grid" :style="{ backgroundSize: `${panel?.grid || 20}px ${panel?.grid || 20}px` }" />
-
-    <div
-      v-for="comp in components"
-      :key="comp.id"
-      class="scada-component"
-      :class="{ selected: selectedIds.includes(comp.id), 'multi-selected': selectedIds.length > 1, locked: comp.locked, editing: isEditing }"
-      :style="getComponentStyle(comp)"
-      @mousedown="handleComponentMouseDown($event, comp)"
-      @click="handleComponentClick($event, comp)"
-      @contextmenu.prevent="handleContextMenu($event, comp)"
-    >
-      <component :is="getComponent(comp.type)" v-if="getComponent(comp.type)" :config="comp" :editing="isEditing" />
-
-      <template v-if="selectedId === comp.id && isEditing && selectedIds.length === 1">
-        <div class="resize-handle nw" @mousedown.stop="handleResizeStart($event, 'nw')"></div>
-        <div class="resize-handle n" @mousedown.stop="handleResizeStart($event, 'n')"></div>
-        <div class="resize-handle ne" @mousedown.stop="handleResizeStart($event, 'ne')"></div>
-        <div class="resize-handle e" @mousedown.stop="handleResizeStart($event, 'e')"></div>
-        <div class="resize-handle se" @mousedown.stop="handleResizeStart($event, 'se')"></div>
-        <div class="resize-handle s" @mousedown.stop="handleResizeStart($event, 's')"></div>
-        <div class="resize-handle sw" @mousedown.stop="handleResizeStart($event, 'sw')"></div>
-        <div class="resize-handle w" @mousedown.stop="handleResizeStart($event, 'w')"></div>
-      </template>
+    <div v-if="showGrid" class="grid-overlay" :style="gridStyle" />
+    
+    <div v-if="guideLines.length > 0" class="guide-lines">
+      <div
+        v-for="(line, idx) in guideLines"
+        :key="idx"
+        class="guide-line"
+        :class="{ 'guide-x': line.type === 'x', 'guide-y': line.type === 'y' }"
+        :style="getGuideLineStyle(line)"
+      />
     </div>
 
     <div
-      v-if="isBoxSelecting"
-      class="selection-box"
-      :style="{
-        left: `${Math.min(boxSelectStart.x, boxSelectEnd.x)}px`,
-        top: `${Math.min(boxSelectStart.y, boxSelectEnd.y)}px`,
-        width: `${Math.abs(boxSelectEnd.x - boxSelectStart.x)}px`,
-        height: `${Math.abs(boxSelectEnd.y - boxSelectStart.y)}px`
-      }"
+      v-if="boxSelectState.active"
+      class="box-select"
+      :style="boxSelectStyle"
     />
 
-    <svg v-if="guideLines.length" class="alignment-guides" :width="panel?.width || 1200" :height="panel?.height || 800">
-      <line
-        v-for="(guide, index) in guideLines"
-        :key="index"
-        :x1="guide.type === 'x' ? guide.pos : 0"
-        :y1="guide.type === 'x' ? 0 : guide.pos"
-        :x2="guide.type === 'x' ? guide.pos : (panel?.width || 1200)"
-        :y2="guide.type === 'x' ? (panel?.height || 800) : guide.pos"
-        stroke="#ff4d4f"
-        stroke-width="1"
-        stroke-dasharray="4 4"
-        vector-effect="non-scaling-stroke"
-      />
-    </svg>
-
-    <Teleport to="body">
-      <div v-if="contextMenuVisible && isEditing" class="context-menu-overlay" @click="hideContextMenu">
-        <div class="context-menu" :style="{ left: `${contextMenuPosition.x}px`, top: `${contextMenuPosition.y}px` }" @click.stop>
-          <template v-if="contextMenuType === 'node'">
-            <div class="context-menu-item" @click="handleContextAction('copy')">
-              <el-icon class="menu-icon"><CopyDocument /></el-icon>
-              <span class="menu-label">{{ t('scadaContextMenu.copy') }}</span>
-            </div>
-            <div class="context-menu-divider"></div>
-            <div class="context-menu-item" @click="handleContextAction(targetComponent?.locked ? 'unlock' : 'lock')">
-              <el-icon class="menu-icon">
-                <component :is="targetComponent?.locked ? Unlock : Lock" />
-              </el-icon>
-              <span class="menu-label">{{ targetComponent?.locked ? t('scadaContextMenu.unlock') : t('scadaContextMenu.lock') }}</span>
-            </div>
-            <div class="context-menu-item" @click="handleContextAction('delete')">
-              <el-icon class="menu-icon"><Delete /></el-icon>
-              <span class="menu-label">{{ t('scadaContextMenu.delete') }}</span>
-            </div>
-            <div class="context-menu-divider"></div>
-            <div class="context-menu-item" @click="handleContextAction('bringToFront')">
-              <el-icon class="menu-icon"><Top /></el-icon>
-              <span class="menu-label">{{ t('scadaContextMenu.bringToFront') }}</span>
-            </div>
-            <div class="context-menu-item" @click="handleContextAction('sendToBack')">
-              <el-icon class="menu-icon"><Bottom /></el-icon>
-              <span class="menu-label">{{ t('scadaContextMenu.sendToBack') }}</span>
-            </div>
-          </template>
-          <template v-else>
-            <div v-if="scadaStore.clipboard" class="context-menu-item" @click="handleContextAction('paste')">
-              <el-icon class="menu-icon"><Document /></el-icon>
-              <span class="menu-label">{{ t('scadaContextMenu.paste') }}</span>
-            </div>
-            <div v-else class="context-menu-item disabled">
-              <el-icon class="menu-icon"><Document /></el-icon>
-              <span class="menu-label">{{ t('scadaContextMenu.noClipboard') }}</span>
-            </div>
-          </template>
+    <div class="components-layer">
+      <div
+        v-for="comp in currentPanel?.components"
+        :key="comp.id"
+        class="component-wrapper"
+        :class="{
+          'component-selected': isSelected(comp.id),
+          'component-locked': comp.locked,
+          'component-hidden': !comp.visible
+        }"
+        :style="getComponentStyle(comp)"
+        :data-component-id="comp.id"
+      >
+        <component
+          :is="getComponent(comp.type)"
+          :config="comp"
+          :editing="isEditing"
+          @select="$emit('select', comp.id)"
+        />
+        
+        <div
+          v-if="isSelected(comp.id) && isEditing && !comp.locked"
+          class="selection-border"
+        >
+          <div
+          v-for="handle in resizeHandles"
+          :key="handle"
+          class="resize-handle"
+          :class="handle"
+          @mousedown.stop="startResize(handle, comp.id, $event)"
+        />
         </div>
       </div>
-    </Teleport>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useScadaStore } from '@/stores/scada'
-import type { ComponentType, ScadaComponent } from '@/types/scada'
-import { getComponent } from '../component-registry'
-import { useScadaCanvas, useScadaElement } from '../hooks'
-import { getCanvasPositionFromEvent } from '../utils/dom'
-import { CopyDocument, Document, Lock, Unlock, Delete, Top, Bottom } from '@element-plus/icons-vue'
+import { computed } from 'vue'
+import { useScadaCanvas } from '../hooks/useScadaCanvas'
+import { getComponent } from '../registry'
+import type { GuideLine, ResizeHandle } from '../types'
 
-const { t } = useI18n()
-const scadaStore = useScadaStore()
-
-const canvasRef = ref<HTMLElement | null>(null)
+const resizeHandles: ResizeHandle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 
 const {
-  isBoxSelecting,
-  boxSelectStart,
-  boxSelectEnd,
+  canvasRef,
   guideLines,
-  contextMenuVisible,
-  contextMenuPosition,
-  contextMenuType,
-  targetComponent,
-  panel,
-  components,
-  selectedId,
-  selectedIds,
+  boxSelectState,
+  currentPanel,
+  selectedComponentIds,
+  canvasWidth,
+  canvasHeight,
+  gridSize,
   isEditing,
-  getComponentStyle,
-  handleCanvasMouseMove,
-  handleCanvasMouseEnter,
-  handleCanvasMouseLeave,
-  handleComponentMouseDown,
-  handleResizeStart,
-  handleCanvasClick,
-  handleCanvasMouseDown,
-  handleComponentClick,
+  zoom,
+  showGrid,
+  handleMouseDown,
+  handleMouseMove,
+  handleMouseUp,
+  handleMouseLeave,
+  handleDoubleClick,
   handleContextMenu,
-  handleCanvasContextMenu,
-  hideContextMenu,
-  handleContextAction
-} = useScadaCanvas(canvasRef)
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+  startResize
+} = useScadaCanvas()
 
-const { addComponent } = useScadaElement()
+const isSelected = (id: string) => selectedComponentIds.value.includes(id)
 
-const handleDrop = (e: DragEvent) => {
-  e.preventDefault()
-  if (!isEditing.value || !canvasRef.value) return
+const canvasStyle = computed(() => ({
+  width: `${canvasWidth.value * zoom.value}px`,
+  height: `${canvasHeight.value * zoom.value}px`,
+  backgroundColor: currentPanel.value?.backgroundColor || '#f0f2f5',
+  backgroundImage: currentPanel.value?.backgroundImage ? `url(${currentPanel.value.backgroundImage})` : undefined,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center'
+}))
 
-  const type = e.dataTransfer?.getData('component-type') as ComponentType
-  if (!type) return
+const gridStyle = computed(() => ({
+  backgroundSize: `${gridSize.value * zoom.value}px ${gridSize.value * zoom.value}px`,
+  backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)`
+}))
 
-  const pos = getCanvasPositionFromEvent(canvasRef.value, e, scadaStore.zoom)
-  addComponent(type, pos.x, pos.y)
+const getGuideLineStyle = (line: GuideLine) => {
+  if (line.type === 'x') {
+    return { left: `${line.pos * zoom.value}px`, height: '100%', width: '1px' }
+  }
+  return { top: `${line.pos * zoom.value}px`, width: '100%', height: '1px' }
 }
 
-const handleDragOver = (e: DragEvent) => {
-  e.preventDefault()
-}
+const boxSelectStyle = computed(() => {
+  const start = boxSelectState.value.start
+  const end = boxSelectState.value.end
+  return {
+    left: `${Math.min(start.x, end.x) * zoom.value}px`,
+    top: `${Math.min(start.y, end.y) * zoom.value}px`,
+    width: `${Math.abs(end.x - start.x) * zoom.value}px`,
+    height: `${Math.abs(end.y - start.y) * zoom.value}px`
+  }
+})
+
+const getComponentStyle = (comp: { x: number; y: number; config: { width: number; height: number } }) => ({
+  left: `${comp.x * zoom.value}px`,
+  top: `${comp.y * zoom.value}px`,
+  width: `${comp.config.width * zoom.value}px`,
+  height: `${comp.config.height * zoom.value}px`
+})
 </script>
 
 <style scoped>
 .scada-canvas {
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-base);
+  cursor: crosshair;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
 
-.canvas-grid {
+.grid-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: linear-gradient(var(--grid-line, rgba(0, 0, 0, 0.05)) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line, rgba(0, 0, 0, 0.05)) 1px, transparent 1px);
+  inset: 0;
   pointer-events: none;
 }
 
-.selection-box {
+.guide-lines {
   position: absolute;
-  border: 1px dashed var(--color-primary);
+  inset: 0;
+  pointer-events: none;
+}
+
+.guide-line {
+  position: absolute;
+  background-color: #409eff;
+  z-index: 100;
+}
+
+.box-select {
+  position: absolute;
+  border: 2px dashed #409eff;
   background-color: rgba(64, 158, 255, 0.1);
+  z-index: 200;
   pointer-events: none;
-  z-index: 1000;
 }
 
-.alignment-guides {
+.components-layer {
   position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 1001;
+  inset: 0;
 }
 
-.hidden-file-input {
-  display: none;
-}
-
-.scada-component {
+.component-wrapper {
   position: absolute;
   cursor: move;
   user-select: none;
+  box-sizing: border-box;
 }
 
-.scada-component.editing:hover {
-  outline: 1px dashed var(--color-primary);
+.component-wrapper.component-hidden {
+  opacity: 0.3;
 }
 
-.scada-component.selected {
-  outline: 2px solid var(--color-primary);
-  box-shadow: 0 0 10px var(--color-primary-light);
-}
-
-.scada-component.selected.multi-selected {
-  outline: 2px dashed var(--color-primary);
-  background-color: rgba(64, 158, 255, 0.05);
-}
-
-.scada-component.locked {
+.component-wrapper.component-locked {
   cursor: not-allowed;
-  opacity: 0.7;
+}
+
+.component-wrapper.component-selected {
+  z-index: 10;
+}
+
+.selection-border {
+  position: absolute;
+  inset: -4px;
+  border: 2px solid #409eff;
+  border-radius: 4px;
+  pointer-events: none;
 }
 
 .resize-handle {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  background: var(--color-primary);
-  border: 2px solid var(--bg-container);
-  border-radius: 2px;
-  z-index: 10;
-}
-
-.resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
-.resize-handle.n { top: -5px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
-.resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
-.resize-handle.e { top: 50%; right: -5px; transform: translateY(-50%); cursor: e-resize; }
-.resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
-.resize-handle.s { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
-.resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
-.resize-handle.w { top: 50%; left: -5px; transform: translateY(-50%); cursor: w-resize; }
-
-.context-menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
-}
-
-.context-menu {
-  position: fixed;
-  min-width: 180px;
-  background: var(--bg-container, #fff);
-  border: 1px solid var(--border-base, #e4e7ed);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
-  padding: 6px 0;
-  z-index: 10000;
-  backdrop-filter: blur(8px);
-  animation: contextMenuFadeIn 0.15s ease-out;
-}
-
-@keyframes contextMenuFadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.context-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 14px;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border: 1px solid #409eff;
+  border-radius: 50%;
   cursor: pointer;
-  font-size: 13px;
-  color: var(--text-primary, #303133);
-  transition: all 0.15s ease;
-  user-select: none;
+  pointer-events: auto;
 }
 
-.context-menu-item:hover {
-  background-color: var(--color-primary-light, #ecf5ff);
-  color: var(--color-primary, #409eff);
-}
-
-.context-menu-item:hover .menu-icon {
-  color: var(--color-primary, #409eff);
-}
-
-.context-menu-item.danger {
-  color: var(--color-danger, #f56c6c);
-}
-
-.context-menu-item.danger:hover {
-  background-color: var(--color-danger-light, #fef0f0);
-  color: var(--color-danger, #f56c6c);
-}
-
-.context-menu-item.danger:hover .menu-icon {
-  color: var(--color-danger, #f56c6c);
-}
-
-.context-menu-item.disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-  color: var(--text-secondary, #c0c4cc);
-}
-
-.context-menu-item.disabled:hover {
-  background-color: transparent;
-  color: var(--text-secondary, #c0c4cc);
-}
-
-.context-menu-item.disabled:hover .menu-icon {
-  color: var(--text-secondary, #c0c4cc);
-}
-
-.menu-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  color: var(--text-secondary, #909399);
-  transition: color 0.15s ease;
-}
-
-.menu-label {
-  flex: 1;
-  white-space: nowrap;
-}
-
-.context-menu-divider {
-  height: 1px;
-  background-color: var(--border-light, #ebeef5);
-  margin: 6px 12px;
-}
+.resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
+.resize-handle.n { top: -4px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+.resize-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
+.resize-handle.e { top: 50%; right: -4px; transform: translateY(-50%); cursor: e-resize; }
+.resize-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
+.resize-handle.s { bottom: -4px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+.resize-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+.resize-handle.w { top: 50%; left: -4px; transform: translateY(-50%); cursor: w-resize; }
 </style>

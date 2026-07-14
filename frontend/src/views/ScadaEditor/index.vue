@@ -1,5 +1,7 @@
 <template>
-  <div class="scada-page" :class="{ 'preview-mode': isPreviewMode }">
+  <div v-if="!isReady" class="loading-state" v-loading="true" :element-loading-text="$t('common.loading')">
+  </div>
+  <div v-else class="scada-page" :class="{ 'preview-mode': isPreviewMode }">
     <div v-if="!isPreviewMode" class="page-header">
       <div class="header-left">
         <el-button :icon="ArrowLeft" @click="handleGoBack">{{ $t('scada.backToList') }}</el-button>
@@ -9,19 +11,19 @@
         <el-button :icon="View" @click="handlePreview">{{ $t('scada.preview') }}</el-button>
         <el-button :icon="FullScreen" @click="handleFullscreen">{{ $t('scada.fullscreen') }}</el-button>
         <el-button @click="handleExport">{{ $t('common.export') }}</el-button>
-        <el-button type="primary" :icon="Upload" v-if="userStore.hasPermission('scada', 'update')" @click="handlePublish">{{ $t('scada.publish') }}</el-button>
+        <el-button @click="handleImport">{{ $t('common.import') }}</el-button>
         <el-button v-if="userStore.hasPermission('scada', 'update')" @click="handleSave">{{ $t('common.save') }}</el-button>
       </div>
     </div>
 
     <div v-if="isPreviewMode" class="preview-header">
-      <span class="preview-title">{{ currentPanel?.name }}</span>
+      <span class="preview-title">{{ currentPanel!.name }}</span>
       <div class="preview-actions">
         <el-button size="small" @click="handleExitPreview">{{ $t('scada.exitPreview') }}</el-button>
       </div>
     </div>
 
-    <div v-if="currentPanel" class="scada-editor">
+    <div class="scada-editor">
       <div v-if="!isPreviewMode" class="editor-left">
         <ComponentPalette :showComponentList="showComponentList" @toggleList="showComponentList = !showComponentList" />
       </div>
@@ -36,12 +38,30 @@
         <div v-if="!isPreviewMode" class="editor-toolbar">
           <div class="toolbar-left">
             <el-button-group>
+              <el-button
+                size="small"
+                :disabled="!scada.canUndo.value"
+                @click="scada.undo()"
+                :title="$t('scada.undo')"
+              >
+                ↩
+              </el-button>
+              <el-button
+                size="small"
+                :disabled="!scada.canRedo.value"
+                @click="scada.redo()"
+                :title="$t('scada.redo')"
+              >
+                ↪
+              </el-button>
+            </el-button-group>
+            <el-button-group>
               <el-button size="small" @click="handleZoomOut">-</el-button>
-              <el-button size="small" @click="handleZoomReset">{{ Math.round(scadaStore.zoom * 100) }}%</el-button>
+              <el-button size="small" @click="handleZoomReset">{{ Math.round(scada.zoom.value * 100) }}%</el-button>
               <el-button size="small" @click="handleZoomIn">+</el-button>
             </el-button-group>
-            <el-checkbox v-model="scadaStore.showGrid" size="small">{{ $t('scada.showGrid') }}</el-checkbox>
-            <el-checkbox v-model="scadaStore.isEditing" size="small">{{ $t('scada.editMode') }}</el-checkbox>
+            <el-checkbox v-model="scada.showGrid.value" size="small">{{ $t('scada.showGrid') }}</el-checkbox>
+            <el-checkbox v-model="scada.isEditing.value" size="small">{{ $t('scada.editMode') }}</el-checkbox>
             <el-popover placement="bottom-start" :width="320" trigger="hover">
               <template #reference>
                 <el-button size="small" text class="shortcut-btn">
@@ -73,11 +93,19 @@
                   <span class="key-group"><kbd>Esc</kbd></span>
                   <span class="desc">{{ $t('scada.closeMenu') }}</span>
                 </div>
+                <div class="shortcut-item">
+                  <span class="key-group"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span>
+                  <span class="desc">{{ $t('scada.undo') }}</span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="key-group"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span>
+                  <span class="desc">{{ $t('scada.redo') }}</span>
+                </div>
               </div>
             </el-popover>
           </div>
           <div class="toolbar-right">
-            <span class="component-count">{{ $t('scada.componentCount', { count: currentPanel.components.length }) }}</span>
+            <span class="component-count">{{ $t('scada.componentCount', { count: currentPanel!.components.length }) }}</span>
           </div>
         </div>
 
@@ -91,52 +119,81 @@
       </div>
     </div>
 
-    <div v-else class="empty-state">
-      <el-empty :description="$t('scada.projectNotExist')">
-        <el-button type="primary" @click="handleGoBack">{{ $t('scada.backToProjectList') }}</el-button>
-      </el-empty>
-    </div>
+    <input
+      ref="importInputRef"
+      type="file"
+      accept=".json"
+      style="display: none"
+      @change="handleImportFileChange"
+    />
+
+    <SaveConfirmModal
+      :visible="showSaveConfirm"
+      @save="handleConfirmSave"
+      @discard="handleConfirmDiscard"
+      @cancel="handleCancelConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useScadaStore } from '@/stores/scada'
+import { useScadaEditor } from './hooks/useScadaEditor'
 import { useUserStore } from '@/stores/users'
 import { usePointStore } from '@/stores/points'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { FullScreen, View, Upload, ArrowLeft } from '@element-plus/icons-vue'
+import { FullScreen, View, ArrowLeft } from '@element-plus/icons-vue'
 import { clamp } from './utils/math'
-import { useScadaData } from './hooks'
+import { useScadaData } from './hooks/useScadaEditor'
+import { useScadaNavigationGuard } from './hooks/useScadaNavigationGuard'
 import ComponentPalette from './components/ComponentPalette.vue'
 import ComponentList from './components/ComponentList.vue'
 import ScadaCanvas from './components/ScadaCanvas.vue'
 import ComponentConfig from './components/ComponentConfig.vue'
+import SaveConfirmModal from './modal/SaveConfirmModal.vue'
 
 const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
-const scadaStore = useScadaStore()
+const scada = useScadaEditor()
 const userStore = useUserStore()
 const pointStore = usePointStore()
 
-const { currentPanel, exportPanel } = useScadaData()
+const { currentPanel, exportPanel, importPanel } = useScadaData()
 
 const isPreviewMode = ref(false)
 const showComponentList = ref(false)
+const isReady = ref(false)
+const importInputRef = ref<HTMLInputElement | null>(null)
 
-watch(() => route.params.id, (newId) => {
-  if (newId) {
-    scadaStore.selectPanel(newId as string)
+const {
+  showSaveConfirm,
+  startLeaveConfirmation,
+  confirmSave: handleConfirmSave,
+  confirmDiscard: handleConfirmDiscard,
+  cancelConfirm: handleCancelConfirm
+} = useScadaNavigationGuard({
+  isDirty: scada.isDirty,
+  routeName: 'ScadaEditor',
+  onSave: async () => {
+    await scada.savePanel()
+    ElMessage.success(t('scada.savePanelSuccess'))
+    router.push({ name: 'ScadaList' })
+  },
+  onDiscard: () => {
+    scada.discardDraft()
+    router.push({ name: 'ScadaList' })
   }
-}, { immediate: true })
+})
 
 onMounted(async () => {
   document.addEventListener('fullscreenchange', handleFullscreenChange)
+  await scada.loadPanel(route.params.id as string)
   await pointStore.fetchDevicesWithPoints()
+  isReady.value = true
 })
 
 onUnmounted(() => {
@@ -144,34 +201,39 @@ onUnmounted(() => {
 })
 
 const handleGoBack = () => {
-  router.push({ name: 'ScadaList' })
+  if (scada.isDirty.value) {
+    startLeaveConfirmation()
+  } else {
+    router.push({ name: 'ScadaList' })
+  }
 }
 
 const setPreviewMode = (enabled: boolean, fullscreen = false) => {
   isPreviewMode.value = enabled
-  scadaStore.isFullscreenPreview = fullscreen
-  scadaStore.isEditing = !enabled
+  scada.isFullscreenPreview.value = fullscreen
+  scada.isEditing.value = !enabled
 }
 
 const handleFullscreenChange = () => {
-  if (!document.fullscreenElement && scadaStore.isFullscreenPreview) {
+  if (!document.fullscreenElement && scada.isFullscreenPreview.value) {
     setPreviewMode(false, false)
   }
 }
 
 const handleZoomIn = () => {
-  scadaStore.zoom = clamp(scadaStore.zoom + 0.1, 0.5, 2)
+  scada.zoom.value = clamp(scada.zoom.value + 0.1, 0.5, 2)
 }
 
 const handleZoomOut = () => {
-  scadaStore.zoom = clamp(scadaStore.zoom - 0.1, 0.5, 2)
+  scada.zoom.value = clamp(scada.zoom.value - 0.1, 0.5, 2)
 }
 
 const handleZoomReset = () => {
-  scadaStore.zoom = 1
+  scada.zoom.value = 1
 }
 
-const handleSave = () => {
+const handleSave = async () => {
+  await scada.savePanel()
   ElMessage.success(t('scada.savePanelSuccess'))
 }
 
@@ -194,19 +256,33 @@ const handleFullscreen = () => {
   setPreviewMode(true, true)
 }
 
-const handlePublish = () => {
-  ElMessageBox.confirm(
-    t('scada.publishConfirm'),
-    t('scada.publishConfirmTitle'),
-    { confirmButtonText: t('scada.publish'), cancelButtonText: t('common.cancel'), type: 'info' }
-  ).then(() => {
-    ElMessage.success(t('scada.publishSuccess'))
-  }).catch(() => {})
-}
-
 const handleExport = () => {
   exportPanel()
   ElMessage.success(t('scada.exportSuccess'))
+}
+
+const handleImport = () => {
+  importInputRef.value?.click()
+}
+
+const handleImportFileChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  try {
+    const text = await file.text()
+    const panel = await importPanel(text)
+    if (panel) {
+      ElMessage.success(t('scada.importSuccess'))
+    } else {
+      ElMessage.error(t('scada.invalidPanelFile'))
+    }
+  } catch {
+    ElMessage.error(t('scada.importFailed'))
+  } finally {
+    input.value = ''
+  }
 }
 </script>
 
@@ -275,59 +351,6 @@ const handleExport = () => {
   gap: 8px;
 }
 
-.panel-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 8px 16px;
-  background: var(--bg-container);
-  border-bottom: 1px solid var(--border-base);
-  overflow-x: auto;
-  flex-shrink: 0;
-}
-
-.panel-tab {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-base);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.panel-tab:hover {
-  background: var(--bg-hover);
-}
-
-.panel-tab.active {
-  background: var(--color-primary);
-  color: #fff;
-  border-color: var(--color-primary);
-}
-
-.tab-name {
-  font-size: 13px;
-}
-
-.tab-close {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 12px;
-  opacity: 0.6;
-}
-
-.tab-close:hover {
-  background: rgba(0, 0, 0, 0.1);
-  opacity: 1;
-}
-
 .scada-editor {
   flex: 1;
   display: flex;
@@ -367,30 +390,6 @@ const handleExport = () => {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-}
-
-.editor-list .list-toggle {
-  position: absolute;
-  top: 50%;
-  right: -14px;
-  transform: translateY(-50%);
-  width: 28px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-container);
-  border: 1px solid var(--border-base);
-  border-radius: 0 8px 8px 0;
-  cursor: pointer;
-  z-index: 10;
-  color: var(--text-secondary);
-  transition: all 0.2s;
-}
-
-.editor-list .list-toggle:hover {
-  background: var(--bg-hover);
-  color: var(--color-primary);
 }
 
 .editor-center {
@@ -492,6 +491,14 @@ kbd {
   flex-shrink: 0;
   background: var(--bg-container);
   border-left: 1px solid var(--border-base);
+}
+
+.loading-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
 }
 
 .empty-state {

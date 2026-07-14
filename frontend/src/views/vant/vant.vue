@@ -1,11 +1,9 @@
 <template>
   <div class="vant-container">
-    <!-- 退出按钮 -->
     <div class="exit-button">
       <el-button :icon="ArrowLeft" circle size="small" @click="exit" />
     </div>
 
-    <!-- 悬浮Tab栏 -->
     <div class="floating-tab-bar">
       <div
         v-for="(tab, i) in tabs"
@@ -18,23 +16,28 @@
       </div>
     </div>
 
-    <!-- 内容区域 -->
     <div
-      class="slides-container"
-      :style="{ transform: `translateX(-${activeTab * 50}%)` }"
+      v-if="panels.length > 0"
+      class="slide-wrapper"
       @touchstart="onTouchStart"
       @touchmove="onTouchMove"
       @touchend="onTouchEnd"
     >
-      <!-- Dashboard：原始尺寸居中，四周黑色 -->
-      <div class="slide-page dashboard-page">
-        <ScadaCanvas />
+      <div class="slide-page">
+        <ScadaCanvas
+          v-if="currentPanel?.type === 'Dashboard'"
+          :key="`dashboard-${currentPanel.id}`"
+        />
+        <GraphicSingle
+          v-else
+          :project="currentPanel"
+          :key="`graphic-${currentPanel.id}`"
+        />
       </div>
+    </div>
 
-      <!-- Graphic：等比缩放全屏 -->
-      <div class="slide-page graphic-page">
-        <GraphicSingle />
-      </div>
+    <div v-else class="empty-state">
+      <span>无面板</span>
     </div>
   </div>
 </template>
@@ -42,7 +45,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
-import { useScadaStore } from "@/stores/scada";
+import { useScadaEditor } from "@/views/ScadaEditor/hooks/useScadaEditor";
+import { useScadaPolling } from "@/views/ScadaEditor/hooks/useScadaBinding";
+import { projectApi } from "@/api/projects";
+import type { Project } from "@/types/project";
 import { ArrowLeft } from "@element-plus/icons-vue";
 import ScadaCanvas from "@/views/ScadaEditor/components/ScadaCanvas.vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
@@ -51,101 +57,75 @@ import { useSwipe } from "./composables/useSwipe";
 import { useKeyboardShortcuts } from "./composables/useKeyboardShortcuts";
 
 const router = useRouter();
-const scadaStore = useScadaStore();
+const scada = useScadaEditor();
 
-// --- 状态管理 ---
+/** 启动当前面板绑定设备的周期性数据刷新 */
+useScadaPolling({ interval: 5000 });
+
 const activeTab = ref(0);
+const panels = ref<Project[]>([]);
 const scale = ref(1);
-const dashboardIndex = ref(0);
-const graphicIndex = ref(0);
 
-// --- 计算属性 ---
-const dashboardPanels = computed(() =>
-  scadaStore.panels.filter((p) => p.type === "Dashboard"),
-);
-const graphicPanels = computed(() =>
-  scadaStore.panels.filter((p) => p.type === "Graphic"),
-);
-const currentPanelIndex = computed(() =>
-  activeTab.value === 0 ? dashboardIndex.value : graphicIndex.value,
-);
-const currentPanels = computed(() =>
-  activeTab.value === 0 ? dashboardPanels.value : graphicPanels.value,
+const tabs = computed(() =>
+  panels.value.map((panel) => ({
+    key: panel.id,
+    name: panel.name || "无面板",
+  })),
 );
 
-const tabs = computed(() => [
-  {
-    key: "dashboard",
-    name: dashboardPanels.value[dashboardIndex.value]?.name || "无面板",
-  },
-  {
-    key: "graphic",
-    name: graphicPanels.value[graphicIndex.value]?.name || "无面板",
-  },
-]);
+const currentPanel = computed(() => panels.value[activeTab.value] ?? null);
 
-// --- 工具函数 ---
-/** 计算缩放比例 */
 const calcScale = () => {
   scale.value = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
 };
 
-/** 面板导航 */
-const navigate = (dir: -1 | 1) => {
-  const panels = currentPanels.value;
-  const idx = currentPanelIndex.value + dir;
-  if (idx < 0 || idx >= panels.length) return;
-
-  if (activeTab.value === 0) {
-    dashboardIndex.value = idx;
-  } else {
-    graphicIndex.value = idx;
-  }
-  scadaStore.selectPanel(panels[idx].id);
+const fetchPanels = async () => {
+  const res = await projectApi.list();
+  panels.value = (res.items ?? []).sort((a, b) => a.createdAt - b.createdAt);
 };
 
-/** 退出预览 */
-const exit = () => router.push({ name: "ScadaList" });
+const loadCurrentPanel = async () => {
+  const panel = currentPanel.value;
+  if (!panel) return;
+  await scada.loadPanel(panel.id);
+};
 
-/** 切换 Tab */
 const switchTab = (dir: -1 | 1) => {
   const next = activeTab.value + dir;
-  if (next >= 0 && next < tabs.value.length) {
+  if (next >= 0 && next < panels.value.length) {
     activeTab.value = next;
   }
 };
 
-// --- 组合式函数 ---
-// 滑动手势
+const exit = () => router.push({ name: "ScadaList" });
+
 const { onTouchStart, onTouchMove, onTouchEnd } = useSwipe(
   50,
   () => switchTab(1),
   () => switchTab(-1),
 );
 
-// 键盘快捷键
 useKeyboardShortcuts({
   Escape: exit,
-  ArrowLeft: () => navigate(-1),
-  ArrowRight: () => navigate(1),
+  ArrowLeft: () => switchTab(-1),
+  ArrowRight: () => switchTab(1),
 });
 
-// --- 生命周期 ---
 let resizeCleanup: (() => void) | undefined;
 
-onMounted(() => {
-  // 初始化 Store 状态
-  scadaStore.isEditing = false;
-  scadaStore.isFullscreenPreview = true;
-  scadaStore.zoom = 1;
+onMounted(async () => {
+  scada.isEditing.value = false;
+  scada.isFullscreenPreview.value = true;
+  scada.zoom.value = 1;
   document.body.classList.add("vant-fullscreen");
 
-  // 选中第一个 Dashboard 面板
-  if (dashboardPanels.value.length > 0) {
-    scadaStore.selectPanel(dashboardPanels.value[0].id);
+  await fetchPanels();
+
+  if (panels.value.length > 0) {
+    activeTab.value = 0;
+    await loadCurrentPanel();
   }
 
-  // 初始化缩放并监听窗口变化
   calcScale();
   let resizeTimer: ReturnType<typeof setTimeout>;
   resizeCleanup = listenTo(window, "resize", () => {
@@ -155,17 +135,17 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // 恢复 Store 状态
-  scadaStore.isEditing = true;
-  scadaStore.isFullscreenPreview = false;
+  scada.isEditing.value = true;
+  scada.isFullscreenPreview.value = false;
   document.body.classList.remove("vant-fullscreen");
 
-  // 清理事件监听
   resizeCleanup?.();
 });
 
-// Tab 切换或面板索引变化时重新计算缩放
-watch([activeTab, graphicIndex], () => nextTick(calcScale));
+watch(activeTab, async () => {
+  await loadCurrentPanel();
+  nextTick(calcScale);
+});
 </script>
 
 <style scoped>
@@ -195,6 +175,12 @@ watch([activeTab, graphicIndex], () => nextTick(calcScale));
   border-radius: 24px;
   z-index: 10000;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  max-width: calc(100% - 80px);
+  overflow-x: auto;
+}
+
+.floating-tab-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-item {
@@ -205,6 +191,7 @@ watch([activeTab, graphicIndex], () => nextTick(calcScale));
   cursor: pointer;
   transition: all 0.3s ease;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .tab-item.active {
@@ -226,39 +213,32 @@ watch([activeTab, graphicIndex], () => nextTick(calcScale));
   color: #fff;
 }
 
-.slides-container {
+.slide-wrapper {
   position: absolute;
   inset: 0;
-  width: 200%;
+  width: 100%;
   height: 100%;
-  display: flex;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .slide-page {
-  width: 50%;
+  width: 100%;
   height: 100%;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   background: #000;
 }
 
-.dashboard-page {
+.empty-state {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.graphic-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.graphic-scaler {
-  width: 1920px;
-  height: 1080px;
-  transform-origin: center center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
 }
 
 @media (max-width: 768px) {

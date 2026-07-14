@@ -8,7 +8,7 @@ export default class DataManager {
   interval: number | null = null
 
   setDataModels(list: any[]) {
-    console.log('setDataModels', list)
+    //console.log('setDataModels', list)
   }
 
   spaceEquipmentsPromise: Promise<any[]> = Promise.resolve([])

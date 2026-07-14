@@ -5,6 +5,8 @@ import { dataApi } from '@/api/data'
 import { controlApi } from '@/api/control'
 import type { Reading, StandardPoint } from '@/api/data'
 import type { DeviceConfig, PointConfig } from '@/api/types'
+import { parseStandardPoints, mapPointToDisplay, mapDeviceWithPoints } from '@/utils/pointMapping'
+import type { ReadingData } from '@/utils/pointMapping'
 
 export interface PointDisplay {
   name: string
@@ -44,89 +46,23 @@ export interface DeviceWithPoints {
   points: PointDisplay[]
 }
 
-function isPointWritable(point: PointConfig): boolean {
-  const config = point.config || {}
-  if (config.writable === true) return true
-  const registerType = config.register_type as string | undefined
-  if (registerType === 'coil' || registerType === 'holding') return true
-  const objectType = (config.object_type as string) || point.data_type
-  if (objectType && (objectType.includes('Output') || objectType.includes('Value'))) return true
-  if (config.control_address) return true
-  return false
-}
+/**
+ * 将后端读数数据转换为以 asset 为 key 的 Map
+ * @param readings 后端设备读数列表
+ */
+function buildReadingMap(readings: any[]): Map<string, ReadingData> {
+  const readingMap = new Map<string, ReadingData>()
 
-function mapPointToDisplay(point: PointConfig, readingData?: { data: Record<string, unknown>; standardPoints: Map<string, StandardPoint>; timestamp?: number }): PointDisplay {
-  const metadata = point.metadata || {}
-  const isDigital = point.standard_data_type === 'bool'
-
-  const sp = readingData?.standardPoints?.get(point.name)
-  const rawValue = readingData?.data?.[point.name]
-  const currentValue = sp?.value ?? (rawValue as number | boolean | string | undefined)
-  const timeStr = readingData?.timestamp
-    ? new Date(readingData.timestamp * 1000).toLocaleString('zh-CN')
-    : undefined
-
-  return {
-    name: point.name,
-    description: point.description || '',
-    data_type: point.data_type,
-    standard_data_type: point.standard_data_type,
-    unit: point.unit || '',
-    enabled: point.enabled,
-    config: point.config || {},
-    metadata: point.metadata || {},
-    tags: point.tags || [],
-    type: isDigital ? 'digital' : 'analog',
-    writable: isPointWritable(point),
-    currentValue,
-    minValue: (metadata.minValue as number) ?? (metadata.range as number[])?.[0],
-    maxValue: (metadata.maxValue as number) ?? (metadata.range as number[])?.[1],
-    lastUpdate: timeStr,
-    quality: (sp?.quality as 'good' | 'bad' | 'uncertain') ?? 'good',
-    trend: {
-      enabled: (metadata.trendEnabled as boolean) ?? false,
-      interval: (metadata.trendInterval as number) ?? 60,
-      retention: (metadata.trendRetention as number) ?? 7
-    }
+  for (const reading of readings) {
+    const { standardPoints, timestamp } = parseStandardPoints(reading.standard_points)
+    readingMap.set(reading.asset, {
+      data: reading.data || {},
+      standardPoints,
+      timestamp
+    })
   }
-}
 
-function mapDeviceWithPoints(device: DeviceConfig, readingData?: { data: Record<string, unknown>; standardPoints: Map<string, StandardPoint>; timestamp?: number }): DeviceWithPoints {
-  const pluginConfig = device.plugin?.config || {}
-  return {
-    asset: device.asset,
-    name: device.name || device.asset,
-    enabled: device.enabled,
-    status: device.status || 'active',
-    pluginName: device.plugin?.name || '',
-    pointCount: device.points?.length || 0,
-    connection: {
-      host: (pluginConfig.host as string) || '',
-      port: (pluginConfig.port as number) || 0
-    },
-    points: (device.points || []).map(p => mapPointToDisplay(p, readingData))
-  }
-}
-
-function parseStandardPoints(rawSp: any[]): { standardPoints: Map<string, StandardPoint>; timestamp?: number } {
-  const standardPoints = new Map<string, StandardPoint>()
-  let timestamp: number | undefined
-  for (const p of rawSp || []) {
-    const key = p.point_name || p.name || ''
-    if (key) {
-      standardPoints.set(key, {
-        name: key,
-        point_name: p.point_name,
-        value: p.value,
-        unit: p.unit,
-        data_type: p.data_type,
-        quality: p.quality,
-        timestamp: p.timestamp
-      })
-    }
-    if (p.timestamp && !timestamp) timestamp = p.timestamp
-  }
-  return { standardPoints, timestamp }
+  return readingMap
 }
 
 export const usePointStore = defineStore('points', () => {
@@ -144,69 +80,82 @@ export const usePointStore = defineStore('points', () => {
 
   const allPoints = computed(() => {
     const points: (PointDisplay & { deviceAsset: string; deviceName: string })[] = []
-    devices.value.forEach(device => {
-      device.points.forEach(point => {
-        points.push({ ...point, deviceAsset: device.asset, deviceName: device.name })
-      })
-    })
+
+    for (const device of devices.value) {
+      for (const point of device.points) {
+        points.push({
+          ...point,
+          deviceAsset: device.asset,
+          deviceName: device.name
+        })
+      }
+    }
+
     return points
   })
 
+  /**
+   * 获取所有设备及其点位，并合并最新读数
+   */
   async function fetchDevicesWithPoints() {
     loading.value = true
     error.value = null
+
     try {
-      const [devRes, readRes] = await Promise.allSettled([
+      const [deviceResult, readingResult] = await Promise.allSettled([
         deviceApi.list(),
         deviceApi.getLatest(false)
       ])
 
-      const deviceList = devRes.status === 'fulfilled' ? devRes.value.devices : []
-      const readingList = readRes.status === 'fulfilled' ? readRes.value.devices : []
+      const deviceList = deviceResult.status === 'fulfilled' ? deviceResult.value.devices : []
+      const readingList = readingResult.status === 'fulfilled' ? readingResult.value.devices : []
 
-      const readingMap = new Map<string, { data: Record<string, unknown>; standardPoints: Map<string, StandardPoint>; timestamp?: number }>()
-      for (const r of readingList) {
-        const { standardPoints, timestamp } = parseStandardPoints(r.standard_points)
-        readingMap.set(r.asset, { data: r.data || {}, standardPoints, timestamp })
-      }
+      const readingMap = buildReadingMap(readingList)
 
-      devices.value = deviceList.map(d => mapDeviceWithPoints(d, readingMap.get(d.asset)))
+      devices.value = deviceList.map(device => mapDeviceWithPoints(device, readingMap.get(device.asset)))
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : '获取设备点位失败'
-      error.value = msg
+      const message = e instanceof Error ? e.message : '获取设备点位失败'
+      error.value = message
       console.error('Failed to fetch devices with points:', e)
     } finally {
       loading.value = false
     }
   }
 
+  /**
+   * 获取指定设备的点位并合并最新读数
+   * @param asset 设备 asset
+   */
   async function fetchDevicePoints(asset: string) {
     try {
-      const [pointsRes, readingRes] = await Promise.allSettled([
+      const [pointsResult, readingsResult] = await Promise.allSettled([
         deviceApi.listPoints(asset),
         dataApi.getReadings({ asset, limit: 1, active_only: false })
       ])
 
-      const points = pointsRes.status === 'fulfilled' ? pointsRes.value : []
-      const readings = readingRes.status === 'fulfilled' ? readingRes.value.readings : []
+      const points = pointsResult.status === 'fulfilled' ? pointsResult.value : []
+      const readings = readingsResult.status === 'fulfilled' ? readingsResult.value.readings : []
 
-      let readingData: { data: Record<string, unknown>; standardPoints: Map<string, StandardPoint>; timestamp?: number } | undefined
+      let readingData: ReadingData | undefined
       if (readings.length > 0) {
-        const r = readings[0]
-        const { standardPoints, timestamp } = parseStandardPoints(r.standard_points)
-        readingData = { data: r.data || {}, standardPoints, timestamp }
+        const reading = readings[0]
+        const { standardPoints, timestamp } = parseStandardPoints(reading.standard_points)
+        readingData = { data: reading.data || {}, standardPoints, timestamp }
       }
 
-      const deviceIdx = devices.value.findIndex(d => d.asset === asset)
-      const mappedPoints = points.map(p => mapPointToDisplay(p, readingData))
+      const mappedPoints = points.map(point => mapPointToDisplay(point, readingData))
+      const deviceIndex = devices.value.findIndex(d => d.asset === asset)
 
-      if (deviceIdx !== -1) {
-        const device = devices.value[deviceIdx]
-        devices.value[deviceIdx] = { ...device, points: mappedPoints, pointCount: mappedPoints.length }
+      if (deviceIndex !== -1) {
+        const device = devices.value[deviceIndex]
+        devices.value[deviceIndex] = {
+          ...device,
+          points: mappedPoints,
+          pointCount: mappedPoints.length
+        }
       } else {
         const device = await deviceApi.get(asset)
-        const mapped = mapDeviceWithPoints(device, readingData)
-        devices.value.push(mapped)
+        devices.value.push(mapDeviceWithPoints(device, readingData))
       }
     } catch (e: unknown) {
       console.error(`Failed to fetch points for device ${asset}:`, e)
@@ -221,14 +170,20 @@ export const usePointStore = defineStore('points', () => {
     // No longer needed - data is merged in fetchDevicesWithPoints
   }
 
+  /**
+   * 获取指定设备的历史读数
+   * @param asset 设备 asset
+   * @param hours 查询小时数，默认 24
+   */
   async function fetchHistoryReadings(asset: string, hours: number = 24) {
     historyLoading.value = true
+
     try {
       const endTime = Date.now() / 1000
       const startTime = endTime - hours * 3600
-      const res = await dataApi.getHistoryReadings(asset, startTime, endTime, 1000)
-      historyReadings.value = res.readings
-      return res.readings
+      const response = await dataApi.getHistoryReadings(asset, startTime, endTime, 1000)
+      historyReadings.value = response.readings
+      return response.readings
     } catch (e: unknown) {
       console.error(`Failed to fetch history for ${asset}:`, e)
       return []
@@ -237,54 +192,75 @@ export const usePointStore = defineStore('points', () => {
     }
   }
 
+  /**
+   * 从历史读数中提取指定点位的趋势数据
+   * @param pointName 点位名
+   */
   function getPointTrendData(pointName: string): { time: string; timestamp: number; value: number; quality: string }[] {
     const data: { time: string; timestamp: number; value: number; quality: string }[] = []
 
     for (const reading of historyReadings.value) {
-      const sp = reading.standard_points?.find(p => (p.name || p.point_name) === pointName)
-      const rawVal = reading.data?.[pointName]
-      const val = sp?.value ?? rawVal
+      const standardPoint = reading.standard_points?.find(
+        (p: StandardPoint) => (p.name || p.point_name) === pointName
+      )
+      const rawValue = reading.data?.[pointName]
+      const value = standardPoint?.value ?? rawValue
 
-      if (val !== undefined && val !== null) {
-        const date = new Date(reading.timestamp * 1000)
-        let numericValue: number
-        
-        if (typeof val === 'boolean') {
-          numericValue = val ? 1 : 0
-        } else if (typeof val === 'number') {
-          numericValue = val
-        } else {
-          continue
-        }
-        
-        data.push({
-          time: date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          timestamp: reading.timestamp * 1000,
-          value: numericValue,
-          quality: sp?.quality || 'good'
-        })
+      if (value === undefined || value === null) continue
+
+      let numericValue: number
+      if (typeof value === 'boolean') {
+        numericValue = value ? 1 : 0
+      } else if (typeof value === 'number') {
+        numericValue = value
+      } else {
+        continue
       }
+
+      const date = new Date(reading.timestamp * 1000)
+      data.push({
+        time: date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: reading.timestamp * 1000,
+        value: numericValue,
+        quality: standardPoint?.quality || 'good'
+      })
     }
 
     return data.sort((a, b) => a.timestamp - b.timestamp)
   }
 
+  /**
+   * 新增点位
+   * @param asset 设备 asset
+   * @param point 点位配置
+   */
   async function addPoint(asset: string, point: PointConfig) {
-    const res = await deviceApi.addPoint(asset, point)
-    if (res.success) {
+    const response = await deviceApi.addPoint(asset, point)
+    if (response.success) {
       await fetchDevicePoints(asset)
     }
-    return res
+    return response
   }
 
+  /**
+   * 更新点位
+   * @param asset 设备 asset
+   * @param pointName 点位名
+   * @param updates 更新字段
+   */
   async function updatePoint(asset: string, pointName: string, updates: Record<string, unknown>) {
-    const res = await deviceApi.updatePoint(asset, pointName, updates)
-    if (res.success) {
+    const response = await deviceApi.updatePoint(asset, pointName, updates)
+    if (response.success) {
       await fetchDevicePoints(asset)
     }
-    return res
+    return response
   }
 
+  /**
+   * 删除点位
+   * @param asset 设备 asset
+   * @param pointName 点位名
+   */
   async function removePoint(asset: string, pointName: string) {
     await deviceApi.removePoint(asset, pointName)
     await fetchDevicePoints(asset)
@@ -306,14 +282,24 @@ export const usePointStore = defineStore('points', () => {
     selectedDeviceAsset.value = null
   }
 
+  /**
+   * 获取指定设备下的所有点位
+   * @param deviceAsset 设备 asset
+   */
   function getDevicePoints(deviceAsset: string): PointDisplay[] {
     const device = devices.value.find(d => d.asset === deviceAsset)
     return device?.points || []
   }
 
+  /**
+   * 生成模拟趋势数据（编辑模式或历史数据为空时使用）
+   * @param point 点位展示对象
+   * @param hours 小时数，默认 24
+   */
   const generateTrendData = (point: PointDisplay, hours: number = 24) => {
     const now = Date.now()
     const data: { time: string; timestamp: number; value: number; quality: string }[] = []
+
     const interval = trendAggregation.value === 'none' ? 60000 :
                      trendAggregation.value === '1min' ? 60000 :
                      trendAggregation.value === '5min' ? 300000 :
@@ -325,8 +311,8 @@ export const usePointStore = defineStore('points', () => {
     for (let i = count; i >= 0; i--) {
       const timestamp = now - i * interval
       const time = new Date(timestamp)
-      const h = time.getHours().toString().padStart(2, '0')
-      const m = time.getMinutes().toString().padStart(2, '0')
+      const hour = time.getHours().toString().padStart(2, '0')
+      const minute = time.getMinutes().toString().padStart(2, '0')
 
       let value: number
       if (isDigital) {
@@ -336,7 +322,7 @@ export const usePointStore = defineStore('points', () => {
       }
 
       data.push({
-        time: `${h}:${m}`,
+        time: `${hour}:${minute}`,
         timestamp,
         value: isDigital ? value : Math.round(value * 100) / 100,
         quality: Math.random() > 0.05 ? 'good' : 'uncertain'
@@ -346,6 +332,12 @@ export const usePointStore = defineStore('points', () => {
     return data
   }
 
+  /**
+   * 向指定点位写入值
+   * @param deviceAsset 设备 asset
+   * @param pointName 点位名
+   * @param value 要写入的值
+   */
   async function writePoint(deviceAsset: string, pointName: string, value: number | boolean | string): Promise<{ success: boolean; message: string }> {
     const device = devices.value.find(d => d.asset === deviceAsset)
     if (!device) {
@@ -362,19 +354,22 @@ export const usePointStore = defineStore('points', () => {
     }
 
     try {
-      const res = await controlApi.writeSetpoint(
+      const response = await controlApi.writeSetpoint(
         device.pluginName,
         deviceAsset,
         pointName,
         value
       )
 
-      if (res.status === 'ACCEPTED') {
+      if (response.status === 'ACCEPTED') {
         setTimeout(() => fetchDevicePoints(deviceAsset), 2000)
-        return { success: true, message: `写值命令已下发 (命令ID: ${res.command_id.slice(0, 8)}...)` }
+        return {
+          success: true,
+          message: `写值命令已下发 (命令ID: ${response.command_id.slice(0, 8)}...)`
+        }
       }
 
-      return { success: false, message: `命令状态异常: ${res.status}` }
+      return { success: false, message: `命令状态异常: ${response.status}` }
     } catch (e: unknown) {
       const detail = (e as any)?.response?.data?.detail || (e instanceof Error ? e.message : '写值失败')
       return { success: false, message: detail }

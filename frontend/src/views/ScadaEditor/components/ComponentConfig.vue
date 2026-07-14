@@ -27,11 +27,11 @@
         <div class="form-row">
           <div class="form-group">
             <label>{{ t('componentConfig.width') }}</label>
-            <input type="number" :value="component.style.width" @input="updateDimension('width', $event)" />
+            <input type="number" :value="component.config.width" @input="updateDimension('width', $event)" />
           </div>
           <div class="form-group">
             <label>{{ t('componentConfig.height') }}</label>
-            <input type="number" :value="component.style.height" @input="updateDimension('height', $event)" />
+            <input type="number" :value="component.config.height" @input="updateDimension('height', $event)" />
           </div>
         </div>
       </div>
@@ -87,7 +87,7 @@
         <div v-if="panelBgType === 'color'" class="form-group">
           <label>{{ t('componentConfig.backgroundColor') }}</label>
           <div class="color-input">
-            <input type="color" v-model="panelBgColor" @change="updatePanelSize" />
+            <el-color-picker v-model="panelBgColor" show-alpha @change="updatePanelSize" />
             <input type="text" v-model="panelBgColor" @change="updatePanelSize" placeholder="#f0f2f5" />
           </div>
         </div>
@@ -141,7 +141,7 @@ import { ref, computed, markRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePointStore } from '@/stores/points'
 import { getConfigPanel } from '../component-registry'
-import { useScadaProps } from '../hooks'
+import { useScadaProps } from '../hooks/useScadaEditor'
 
 const { t } = useI18n()
 const pointStore = usePointStore()
@@ -281,12 +281,7 @@ const triggerBgImageUpload = () => {
 .color-input {
   display: flex;
   gap: 8px;
-}
-
-.color-input input[type="color"] {
-  width: 40px;
-  padding: 2px;
-  cursor: pointer;
+  align-items: center;
 }
 
 .color-input input[type="text"] {
@@ -294,8 +289,8 @@ const triggerBgImageUpload = () => {
 }
 
 .preset-buttons {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
   margin-top: 8px;
 }
@@ -369,9 +364,12 @@ const triggerBgImageUpload = () => {
   color: var(--text-secondary);
 }
 
-.preset-buttons .el-button {
-  flex: 1;
-  min-width: calc(50% - 3px);
+.preset-buttons :deep(.el-button) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 0;
   font-size: 11px;
 }
 

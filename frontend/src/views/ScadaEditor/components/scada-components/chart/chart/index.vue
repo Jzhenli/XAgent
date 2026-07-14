@@ -1,5 +1,5 @@
 <template>
-  <div class="chart-container">
+  <div class="chart-container" :style="containerStyle">
     <div v-if="binding" class="chart-title">
       {{ binding.pointDescription || binding.pointName }}
     </div>
@@ -8,11 +8,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted } from 'vue'
-import type { ScadaComponent } from '@/types/scada'
-import { useScadaBinding } from '@/views/ScadaEditor/hooks'
+import { computed, watch, onMounted, inject } from 'vue'
+import type { ScadaComponent, ChartComponentConfig } from '../../../../types'
+import { useScadaBinding } from '../../../../hooks'
 import { usePointStore } from '@/stores/points'
-import { useScadaStore } from '@/stores/scada'
+import { ScadaPointReaderKey } from '@/utils/scadaPointReader'
+import { useScadaEditor } from '../../../../hooks/useScadaEditor'
+import { usePolling } from '@/hooks/usePolling'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, BarChart } from 'echarts/charts'
@@ -27,16 +29,34 @@ const props = defineProps<{
 }>()
 
 const pointStore = usePointStore()
-const scadaStore = useScadaStore()
-const chartConfig = computed(() => props.config.chartConfig)
+const injectedReader = inject(ScadaPointReaderKey, null)
+const scada = useScadaEditor()
+
+const fetchHistoryReadings = async (asset: string, hours: number = 24) => {
+  if (injectedReader) {
+    return injectedReader.fetchHistoryReadings(asset, hours)
+  }
+  return pointStore.fetchHistoryReadings(asset, hours)
+}
+
+const getPointTrendData = (pointName: string) => {
+  if (injectedReader) {
+    return injectedReader.getPointTrendData(pointName)
+  }
+  return pointStore.getPointTrendData(pointName)
+}
+
+const generateTrendData = (point: any, hours: number) => {
+  if (injectedReader) {
+    return injectedReader.generateTrendData(point, hours)
+  }
+  return pointStore.generateTrendData(point, hours)
+}
+const chartConfig = computed(() => props.config.config as ChartComponentConfig)
 const binding = computed(() => props.config.binding)
+const fallbackValue = computed(() => props.config.config.value)
 
-const { boundPoint } = useScadaBinding(binding, {
-  autoRefresh: true,
-  refreshInterval: 10000
-})
-
-let refreshTimer: ReturnType<typeof setInterval> | null = null
+const { boundPoint } = useScadaBinding(binding, {}, fallbackValue)
 
 const hoursMap: Record<string, number> = {
   '1h': 1,
@@ -45,83 +65,94 @@ const hoursMap: Record<string, number> = {
   '7d': 168
 }
 
-// 加载历史数据
+/**
+ * 加载图表绑定点位的历史数据
+ */
 const loadHistoryData = async () => {
-  if (scadaStore.isEditing || !binding.value) return
-  
+  if (scada.isEditing.value || !binding.value) return
+
   const deviceId = binding.value.deviceId
   const hours = hoursMap[chartConfig.value?.timeRange || '24h'] || 24
-  
-  await pointStore.fetchHistoryReadings(deviceId, hours)
+
+  await fetchHistoryReadings(deviceId, hours)
 }
 
-// 启动自动刷新
-const startAutoRefresh = () => {
-  if (scadaStore.isEditing) return
-  if (refreshTimer) clearInterval(refreshTimer)
-  
-  refreshTimer = setInterval(() => {
-    loadHistoryData()
-  }, 30000) // 30秒刷新一次
-}
+/** 历史数据轮询：每 30 秒刷新一次 */
+const { start: startHistoryPolling, stop: stopHistoryPolling } = usePolling(loadHistoryData, {
+  interval: 30000,
+  immediate: false,
+  paused: scada.isEditing.value
+})
 
-// 停止自动刷新
-const stopAutoRefresh = () => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
-    refreshTimer = null
-  }
-}
-
-// 监听编辑模式变化
-watch(() => scadaStore.isEditing, (isEditing) => {
+watch(() => scada.isEditing.value, (isEditing) => {
   if (isEditing) {
-    stopAutoRefresh()
+    stopHistoryPolling()
   } else {
-    loadHistoryData()
-    startAutoRefresh()
+    void loadHistoryData()
+    startHistoryPolling()
   }
 })
 
-// 监听时间范围变化
 watch(() => chartConfig.value?.timeRange, () => {
-  if (!scadaStore.isEditing) {
-    loadHistoryData()
+  if (!scada.isEditing.value) {
+    void loadHistoryData()
   }
 })
 
 onMounted(() => {
-  if (!scadaStore.isEditing && binding.value) {
-    loadHistoryData()
-    startAutoRefresh()
+  if (!scada.isEditing.value && binding.value) {
+    void loadHistoryData()
+    startHistoryPolling()
   }
 })
 
-onUnmounted(() => {
-  stopAutoRefresh()
-})
+const containerStyle = computed(() => ({
+  backgroundColor: chartConfig.value?.backgroundColor || undefined,
+  borderRadius: `${chartConfig.value?.borderRadius ?? 8}px`
+}))
+
+const colorWithAlpha = (color: string | undefined, alpha: number): string => {
+  if (!color) return `rgba(52, 152, 219, ${alpha})`
+  if (color === 'transparent') return `rgba(0, 0, 0, 0)`
+  if (color.startsWith('rgba')) {
+    return color.replace(/,\s*[\d.]+\s*\)$/, `, ${alpha})`)
+  }
+  if (color.startsWith('rgb(')) {
+    return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`)
+  }
+  if (color.startsWith('#')) {
+    const hex = color.replace('#', '')
+    const fullHex = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex
+    const bigint = parseInt(fullHex.slice(0, 6), 16)
+    const r = (bigint >> 16) & 255
+    const g = (bigint >> 8) & 255
+    const b = bigint & 255
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  return color
+}
 
 const chartOption = computed(() => {
   const isLine = props.config.type === 'chart-line'
-  
+
   let data: number[] = []
-  if (boundPoint.value) {
-    if (scadaStore.isEditing) {
-      // 编辑模式：使用随机数据作为预览
-      const hours = hoursMap[chartConfig.value?.timeRange || '24h'] || 24
-      const trendData = pointStore.generateTrendData(boundPoint.value, hours)
-      data = trendData.map(d => d.value)
+  if (scada.isEditing.value && typeof fallbackValue.value === 'number') {
+    const hours = hoursMap[chartConfig.value?.timeRange || '24h'] || 24
+    const trendData = generateTrendData({
+      name: '',
+      currentValue: fallbackValue.value,
+      type: 'analog',
+      standard_data_type: 'float'
+    } as any, hours)
+    data = trendData.map(d => d.value)
+  } else if (boundPoint.value) {
+    const realData = getPointTrendData(boundPoint.value.name)
+    if (realData.length > 0) {
+      data = realData.map(d => d.value)
     } else {
-      // 预览模式：使用真实历史数据
-      const realData = pointStore.getPointTrendData(boundPoint.value.name)
-      if (realData.length > 0) {
-        data = realData.map(d => d.value)
-      } else {
-        // 如果没有历史数据，fallback 到随机数据
-        const hours = hoursMap[chartConfig.value?.timeRange || '24h'] || 24
-        const trendData = pointStore.generateTrendData(boundPoint.value, hours)
-        data = trendData.map(d => d.value)
-      }
+      const hours = hoursMap[chartConfig.value?.timeRange || '24h'] || 24
+      const trendData = generateTrendData(boundPoint.value, hours)
+      data = trendData.map(d => d.value)
     }
   }
   
@@ -163,8 +194,8 @@ const chartOption = computed(() => {
           type: 'linear',
           x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
-            { offset: 0, color: `${chartConfig.value?.lineColor || '#3498db'}40` },
-            { offset: 1, color: `${chartConfig.value?.lineColor || '#3498db'}05` }
+            { offset: 0, color: colorWithAlpha(chartConfig.value?.lineColor, 0.25) },
+            { offset: 1, color: colorWithAlpha(chartConfig.value?.lineColor, 0.02) }
           ]
         }
       } : undefined,

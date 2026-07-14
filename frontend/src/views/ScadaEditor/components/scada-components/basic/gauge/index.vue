@@ -1,5 +1,5 @@
 <template>
-  <div class="gauge-container">
+  <div class="gauge-container" :style="containerStyle">
     <svg viewBox="0 0 100 70" class="gauge-svg">
       <!-- Background arc -->
       <path
@@ -25,12 +25,12 @@
       <circle cx="50" cy="60" r="3" :fill="currentColor" />
     </svg>
     
-    <div class="gauge-value" :style="{ color: currentColor }">
+    <div class="gauge-value" :style="valueStyle">
       {{ displayValue }}
       <span v-if="gaugeConfig?.unit" class="unit">{{ gaugeConfig.unit }}</span>
     </div>
-    
-    <div v-if="binding" class="gauge-label">
+
+    <div v-if="binding" class="gauge-label" :style="labelStyle">
       {{ binding.pointDescription || binding.pointName }}
     </div>
   </div>
@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ScadaComponent } from '@/types/scada'
+import type { ScadaComponent, GaugeComponentConfig } from '@/types/scada'
 import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 
 const props = defineProps<{
@@ -46,14 +46,13 @@ const props = defineProps<{
   editing?: boolean
 }>()
 
-const gaugeConfig = computed(() => props.config.gaugeConfig)
+const gaugeConfig = computed(() => props.config.config as GaugeComponentConfig)
 const binding = computed(() => props.config.binding)
+const fallbackValue = computed(() => props.config.config.value)
 
 const { currentValue } = useScadaBinding(binding, {
-  autoRefresh: true,
-  refreshInterval: 5000,
   transform: (value) => typeof value === 'number' ? value : 0
-})
+}, fallbackValue)
 
 const percentage = computed(() => {
   if (!gaugeConfig.value) return 0
@@ -83,6 +82,21 @@ const displayValue = computed(() => {
   const val = currentValue.value
   return typeof val === 'number' ? val.toFixed(1) : '0.0'
 })
+
+const containerStyle = computed(() => ({
+  backgroundColor: gaugeConfig.value?.backgroundColor || undefined,
+  borderRadius: `${gaugeConfig.value?.borderRadius ?? 8}px`
+}))
+
+const valueStyle = computed(() => ({
+  color: gaugeConfig.value?.fontColor || currentColor.value,
+  fontSize: `${gaugeConfig.value?.fontSize ?? 24}px`
+}))
+
+const labelStyle = computed(() => ({
+  color: gaugeConfig.value?.fontColor || 'var(--text-secondary)',
+  fontSize: `${Math.max(10, (gaugeConfig.value?.fontSize ?? 24) * 0.5)}px`
+}))
 </script>
 
 <style scoped>
@@ -94,7 +108,6 @@ const displayValue = computed(() => {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--bg-container) 0%, var(--bg-hover) 100%);
-  border-radius: 8px;
   padding: 10px;
 }
 
@@ -108,20 +121,16 @@ const displayValue = computed(() => {
 }
 
 .gauge-value {
-  font-size: 24px;
   font-weight: 700;
   margin-top: -10px;
 }
 
 .gauge-value .unit {
-  font-size: 14px;
   font-weight: 400;
   opacity: 0.7;
 }
 
 .gauge-label {
-  font-size: 12px;
-  color: var(--text-secondary);
   margin-top: 4px;
   text-align: center;
   max-width: 90%;

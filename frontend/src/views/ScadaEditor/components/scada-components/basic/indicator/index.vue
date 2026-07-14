@@ -1,5 +1,5 @@
 <template>
-  <div class="indicator-container">
+  <div class="indicator-container" :style="containerStyle">
     <div class="indicator-light" :style="indicatorStyle"></div>
     <div v-if="binding" class="indicator-label">
       {{ binding.pointDescription || binding.pointName }}
@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ScadaComponent } from '@/types/scada'
+import type { ScadaComponent, IndicatorComponentConfig } from '@/types/scada'
 import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 
 const props = defineProps<{
@@ -17,22 +17,47 @@ const props = defineProps<{
   editing?: boolean
 }>()
 
-const indicatorConfig = computed(() => props.config.indicatorConfig)
+const indicatorConfig = computed(() => props.config.config as IndicatorComponentConfig)
 const binding = computed(() => props.config.binding)
+const fallbackValue = computed(() => props.config.config.value)
 
 const { currentValue } = useScadaBinding(binding, {
-  autoRefresh: true,
-  refreshInterval: 3000,
   transform: (value) => value === true || value === 1
-})
+}, fallbackValue)
+
+const colorWithAlpha = (color: string | undefined, alpha: number): string => {
+  if (!color) return `rgba(39, 174, 96, ${alpha})`
+  if (color === 'transparent') return `rgba(0, 0, 0, 0)`
+  if (color.startsWith('rgba')) {
+    return color.replace(/,\s*[\d.]+\s*\)$/, `, ${alpha})`)
+  }
+  if (color.startsWith('rgb(')) {
+    return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`)
+  }
+  if (color.startsWith('#')) {
+    const hex = color.replace('#', '')
+    const fullHex = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex
+    const bigint = parseInt(fullHex.slice(0, 6), 16)
+    const r = (bigint >> 16) & 255
+    const g = (bigint >> 8) & 255
+    const b = bigint & 255
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  return color
+}
 
 const indicatorStyle = computed(() => ({
   backgroundColor: currentValue.value
     ? indicatorConfig.value?.onColor || '#27ae60'
     : indicatorConfig.value?.offColor || '#95a5a6',
   boxShadow: currentValue.value
-    ? `0 0 20px ${indicatorConfig.value?.onColor || '#27ae60'}80`
+    ? `0 0 20px ${colorWithAlpha(indicatorConfig.value?.onColor, 0.5)}`
     : 'none'
+}))
+
+const containerStyle = computed(() => ({
+  backgroundColor: indicatorConfig.value?.backgroundColor || undefined,
+  borderRadius: `${indicatorConfig.value?.borderRadius ?? 8}px`
 }))
 </script>
 

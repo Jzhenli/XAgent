@@ -1,0 +1,45 @@
+import { DrawingArea, GPoint } from '../DrawingArea';
+import { default as GItem } from '../shapes/GItem';
+import { default as GCtrl } from './GCtrl';
+
+declare class MouseHandler {
+    lastPoint: GPoint;
+    currPoint: GPoint;
+    lastCiPoint: GPoint;
+    currCiPoint: GPoint;
+    lastDAPoint: GPoint;
+    currDAPoint: GPoint;
+    downPoint: GPoint | null;
+    downDAPoint: GPoint | null;
+    button: number | null;
+    mouseButtons: boolean[];
+    altKey: boolean;
+    ctrlKey: boolean;
+    shiftKey: boolean;
+    lastHovered: GItem | GCtrl | DrawingArea | null;
+    hovered: GItem | GCtrl | DrawingArea | null;
+    downElement: GItem | GCtrl | DrawingArea | null;
+    draggingElement: GItem | GCtrl | DrawingArea | null;
+    isMouseDown: boolean;
+    hasMoved: boolean;
+    canvasTarget: HTMLElement | null;
+    onCanvasMove(event: MouseEvent): void;
+    onBodyMove(event: MouseEvent): void;
+    private calculateMouseButton;
+    onCanvasDown(event: MouseEvent): void;
+    onCanvasUp(event: MouseEvent): void;
+    onBodyUp(event: MouseEvent): void;
+    onCanvasDblClick(event: MouseEvent): void;
+    onCanvasWheel(event: WheelEvent): void;
+    onCanvasDrop(event: MouseEvent): void;
+    private onUp;
+    private onMove;
+    private checkTempGroup;
+    private findItemActiveFirst;
+    private findTopItem;
+    private findTopCtrl;
+    private updateKeyBoardState;
+    private getGMouseEvent;
+}
+declare const _default: MouseHandler;
+export default _default;

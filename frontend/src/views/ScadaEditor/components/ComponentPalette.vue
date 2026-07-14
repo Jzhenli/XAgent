@@ -3,7 +3,7 @@
     <div class="palette-header">
       <div class="header-content">
         <span class="header-title">{{ t('componentPalette.title') }}</span>
-        <div class="header-toggle" @click="emit('toggleList')" :title="props.showComponentList ? '隐藏组件列表' : '显示组件列表'">
+        <div class="header-toggle" @click="emit('toggleList')" :title="props.showComponentList ? t('componentPalette.hideComponentList') : t('componentPalette.showComponentList')">
           <el-icon><DArrowLeft v-if="props.showComponentList" /><DArrowRight v-else /></el-icon>
         </div>
       </div>

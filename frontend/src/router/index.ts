@@ -48,10 +48,10 @@ const routes: RouteRecordRaw[] = [
   },
   // 预览相关路由 - 独立布局，不使用 MainLayout
   {
-    path: '/scada/slideshow',
-    name: 'SlideshowPreview',
+    path: '/scada/vant',
+    name: 'VantPreview',
     component: () => import('@/views/vant/vant.vue'),
-    meta: { title: '幻灯片预览', public: true }
+    meta: { title: '预览', public: true }
   },
   {
     path: '/scada/:id/preview',

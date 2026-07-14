@@ -90,9 +90,7 @@
           <el-badge :value="alertStore.pendingAlerts" :hidden="alertStore.pendingAlerts === 0">
             <el-button :icon="Bell" circle @click="router.push('/alerts')" />
           </el-badge>
-          <!-- Theme switcher -->
           <ThemeSwitcher />
-          <!-- Language switcher -->
           <el-dropdown @command="handleLanguageChange">
             <el-button size="small">
               {{ currentLanguageLabel }}
@@ -171,13 +169,11 @@ import {
   Menu
 } from '@element-plus/icons-vue'
 import { useAlertStore } from '@/stores/alerts'
-import { useScadaStore } from '@/stores/scada'
 import { useUserStore } from '@/stores/users'
-//import { useThemeStore } from '@/stores/theme'
 import { useResponsive } from '@/utils/useResponsive'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import { ElMessage } from 'element-plus'
-//import '@x-plateform/graphic-editor/dist/style.css'
+import '@x-plateform/graphic-editor/dist/index.css'
 import '@x-plateform-mono/common/dist/index.css'
 
 const { t, locale } = useI18n()
@@ -185,16 +181,13 @@ const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const alertStore = useAlertStore()
-const scadaStore = useScadaStore()
 const userStore = useUserStore()
-//const themeStore = useThemeStore()
 const { isTablet, isMobile, width, height } = useResponsive()
 
 const isCollapsed = ref(false)
 const isDrawerVisible = ref(false)
 const forceExpanded = ref(false)
 
-// Language options
 const languageOptions = [
   { value: 'zh-CN', label: '简体中文' },
   { value: 'en', label: 'English' },
@@ -212,7 +205,6 @@ function handleLanguageChange(lang: string) {
   ElMessage.success(t('common.languageChanged'))
 }
 
-// 当前时间
 const currentTime = ref(new Date().toLocaleString(locale.value, {
   year: 'numeric',
   month: '2-digit',
@@ -276,7 +268,7 @@ const toggleDrawer = () => {
   isDrawerVisible.value = !isDrawerVisible.value
 }
 
-const isFullscreenMode = computed(() => scadaStore.isFullscreenPreview)
+const isFullscreenMode = ref(false)
 
 const showSidebar = computed(() => !isTablet.value && !isMobile.value && route.path !== '/login' && !isFullscreenMode.value)
 const showDrawer = computed(() => (isTablet.value || isMobile.value) && route.path !== '/login' && !isFullscreenMode.value)
@@ -287,7 +279,6 @@ function handleLogout() {
   router.push('/login')
 }
 
-// 时间更新
 onMounted(() => {
   timeTimer = setInterval(() => {
     currentTime.value = new Date().toLocaleString(locale.value, {

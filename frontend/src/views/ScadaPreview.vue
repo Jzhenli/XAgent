@@ -5,7 +5,7 @@
         <el-button :icon="ArrowLeft" size="small" @click="handleGoBack">
           {{ $t('scada.backToList') }}
         </el-button>
-        <h3 class="panel-title">{{ currentPanel?.name }}</h3>
+        <h3 class="panel-title">{{ currentPanel.value?.name }}</h3>
       </div>
       <div class="header-right">
         <el-button :icon="FullScreen" size="small" @click="handleToggleFullscreen">
@@ -29,34 +29,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useScadaStore } from '@/stores/scada'
+import { useScadaEditor } from '@/views/ScadaEditor/hooks/useScadaEditor'
+import { useScadaPolling } from '@/views/ScadaEditor/hooks/useScadaBinding'
+import { useScadaPointReader, ScadaPointReaderKey } from '@/utils/scadaPointReader'
 import { ArrowLeft, FullScreen } from '@element-plus/icons-vue'
 import ScadaCanvas from '@/views/ScadaEditor/components/ScadaCanvas.vue'
+import { useSystemStore } from '@/stores/system'
 
 useI18n()
 const route = useRoute()
 const router = useRouter()
-const scadaStore = useScadaStore()
+const scada = useScadaEditor()
+const pointReader = useScadaPointReader()
+const systemStore = useSystemStore()
+
+provide(ScadaPointReaderKey, pointReader)
+
+/** 启动当前面板绑定设备的周期性数据刷新 */
+useScadaPolling({ interval: systemStore.visualizationConfig.pollingInterval })
 
 const isFullscreen = ref(false)
 
-const currentPanel = computed(() => scadaStore.currentPanel)
+const currentPanel = computed(() => scada.currentPanel)
 
-onMounted(() => {
+onMounted(async () => {
   const panelId = route.params.id as string
   if (panelId) {
-    scadaStore.selectPanel(panelId)
-    scadaStore.isEditing = false
+    await scada.loadPanel(panelId)
+    scada.isEditing.value = false
   }
   document.addEventListener('fullscreenchange', handleFullscreenChange)
 })
 
 onUnmounted(() => {
-  scadaStore.isEditing = true
-  scadaStore.isFullscreenPreview = false
+  scada.isEditing.value = true
+  scada.isFullscreenPreview.value = false
+  pointReader.clearDevices()
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
 })
 
