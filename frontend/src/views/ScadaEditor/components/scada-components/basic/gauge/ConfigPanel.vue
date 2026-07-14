@@ -28,7 +28,7 @@
     <div class="form-row">
       <div class="form-group">
         <label>{{ t('componentConfig.backgroundColor') }}</label>
-        <el-color-picker :model-value="config.backgroundColor" show-alpha @active-change="updateConfig('backgroundColor', $event)" />
+        <el-color-picker :model-value="config.backgroundColor" show-alpha @change="updateConfig('backgroundColor', $event)" />
       </div>
       <div class="form-group">
         <label>{{ t('componentConfig.borderRadius') }}</label>
@@ -42,7 +42,7 @@
       </div>
       <div class="form-group">
         <label>{{ t('componentConfig.fontColor') }}</label>
-        <el-color-picker :model-value="config.fontColor" show-alpha @active-change="updateConfig('fontColor', $event)" />
+        <el-color-picker :model-value="config.fontColor" show-alpha @change="updateConfig('fontColor', $event)" />
       </div>
     </div>
   </div>

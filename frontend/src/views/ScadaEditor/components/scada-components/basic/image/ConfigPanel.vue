@@ -43,7 +43,7 @@
       </div>
       <div class="form-group">
         <label>{{ t('componentConfig.backgroundColor') }}</label>
-        <el-color-picker :model-value="config.backgroundColor" show-alpha @active-change="updateConfig('backgroundColor', $event)" />
+        <el-color-picker :model-value="config.backgroundColor" show-alpha @change="updateConfig('backgroundColor', $event)" />
       </div>
     </div>
     <div class="form-row">

@@ -15,17 +15,17 @@
     <div class="form-row">
       <div class="form-group">
         <label>{{ t('componentConfig.onColor') }}</label>
-        <el-color-picker :model-value="config.onColor" show-alpha @active-change="updateConfig('onColor', $event)" />
+        <el-color-picker :model-value="config.onColor" show-alpha @change="updateConfig('onColor', $event)" />
       </div>
       <div class="form-group">
         <label>{{ t('componentConfig.offColor') }}</label>
-        <el-color-picker :model-value="config.offColor" show-alpha @active-change="updateConfig('offColor', $event)" />
+        <el-color-picker :model-value="config.offColor" show-alpha @change="updateConfig('offColor', $event)" />
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
         <label>{{ t('componentConfig.backgroundColor') }}</label>
-        <el-color-picker :model-value="config.backgroundColor" show-alpha @active-change="updateConfig('backgroundColor', $event)" />
+        <el-color-picker :model-value="config.backgroundColor" show-alpha @change="updateConfig('backgroundColor', $event)" />
       </div>
       <div class="form-group">
         <label>{{ t('componentConfig.borderRadius') }}</label>

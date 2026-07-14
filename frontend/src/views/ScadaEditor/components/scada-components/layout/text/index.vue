@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import type { ScadaComponent } from '@/types/scada'
 
 const props = defineProps<{
@@ -36,9 +36,11 @@ const containerStyle = computed(() => ({
   fontWeight: textConfig.value?.fontWeight || 'normal',
   textAlign: textConfig.value?.textAlign || 'center',
   justifyContent: justifyMap[textConfig.value?.textAlign || 'center'],
-  backgroundColor: textConfig.value?.backgroundColor || undefined,
+  background: textConfig.value?.backgroundColor || undefined,
   borderRadius: `${textConfig.value?.borderRadius ?? 4}px`
 }))
+
+
 </script>
 
 <style scoped>
