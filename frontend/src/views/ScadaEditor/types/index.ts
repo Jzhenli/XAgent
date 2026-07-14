@@ -70,8 +70,11 @@ export interface IndicatorComponentConfig extends BaseComponentConfig {
 
 /** 开关组件配置 */
 export interface SwitchComponentConfig extends BaseComponentConfig {
-  onText: string
-  offText: string
+  thumbColor: string
+  onColor: string
+  offColor: string
+  onValue: number | boolean | string
+  offValue: number | boolean | string
   confirmRequired: boolean
   writePoint: PointBinding | null
 }
@@ -155,10 +158,13 @@ export interface IndicatorConfig {
 
 /** @deprecated 已合并到 SwitchComponentConfig，保留用于旧数据迁移 */
 export interface SwitchConfig {
-  onText: string
-  offText: string
-  confirmRequired: boolean
-  writePoint: PointBinding | null
+  thumbColor?: string
+  onColor?: string
+  offColor?: string
+  onValue?: number | boolean | string
+  offValue?: number | boolean | string
+  confirmRequired?: boolean
+  writePoint?: PointBinding | null
 }
 
 /** @deprecated 已合并到 SliderComponentConfig，保留用于旧数据迁移 */

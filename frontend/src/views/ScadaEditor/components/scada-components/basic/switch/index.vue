@@ -1,10 +1,8 @@
 <template>
-  <div class="switch-container" @click="handleToggle">
-    <div class="switch-label">{{ onText }}</div>
-    <div class="switch-track" :class="{ on: currentValue, writing }">
-      <div class="switch-thumb" :class="{ on: currentValue }"></div>
+  <div class="switch-container" :style="containerStyle" @click="handleToggle">
+    <div class="switch-track" :class="{ on: currentValue, writing }" :style="trackStyle">
+      <div class="switch-thumb" :class="{ on: currentValue }" :style="thumbStyle"></div>
     </div>
-    <div class="switch-label">{{ offText }}</div>
   </div>
 </template>
 
@@ -25,57 +23,83 @@ const switchConfig = computed(() => props.config.config as SwitchComponentConfig
 const binding = computed(() => props.config.binding)
 const fallbackValue = computed(() => props.config.config.value)
 
-const onText = computed(() => {
-  const text = switchConfig.value?.onText
-  return text ? t(text) : t('scadaComponents.switchOn')
-})
+const onValue = computed(() => switchConfig.value?.onValue ?? true)
+const offValue = computed(() => switchConfig.value?.offValue ?? false)
 
-const offText = computed(() => {
-  const text = switchConfig.value?.offText
-  return text ? t(text) : t('scadaComponents.switchOff')
-})
+const isOn = (value: unknown): boolean => {
+  if (value === undefined || value === null) return false
+  // eslint-disable-next-line eqeqeq
+  return value == onValue.value
+}
 
 const { currentValue, writeValue } = useScadaBinding(binding, {
-  transform: (value) => value === true || value === 1
+  transform: (value) => isOn(value)
 }, fallbackValue)
 
 const writing = ref(false)
 
+const containerStyle = computed(() => ({
+  '--thumb-color': switchConfig.value?.thumbColor || '#ffffff',
+  '--track-off-color': switchConfig.value?.offColor || '#95a5a6',
+  '--track-on-color': switchConfig.value?.onColor || '#27ae60'
+}))
+
+const trackStyle = computed(() => {
+  const config = switchConfig.value
+  const width = config?.width ?? 60
+  const height = config?.height ?? 30
+  const padding = Math.min(width, height) * 0.08
+  const borderRadius = height / 2
+  return {
+    padding: `${padding}px`,
+    borderRadius: `${borderRadius}px`
+  }
+})
+
+const thumbStyle = computed(() => {
+  const config = switchConfig.value
+  const width = config?.width ?? 60
+  const height = config?.height ?? 30
+  const padding = Math.min(width, height) * 0.08
+  const thumbSize = height - 2 * padding
+  const translateX = width - thumbSize - 2 * padding
+  return {
+    width: `${thumbSize}px`,
+    height: `${thumbSize}px`,
+    marginTop: `${-thumbSize / 2}px`,
+    transform: currentValue.value ? `translateX(${translateX}px)` : 'translateX(0)'
+  }
+})
+
 const handleToggle = async () => {
   if (props.editing) return
-  
-  if (switchConfig.value?.confirmRequired) {
-    try {
-      await ElMessageBox.confirm(
-        `${t('scadaComponents.confirmToggle')}${currentValue.value ? t('scadaComponents.switchOff') : t('scadaComponents.switchOn')}${t('scadaComponents.confirmToggleSuffix', '？')}`,
-        t('scadaComponents.operationConfirm'),
-        { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel'), type: 'warning' }
-      )
-    } catch {
-      return
-    }
-  }
 
-  const targetValue = !currentValue.value
+  const targetValue = currentValue.value ? offValue.value : onValue.value
   const writeTarget = switchConfig.value?.writePoint || binding.value
 
   if (writeTarget) {
     writing.value = true
+    const originalValue = currentValue.value
+
+    currentValue.value = !originalValue
+
     try {
       const res = await writeValue(targetValue)
       if (res.success) {
         ElMessage.success(t('scadaComponents.commandSent'))
       } else {
+        currentValue.value = originalValue
         ElMessage.error(res.message)
       }
     } catch (e: unknown) {
+      currentValue.value = originalValue
       const detail = (e as any)?.response?.data?.detail || (e instanceof Error ? e.message : t('scadaComponents.operationFailed'))
       ElMessage.error(detail)
     } finally {
       writing.value = false
     }
   } else {
-    currentValue.value = targetValue
+    currentValue.value = !currentValue.value
   }
 }
 </script>
@@ -87,29 +111,21 @@ const handleToggle = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  background: var(--bg-container);
-  border-radius: 8px;
   cursor: pointer;
   user-select: none;
 }
 
-.switch-label {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
 .switch-track {
-  width: 50px;
-  height: 26px;
-  background: var(--border-base);
-  border-radius: 13px;
+  width: 100%;
+  height: 100%;
+  background: var(--track-off-color);
   position: relative;
   transition: background 0.3s;
+  box-sizing: border-box;
 }
 
 .switch-track.on {
-  background: var(--color-success);
+  background: var(--track-on-color);
 }
 
 .switch-track.writing {
@@ -118,17 +134,11 @@ const handleToggle = async () => {
 
 .switch-thumb {
   position: absolute;
-  width: 22px;
-  height: 22px;
-  background: var(--bg-container);
+  background: var(--thumb-color);
   border-radius: 50%;
-  top: 2px;
-  left: 2px;
+  top: 50%;
+  left: 0;
   transition: transform 0.3s;
   box-shadow: var(--shadow-light);
-}
-
-.switch-thumb.on {
-  transform: translateX(24px);
 }
 </style>
