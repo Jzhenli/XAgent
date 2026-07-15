@@ -4,10 +4,6 @@
 
     <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
     <div class="form-group">
-      <label>{{ t('componentConfig.currentValue') }}</label>
-      <input type="text" :value="config.value ?? ''" @input="updateValue(($event.target as HTMLInputElement).value || null)">
-    </div>
-    <div class="form-group">
       <label>{{ t('componentConfig.imageSource') }}</label>
       <div v-if="config.url" class="bg-image-card">
         <div class="bg-image-preview">
@@ -71,7 +67,7 @@ const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const { config, updateConfig, updateValue } = useScadaConfig(props.component as ScadaComponent<'image'>)
+const { config, updateConfig } = useScadaConfig(props.component as ScadaComponent<'image'>)
 
 const imageFileInput = ref<HTMLInputElement | null>(null)
 

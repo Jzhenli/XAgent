@@ -2,15 +2,8 @@
   <div class="config-section">
     <div class="section-title">{{ t("componentConfig.switchConfig") }}</div>
 
-    <!-- 数据绑定：当前值与通断映射 -->
+    <!-- 数据绑定：通断映射 -->
     <div class="subsection-title">{{ t("componentConfig.dataSection") }}</div>
-    <div class="form-group">
-      <label>{{ t("componentConfig.currentValue") }}</label>
-      <select v-model="currentValueModel">
-        <option value="true">{{ t("common.on") }}</option>
-        <option value="false">{{ t("common.off") }}</option>
-      </select>
-    </div>
     <div class="form-row">
       <div class="form-group">
         <label>{{ t("componentConfig.onValue") }}</label>
@@ -53,20 +46,9 @@ const props = defineProps<{
   component: ScadaComponent;
 }>();
 
-const { config, updateConfig, updateValue } = useScadaConfig(
+const { config, updateConfig } = useScadaConfig(
   props.component as ScadaComponent<"switch">,
 );
-
-/** 开关当前是否处于“开启”状态 */
-const isOn = computed(
-  () => config.value.value === true || config.value.value === 1,
-);
-
-/** 当前值 select 的 v-model 桥接（字符串 option 与布尔值互转） */
-const currentValueModel = computed({
-  get: () => (isOn.value ? "true" : "false"),
-  set: (value: string) => updateValue(value === "true"),
-});
 
 /** 通值输入框的 v-model 桥接 */
 const onValueModel = computed({

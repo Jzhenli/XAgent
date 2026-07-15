@@ -4,10 +4,6 @@
 
     <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
     <div class="form-group">
-      <label>{{ t('componentConfig.currentValue') }}</label>
-      <input type="number" :value="config.value ?? 0" @input="updateNumericValue($event)">
-    </div>
-    <div class="form-group">
       <label>{{ t('componentConfig.timeRange') }}</label>
       <select :value="config.timeRange" @change="updateConfig('timeRange', ($event.target as HTMLSelectElement).value as ChartComponentConfig['timeRange'])">
         <option value="1h">{{ t('dashboard.timeRange1h') }}</option>
@@ -48,12 +44,7 @@ const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const { config, updateConfig, updateValue } = useScadaConfig(props.component as ScadaComponent<'chart-line'>)
-
-const updateNumericValue = (e: Event) => {
-  const value = +((e.target as HTMLInputElement).value)
-  updateValue(isNaN(value) ? 0 : value)
-}
+const { config, updateConfig } = useScadaConfig(props.component as ScadaComponent<'chart-line'>)
 </script>
 
 <style scoped>

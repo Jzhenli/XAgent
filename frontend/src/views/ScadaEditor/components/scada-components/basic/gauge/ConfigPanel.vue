@@ -5,10 +5,6 @@
     <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t('componentConfig.currentValue') }}</label>
-        <input type="number" :value="config.value ?? 0" @input="updateNumericValue($event)">
-      </div>
-      <div class="form-group">
         <label>{{ t('componentConfig.unit') }}</label>
         <input type="text" :value="config.unit" @input="updateConfig('unit', ($event.target as HTMLInputElement).value)">
       </div>
@@ -59,12 +55,7 @@ const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const { config, updateConfig, updateValue } = useScadaConfig(props.component as ScadaComponent<'gauge'>)
-
-const updateNumericValue = (e: Event) => {
-  const value = +((e.target as HTMLInputElement).value)
-  updateValue(isNaN(value) ? 0 : value)
-}
+const { config, updateConfig } = useScadaConfig(props.component as ScadaComponent<'gauge'>)
 </script>
 
 <style scoped>

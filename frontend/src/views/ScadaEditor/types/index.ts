@@ -66,6 +66,8 @@ export interface IndicatorComponentConfig
   extends Omit<BaseComponentConfig, 'backgroundColor' | 'borderRadius'> {
   onColor: string
   offColor: string
+  onValue: number
+  offValue: number
   blinkOnAlarm: boolean
 }
 

@@ -21,8 +21,17 @@ const indicatorConfig = computed(() => props.config.config as IndicatorComponent
 const binding = computed(() => props.config.binding)
 const fallbackValue = computed(() => props.config.config.value)
 
+const onValue = computed(() => indicatorConfig.value?.onValue ?? 1)
+const offValue = computed(() => indicatorConfig.value?.offValue ?? 0)
+
+const isOn = (value: unknown): boolean => {
+  if (value === undefined || value === null) return false
+  // eslint-disable-next-line eqeqeq
+  return value == onValue.value
+}
+
 const { currentValue } = useScadaBinding(binding, {
-  transform: (value) => value === true || value === 1
+  transform: (value) => isOn(value)
 }, fallbackValue)
 
 const colorWithAlpha = (color: string | undefined, alpha: number): string => {

@@ -3,12 +3,23 @@
     <div class="section-title">{{ t('componentConfig.indicatorConfig') }}</div>
 
     <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
-    <div class="form-group">
-      <label>{{ t('componentConfig.currentValue') }}</label>
-      <select :value="currentValueBoolean ? 'true' : 'false'" @change="updateBooleanValue($event)">
-        <option value="true">{{ t('common.on') }}</option>
-        <option value="false">{{ t('common.off') }}</option>
-      </select>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.onValue') }}</label>
+        <input
+          type="number"
+          :value="config.onValue"
+          @change="updateConfig('onValue', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.offValue') }}</label>
+        <input
+          type="number"
+          :value="config.offValue"
+          @change="updateConfig('offValue', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
     </div>
 
     <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>
@@ -27,7 +38,6 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { computed } from 'vue'
 import { useScadaConfig } from '../../../../hooks/useScadaEditor'
 import type { ScadaComponent } from '../../../../types'
 
@@ -37,14 +47,7 @@ const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const { config, updateConfig, updateValue } = useScadaConfig(props.component as ScadaComponent<'indicator'>)
-
-const currentValueBoolean = computed(() => config.value.value === true || config.value.value === 1)
-
-const updateBooleanValue = (e: Event) => {
-  const value = (e.target as HTMLSelectElement).value === 'true'
-  updateValue(value)
-}
+const { config, updateConfig } = useScadaConfig(props.component as ScadaComponent<'indicator'>)
 </script>
 
 <style scoped>
