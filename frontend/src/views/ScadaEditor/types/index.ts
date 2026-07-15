@@ -87,7 +87,7 @@ export interface SliderComponentConfig extends BaseComponentConfig {
   min: number
   max: number
   step: number
-  /** 滑块/填充颜色 */
+  /** 滑块颜色 */
   thumbColor?: string
 }
 

@@ -2,6 +2,26 @@
   <div class="config-section">
     <div class="section-title">{{ t('componentConfig.sliderConfig') }}</div>
 
+    <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.minValue') }}</label>
+        <input
+          type="number"
+          :value="config.min"
+          @change="updateConfig('min', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.maxValue') }}</label>
+        <input
+          type="number"
+          :value="config.max"
+          @change="updateConfig('max', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+    </div>
+
     <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>
     <div class="form-row">
       <div class="form-group">
@@ -18,6 +38,16 @@
           :model-value="config.backgroundColor"
           show-alpha
           @change="updateConfig('backgroundColor', $event as string)"
+        />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.borderRadius') }}</label>
+        <input
+          type="number"
+          :value="config.borderRadius"
+          @change="updateConfig('borderRadius', +($event.target as HTMLInputElement).value)"
         />
       </div>
     </div>

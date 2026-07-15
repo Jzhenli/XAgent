@@ -8,8 +8,10 @@ const defaultConfig: SliderComponentConfig = {
   min: 0,
   max: 100,
   step: 1,
-  backgroundColor: 'rgba(0, 0, 0, 0.2)',
-  thumbColor: 'rgba(255, 204, 0, 1)',
+  value: 40,
+  backgroundColor: '#B0C4DE',
+  thumbColor: '#007BFF',
+  borderRadius: 999,
 }
 
 export const sliderMeta: ScadaComponentMeta = {
