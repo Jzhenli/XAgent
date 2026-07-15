@@ -23,8 +23,8 @@ const switchConfig = computed(() => props.config.config as SwitchComponentConfig
 const binding = computed(() => props.config.binding)
 const fallbackValue = computed(() => props.config.config.value)
 
-const onValue = computed(() => switchConfig.value?.onValue ?? true)
-const offValue = computed(() => switchConfig.value?.offValue ?? false)
+const onValue = computed(() => switchConfig.value?.onValue ?? 1)
+const offValue = computed(() => switchConfig.value?.offValue ?? 0)
 
 const isOn = (value: unknown): boolean => {
   if (value === undefined || value === null) return false

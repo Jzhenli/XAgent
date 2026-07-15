@@ -7,27 +7,49 @@
     <div class="form-row">
       <div class="form-group">
         <label>{{ t("componentConfig.onValue") }}</label>
-        <input v-model.lazy="onValueModel" type="text" />
+        <input
+          type="number"
+          :value="config.onValue"
+          @change="updateConfig('onValue', +($event.target as HTMLInputElement).value)"
+        />
       </div>
       <div class="form-group">
         <label>{{ t("componentConfig.offValue") }}</label>
-        <input v-model.lazy="offValueModel" type="text" />
+        <input
+          type="number"
+          :value="config.offValue"
+          @change="updateConfig('offValue', +($event.target as HTMLInputElement).value)"
+        />
       </div>
     </div>
 
     <!-- 样式：颜色选择器 -->
     <div class="subsection-title">{{ t("componentConfig.styleSection") }}</div>
-    <div
-      v-for="(group, groupIndex) in colorPickerGroups"
-      :key="groupIndex"
-      class="form-row"
-    >
-      <div v-for="item in group" :key="item.key" class="form-group">
-        <label>{{ t(item.labelKey) }}</label>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t("componentConfig.thumbColor") }}</label>
         <el-color-picker
-          :model-value="config[item.key]"
+          :model-value="config.thumbColor"
           show-alpha
-          @change="updateConfig(item.key, $event)"
+          @change="updateConfig('thumbColor', $event)"
+        />
+      </div>
+      <div class="form-group">
+        <label>{{ t("componentConfig.onColor") }}</label>
+        <el-color-picker
+          :model-value="config.onColor"
+          show-alpha
+          @change="updateConfig('onColor', $event)"
+        />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t("componentConfig.offColor") }}</label>
+        <el-color-picker
+          :model-value="config.offColor"
+          show-alpha
+          @change="updateConfig('offColor', $event)"
         />
       </div>
     </div>
@@ -36,9 +58,8 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { computed } from "vue";
 import { useScadaConfig } from "../../../../hooks/useScadaEditor";
-import type { ScadaComponent, ComponentConfig } from "../../../../types";
+import type { ScadaComponent } from "../../../../types";
 
 const { t } = useI18n();
 
@@ -49,59 +70,6 @@ const props = defineProps<{
 const { config, updateConfig } = useScadaConfig(
   props.component as ScadaComponent<"switch">,
 );
-
-/** 通值输入框的 v-model 桥接 */
-const onValueModel = computed({
-  get: () => formatTypedValue(config.value.onValue),
-  set: (value: string) => updateConfig("onValue", parseTypedValue(value)),
-});
-
-/** 断值输入框的 v-model 桥接 */
-const offValueModel = computed({
-  get: () => formatTypedValue(config.value.offValue),
-  set: (value: string) => updateConfig("offValue", parseTypedValue(value)),
-});
-
-/** 颜色选择器配置分组 */
-type SwitchConfig = ComponentConfig<"switch">;
-type ColorKey = keyof Pick<SwitchConfig, "thumbColor" | "onColor" | "offColor">;
-
-interface ColorPickerItem {
-  key: ColorKey;
-  labelKey: string;
-}
-
-const colorPickerGroups: ColorPickerItem[][] = [
-  [
-    { key: "thumbColor", labelKey: "componentConfig.thumbColor" },
-    { key: "onColor", labelKey: "componentConfig.onColor" },
-  ],
-  [{ key: "offColor", labelKey: "componentConfig.offColor" }],
-];
-
-/**
- * 将用户输入的字符串解析为强类型值。
- * 支持布尔字面量、数字以及普通字符串。
- */
-const parseTypedValue = (raw: string): number | boolean | string => {
-  const trimmed = raw.trim();
-  if (trimmed === "true") return true;
-  if (trimmed === "false") return false;
-  const numeric = Number(trimmed);
-  if (trimmed !== "" && !Number.isNaN(numeric)) return numeric;
-  return trimmed;
-};
-
-/**
- * 将强类型值格式化为字符串，供文本输入框展示。
- */
-const formatTypedValue = (
-  value: number | boolean | string | undefined | null,
-): string => {
-  if (value === null || value === undefined) return "";
-  if (typeof value === "boolean") return value ? "true" : "false";
-  return String(value);
-};
 </script>
 
 <style scoped>

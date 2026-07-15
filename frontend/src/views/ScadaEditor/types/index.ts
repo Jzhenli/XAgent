@@ -76,8 +76,8 @@ export interface SwitchComponentConfig extends BaseComponentConfig {
   thumbColor: string
   onColor: string
   offColor: string
-  onValue: number | boolean | string
-  offValue: number | boolean | string
+  onValue: number
+  offValue: number
   confirmRequired: boolean
   writePoint: PointBinding | null
 }
