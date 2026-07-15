@@ -21,7 +21,6 @@ export type {
   SliderComponentConfig,
   ImageComponentConfig,
   ButtonComponentConfig,
-  ContainerComponentConfig,
   ScadaComponent,
   PanelType,
   ScadaPanel

@@ -62,7 +62,8 @@ export interface ChartComponentConfig extends BaseComponentConfig {
 }
 
 /** 指示灯组件配置 */
-export interface IndicatorComponentConfig extends BaseComponentConfig {
+export interface IndicatorComponentConfig
+  extends Omit<BaseComponentConfig, 'backgroundColor' | 'borderRadius'> {
   onColor: string
   offColor: string
   blinkOnAlarm: boolean
@@ -79,11 +80,13 @@ export interface SwitchComponentConfig extends BaseComponentConfig {
   writePoint: PointBinding | null
 }
 
-/** 滑块组件配置 */
+/** 亮度调节器组件配置 */
 export interface SliderComponentConfig extends BaseComponentConfig {
   min: number
   max: number
   step: number
+  /** 滑块/填充颜色 */
+  thumbColor?: string
 }
 
 /** 图片组件配置 */
@@ -97,11 +100,14 @@ export interface ButtonComponentConfig extends BaseComponentConfig {
   text: string
   type: 'primary' | 'success' | 'warning' | 'danger' | 'info'
   writeValue: number | boolean | string
-  writePoint: PointBinding | null
-}
-
-/** 容器组件配置 */
-export interface ContainerComponentConfig extends BaseComponentConfig {
+  /** @deprecated 旧版写入点位，现优先使用组件 binding */
+  writePoint?: PointBinding | null
+  fontColor?: string
+  fontSize?: number
+  backgroundColor?: string
+  borderWidth?: number
+  borderColor?: string
+  borderStyle?: string
 }
 
 import type { ComponentType } from '../registry'
@@ -117,7 +123,6 @@ export interface ComponentConfigMap {
   slider: SliderComponentConfig
   image: ImageComponentConfig
   button: ButtonComponentConfig
-  container: ContainerComponentConfig
 }
 
 /** 组件统一配置类型 */
@@ -179,7 +184,7 @@ export interface ButtonConfig {
   text: string
   type: 'primary' | 'success' | 'warning' | 'danger' | 'info'
   writeValue: number | boolean | string
-  writePoint: PointBinding | null
+  writePoint?: PointBinding | null
 }
 
 /** @deprecated 已合并到 ImageComponentConfig，保留用于旧数据迁移 */

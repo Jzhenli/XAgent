@@ -1,9 +1,9 @@
 <template>
-  <div class="indicator-container" :style="containerStyle">
+  <div class="indicator-container">
     <div class="indicator-light" :style="indicatorStyle"></div>
-    <div v-if="binding" class="indicator-label">
+    <!-- <div v-if="binding" class="indicator-label">
       {{ binding.pointDescription || binding.pointName }}
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -53,11 +53,6 @@ const indicatorStyle = computed(() => ({
   boxShadow: currentValue.value
     ? `0 0 20px ${colorWithAlpha(indicatorConfig.value?.onColor, 0.5)}`
     : 'none'
-}))
-
-const containerStyle = computed(() => ({
-  backgroundColor: indicatorConfig.value?.backgroundColor || undefined,
-  borderRadius: `${indicatorConfig.value?.borderRadius ?? 8}px`
 }))
 </script>
 

@@ -1,41 +1,44 @@
 <template>
   <div class="config-section">
-    <div class="section-title">{{ t('componentConfig.containerConfig') }}</div>
+    <div class="section-title">{{ t('componentConfig.sliderConfig') }}</div>
 
     <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
     <div class="form-group">
       <label>{{ t('componentConfig.currentValue') }}</label>
-      <input type="text" :value="config.value ?? ''" @input="updateValue(($event.target as HTMLInputElement).value || null)">
+      <input
+        type="number"
+        :value="config.value ?? min"
+        @input="updateNumericValue($event)"
+      />
     </div>
 
     <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>
     <div class="form-row">
       <div class="form-group">
+        <label>{{ t('componentConfig.thumbColor') }}</label>
+        <el-color-picker
+          :model-value="config.thumbColor"
+          show-alpha
+          @change="updateConfig('thumbColor', $event as string)"
+        />
+      </div>
+      <div class="form-group">
         <label>{{ t('componentConfig.backgroundColor') }}</label>
-        <el-color-picker :model-value="config.backgroundColor" show-alpha @change="updateConfig('backgroundColor', $event)" />
-      </div>
-      <div class="form-group">
-        <label>{{ t('componentConfig.borderColor') }}</label>
-        <el-color-picker :model-value="config.borderColor" show-alpha @change="updateConfig('borderColor', $event)" />
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>{{ t('componentConfig.borderWidth') }}</label>
-        <input type="number" :value="config.borderWidth" @input="updateConfig('borderWidth', +($event.target as HTMLInputElement).value)">
-      </div>
-      <div class="form-group">
-        <label>{{ t('componentConfig.borderRadius') }}</label>
-        <input type="number" :value="config.borderRadius" @input="updateConfig('borderRadius', +($event.target as HTMLInputElement).value)">
+        <el-color-picker
+          :model-value="config.backgroundColor"
+          show-alpha
+          @change="updateConfig('backgroundColor', $event as string)"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useScadaConfig } from '../../../../hooks/useScadaEditor'
-import type { ScadaComponent } from '../../../../types'
+import type { ScadaComponent, SliderComponentConfig } from '../../../../types'
 
 const { t } = useI18n()
 
@@ -43,7 +46,16 @@ const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const { config, updateConfig, updateValue } = useScadaConfig(props.component as ScadaComponent<'container'>)
+const { config, updateConfig, updateValue } = useScadaConfig(
+  props.component as ScadaComponent<'slider'>,
+)
+
+const min = computed(() => (config.value as SliderComponentConfig).min ?? 0)
+
+const updateNumericValue = (e: Event) => {
+  const value = +((e.target as HTMLInputElement).value)
+  updateValue(isNaN(value) ? min.value : value)
+}
 </script>
 
 <style scoped>

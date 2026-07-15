@@ -1,6 +1,6 @@
 import type { ScadaComponent, StyleConfig, ComponentConfig } from '../types'
 import type { ComponentType } from '../registry'
-import { getComponentTemplate } from '../component-registry'
+import { getComponentTemplate, componentMetaRegistry } from '../component-registry'
 
 /**
  * 生成唯一组件ID
@@ -63,8 +63,7 @@ const legacyConfigKeys: Record<string, string[]> = {
   switch: ['switchConfig'],
   slider: ['sliderConfig'],
   image: ['imageConfig'],
-  button: ['buttonConfig'],
-  container: []
+  button: ['buttonConfig']
 }
 
 /**
@@ -76,6 +75,10 @@ export function migrateComponentConfig(data: unknown): ScadaComponent | null {
 
   const comp = data as Record<string, unknown>
   if (typeof comp.id !== 'string' || typeof comp.type !== 'string') return null
+
+  if (!(comp.type in componentMetaRegistry)) {
+    return null
+  }
 
   const type = comp.type as ComponentType
 

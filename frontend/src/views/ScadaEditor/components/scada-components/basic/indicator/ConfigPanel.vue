@@ -22,16 +22,6 @@
         <el-color-picker :model-value="config.offColor" show-alpha @change="updateConfig('offColor', $event)" />
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>{{ t('componentConfig.backgroundColor') }}</label>
-        <el-color-picker :model-value="config.backgroundColor" show-alpha @change="updateConfig('backgroundColor', $event)" />
-      </div>
-      <div class="form-group">
-        <label>{{ t('componentConfig.borderRadius') }}</label>
-        <input type="number" :value="config.borderRadius" @input="updateConfig('borderRadius', +($event.target as HTMLInputElement).value)">
-      </div>
-    </div>
   </div>
 </template>
 

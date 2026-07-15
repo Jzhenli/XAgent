@@ -1,49 +1,71 @@
 <template>
-  <div class="button-container" @click="handleClick">
-    <el-button 
-      :type="buttonConfig?.type || 'primary'"
-      size="default"
-      :loading="writing"
-      style="width: 100%; height: 100%;"
+  <div class="button-container">
+    <button
+      class="scada-button"
+      :disabled="writing"
+      :style="buttonStyle"
+      @click="handleClick"
     >
       {{ displayText }}
-    </el-button>
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, inject } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ScadaComponent, ButtonComponentConfig } from '@/types/scada'
-import { usePointStore } from '@/stores/points'
-import { ScadaPointReaderKey } from '@/utils/scadaPointReader'
-import { controlApi } from '@/api/control'
+import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 const { t } = useI18n()
+
 const props = defineProps<{
   config: ScadaComponent
   editing?: boolean
 }>()
 
-const pointStore = usePointStore()
-const injectedReader = inject(ScadaPointReaderKey, null)
-const devices = computed(() => injectedReader ? injectedReader.devices.value : pointStore.devices)
-const writing = ref(false)
-
 const buttonConfig = computed(() => props.config.config as ButtonComponentConfig)
+const binding = computed(() => props.config.binding)
+const fallbackValue = computed(() => props.config.config.value)
+
+const { currentValue, writeValue } = useScadaBinding(
+  binding,
+  {},
+  fallbackValue,
+)
+
+const writing = ref(false)
 
 const displayText = computed(() => {
   const text = buttonConfig.value?.text
-  return text ? t(text) : t('scadaComponents.defaultButton')
+  if (!text) return t('scadaComponents.defaultButton')
+  if (text.startsWith('scadaComponentNames.') || text.startsWith('scadaComponents.')) {
+    return t(text)
+  }
+  return text
+})
+
+const buttonStyle = computed(() => {
+  const config = buttonConfig.value
+  const borderWidth = config.borderWidth ?? 0
+  const borderColor = config.borderColor ?? config.backgroundColor ?? '#409eff'
+  return {
+    color: config.fontColor ?? '#ffffff',
+    fontSize: `${config.fontSize ?? 14}px`,
+    backgroundColor: config.backgroundColor ?? '#409eff',
+    border: borderWidth > 0
+      ? `${borderWidth}px ${config.borderStyle ?? 'solid'} ${borderColor}`
+      : 'none',
+  }
 })
 
 const handleClick = async () => {
   if (props.editing) return
-  
+
   try {
     await ElMessageBox.confirm(
-      t('scadaComponents.confirmExecute', { action: buttonConfig.value?.text || t('scadaComponents.defaultButton') }),
+      t('scadaComponents.confirmExecute', { action: displayText.value }),
       t('scadaComponents.operationConfirm'),
       { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
     )
@@ -51,29 +73,25 @@ const handleClick = async () => {
     return
   }
 
-  const writeTarget = buttonConfig.value?.writePoint
-  if (writeTarget && buttonConfig.value?.writeValue !== undefined) {
-    writing.value = true
-    try {
-      const device = devices.value.find(d => d.asset === writeTarget.deviceId || d.name === writeTarget.deviceId)
-      const pluginName = device?.pluginName || ''
-      const res = await controlApi.writeSetpoint(
-        pluginName,
-        writeTarget.deviceId,
-        writeTarget.pointName,
-        buttonConfig.value.writeValue
-      )
-      if (res.status === 'ACCEPTED') {
-        ElMessage.success(t('scadaComponents.commandSent'))
-      } else {
-        ElMessage.error(`${t('scadaComponents.commandError')}: ${res.status}`)
-      }
-    } catch (e: unknown) {
-      const detail = (e as any)?.response?.data?.detail || (e instanceof Error ? e.message : t('scadaComponents.operationFailed'))
-      ElMessage.error(detail)
-    } finally {
-      writing.value = false
+  const target = binding.value || buttonConfig.value?.writePoint || null
+  if (!target) {
+    ElMessage.error(t('scadaBinding.noBoundPoint'))
+    return
+  }
+
+  writing.value = true
+  try {
+    const result = await writeValue(buttonConfig.value?.writeValue)
+    if (result.success) {
+      ElMessage.success(t('scadaComponents.commandSent'))
+    } else {
+      ElMessage.error(result.message)
     }
+  } catch (e: unknown) {
+    const detail = (e as any)?.response?.data?.detail || (e instanceof Error ? e.message : t('scadaComponents.operationFailed'))
+    ElMessage.error(detail)
+  } finally {
+    writing.value = false
   }
 }
 </script>
@@ -86,5 +104,25 @@ const handleClick = async () => {
   align-items: center;
   justify-content: center;
   padding: 4px;
+}
+
+.scada-button {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scada-button:hover {
+  opacity: 0.9;
+}
+
+.scada-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
