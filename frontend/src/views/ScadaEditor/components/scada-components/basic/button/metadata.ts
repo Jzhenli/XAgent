@@ -5,9 +5,9 @@ import ButtonConfigPanel from './ConfigPanel.vue'
 const defaultConfig: ButtonComponentConfig = {
   width: 100,
   height: 40,
-  text: 'scadaComponents.buttonText',
+  text: 'Button',
   type: 'primary',
-  writeValue: true,
+  writeValue: 1,
   fontColor: '#ffffff',
   fontSize: 14,
   backgroundColor: '#409eff',

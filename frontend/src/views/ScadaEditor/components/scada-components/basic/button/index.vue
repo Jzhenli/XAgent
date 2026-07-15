@@ -16,7 +16,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ScadaComponent, ButtonComponentConfig } from '@/types/scada'
 import { useScadaBinding } from '@/views/ScadaEditor/hooks'
-import { ElMessageBox, ElMessage } from 'element-plus'
+import { ElMessage } from 'element-plus'
 
 const { t } = useI18n()
 
@@ -37,15 +37,10 @@ const { currentValue, writeValue } = useScadaBinding(
 
 const writing = ref(false)
 
-const displayText = computed(() => {
-  const text = buttonConfig.value?.text
-  if (!text) return t('scadaComponents.defaultButton')
-  if (text.startsWith('scadaComponentNames.') || text.startsWith('scadaComponents.')) {
-    return t(text)
-  }
-  return text
-})
+// 按钮显示文字，直接使用配置值，默认回退为 "Button"
+const displayText = computed(() => buttonConfig.value?.text || 'Button')
 
+// 根据配置生成按钮内联样式
 const buttonStyle = computed(() => {
   const config = buttonConfig.value
   const borderWidth = config.borderWidth ?? 0
@@ -60,19 +55,11 @@ const buttonStyle = computed(() => {
   }
 })
 
+// 点击按钮时直接写入配置值
 const handleClick = async () => {
   if (props.editing) return
 
-  try {
-    await ElMessageBox.confirm(
-      t('scadaComponents.confirmExecute', { action: displayText.value }),
-      t('scadaComponents.operationConfirm'),
-      { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
-    )
-  } catch {
-    return
-  }
-
+  // 必须存在绑定目标才能写入
   const target = binding.value || buttonConfig.value?.writePoint || null
   if (!target) {
     ElMessage.error(t('scadaBinding.noBoundPoint'))

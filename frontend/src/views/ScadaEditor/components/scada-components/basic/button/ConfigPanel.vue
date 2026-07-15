@@ -2,13 +2,14 @@
   <div class="config-section">
     <div class="section-title">{{ t('componentConfig.buttonConfig') }}</div>
 
+    <!-- 数据项：写入值固定为数字类型 -->
     <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
     <div class="form-group">
       <label>{{ t('componentConfig.writeValue') }}</label>
       <input
-        type="text"
-        :value="writeValueModel"
-        @change="updateConfig('writeValue', parseTypedValue(($event.target as HTMLInputElement).value))"
+        type="number"
+        :value="config.writeValue"
+        @change="updateConfig('writeValue', +($event.target as HTMLInputElement).value)"
       />
     </div>
 
@@ -70,7 +71,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useScadaConfig } from '../../../../hooks/useScadaEditor'
 import type { ScadaComponent } from '../../../../types'
@@ -81,28 +81,10 @@ const props = defineProps<{
   component: ScadaComponent
 }>()
 
+// 获取按钮组件配置及更新方法
 const { config, updateConfig } = useScadaConfig(
   props.component as ScadaComponent<'button'>,
 )
-
-const writeValueModel = computed(() => formatTypedValue(config.value.writeValue))
-
-const parseTypedValue = (raw: string): number | boolean | string => {
-  const trimmed = raw.trim()
-  if (trimmed === 'true') return true
-  if (trimmed === 'false') return false
-  const numeric = Number(trimmed)
-  if (trimmed !== '' && !Number.isNaN(numeric)) return numeric
-  return trimmed
-}
-
-const formatTypedValue = (
-  value: number | boolean | string | undefined | null,
-): string => {
-  if (value === null || value === undefined) return ''
-  if (typeof value === 'boolean') return value ? 'true' : 'false'
-  return String(value)
-}
 </script>
 
 <style scoped>
