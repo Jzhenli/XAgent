@@ -9,6 +9,7 @@
         </linearGradient>
       </defs>
     </svg>
+
     <div class="gauge-progress" :style="progressStyle">
       <el-progress
         type="dashboard"
@@ -19,30 +20,30 @@
         :stroke-linecap="strokeLinecap"
       >
         <div class="gauge-center">
-          <button
+          <el-icon
             v-if="showButtons"
-            class="gauge-btn"
+            class="gauge-icon gauge-icon-left"
+            :class="{ 'is-disabled': writing }"
             :style="controlButtonStyle"
-            :disabled="writing"
             @click.stop="decrement"
           >
-            &#60;
-          </button>
+            <ArrowLeft />
+          </el-icon>
 
           <div class="gauge-value-wrap">
             <span class="gauge-value" :style="valueTextStyle">{{ displayValue }}</span>
             <span v-if="unit" class="gauge-unit" :style="unitTextStyle">{{ unit }}</span>
           </div>
 
-          <button
+          <el-icon
             v-if="showButtons"
-            class="gauge-btn"
+            class="gauge-icon gauge-icon-right"
+            :class="{ 'is-disabled': writing }"
             :style="controlButtonStyle"
-            :disabled="writing"
             @click.stop="increment"
           >
-            &#62;
-          </button>
+            <ArrowRight />
+          </el-icon>
         </div>
       </el-progress>
     </div>
@@ -52,10 +53,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import type { ScadaComponent, GaugeComponentConfig } from '@/types/scada'
 import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 import { useScadaConfig } from '@/views/ScadaEditor/hooks/useScadaEditor'
-import { ElMessage } from 'element-plus'
 
 const props = defineProps<{
   config: ScadaComponent
@@ -78,34 +80,18 @@ const { currentValue, boundPoint, writeValue } = useScadaBinding(
 
 const { updateValue } = useScadaConfig(props.config as ScadaComponent<'gauge'>)
 
+// ═══════════════════════════════════════════════════════════════════════════════
 // 数据范围配置
+// ═══════════════════════════════════════════════════════════════════════════════
 const min = computed(() => gaugeConfig.value?.min ?? 0)
 const max = computed(() => gaugeConfig.value?.max ?? 100)
 const step = computed(() => gaugeConfig.value?.step ?? 1)
 const unit = computed(() => gaugeConfig.value?.unit ?? '')
 
+// ═══════════════════════════════════════════════════════════════════════════════
 // 样式配置
+// ═══════════════════════════════════════════════════════════════════════════════
 const showButtons = computed(() => gaugeConfig.value?.showButtons ?? true)
-const fillColor = computed(() => gaugeConfig.value?.fillColor ?? '#4a90e2')
-
-/** 填充色渐变（3 色），缺失时回退到 fillColor */
-const gradientColors = computed(() => {
-  const gradient = gaugeConfig.value?.fillGradient
-  if (Array.isArray(gradient) && gradient.length === 3 && gradient.every((c) => c && c !== '')) {
-    return gradient as [string, string, string]
-  }
-  const fallback = fillColor.value
-  return [fallback, fallback, fallback]
-})
-const hasGradient = computed(() => {
-  const gradient = gaugeConfig.value?.fillGradient
-  return Array.isArray(gradient) && gradient.length === 3 && gradient.every((c) => c && c !== '')
-})
-const gradientId = computed(() => `gauge-gradient-${props.config.id}`)
-
-const trackColor = computed(() => gaugeConfig.value?.trackColor ?? '#4a4a6a')
-const trackWidth = computed(() => gaugeConfig.value?.trackWidth ?? 12)
-const strokeLinecap = computed(() => gaugeConfig.value?.strokeLinecap ?? 'round')
 const fontSize = computed(() => gaugeConfig.value?.fontSize ?? 48)
 const fontColor = computed(() => gaugeConfig.value?.fontColor ?? '#000000')
 const fontWeight = computed(() => gaugeConfig.value?.fontWeight ?? 'bold')
@@ -114,13 +100,33 @@ const stepFontColor = computed(() => gaugeConfig.value?.stepFontColor ?? fontCol
 const unitFontSize = computed(() => gaugeConfig.value?.unitFontSize ?? 16)
 const unitFontColor = computed(() => gaugeConfig.value?.unitFontColor ?? fontColor.value)
 const unitFontWeight = computed(() => gaugeConfig.value?.unitFontWeight ?? 'normal')
+const trackColor = computed(() => gaugeConfig.value?.trackColor ?? '#4a4a6a')
+const trackWidth = computed(() => gaugeConfig.value?.trackWidth ?? 12)
+const strokeLinecap = computed(() => gaugeConfig.value?.strokeLinecap ?? 'round')
 
-/** 是否正在写入点位 */
-const writing = ref(false)
+// ═══════════════════════════════════════════════════════════════════════════════
+// 填充色与渐变
+// ═══════════════════════════════════════════════════════════════════════════════
+const fillColor = computed(() => gaugeConfig.value?.fillColor ?? '#4a90e2')
+const gradientId = computed(() => `gauge-gradient-${props.config.id}`)
 
-/**
- * 将数值归一化为 0-100 的进度百分比
- */
+const isValidGradient = (gradient?: string[] | null): gradient is [string, string, string] =>
+  Array.isArray(gradient) && gradient.length === 3 && gradient.every((color) => !!color)
+
+/** 填充渐变色（3 色），缺失时回退到 fillColor */
+const gradientColors = computed(() => {
+  const gradient = gaugeConfig.value?.fillGradient
+  if (isValidGradient(gradient)) return gradient
+  const fallback = fillColor.value
+  return [fallback, fallback, fallback]
+})
+
+const hasGradient = computed(() => isValidGradient(gaugeConfig.value?.fillGradient))
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 进度计算
+// ═══════════════════════════════════════════════════════════════════════════════
+/** 将数值归一化为 0-100 的进度百分比 */
 const normalizePercentage = (value: number, minVal: number, maxVal: number): number => {
   const range = maxVal - minVal
   if (range <= 0) return 0
@@ -164,44 +170,49 @@ const gaugeSize = computed(() => {
   return Math.max(60, size)
 })
 
-/** 格式化数值：整数直接显示，保留一位小数 */
-const formatNumber = (val: number): string => {
-  return Number.isInteger(val) ? val.toString() : val.toFixed(1)
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// 文本显示
+// ═══════════════════════════════════════════════════════════════════════════════
+/** 整数直接显示，否则保留一位小数 */
+const formatNumber = (val: number): string =>
+  Number.isInteger(val) ? val.toString() : val.toFixed(1)
 
 /** 中心显示的当前值文本 */
 const displayValue = computed(() => formatNumber(currentValue.value ?? fallbackValue.value ?? 0))
 
-/** 容器样式 */
+// ═══════════════════════════════════════════════════════════════════════════════
+// 样式对象
+// ═══════════════════════════════════════════════════════════════════════════════
 const containerStyle = computed(() => ({
   borderRadius: `${gaugeConfig.value?.borderRadius ?? 12}px`,
   '--gauge-track-color': trackColor.value,
 }))
 
-/** 进度条包装样式：启用渐变时通过 CSS 变量覆盖路径 stroke */
 const progressStyle = computed(() => ({
   '--gauge-stroke': hasGradient.value ? `url(#${gradientId.value})` : undefined,
 }))
 
-/** 中心数值文本样式 */
 const valueTextStyle = computed(() => ({
   color: fontColor.value,
   fontSize: `${fontSize.value}px`,
   fontWeight: fontWeight.value,
 }))
 
-/** 单位文本样式 */
 const unitTextStyle = computed(() => ({
   color: unitFontColor.value,
   fontSize: `${unitFontSize.value}px`,
   fontWeight: unitFontWeight.value,
 }))
 
-/** 加减控制按钮样式 */
 const controlButtonStyle = computed(() => ({
   color: stepFontColor.value,
   fontSize: `${Math.max(12, stepFontSize.value)}px`,
 }))
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 数值写入
+// ═══════════════════════════════════════════════════════════════════════════════
+const writing = ref(false)
 
 /** 将目标值限制在 [min, max] 范围内 */
 const clampValue = (raw: number): number => Math.min(max.value, Math.max(min.value, raw))
@@ -294,7 +305,6 @@ const decrement = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
 }
 
 .gauge-value-wrap {
@@ -317,9 +327,7 @@ const decrement = () => {
   line-height: 1;
 }
 
-.gauge-btn {
-  background: transparent;
-  border: none;
+.gauge-icon {
   padding: 0 4px;
   cursor: pointer;
   opacity: 0.6;
@@ -328,12 +336,18 @@ const decrement = () => {
   user-select: none;
 }
 
-.gauge-btn:hover:not(:disabled) {
+.gauge-icon:hover:not(.is-disabled) {
   opacity: 1;
 }
 
-.gauge-btn:disabled {
+.gauge-icon.is-disabled {
   opacity: 0.3;
   cursor: not-allowed;
+  pointer-events: none;
+}
+
+/** ArrowRight 图标内部箭头偏左，需额外左间距使左右箭头到数值的视觉距离对称 */
+.gauge-icon-left {
+  margin-right: 6px;
 }
 </style>

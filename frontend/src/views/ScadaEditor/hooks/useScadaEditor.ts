@@ -782,7 +782,20 @@ export function useScadaElement(componentId: string) {
 export function useScadaConfig<T extends ComponentType = ComponentType>(component: ScadaComponent<T>) {
   const scada = useScadaEditor()
 
-  const config = computed(() => component.config)
+  /**
+   * 始终从当前面板中读取该组件的最新配置。
+   * 当首次编辑触发草稿面板（draftPanel）深拷贝后，传入的 component 对象可能不再
+   * 与面板中的组件同步；依赖 currentPanel 可保证配置面板与画布状态一致。
+   */
+  const config = computed((): ScadaComponent<T>['config'] => {
+    const latest = scada.currentPanel.value?.components.find(c => c.id === component.id)
+    return (latest?.config ?? component.config) as ScadaComponent<T>['config']
+  })
+
+  /** 从当前面板获取该组件的最新配置，避免连续更新时读取到过期状态 */
+  const getLatestConfig = (): ScadaComponent<T>['config'] => {
+    return config.value
+  }
 
   /** 更新单个配置项 */
   const updateConfig = <K extends keyof ComponentConfig<T>>(
@@ -790,14 +803,14 @@ export function useScadaConfig<T extends ComponentType = ComponentType>(componen
     value: ComponentConfig<T>[K]
   ) => {
     scada.updateComponent(component.id, {
-      config: { ...component.config, [key]: value }
+      config: { ...getLatestConfig(), [key]: value }
     } as Partial<ScadaComponent<T>>)
   }
 
   /** 批量更新多个配置项 */
   const updateConfigs = (updates: Partial<ComponentConfig<T>>) => {
     scada.updateComponent(component.id, {
-      config: { ...component.config, ...updates }
+      config: { ...getLatestConfig(), ...updates }
     } as Partial<ScadaComponent<T>>)
   }
 
