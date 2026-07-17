@@ -92,28 +92,71 @@
       <div class="settings-content">
         <div v-if="activeMenu === 'general'" class="settings-section">
           <h3>{{ $t('settings.menu.general') }}</h3>
-          <el-form label-width="120px" class="settings-form">
-            <el-form-item :label="$t('settings.general.log_level')">
-              <el-select v-model="systemConfig.logLevel" style="width: 200px">
-                <el-option label="DEBUG" value="debug" />
-                <el-option label="INFO" value="info" />
-                <el-option label="WARNING" value="warning" />
-                <el-option label="ERROR" value="error" />
-              </el-select>
-            </el-form-item>
-            <el-form-item :label="$t('settings.general.data_retention')">
-              <el-input-number v-model="systemConfig.dataRetention" :min="1" :max="365" />
-            </el-form-item>
-            <el-form-item :label="$t('settings.general.max_connections')">
-              <el-input-number v-model="systemConfig.maxConnections" :min="1" :max="1000" />
-            </el-form-item>
-            <el-form-item :label="$t('settings.general.timeout')">
-              <el-input-number v-model="systemConfig.timeout" :min="1" :max="300" />
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="handleSave">{{ $t('settings.general.save_config') }}</el-button>
-            </el-form-item>
-          </el-form>
+
+          <!-- 日志配置 -->
+          <div class="config-group">
+            <div class="config-group-title">{{ $t('settings.general.log_config_title') }}</div>
+            <el-form label-width="140px" class="settings-form" v-loading="configLoading">
+              <el-form-item :label="$t('settings.general.log_level')">
+                <el-select v-model="systemConfig.logging.level" style="width: 200px">
+                  <el-option label="DEBUG" value="DEBUG" />
+                  <el-option label="INFO" value="INFO" />
+                  <el-option label="WARNING" value="WARNING" />
+                  <el-option label="ERROR" value="ERROR" />
+                </el-select>
+                <span class="config-hint-inline">{{ $t('settings.general.log_level_hint') }}</span>
+              </el-form-item>
+
+              <el-form-item :label="$t('settings.general.log_max_size')">
+                <el-input-number
+                  v-model="systemConfig.logging.max_bytes"
+                  :min="1"
+                  :max="100"
+                  :step="1"
+                />
+                <span style="margin-left: 8px; color: var(--text-secondary); font-size: 14px;">{{ $t('settings.general.unit_mb') }}</span>
+              </el-form-item>
+
+              <el-form-item :label="$t('settings.general.log_backup_count')">
+                <el-input-number
+                  v-model="systemConfig.logging.backup_count"
+                  :min="1"
+                  :max="20"
+                />
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <!-- 存储配置 -->
+          <div class="config-group">
+            <div class="config-group-title">{{ $t('settings.general.storage_config_title') }}</div>
+            <el-form label-width="140px" class="settings-form">
+              <el-form-item :label="$t('settings.general.data_retention')">
+                <el-input-number
+                  v-model="systemConfig.storage.retention_days"
+                  :min="0"
+                  :max="365"
+                />
+                <span style="margin-left: 8px; color: var(--text-secondary); font-size: 14px;">{{ $t('settings.general.unit_days') }} ({{ $t('settings.general.data_retention_hint') }})</span>
+              </el-form-item>
+
+              <el-form-item :label="$t('settings.general.cleanup_interval')">
+                <el-input-number
+                  v-model="systemConfig.storage.cleanup_interval"
+                  :min="60"
+                  :max="86400"
+                />
+                <span style="margin-left: 8px; color: var(--text-secondary); font-size: 14px;">{{ $t('settings.general.unit_seconds') }} ({{ $t('settings.general.cleanup_interval_hint') }})</span>
+              </el-form-item>
+
+              <el-form-item>
+                <el-button type="primary" @click="handleSave" :loading="configLoading">
+                  {{ $t('settings.general.save_config') }}
+                </el-button>
+                <span class="config-hint-inline" style="margin-left: 12px;">{{ $t('settings.general.storage_config_hint') }}</span>
+              </el-form-item>
+            </el-form>
+          </div>
         </div>
 
         <div v-if="activeMenu === 'logs'" class="settings-section">
@@ -500,15 +543,125 @@ const useCompactLayout = computed(() => {
 
 const activeMenu = ref('general')
 
+// 常量定义
+const BYTES_PER_MB = 1024 * 1024
+const MAX_LOG_SIZE_MB = 100
+const MIN_LOG_SIZE_MB = 1
+
 const systemConfig = ref({
-  logLevel: 'info',
-  dataRetention: 30,
-  maxConnections: 100,
-  timeout: 30
+  logging: {
+    level: 'INFO',
+    max_bytes: 10,  // MB单位(前端显示和输入)
+    backup_count: 5
+  },
+  storage: {
+    retention_days: 30,
+    cleanup_interval: 3600
+  }
 })
 
-const handleSave = () => {
-  ElMessage.success(t('settings.config_saved'))
+const configLoading = ref(false)
+
+// 安全的单位转换函数
+function safeBytesToMB(bytes: number): number {
+  const mb = Math.round(bytes / BYTES_PER_MB)
+  // 安全检查:限制在合理范围内
+  return Math.max(MIN_LOG_SIZE_MB, Math.min(MAX_LOG_SIZE_MB, mb))
+}
+
+function safeMBToBytes(mb: number): number {
+  // 安全检查:防止异常值
+  const safeMB = Math.max(MIN_LOG_SIZE_MB, Math.min(MAX_LOG_SIZE_MB, mb))
+  return safeMB * BYTES_PER_MB
+}
+
+// 加载系统配置
+async function loadSystemConfig() {
+  try {
+    configLoading.value = true
+    const config = await configApi.getSystemConfig()
+
+    // 转换字节为MB(用于前端显示),使用安全转换
+    systemConfig.value = {
+      ...config,
+      logging: {
+        ...config.logging,
+        max_bytes: safeBytesToMB(config.logging.max_bytes)
+      }
+    }
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.detail || t('settings.config_load_failed'))
+  } finally {
+    configLoading.value = false
+  }
+}
+
+// 保存系统配置
+async function handleSave() {
+  try {
+    configLoading.value = true
+
+    // 转换MB为字节(用于后端存储),使用安全转换
+    const configToSave = {
+      ...systemConfig.value,
+      logging: {
+        ...systemConfig.value.logging,
+        max_bytes: safeMBToBytes(systemConfig.value.logging.max_bytes)
+      }
+    }
+
+    const result = await configApi.updateSystemConfig(configToSave)
+
+    ElMessage.success(result.message)
+
+    if (result.warnings && result.warnings.length > 0) {
+      ElMessage.warning(result.warnings.join('\n'))
+    }
+  } catch (e: any) {
+    const detail = e.response?.data?.detail
+
+    // 处理验证错误(更友好的显示)
+    if (detail?.errors && Array.isArray(detail.errors)) {
+      // 显示第一个错误,并提示用户查看完整错误列表
+      const firstError = detail.errors[0]
+      ElMessage.error({
+        message: firstError,
+        duration: 5000
+      })
+
+      // 如果有多个错误,记录到控制台
+      if (detail.errors.length > 1) {
+        console.error('配置验证失败:', detail.errors)
+        ElMessage.warning({
+          message: `共${detail.errors.length}个错误,请查看控制台`,
+          duration: 3000
+        })
+      }
+    }
+    // 处理配置重载失败
+    else if (detail?.message && detail.message.includes('重载失败')) {
+      ElMessage.warning({
+        message: t('settings.general.reload_failed_hint'),
+        duration: 5000
+      })
+    }
+    // 处理其他错误
+    else if (detail?.message) {
+      ElMessage.error({
+        message: detail.message,
+        duration: 5000
+      })
+    }
+    // 默认错误
+    else {
+      ElMessage.error({
+        message: t('settings.config_save_failed'),
+        duration: 5000
+      })
+    }
+  } finally {
+    configLoading.value = false
+  }
 }
 
 const handleSaveVisualization = () => {
@@ -983,6 +1136,7 @@ onMounted(async () => {
     userStore.fetchRoles(),
     userStore.fetchPermissionMatrix(),
     loadBackupList(),
+    loadSystemConfig(),  // 加载系统配置
   ])
   if (userStore.permissionMatrix?.roles?.length) {
     activePermissionRole.value = userStore.permissionMatrix.roles[0].name
@@ -1491,5 +1645,28 @@ watch(() => userStore.permissionMatrix, (matrix) => {
   padding: 40px;
   color: var(--text-secondary);
   font-size: 14px;
+}
+
+.config-group {
+  margin-bottom: 30px;
+}
+
+.config-group:last-child {
+  margin-bottom: 0;
+}
+
+.config-group-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e4e7ed;
+}
+
+.config-hint-inline {
+  margin-left: 12px;
+  font-size: 12px;
+  color: #909399;
 }
 </style>
