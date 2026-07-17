@@ -51,6 +51,34 @@ export interface GaugeComponentConfig extends BaseComponentConfig {
   unit: string
   thresholds: { value: number; color: string }[]
   showValue: boolean
+  /** 中心显示的目标/设定值 */
+  targetValue?: number
+  /** 轨道基础色 */
+  trackColor?: string
+  /** 数据填充轨道色 */
+  fillColor?: string
+  /** 数据填充轨道渐变色（3 色），配置后优先于 fillColor */
+  fillGradient?: string[]
+  /** 轨道宽度 */
+  trackWidth?: number
+  /** 进度条端点形状 */
+  strokeLinecap?: 'butt' | 'round' | 'square'
+  /** 中心文本字体粗细 */
+  fontWeight?: 'normal' | 'bold'
+  /** 按钮调节步进值 */
+  step?: number
+  /** 是否显示加减按钮 */
+  showButtons?: boolean
+  /** 步进按钮字体大小 */
+  stepFontSize?: number
+  /** 步进按钮字体颜色 */
+  stepFontColor?: string
+  /** 单位字体大小 */
+  unitFontSize?: number
+  /** 单位字体颜色 */
+  unitFontColor?: string
+  /** 单位字体粗细 */
+  unitFontWeight?: 'normal' | 'bold'
 }
 
 /** 图表组件配置 */

@@ -5,19 +5,29 @@ import GaugeConfigPanel from './ConfigPanel.vue'
 const defaultConfig: GaugeComponentConfig = {
   width: 150,
   height: 150,
-  backgroundColor: '#f5f7fa',
-  borderRadius: 8,
-  fontSize: 24,
-  fontColor: '#2c3e50',
+  borderRadius: 12,
+  fontSize: 32,
+  fontColor: '#000000',
+  fontWeight: 'bold',
   min: 0,
   max: 100,
   unit: '',
-  thresholds: [
-    { value: 30, color: '#27ae60' },
-    { value: 70, color: '#f39c12' },
-    { value: 100, color: '#e74c3c' }
-  ],
-  showValue: true
+  value: 48,
+  targetValue: 48,
+  trackColor: '#4a4a6a',
+  fillColor: '#4a90e2',
+  fillGradient: ['#4a90e2', '#50e3c2', '#f5a623'],
+  trackWidth: 12,
+  strokeLinecap: 'round',
+  step: 1,
+  showButtons: true,
+  thresholds: [],
+  showValue: true,
+  stepFontSize: 12,
+  stepFontColor: '#000000',
+  unitFontSize: 16,
+  unitFontColor: '#000000',
+  unitFontWeight: 'normal',
 }
 
 export const gaugeMeta: ScadaComponentMeta = {

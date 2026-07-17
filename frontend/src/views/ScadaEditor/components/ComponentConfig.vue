@@ -199,6 +199,7 @@ const triggerBgImageUpload = () => {
   border-left: 1px solid var(--border-base);
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .panel-header {
