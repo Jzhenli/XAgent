@@ -1017,3 +1017,180 @@ class ConfigService:
         from ..dependencies import get_app_state
         state = get_app_state()
         return state.storage
+
+    def get_system_config(self) -> Dict[str, Any]:
+        """获取系统配置(仅返回可修改的配置项)
+
+        Returns:
+            系统配置字典(精简版)
+        """
+        from ..dependencies import get_app_state
+
+        try:
+            state = get_app_state()
+            config_manager = state.get_config_manager()
+
+            if not config_manager:
+                return {
+                    "success": False,
+                    "message": "ConfigManager not initialized"
+                }
+
+            config = config_manager.config
+
+            # 只返回前端需要修改的配置项
+            return {
+                "logging": {
+                    "level": config.logging.level,
+                    "max_bytes": config.logging.max_bytes,
+                    "backup_count": config.logging.backup_count
+                },
+                "storage": {
+                    "retention_days": config.storage.retention_days,
+                    "cleanup_interval": config.storage.cleanup_interval
+                }
+            }
+        except Exception as e:
+            logger.error(f"Failed to get system config: {e}")
+            return {
+                "success": False,
+                "message": f"获取系统配置失败: {str(e)}"
+            }
+
+    def update_system_config(self, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """更新系统配置(直接字段赋值,无递归合并)
+
+        Args:
+            updates: 要更新的配置项(嵌套结构)
+                例如: {"logging": {"level": "DEBUG"}, "storage": {"retention_days": 30}}
+
+        Returns:
+            更新结果
+
+        注意:
+            - 只更新指定的字段,其他字段保持不变
+            - 例如:只修改logging.level,会保留logging.max_bytes和logging.backup_count
+        """
+        # 初始化变量,防止UnboundLocalError
+        warnings = []
+
+        # 1. 读取当前配置文件
+        config_path = self.config_file
+        if not config_path.exists():
+            return {
+                "success": False,
+                "message": "配置文件不存在"
+            }
+
+        # 备份原始配置(用于回滚)
+        backup_config = None
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                backup_config = f.read()
+        except Exception as e:
+            logger.error(f"Failed to backup config for rollback: {e}")
+            return {
+                "success": False,
+                "message": f"配置备份失败,无法继续更新: {str(e)}"
+            }
+
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config_dict = yaml.safe_load(f)
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"读取配置文件失败: {str(e)}"
+            }
+
+        # 2. 直接字段赋值(不递归合并)
+        # 只修改已存在的顶层字段,确保安全
+        for section in ['logging', 'storage']:
+            if section in updates:
+                # 安全检查:确保该section存在且是dict
+                if section not in config_dict:
+                    config_dict[section] = {}
+
+                if not isinstance(config_dict[section], dict):
+                    logger.warning(f"Config section '{section}' is not a dict, recreating")
+                    config_dict[section] = {}
+
+                # 执行update(只更新指定字段,保留其他字段)
+                config_dict[section].update(updates[section])
+
+        # 3. 验证配置(使用现有的验证方法)
+        try:
+            is_valid, errors, warnings = self.validate_content(
+                yaml.dump(config_dict, default_flow_style=False)
+            )
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"配置验证异常: {str(e)}"
+            }
+
+        if not is_valid:
+            return {
+                "success": False,
+                "message": "配置验证失败",
+                "errors": errors,
+                "warnings": warnings
+            }
+
+        # 4. 原子写入配置文件
+        temp_path = config_path.with_suffix('.tmp')
+        try:
+            # 写入临时文件
+            with open(temp_path, 'w', encoding='utf-8') as f:
+                yaml.dump(config_dict, f, default_flow_style=False)
+
+            # 原子替换(Windows兼容:目标文件存在时需要先删除)
+            if config_path.exists():
+                config_path.unlink()
+            shutil.move(str(temp_path), str(config_path))
+
+        except Exception as e:
+            # 清理临时文件
+            if temp_path.exists():
+                temp_path.unlink()
+            return {
+                "success": False,
+                "message": f"写入配置文件失败: {str(e)}"
+            }
+
+        # 5. 重载配置(触发ConfigManager.reload)
+        reload_success = False
+        try:
+            from ..dependencies import get_app_state
+            state = get_app_state()
+            config_manager = state.get_config_manager()
+            config_manager.reload()
+            reload_success = True
+
+            # 审计日志: 记录配置修改
+            logger.info(
+                f"System config updated successfully",
+                extra={
+                    "event": "config_update",
+                    "sections": list(updates.keys()),
+                    "changes": updates
+                }
+            )
+        except Exception as e:
+            logger.error(f"Failed to reload config: {e}")
+
+            # 回滚配置文件
+            if backup_config:
+                try:
+                    with open(config_path, 'w', encoding='utf-8') as f:
+                        f.write(backup_config)
+                    logger.info("Config file rolled back due to reload failure")
+                except Exception as rollback_error:
+                    logger.error(f"Failed to rollback config: {rollback_error}")
+
+        # 6. 返回结果(明确告知用户重载状态)
+        return {
+            "success": True,
+            "message": "配置已更新" if reload_success else "配置已更新,但重载失败",
+            "warnings": warnings
+        }

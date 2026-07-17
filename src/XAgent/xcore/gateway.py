@@ -151,6 +151,9 @@ class Gateway(ILifecycle):
         # 初始化北向通道服务
         await self._initialize_north_channel_service()
         
+        # 注册所有配置变更回调
+        await self._register_config_callbacks()
+        
         # 设置API依赖
         set_gateway_storage(
             storage=storage,
@@ -447,6 +450,37 @@ class Gateway(ILifecycle):
                 self.config_manager.reload()
             except Exception as e:
                 logger.error(f"Error checking config changes: {e}")
+    
+    async def _register_config_callbacks(self) -> None:
+        """注册所有配置变更回调
+        
+        利用现有的 _start_config_watcher() 配置监控机制,
+        当配置文件变更时,会自动触发回调。
+        """
+        if self.config_manager:
+            self.config_manager.register_reload_callback(self._on_log_level_change)
+            logger.info("Config reload callbacks registered")
+    
+    def _on_log_level_change(self, old_config, new_config) -> None:
+        """日志级别变更回调
+        
+        Args:
+            old_config: 旧配置对象
+            new_config: 新配置对象
+        """
+        if old_config and new_config:
+            if old_config.logging.level != new_config.logging.level:
+                # 更新root logger
+                root_logger = logging.getLogger()
+                root_logger.setLevel(new_config.logging.level.upper())
+                
+                # 更新所有handler
+                for handler in root_logger.handlers:
+                    handler.setLevel(new_config.logging.level.upper())
+                
+                logger.info(
+                    f"日志级别已更新: {old_config.logging.level} → {new_config.logging.level}"
+                )
     
     def get_system_health(self) -> Dict[str, Any]:
         """获取系统健康状态

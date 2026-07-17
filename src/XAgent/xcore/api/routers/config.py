@@ -9,6 +9,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks, Depends, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field, validator
 
 from ..models.config import (
     ConfigUploadResponse,
@@ -28,6 +29,26 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/config", tags=["Configuration"])
 security = HTTPBearer()
+
+# Pydantic模型(增加输入验证)
+class LoggingConfigUpdate(BaseModel):
+    level: Optional[str] = None
+    max_bytes: Optional[int] = Field(None, ge=1048576, le=104857600)
+    backup_count: Optional[int] = Field(None, ge=1, le=20)
+
+    @validator('level')
+    def validate_level(cls, v):
+        if v is not None and v.upper() not in ['DEBUG', 'INFO', 'WARNING', 'ERROR']:
+            raise ValueError('日志级别必须是 DEBUG/INFO/WARNING/ERROR')
+        return v.upper() if v else None
+
+class StorageConfigUpdate(BaseModel):
+    retention_days: Optional[int] = Field(None, ge=0, le=365)
+    cleanup_interval: Optional[int] = Field(None, ge=60, le=86400)
+
+class SystemConfigUpdate(BaseModel):
+    logging: Optional[LoggingConfigUpdate] = None
+    storage: Optional[StorageConfigUpdate] = None
 
 DEFAULT_API_TOKEN = "xagent_47808"
 
@@ -83,13 +104,13 @@ def verify_api_token_from_query(token: str = None) -> str:
 
 def validate_backup_filename(filename: str) -> str:
     """验证备份文件名（防止路径遍历攻击）
-    
+
     Args:
         filename: 文件名
-        
+
     Returns:
         验证后的文件名
-        
+
     Raises:
         HTTPException: 文件名无效
     """
@@ -99,9 +120,10 @@ def validate_backup_filename(filename: str) -> str:
             status_code=400,
             detail="Invalid filename: path traversal detected"
         )
-    
-    # 检查文件名格式（config_YYYYMMDD_HHMMSS.zip）
-    if not re.match(r'^config_\d{8}_\d{6}\.zip$', filename):
+
+    # 检查文件名格式（支持 .zip 和 .yaml/.yml 格式）
+    # 格式: config_YYYYMMDD_HHMMSS.zip 或 config_YYYYMMDD_HHMMSS.yaml
+    if not re.match(r'^config(_backup)?_\d{8}_\d{6}\.(zip|ya?ml)$', filename):
         raise HTTPException(
             status_code=400,
             detail="Invalid filename format"
@@ -509,16 +531,48 @@ async def list_configs(token: str = Depends(verify_api_token)):
 @router.delete("/export/{filename}")
 async def delete_config(filename: str, token: str = Depends(verify_api_token)):
     """删除导出的配置文件"""
-    # 验证文件名（防止路径遍历）
+    # 验证文件名(防止路径遍历)
     filename = validate_backup_filename(filename)
-    
+
     service = _get_config_service()
     backup_dir = service.backup_dir
     backup_file = backup_dir / filename
-    
+
     if not backup_file.exists():
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     backup_file.unlink()
-    
+
     return {"success": True, "message": f"Deleted {filename}"}
+
+
+# ==================== 系统配置API ====================
+
+@router.get("/system")
+async def get_system_config(token: str = Depends(verify_api_token)):
+    """获取系统配置"""
+    service = _get_config_service()
+    return service.get_system_config()
+
+
+@router.patch("/system")
+async def update_system_config(
+    request: SystemConfigUpdate,
+    token: str = Depends(verify_api_token)
+):
+    """更新系统配置"""
+    service = _get_config_service()
+
+    # 转换为字典,过滤None值
+    updates = {}
+    if request.logging:
+        updates['logging'] = {k: v for k, v in request.logging.dict().items() if v is not None}
+    if request.storage:
+        updates['storage'] = {k: v for k, v in request.storage.dict().items() if v is not None}
+
+    result = service.update_system_config(updates)
+
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result)
+
+    return result
