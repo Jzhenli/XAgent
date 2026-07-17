@@ -161,46 +161,7 @@
 
         <div v-if="activeMenu === 'logs'" class="settings-section">
           <h3>{{ $t('settings.menu.logs') }}</h3>
-          <div class="log-viewer">
-            <div class="log-toolbar">
-              <el-select :placeholder="$t('settings.log.level')" style="width: 120px">
-                <el-option :label="$t('settings.log.all')" value="" />
-                <el-option label="DEBUG" value="debug" />
-                <el-option label="INFO" value="info" />
-                <el-option label="WARNING" value="warning" />
-                <el-option label="ERROR" value="error" />
-              </el-select>
-              <el-button type="primary">{{ $t('common.refresh') }}</el-button>
-              <el-button>{{ $t('settings.log.download') }}</el-button>
-            </div>
-            <div class="log-content">
-              <div class="log-line info">
-                <span class="log-time">2026-04-27 10:23:45</span>
-                <span class="log-level">INFO</span>
-                <span class="log-message">[KNX-01] 数据采集完成，共128个点位</span>
-              </div>
-              <div class="log-line info">
-                <span class="log-time">2026-04-27 10:23:40</span>
-                <span class="log-level">INFO</span>
-                <span class="log-message">[RuleEngine] 规则 rule-001 执行成功</span>
-              </div>
-              <div class="log-line warning">
-                <span class="log-time">2026-04-27 10:23:35</span>
-                <span class="log-level">WARNING</span>
-                <span class="log-message">[BACNET-01] 连接超时，正在重试...</span>
-              </div>
-              <div class="log-line error">
-                <span class="log-time">2026-04-27 10:23:30</span>
-                <span class="log-level">ERROR</span>
-                <span class="log-message">[BACNET-01] 连接失败: Connection refused</span>
-              </div>
-              <div class="log-line debug">
-                <span class="log-time">2026-04-27 10:23:25</span>
-                <span class="log-level">DEBUG</span>
-                <span class="log-message">[MQTT] 发布消息到 topic: xagent/data</span>
-              </div>
-            </div>
-          </div>
+          <LogViewer />
         </div>
 
         <div v-if="activeMenu === 'backup'" class="settings-section">
@@ -525,6 +486,7 @@ import { useSystemStore } from '@/stores/system'
 import { useResponsive } from '@/utils/useResponsive'
 import type { UserInfo, RoleInfo } from '@/api/users'
 import { configApi, type ConfigBackup } from '@/api/config'
+import LogViewer from '@/components/LogViewer.vue'
 
 const { t } = useI18n()
 

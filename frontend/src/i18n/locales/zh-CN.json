@@ -723,7 +723,15 @@
     "log": {
       "level": "级别",
       "all": "全部",
-      "download": "下载"
+      "download": "下载",
+      "levelFilter": "级别过滤",
+      "refresh": "刷新",
+      "exportLogs": "导出日志",
+      "empty": "暂无日志",
+      "fetchFailed": "获取日志失败",
+      "noLogsToExport": "没有日志可导出",
+      "exportSuccess": "成功导出 {count} 行日志",
+      "exportFailed": "导出日志失败"
     },
     "backup": {
       "export": "导出",

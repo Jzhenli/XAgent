@@ -723,7 +723,15 @@
     "log": {
       "level": "Level",
       "all": "All",
-      "download": "Download"
+      "download": "Download",
+      "levelFilter": "Level Filter",
+      "refresh": "Refresh",
+      "exportLogs": "Export Logs",
+      "empty": "No Logs",
+      "fetchFailed": "Failed to fetch logs",
+      "noLogsToExport": "No logs to export",
+      "exportSuccess": "Successfully exported {count} log lines",
+      "exportFailed": "Failed to export logs"
     },
     "backup": {
       "export": "Export",
