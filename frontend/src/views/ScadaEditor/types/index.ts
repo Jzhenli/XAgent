@@ -116,6 +116,32 @@ export interface LineChartComponentConfig
   smooth?: boolean
 }
 
+/** 柱状图组件配置 */
+export interface BarChartComponentConfig extends BaseComponentConfig {
+  /** 时间范围 */
+  timeRange: '1h' | '6h' | '24h' | '7d'
+  /** 是否显示 X 轴标签 */
+  showXAxisLabel?: boolean
+  /** 是否显示 Y 轴标签 */
+  showYAxisLabel?: boolean
+  /** 是否显示 Y 轴线 */
+  showYAxisLine?: boolean
+  /** X 轴标签颜色 */
+  xAxisLabelColor?: string
+  /** X 轴标签字号 */
+  xAxisLabelFontSize?: number
+  /** Y 轴标签颜色 */
+  yAxisLabelColor?: string
+  /** Y 轴标签字号 */
+  yAxisLabelFontSize?: number
+  /** 柱体颜色 */
+  barColor?: string
+  /** 柱体宽度（像素） */
+  barWidth?: number
+  /** 柱体圆角 */
+  barBorderRadius?: number | number[]
+}
+
 /** 折线图数据点 */
 export interface LineChartDataPoint {
   time: string
@@ -182,7 +208,7 @@ export interface ComponentConfigMap {
   text: TextComponentConfig
   gauge: GaugeComponentConfig
   'chart-line': LineChartComponentConfig
-  'chart-bar': ChartComponentConfig
+  'chart-bar': BarChartComponentConfig
   indicator: IndicatorComponentConfig
   switch: SwitchComponentConfig
   slider: SliderComponentConfig
