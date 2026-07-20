@@ -5,10 +5,10 @@ import IndicatorConfigPanel from './ConfigPanel.vue'
 const defaultConfig: IndicatorComponentConfig = {
   width: 60,
   height: 60,
-  backgroundColor: '#f5f7fa',
-  borderRadius: 8,
   onColor: '#27ae60',
   offColor: '#95a5a6',
+  onValue: 1,
+  offValue: 0,
   blinkOnAlarm: true
 }
 

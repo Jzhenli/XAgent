@@ -49,17 +49,22 @@ const systemStore = useSystemStore()
 provide(ScadaPointReaderKey, pointReader)
 
 /** 启动当前面板绑定设备的周期性数据刷新 */
-useScadaPolling({ interval: systemStore.visualizationConfig.pollingInterval })
+const { refreshBoundDevices } = useScadaPolling({ 
+  interval: systemStore.visualizationConfig.pollingInterval,
+  reader: pointReader
+})
 
 const isFullscreen = ref(false)
 
 const currentPanel = computed(() => scada.currentPanel)
 
 onMounted(async () => {
+  console.log('ScadaPreview mounted')
   const panelId = route.params.id as string
   if (panelId) {
     await scada.loadPanel(panelId)
     scada.isEditing.value = false
+    await refreshBoundDevices()
   }
   document.addEventListener('fullscreenchange', handleFullscreenChange)
 })

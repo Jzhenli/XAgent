@@ -1,29 +1,30 @@
 <template>
   <div class="config-section">
-    <div class="section-title">{{ t('componentConfig.containerConfig') }}</div>
+    <div class="section-title">{{ t('componentConfig.chartConfig') }}</div>
 
     <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
     <div class="form-group">
-      <label>{{ t('componentConfig.currentValue') }}</label>
-      <input type="text" :value="config.value ?? ''" @input="updateValue(($event.target as HTMLInputElement).value || null)">
+      <label>{{ t('componentConfig.timeRange') }}</label>
+      <select :value="config.timeRange" @change="updateConfig('timeRange', ($event.target as HTMLSelectElement).value as ChartComponentConfig['timeRange'])">
+        <option value="1h">{{ t('dashboard.timeRange1h') }}</option>
+        <option value="6h">{{ t('pointTrend.timeRange6h') }}</option>
+        <option value="24h">{{ t('dashboard.timeRange24h') }}</option>
+        <option value="7d">{{ t('dashboard.timeRange7d') }}</option>
+      </select>
     </div>
 
     <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t('componentConfig.backgroundColor') }}</label>
-        <el-color-picker :model-value="config.backgroundColor" show-alpha @active-change="updateConfig('backgroundColor', $event)" />
+        <label>{{ t('componentConfig.lineColor') }}</label>
+        <el-color-picker :model-value="config.lineColor" show-alpha @change="updateConfig('lineColor', $event)" />
       </div>
       <div class="form-group">
-        <label>{{ t('componentConfig.borderColor') }}</label>
-        <el-color-picker :model-value="config.borderColor" show-alpha @active-change="updateConfig('borderColor', $event)" />
+        <label>{{ t('componentConfig.backgroundColor') }}</label>
+        <el-color-picker :model-value="config.backgroundColor" show-alpha @change="updateConfig('backgroundColor', $event)" />
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label>{{ t('componentConfig.borderWidth') }}</label>
-        <input type="number" :value="config.borderWidth" @input="updateConfig('borderWidth', +($event.target as HTMLInputElement).value)">
-      </div>
       <div class="form-group">
         <label>{{ t('componentConfig.borderRadius') }}</label>
         <input type="number" :value="config.borderRadius" @input="updateConfig('borderRadius', +($event.target as HTMLInputElement).value)">
@@ -35,7 +36,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useScadaConfig } from '../../../../hooks/useScadaEditor'
-import type { ScadaComponent } from '../../../../types'
+import type { ScadaComponent, ChartComponentConfig } from '../../../../types'
 
 const { t } = useI18n()
 
@@ -43,7 +44,7 @@ const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const { config, updateConfig, updateValue } = useScadaConfig(props.component as ScadaComponent<'container'>)
+const { config, updateConfig } = useScadaConfig(props.component as ScadaComponent<'chart-bar'>)
 </script>
 
 <style scoped>
@@ -85,7 +86,8 @@ const { config, updateConfig, updateValue } = useScadaConfig(props.component as 
   margin-bottom: 4px;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid var(--border-base);
@@ -93,7 +95,8 @@ const { config, updateConfig, updateValue } = useScadaConfig(props.component as 
   font-size: 13px;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
   border-color: var(--color-primary);
 }

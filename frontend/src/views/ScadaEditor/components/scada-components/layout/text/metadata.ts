@@ -5,11 +5,11 @@ import TextConfigPanel from './ConfigPanel.vue'
 const defaultConfig: TextComponentConfig = {
   width: 150,
   height: 40,
-  backgroundColor: 'transparent',
+  backgroundColor: undefined,
   borderRadius: 4,
   fontSize: 14,
-  fontColor: '#2c3e50',
-  content: 'scadaComponents.textLabel',
+  fontColor: 'rgb(44, 62, 80)',
+  content: 'Text',
   fontWeight: 'normal',
   textAlign: 'center'
 }

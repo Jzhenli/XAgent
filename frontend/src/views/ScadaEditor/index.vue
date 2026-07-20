@@ -491,6 +491,9 @@ kbd {
   flex-shrink: 0;
   background: var(--bg-container);
   border-left: 1px solid var(--border-base);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .loading-state {

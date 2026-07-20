@@ -1,11 +1,12 @@
 <template>
   <div class="config-section">
-    <div class="section-title">{{ t('componentConfig.indicatorConfig') }}</div>
+    <div class="section-title">{{ t("componentConfig.switchConfig") }}</div>
 
-    <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
+    <!-- 数据绑定：通断映射 -->
+    <div class="subsection-title">{{ t("componentConfig.dataSection") }}</div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t('componentConfig.onValue') }}</label>
+        <label>{{ t("componentConfig.onValue") }}</label>
         <input
           type="number"
           :value="config.onValue"
@@ -13,7 +14,7 @@
         />
       </div>
       <div class="form-group">
-        <label>{{ t('componentConfig.offValue') }}</label>
+        <label>{{ t("componentConfig.offValue") }}</label>
         <input
           type="number"
           :value="config.offValue"
@@ -22,32 +23,53 @@
       </div>
     </div>
 
-    <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>
+    <!-- 样式：颜色选择器 -->
+    <div class="subsection-title">{{ t("componentConfig.styleSection") }}</div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t('componentConfig.onColor') }}</label>
-        <el-color-picker :model-value="config.onColor" show-alpha @change="updateConfig('onColor', $event)" />
+        <label>{{ t("componentConfig.thumbColor") }}</label>
+        <el-color-picker
+          :model-value="config.thumbColor"
+          show-alpha
+          @change="updateConfig('thumbColor', $event)"
+        />
       </div>
       <div class="form-group">
-        <label>{{ t('componentConfig.offColor') }}</label>
-        <el-color-picker :model-value="config.offColor" show-alpha @change="updateConfig('offColor', $event)" />
+        <label>{{ t("componentConfig.onColor") }}</label>
+        <el-color-picker
+          :model-value="config.onColor"
+          show-alpha
+          @change="updateConfig('onColor', $event)"
+        />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t("componentConfig.offColor") }}</label>
+        <el-color-picker
+          :model-value="config.offColor"
+          show-alpha
+          @change="updateConfig('offColor', $event)"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-import { useScadaConfig } from '../../../../hooks/useScadaEditor'
-import type { ScadaComponent } from '../../../../types'
+import { useI18n } from "vue-i18n";
+import { useScadaConfig } from "../../../../hooks/useScadaEditor";
+import type { ScadaComponent } from "../../../../types";
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps<{
-  component: ScadaComponent
-}>()
+  component: ScadaComponent;
+}>();
 
-const { config, updateConfig } = useScadaConfig(props.component as ScadaComponent<'indicator'>)
+const { config, updateConfig } = useScadaConfig(
+  props.component as ScadaComponent<"switch">,
+);
 </script>
 
 <style scoped>

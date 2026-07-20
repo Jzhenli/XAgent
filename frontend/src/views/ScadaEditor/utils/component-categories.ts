@@ -8,9 +8,9 @@ export interface CategoryConfig {
 }
 
 export const COMPONENT_CATEGORIES: CategoryConfig[] = [
-  { key: 'basic', icon: '📝', order: 1 },
-  { key: 'chart', icon: '📊', order: 2 },
-  { key: 'layout', icon: '📦', order: 3 },
+  { key: 'layout', icon: '📦', order: 1 },
+  { key: 'basic', icon: '📝', order: 2 },
+  { key: 'chart', icon: '📊', order: 3 },
 ]
 
 export const getSortedCategories = (): CategoryConfig[] => {

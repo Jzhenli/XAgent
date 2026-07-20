@@ -1,37 +1,54 @@
 <template>
   <div class="config-section">
-    <div class="section-title">{{ t('componentConfig.chartConfig') }}</div>
+    <div class="section-title">{{ t('componentConfig.sliderConfig') }}</div>
 
     <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
-    <div class="form-group">
-      <label>{{ t('componentConfig.currentValue') }}</label>
-      <input type="number" :value="config.value ?? 0" @input="updateNumericValue($event)">
-    </div>
-    <div class="form-group">
-      <label>{{ t('componentConfig.timeRange') }}</label>
-      <select :value="config.timeRange" @change="updateConfig('timeRange', ($event.target as HTMLSelectElement).value as ChartComponentConfig['timeRange'])">
-        <option value="1h">{{ t('dashboard.timeRange1h') }}</option>
-        <option value="6h">{{ t('pointTrend.timeRange6h') }}</option>
-        <option value="24h">{{ t('dashboard.timeRange24h') }}</option>
-        <option value="7d">{{ t('dashboard.timeRange7d') }}</option>
-      </select>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.minValue') }}</label>
+        <input
+          type="number"
+          :value="config.min"
+          @change="updateConfig('min', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.maxValue') }}</label>
+        <input
+          type="number"
+          :value="config.max"
+          @change="updateConfig('max', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
     </div>
 
     <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t('componentConfig.lineColor') }}</label>
-        <el-color-picker :model-value="config.lineColor" show-alpha @active-change="updateConfig('lineColor', $event)" />
+        <label>{{ t('componentConfig.thumbColor') }}</label>
+        <el-color-picker
+          :model-value="config.thumbColor"
+          show-alpha
+          @change="updateConfig('thumbColor', $event as string)"
+        />
       </div>
       <div class="form-group">
         <label>{{ t('componentConfig.backgroundColor') }}</label>
-        <el-color-picker :model-value="config.backgroundColor" show-alpha @active-change="updateConfig('backgroundColor', $event)" />
+        <el-color-picker
+          :model-value="config.backgroundColor"
+          show-alpha
+          @change="updateConfig('backgroundColor', $event as string)"
+        />
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
         <label>{{ t('componentConfig.borderRadius') }}</label>
-        <input type="number" :value="config.borderRadius" @input="updateConfig('borderRadius', +($event.target as HTMLInputElement).value)">
+        <input
+          type="number"
+          :value="config.borderRadius"
+          @change="updateConfig('borderRadius', +($event.target as HTMLInputElement).value)"
+        />
       </div>
     </div>
   </div>
@@ -40,7 +57,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useScadaConfig } from '../../../../hooks/useScadaEditor'
-import type { ScadaComponent, ChartComponentConfig } from '../../../../types'
+import type { ScadaComponent } from '../../../../types'
 
 const { t } = useI18n()
 
@@ -48,12 +65,9 @@ const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const { config, updateConfig, updateValue } = useScadaConfig(props.component as ScadaComponent<'chart-line'>)
-
-const updateNumericValue = (e: Event) => {
-  const value = +((e.target as HTMLInputElement).value)
-  updateValue(isNaN(value) ? 0 : value)
-}
+const { config, updateConfig } = useScadaConfig(
+  props.component as ScadaComponent<'slider'>,
+)
 </script>
 
 <style scoped>
@@ -95,8 +109,7 @@ const updateNumericValue = (e: Event) => {
   margin-bottom: 4px;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid var(--border-base);
@@ -104,8 +117,7 @@ const updateNumericValue = (e: Event) => {
   font-size: 13px;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
 }

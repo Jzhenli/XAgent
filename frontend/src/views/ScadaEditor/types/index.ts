@@ -51,6 +51,34 @@ export interface GaugeComponentConfig extends BaseComponentConfig {
   unit: string
   thresholds: { value: number; color: string }[]
   showValue: boolean
+  /** 中心显示的目标/设定值 */
+  targetValue?: number
+  /** 轨道基础色 */
+  trackColor?: string
+  /** 数据填充轨道色 */
+  fillColor?: string
+  /** 数据填充轨道渐变色（3 色），配置后优先于 fillColor */
+  fillGradient?: string[]
+  /** 轨道宽度 */
+  trackWidth?: number
+  /** 进度条端点形状 */
+  strokeLinecap?: 'butt' | 'round' | 'square'
+  /** 中心文本字体粗细 */
+  fontWeight?: 'normal' | 'bold'
+  /** 按钮调节步进值 */
+  step?: number
+  /** 是否显示加减按钮 */
+  showButtons?: boolean
+  /** 步进按钮字体大小 */
+  stepFontSize?: number
+  /** 步进按钮字体颜色 */
+  stepFontColor?: string
+  /** 单位字体大小 */
+  unitFontSize?: number
+  /** 单位字体颜色 */
+  unitFontColor?: string
+  /** 单位字体粗细 */
+  unitFontWeight?: 'normal' | 'bold'
 }
 
 /** 图表组件配置 */
@@ -61,26 +89,69 @@ export interface ChartComponentConfig extends BaseComponentConfig {
   showLegend: boolean
 }
 
+/** 折线图组件配置 */
+export interface LineChartComponentConfig
+  extends Omit<ChartComponentConfig, 'showLegend' | 'borderRadius'> {
+  /** 是否显示 X 轴标签 */
+  showXAxisLabel?: boolean
+  /** 是否显示 Y 轴标签 */
+  showYAxisLabel?: boolean
+  /** 是否显示 Y 轴线 */
+  showYAxisLine?: boolean
+  /** X 轴标签颜色 */
+  xAxisLabelColor?: string
+  /** X 轴标签字号 */
+  xAxisLabelFontSize?: number
+  /** Y 轴标签颜色 */
+  yAxisLabelColor?: string
+  /** Y 轴标签字号 */
+  yAxisLabelFontSize?: number
+  /** 线条粗细 */
+  lineWidth?: number
+  /** 节点大小；0 或 null 表示不显示节点 */
+  nodeSize?: number
+  /** 节点填充色 */
+  nodeFillColor?: string
+  /** 是否平滑折线 */
+  smooth?: boolean
+}
+
+/** 折线图数据点 */
+export interface LineChartDataPoint {
+  time: string
+  timestamp: number
+  value: number
+  quality: string
+}
+
 /** 指示灯组件配置 */
-export interface IndicatorComponentConfig extends BaseComponentConfig {
+export interface IndicatorComponentConfig
+  extends Omit<BaseComponentConfig, 'backgroundColor' | 'borderRadius'> {
   onColor: string
   offColor: string
+  onValue: number
+  offValue: number
   blinkOnAlarm: boolean
 }
 
 /** 开关组件配置 */
 export interface SwitchComponentConfig extends BaseComponentConfig {
-  onText: string
-  offText: string
+  thumbColor: string
+  onColor: string
+  offColor: string
+  onValue: number
+  offValue: number
   confirmRequired: boolean
   writePoint: PointBinding | null
 }
 
-/** 滑块组件配置 */
+/** 亮度调节器组件配置 */
 export interface SliderComponentConfig extends BaseComponentConfig {
   min: number
   max: number
   step: number
+  /** 滑块颜色 */
+  thumbColor?: string
 }
 
 /** 图片组件配置 */
@@ -94,11 +165,14 @@ export interface ButtonComponentConfig extends BaseComponentConfig {
   text: string
   type: 'primary' | 'success' | 'warning' | 'danger' | 'info'
   writeValue: number | boolean | string
-  writePoint: PointBinding | null
-}
-
-/** 容器组件配置 */
-export interface ContainerComponentConfig extends BaseComponentConfig {
+  /** @deprecated 旧版写入点位，现优先使用组件 binding */
+  writePoint?: PointBinding | null
+  fontColor?: string
+  fontSize?: number
+  backgroundColor?: string
+  borderWidth?: number
+  borderColor?: string
+  borderStyle?: string
 }
 
 import type { ComponentType } from '../registry'
@@ -107,14 +181,13 @@ import type { ComponentType } from '../registry'
 export interface ComponentConfigMap {
   text: TextComponentConfig
   gauge: GaugeComponentConfig
-  'chart-line': ChartComponentConfig
+  'chart-line': LineChartComponentConfig
   'chart-bar': ChartComponentConfig
   indicator: IndicatorComponentConfig
   switch: SwitchComponentConfig
   slider: SliderComponentConfig
   image: ImageComponentConfig
   button: ButtonComponentConfig
-  container: ContainerComponentConfig
 }
 
 /** 组件统一配置类型 */
@@ -155,10 +228,13 @@ export interface IndicatorConfig {
 
 /** @deprecated 已合并到 SwitchComponentConfig，保留用于旧数据迁移 */
 export interface SwitchConfig {
-  onText: string
-  offText: string
-  confirmRequired: boolean
-  writePoint: PointBinding | null
+  thumbColor?: string
+  onColor?: string
+  offColor?: string
+  onValue?: number | boolean | string
+  offValue?: number | boolean | string
+  confirmRequired?: boolean
+  writePoint?: PointBinding | null
 }
 
 /** @deprecated 已合并到 SliderComponentConfig，保留用于旧数据迁移 */
@@ -173,7 +249,7 @@ export interface ButtonConfig {
   text: string
   type: 'primary' | 'success' | 'warning' | 'danger' | 'info'
   writeValue: number | boolean | string
-  writePoint: PointBinding | null
+  writePoint?: PointBinding | null
 }
 
 /** @deprecated 已合并到 ImageComponentConfig，保留用于旧数据迁移 */

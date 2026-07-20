@@ -3,14 +3,14 @@ import type { ScadaComponentMeta } from './types'
 
 // ─── 导入所有组件元数据 ────────────────────────────────────────
 import { gaugeMeta } from './components/scada-components/basic/gauge/metadata'
-import { chartLineMeta, chartBarMeta } from './components/scada-components/chart/chart/metadata'
+import { chartLineMeta } from './components/scada-components/chart/line/metadata'
+import { chartBarMeta } from './components/scada-components/chart/bar/metadata'
 import { indicatorMeta } from './components/scada-components/basic/indicator/metadata'
 import { switchMeta } from './components/scada-components/basic/switch/metadata'
 import { sliderMeta } from './components/scada-components/basic/slider/metadata'
 import { textMeta } from './components/scada-components/layout/text/metadata'
 import { imageMeta } from './components/scada-components/basic/image/metadata'
 import { buttonMeta } from './components/scada-components/basic/button/metadata'
-import { containerMeta } from './components/scada-components/layout/container/metadata'
 
 // ─── 统一组件注册表：type -> 完整元数据 ─────────────────────────
 // 新增组件只需在此添加映射，ComponentType 自动推导
@@ -24,7 +24,6 @@ export const componentMetaRegistry = {
   text: textMeta,
   image: imageMeta,
   button: buttonMeta,
-  container: containerMeta,
 } as const
 
 /** 组件类型 —— 从注册表键名自动推导 */

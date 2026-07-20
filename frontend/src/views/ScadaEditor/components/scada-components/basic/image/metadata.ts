@@ -18,7 +18,7 @@ export const imageMeta: ScadaComponentMeta = {
   template: {
     name: 'scadaComponentNames.image',
     icon: '🖼️',
-    category: 'scadaComponentCategories.basic',
+    category: 'scadaComponentCategories.layout',
     defaultConfig
   },
   configTypes: {

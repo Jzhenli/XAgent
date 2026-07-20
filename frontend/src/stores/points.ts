@@ -65,6 +65,9 @@ function buildReadingMap(readings: any[]): Map<string, ReadingData> {
   return readingMap
 }
 
+const WRITE_PROTECTION_DURATION = 10000
+const writeProtectionMap = new Map<string, { value: any; expiresAt: number }>()
+
 export const usePointStore = defineStore('points', () => {
   const devices = ref<DeviceWithPoints[]>([])
   const loading = ref(false)
@@ -111,8 +114,24 @@ export const usePointStore = defineStore('points', () => {
       const readingList = readingResult.status === 'fulfilled' ? readingResult.value.devices : []
 
       const readingMap = buildReadingMap(readingList)
+      const now = Date.now()
 
-      devices.value = deviceList.map(device => mapDeviceWithPoints(device, readingMap.get(device.asset)))
+      devices.value = deviceList.map(device => {
+        const mappedDevice = mapDeviceWithPoints(device, readingMap.get(device.asset))
+        mappedDevice.points = mappedDevice.points.map(point => {
+          const protectionKey = `${device.asset}:${point.name}`
+          const protection = writeProtectionMap.get(protectionKey)
+          
+          if (protection && now < protection.expiresAt) {
+            return { ...point, currentValue: protection.value }
+          } else if (protection) {
+            writeProtectionMap.delete(protectionKey)
+          }
+          
+          return point
+        })
+        return mappedDevice
+      })
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : '获取设备点位失败'
       error.value = message
@@ -143,7 +162,20 @@ export const usePointStore = defineStore('points', () => {
         readingData = { data: reading.data || {}, standardPoints, timestamp }
       }
 
-      const mappedPoints = points.map(point => mapPointToDisplay(point, readingData))
+      const now = Date.now()
+      const mappedPoints = points.map(point => {
+        const result = mapPointToDisplay(point, readingData)
+        const protectionKey = `${asset}:${point.name}`
+        const protection = writeProtectionMap.get(protectionKey)
+        
+        if (protection && now < protection.expiresAt) {
+          result.currentValue = protection.value
+        } else if (protection) {
+          writeProtectionMap.delete(protectionKey)
+        }
+        
+        return result
+      })
       const deviceIndex = devices.value.findIndex(d => d.asset === asset)
 
       if (deviceIndex !== -1) {
@@ -362,6 +394,29 @@ export const usePointStore = defineStore('points', () => {
       )
 
       if (response.status === 'ACCEPTED') {
+        const protectionKey = `${deviceAsset}:${pointName}`
+        writeProtectionMap.set(protectionKey, {
+          value,
+          expiresAt: Date.now() + WRITE_PROTECTION_DURATION
+        })
+
+        const deviceIndex = devices.value.findIndex(d => d.asset === deviceAsset)
+        if (deviceIndex !== -1) {
+          const device = devices.value[deviceIndex]
+          const pointIndex = device.points.findIndex(p => p.name === pointName)
+          if (pointIndex !== -1) {
+            const updatedPoints = [...device.points]
+            updatedPoints[pointIndex] = {
+              ...updatedPoints[pointIndex],
+              currentValue: value
+            }
+            devices.value[deviceIndex] = {
+              ...device,
+              points: updatedPoints
+            }
+          }
+        }
+
         setTimeout(() => fetchDevicePoints(deviceAsset), 2000)
         return {
           success: true,
