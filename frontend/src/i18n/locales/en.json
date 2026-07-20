@@ -63,16 +63,21 @@
     "darkTheme": "Dark Theme"
   },
   "login": {
-    "title": "XAgent",
-    "subtitle": "IoT Gateway Console",
+    "title": "Welcome",
+    "subtitle": "Smart Building Configuration Studio",
     "username": "Username",
     "password": "Password",
     "loginBtn": "Login",
     "loginSuccess": "Login successful",
-    "loginFailed": "Invalid username or password",
-    "loginError": "Login failed, please check your network connection",
+    "loginFailed": "Login failed",
+    "loginError": "Login error, please try again later",
     "pleaseEnterCredentials": "Please enter username and password",
-    "footer": "XAgent IoT Gateway v1.0"
+    "footer": "Adveco © 2024",
+    "aboutUs": "About Us",
+    "contactUs": "Contact Us",
+    "softwareVersion": "Software Version",
+    "uiVersion": "UI Version",
+    "backendVersion": "Backend Version"
   },
   "dashboard": {
     "title": "Data Collection Trend",

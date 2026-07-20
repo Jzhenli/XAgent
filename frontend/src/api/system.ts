@@ -18,5 +18,13 @@ export const systemApi = {
   }> {
     const res = await api.get('/api/system/health')
     return res.data
+  },
+
+  async getVersion(): Promise<{
+    software: string
+    backend: string
+  }> {
+    const res = await api.get('/api/system/version')
+    return res.data
   }
 }

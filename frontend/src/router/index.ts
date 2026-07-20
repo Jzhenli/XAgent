@@ -145,7 +145,7 @@ function findFirstAllowedPath(userStore: ReturnType<typeof useUserStore>): strin
 }
 
 router.beforeEach(async (to, _from, next) => {
-  document.title = `${to.meta.title || 'XAgent'} - XAgent 控制台`
+  document.title = 'XPlay'
 
   if (to.meta.public) {
     next()

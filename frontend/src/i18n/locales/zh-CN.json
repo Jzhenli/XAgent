@@ -63,16 +63,21 @@
     "darkTheme": "深色主题"
   },
   "login": {
-    "title": "XAgent",
-    "subtitle": "IoT 网关控制台",
+    "title": "欢迎登录",
+    "subtitle": "智慧建筑组态工作室",
     "username": "用户名",
     "password": "密码",
     "loginBtn": "登 录",
     "loginSuccess": "登录成功",
-    "loginFailed": "用户名或密码错误",
-    "loginError": "登录失败，请检查网络连接",
+    "loginFailed": "登录失败",
+    "loginError": "登录异常，请稍后重试",
     "pleaseEnterCredentials": "请输入用户名和密码",
-    "footer": "XAgent IoT Gateway v1.0"
+    "footer": "Adveco © 2024",
+    "aboutUs": "关于我们",
+    "contactUs": "联系我们",
+    "softwareVersion": "软件版本",
+    "uiVersion": "UI 版本",
+    "backendVersion": "后端版本"
   },
   "dashboard": {
     "title": "数据采集趋势",
