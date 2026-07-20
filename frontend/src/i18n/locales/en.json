@@ -702,15 +702,36 @@
     },
     "general": {
       "log_level": "Log Level",
+      "log_max_size": "Log File Size",
+      "log_backup_count": "Log Backup Count",
       "data_retention": "Data Retention",
+      "cleanup_interval": "Cleanup Interval",
       "max_connections": "Max Connections",
       "timeout": "Timeout",
-      "save_config": "Save Config"
+      "save_config": "Save Config",
+      "log_config_title": "Log Configuration",
+      "storage_config_title": "Data Storage Configuration",
+      "log_level_hint": "Effective immediately, for troubleshooting",
+      "storage_config_hint": "Effective on next cleanup task execution",
+      "unit_mb": "MB",
+      "unit_days": "Days",
+      "unit_seconds": "Seconds",
+      "data_retention_hint": "0 means never delete",
+      "cleanup_interval_hint": "1 minute to 24 hours",
+      "reload_failed_hint": "Config saved but reload failed, please restart service"
     },
     "log": {
       "level": "Level",
       "all": "All",
-      "download": "Download"
+      "download": "Download",
+      "levelFilter": "Level Filter",
+      "refresh": "Refresh",
+      "exportLogs": "Export Logs",
+      "empty": "No Logs",
+      "fetchFailed": "Failed to fetch logs",
+      "noLogsToExport": "No logs to export",
+      "exportSuccess": "Successfully exported {count} log lines",
+      "exportFailed": "Failed to export logs"
     },
     "backup": {
       "export": "Export",
@@ -780,6 +801,8 @@
       "milliseconds": "ms"
     },
     "config_saved": "Config Saved",
+    "config_load_failed": "Config Load Failed",
+    "config_save_failed": "Config Save Failed",
     "operation_failed": "Operation Failed",
     "delete_confirm": "Confirm Delete"
   },

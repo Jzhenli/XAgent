@@ -55,6 +55,7 @@ dependencies = [
     "psutil",
     "pyapp-runtime>=0.1.0",
 ]
+icon = "icons/android/xplay"
 
 [tool.pyapp.windows]
 deployment = "standalone"
@@ -79,6 +80,7 @@ dependencies = [
     "psutil",
     "pyapp-runtime>=0.1.0",
 ]
+icon = "icons/windows/xplay"
 
 [tool.pyapp.linux]
 deployment = "shared"

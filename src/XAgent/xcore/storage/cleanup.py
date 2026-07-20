@@ -37,52 +37,67 @@ class DataCleanupTask:
         self._running = False
 
     async def execute(self) -> int:
+        """执行数据清理(每次执行时读取最新配置)
+
+        注意:ConfigManager.config属性会自动检查文件mtime,
+        如果文件已更新,会自动reload,因此这个方案是安全的。
+        """
         if self._running:
             logger.warning("Cleanup task already running, skipping")
             return 0
-        
+
         self._running = True
         start_time = time.time()
-        
+
         try:
-            cutoff_timestamp = self._calculate_cutoff_timestamp()
-            
+            # 从AppState获取ConfigManager(自动检查文件更新)
+            from ..api.dependencies import get_app_state
+            state = get_app_state()
+            config = state.get_config_manager().config
+
+            # 使用最新配置值
+            retention_days = config.storage.retention_days
+            batch_size = config.storage.cleanup_batch_size
+
+            cutoff_timestamp = self._calculate_cutoff_timestamp(retention_days)
+
             logger.info(
-                f"Starting data cleanup: retention_days={self.retention_days}, "
+                f"Starting data cleanup: retention_days={retention_days}, "
                 f"cutoff_timestamp={cutoff_timestamp}, "
                 f"cutoff_datetime={datetime.fromtimestamp(cutoff_timestamp).isoformat()}"
             )
-            
+
             deleted = await self.storage.delete_old_readings_batch(
                 before_timestamp=cutoff_timestamp,
-                batch_size=self.cleanup_batch_size
+                batch_size=batch_size
             )
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             self._stats.total_cleanups += 1
             self._stats.total_deleted += deleted
             self._stats.last_cleanup = datetime.now()
             self._stats.last_deleted_count = deleted
             self._stats.last_cleanup_duration_ms = round(duration_ms, 2)
-            
+
             logger.info(
                 f"Data cleanup completed: deleted={deleted}, "
                 f"duration_ms={duration_ms:.2f}"
             )
-            
+
             return deleted
-            
+
         except Exception as e:
             self._stats.errors += 1
             self._stats.last_error = str(e)
             logger.error(f"Data cleanup failed: {e}")
             return 0
         finally:
+            # 确保无论如何都重置运行标志
             self._running = False
 
-    def _calculate_cutoff_timestamp(self) -> float:
-        cutoff_date = datetime.now() - timedelta(days=self.retention_days)
+    def _calculate_cutoff_timestamp(self, retention_days: int) -> float:
+        cutoff_date = datetime.now() - timedelta(days=retention_days)
         return cutoff_date.timestamp()
 
     def get_stats(self) -> Dict[str, Any]:

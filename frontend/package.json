@@ -17,6 +17,7 @@
     "@vue-flow/controls": "^1.1.0",
     "@vue-flow/core": "^1.33.0",
     "@vue-flow/minimap": "^1.4.0",
+    "@x-plateform/graphic-editor": "file:./graphic/graphic-editor",
     "@x-plateform-mono/common": "^1.0.1",
     "@x-plateform/graphic-editor": "file:./graphic/graphic-editor",
     "axios": "^1.6.0",

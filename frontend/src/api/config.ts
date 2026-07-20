@@ -43,6 +43,30 @@ export interface ImportConfigResponse {
   error?: string
 }
 
+export interface SystemConfig {
+  logging: {
+    level: string
+    max_bytes: number
+    backup_count: number
+  }
+  storage: {
+    retention_days: number
+    cleanup_interval: number
+  }
+}
+
+export interface SystemConfigUpdate {
+  logging?: {
+    level?: string
+    max_bytes?: number
+    backup_count?: number
+  }
+  storage?: {
+    retention_days?: number
+    cleanup_interval?: number
+  }
+}
+
 export const configApi = {
   /**
    * 导出配置（创建备份）
@@ -103,6 +127,30 @@ export const configApi = {
    */
   async deleteConfig(filename: string): Promise<{ success: boolean; message: string }> {
     const res = await api.delete(`/api/config/export/${filename}`)
+    return res.data
+  },
+
+  /**
+   * 获取系统配置
+   */
+  async getSystemConfig(): Promise<SystemConfig> {
+    const res = await api.get('/api/config/system', {
+      timeout: 30000  // 30秒超时
+    })
+    return res.data
+  },
+
+  /**
+   * 更新系统配置
+   */
+  async updateSystemConfig(updates: SystemConfigUpdate): Promise<{
+    success: boolean
+    message: string
+    warnings?: string[]
+  }> {
+    const res = await api.patch('/api/config/system', updates, {
+      timeout: 30000  // 30秒超时
+    })
     return res.data
   }
 }

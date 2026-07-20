@@ -702,15 +702,36 @@
     },
     "general": {
       "log_level": "日志级别",
+      "log_max_size": "日志文件大小",
+      "log_backup_count": "日志备份数量",
       "data_retention": "数据保留",
+      "cleanup_interval": "清理间隔",
       "max_connections": "最大连接数",
       "timeout": "超时",
-      "save_config": "保存配置"
+      "save_config": "保存配置",
+      "log_config_title": "日志配置",
+      "storage_config_title": "数据存储配置",
+      "log_level_hint": "修改后立即生效,用于问题诊断",
+      "storage_config_hint": "存储配置将在下次数据清理任务执行时生效",
+      "unit_mb": "MB",
+      "unit_days": "天",
+      "unit_seconds": "秒",
+      "data_retention_hint": "0表示永不删除",
+      "cleanup_interval_hint": "1分钟-24小时",
+      "reload_failed_hint": "配置已保存,但重载失败,请重启服务"
     },
     "log": {
       "level": "级别",
       "all": "全部",
-      "download": "下载"
+      "download": "下载",
+      "levelFilter": "级别过滤",
+      "refresh": "刷新",
+      "exportLogs": "导出日志",
+      "empty": "暂无日志",
+      "fetchFailed": "获取日志失败",
+      "noLogsToExport": "没有日志可导出",
+      "exportSuccess": "成功导出 {count} 行日志",
+      "exportFailed": "导出日志失败"
     },
     "backup": {
       "export": "导出",
@@ -780,6 +801,8 @@
       "milliseconds": "毫秒"
     },
     "config_saved": "配置已保存",
+    "config_load_failed": "配置加载失败",
+    "config_save_failed": "配置保存失败",
     "operation_failed": "操作失败",
     "delete_confirm": "确认删除"
   },
