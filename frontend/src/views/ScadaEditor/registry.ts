@@ -3,7 +3,8 @@ import type { ScadaComponentMeta } from './types'
 
 // ─── 导入所有组件元数据 ────────────────────────────────────────
 import { gaugeMeta } from './components/scada-components/basic/gauge/metadata'
-import { chartLineMeta, chartBarMeta } from './components/scada-components/chart/chart/metadata'
+import { chartLineMeta } from './components/scada-components/chart/line/metadata'
+import { chartBarMeta } from './components/scada-components/chart/bar/metadata'
 import { indicatorMeta } from './components/scada-components/basic/indicator/metadata'
 import { switchMeta } from './components/scada-components/basic/switch/metadata'
 import { sliderMeta } from './components/scada-components/basic/slider/metadata'

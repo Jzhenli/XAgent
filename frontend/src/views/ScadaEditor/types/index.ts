@@ -89,6 +89,41 @@ export interface ChartComponentConfig extends BaseComponentConfig {
   showLegend: boolean
 }
 
+/** 折线图组件配置 */
+export interface LineChartComponentConfig
+  extends Omit<ChartComponentConfig, 'showLegend' | 'borderRadius'> {
+  /** 是否显示 X 轴标签 */
+  showXAxisLabel?: boolean
+  /** 是否显示 Y 轴标签 */
+  showYAxisLabel?: boolean
+  /** 是否显示 Y 轴线 */
+  showYAxisLine?: boolean
+  /** X 轴标签颜色 */
+  xAxisLabelColor?: string
+  /** X 轴标签字号 */
+  xAxisLabelFontSize?: number
+  /** Y 轴标签颜色 */
+  yAxisLabelColor?: string
+  /** Y 轴标签字号 */
+  yAxisLabelFontSize?: number
+  /** 线条粗细 */
+  lineWidth?: number
+  /** 节点大小；0 或 null 表示不显示节点 */
+  nodeSize?: number
+  /** 节点填充色 */
+  nodeFillColor?: string
+  /** 是否平滑折线 */
+  smooth?: boolean
+}
+
+/** 折线图数据点 */
+export interface LineChartDataPoint {
+  time: string
+  timestamp: number
+  value: number
+  quality: string
+}
+
 /** 指示灯组件配置 */
 export interface IndicatorComponentConfig
   extends Omit<BaseComponentConfig, 'backgroundColor' | 'borderRadius'> {
@@ -146,7 +181,7 @@ import type { ComponentType } from '../registry'
 export interface ComponentConfigMap {
   text: TextComponentConfig
   gauge: GaugeComponentConfig
-  'chart-line': ChartComponentConfig
+  'chart-line': LineChartComponentConfig
   'chart-bar': ChartComponentConfig
   indicator: IndicatorComponentConfig
   switch: SwitchComponentConfig

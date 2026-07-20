@@ -16,6 +16,8 @@ export type {
   TextComponentConfig,
   GaugeComponentConfig,
   ChartComponentConfig,
+  LineChartComponentConfig,
+  LineChartDataPoint,
   IndicatorComponentConfig,
   SwitchComponentConfig,
   SliderComponentConfig,

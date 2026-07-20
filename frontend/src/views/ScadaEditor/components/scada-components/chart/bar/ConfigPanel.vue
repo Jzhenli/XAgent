@@ -44,7 +44,7 @@ const props = defineProps<{
   component: ScadaComponent
 }>()
 
-const { config, updateConfig } = useScadaConfig(props.component as ScadaComponent<'chart-line'>)
+const { config, updateConfig } = useScadaConfig(props.component as ScadaComponent<'chart-bar'>)
 </script>
 
 <style scoped>
