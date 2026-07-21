@@ -23,6 +23,8 @@ export type {
   SliderComponentConfig,
   ImageComponentConfig,
   ButtonComponentConfig,
+  AcModeComponentConfig,
+  AcFanSpeedComponentConfig,
   ScadaComponent,
   PanelType,
   ScadaPanel

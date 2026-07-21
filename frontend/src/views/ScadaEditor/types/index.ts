@@ -201,6 +201,36 @@ export interface ButtonComponentConfig extends BaseComponentConfig {
   borderStyle?: string
 }
 
+/** 空调模式组件配置 */
+export interface AcModeComponentConfig extends BaseComponentConfig {
+  iconSize: number
+  iconColor: string
+  activeIconColor: string
+  fontColor: string
+  activeFontColor: string
+  /** 当前值：编辑态/未绑定点位时的模拟值，预览时优先使用后端实际值 */
+  currentValue: number | string
+  coolValue: number | string
+  heatValue: number | string
+  autoValue: number | string
+  fanValue: number | string
+}
+
+/** 空调风速组件配置 */
+export interface AcFanSpeedComponentConfig extends BaseComponentConfig {
+  iconSize: number
+  iconColor: string
+  activeIconColor: string
+  activeBackgroundColor: string
+  fontColor: string
+  activeFontColor: string
+  borderRadius: number
+  autoValue: number | string
+  highValue: number | string
+  mediumValue: number | string
+  lowValue: number | string
+}
+
 import type { ComponentType } from '../registry'
 
 /** 组件类型到统一配置的映射 */
@@ -214,6 +244,8 @@ export interface ComponentConfigMap {
   slider: SliderComponentConfig
   image: ImageComponentConfig
   button: ButtonComponentConfig
+  acMode: AcModeComponentConfig
+  acFanSpeed: AcFanSpeedComponentConfig
 }
 
 /** 组件统一配置类型 */
