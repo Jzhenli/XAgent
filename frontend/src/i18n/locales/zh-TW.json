@@ -1511,6 +1511,7 @@
     "acModeAutoValue": "自動值",
     "acModeFanValue": "通風值",
     "acFanSpeedConfig": "空調風速設定",
+    "acFanSpeedCurrentValue": "目前值",
     "acFanSpeedAutoValue": "自動值",
     "acFanSpeedHighValue": "高風速值",
     "acFanSpeedMediumValue": "中風速值",

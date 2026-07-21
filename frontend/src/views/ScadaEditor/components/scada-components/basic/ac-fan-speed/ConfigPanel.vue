@@ -2,23 +2,48 @@
   <div class="config-section">
     <div class="section-title">{{ t("componentConfig.acFanSpeedConfig") }}</div>
 
-    <!-- Data binding: fan speed value mapping -->
+    <!-- Data binding: current value & fan speed value mapping -->
     <div class="subsection-title">{{ t("componentConfig.dataSection") }}</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t("componentConfig.acFanSpeedCurrentValue") }}</label>
+        <input
+          type="text"
+          :value="config.currentValue"
+          @change="
+            updateConfig(
+              'currentValue',
+              parseValue(($event.target as HTMLInputElement).value),
+            )
+          "
+        />
+      </div>
+    </div>
     <div class="form-row">
       <div class="form-group">
         <label>{{ t("componentConfig.acFanSpeedAutoValue") }}</label>
         <input
           type="text"
           :value="config.autoValue"
-          @change="updateConfig('autoValue', parseValue(($event.target as HTMLInputElement).value))"
+          @change="
+            updateConfig(
+              'autoValue',
+              parseValue(($event.target as HTMLInputElement).value),
+            )
+          "
         />
       </div>
       <div class="form-group">
-        <label>{{ t("componentConfig.acFanSpeedHighValue") }}</label>
+        <label>{{ t("componentConfig.acFanSpeedLowValue") }}</label>
         <input
           type="text"
-          :value="config.highValue"
-          @change="updateConfig('highValue', parseValue(($event.target as HTMLInputElement).value))"
+          :value="config.lowValue"
+          @change="
+            updateConfig(
+              'lowValue',
+              parseValue(($event.target as HTMLInputElement).value),
+            )
+          "
         />
       </div>
     </div>
@@ -28,15 +53,25 @@
         <input
           type="text"
           :value="config.mediumValue"
-          @change="updateConfig('mediumValue', parseValue(($event.target as HTMLInputElement).value))"
+          @change="
+            updateConfig(
+              'mediumValue',
+              parseValue(($event.target as HTMLInputElement).value),
+            )
+          "
         />
       </div>
       <div class="form-group">
-        <label>{{ t("componentConfig.acFanSpeedLowValue") }}</label>
+        <label>{{ t("componentConfig.acFanSpeedHighValue") }}</label>
         <input
           type="text"
-          :value="config.lowValue"
-          @change="updateConfig('lowValue', parseValue(($event.target as HTMLInputElement).value))"
+          :value="config.highValue"
+          @change="
+            updateConfig(
+              'highValue',
+              parseValue(($event.target as HTMLInputElement).value),
+            )
+          "
         />
       </div>
     </div>
@@ -45,11 +80,13 @@
     <div class="subsection-title">{{ t("componentConfig.styleSection") }}</div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t("componentConfig.iconSize") }}</label>
+        <label>{{ t("componentConfig.fontSize") }}</label>
         <input
           type="number"
-          :value="config.iconSize"
-          @change="updateConfig('iconSize', +($event.target as HTMLInputElement).value)"
+          :value="config.fontSize"
+          @change="
+            updateConfig('fontSize', +($event.target as HTMLInputElement).value)
+          "
         />
       </div>
       <div class="form-group">
@@ -57,25 +94,12 @@
         <input
           type="number"
           :value="config.borderRadius"
-          @change="updateConfig('borderRadius', +($event.target as HTMLInputElement).value)"
-        />
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>{{ t("componentConfig.iconColor") }}</label>
-        <el-color-picker
-          :model-value="config.iconColor"
-          show-alpha
-          @change="updateConfig('iconColor', $event)"
-        />
-      </div>
-      <div class="form-group">
-        <label>{{ t("componentConfig.activeIconColor") }}</label>
-        <el-color-picker
-          :model-value="config.activeIconColor"
-          show-alpha
-          @change="updateConfig('activeIconColor', $event)"
+          @change="
+            updateConfig(
+              'borderRadius',
+              +($event.target as HTMLInputElement).value,
+            )
+          "
         />
       </div>
     </div>

@@ -1539,6 +1539,7 @@
     "acModeAutoValue": "Auto Value",
     "acModeFanValue": "Fan Value",
     "acFanSpeedConfig": "AC Fan Speed Config",
+    "acFanSpeedCurrentValue": "Current Value",
     "acFanSpeedAutoValue": "Auto Value",
     "acFanSpeedHighValue": "High Value",
     "acFanSpeedMediumValue": "Medium Value",

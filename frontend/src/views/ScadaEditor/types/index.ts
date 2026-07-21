@@ -218,13 +218,13 @@ export interface AcModeComponentConfig extends BaseComponentConfig {
 
 /** 空调风速组件配置 */
 export interface AcFanSpeedComponentConfig extends BaseComponentConfig {
-  iconSize: number
-  iconColor: string
-  activeIconColor: string
+  fontSize: number
   activeBackgroundColor: string
   fontColor: string
   activeFontColor: string
   borderRadius: number
+  /** 当前值：编辑态/未绑定点位时的模拟值，预览时优先使用后端实际值 */
+  currentValue: number | string
   autoValue: number | string
   highValue: number | string
   mediumValue: number | string
