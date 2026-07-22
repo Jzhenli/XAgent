@@ -62,6 +62,21 @@
     "lightTheme": "Light Theme",
     "darkTheme": "Dark Theme"
   },
+  "route": {
+    "login": "Login",
+    "preview": "Preview",
+    "scadaPreview": "SCADA Preview",
+    "graphicPreview": "Graphic Preview",
+    "dashboard": "Dashboard",
+    "devices": "Device Management",
+    "channels": "Channel Management",
+    "rules": "Rule Engine",
+    "alerts": "Alert Configuration",
+    "scadaList": "Project Management",
+    "scadaEdit": "SCADA Editor",
+    "graphicEdit": "Graphic Editor",
+    "settings": "System Settings"
+  },
   "login": {
     "title": "Welcome",
     "subtitle": "Smart Building Configuration Studio",

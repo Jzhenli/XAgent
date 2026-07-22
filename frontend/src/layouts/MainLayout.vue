@@ -84,7 +84,7 @@
             class="menu-toggle-btn"
             @click="toggleDrawer"
           />
-          <span class="page-title">{{ route.meta.title }}</span>
+          <span class="page-title">{{ pageTitle }}</span>
         </div>
         <div class="header-right">
           <el-badge :value="alertStore.pendingAlerts" :hidden="alertStore.pendingAlerts === 0">
@@ -246,6 +246,11 @@ const menuItems = computed(() =>
 )
 
 const activeMenu = computed(() => route.path)
+
+const pageTitle = computed(() => {
+  const title = route.meta.title
+  return title ? t(title as string) : ''
+})
 
 const handleMenuSelect = (path: string) => {
   if (route.path !== path) {

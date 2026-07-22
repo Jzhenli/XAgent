@@ -62,6 +62,21 @@
     "lightTheme": "浅色主题",
     "darkTheme": "深色主题"
   },
+  "route": {
+    "login": "登录",
+    "preview": "预览",
+    "scadaPreview": "组态预览",
+    "graphicPreview": "图形预览",
+    "dashboard": "监控面板",
+    "devices": "设备管理",
+    "channels": "通道管理",
+    "rules": "规则引擎",
+    "alerts": "告警配置",
+    "scadaList": "项目管理",
+    "scadaEdit": "组态编辑",
+    "graphicEdit": "图形编辑",
+    "settings": "系统设置"
+  },
   "login": {
     "title": "欢迎登录",
     "subtitle": "智慧建筑组态工作室",

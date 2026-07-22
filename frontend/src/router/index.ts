@@ -40,7 +40,7 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue'),
-    meta: { title: '登录', public: true }
+    meta: { title: 'route.login', public: true }
   },
   {
     path: '/',
@@ -51,19 +51,19 @@ const routes: RouteRecordRaw[] = [
     path: '/scada/vant',
     name: 'VantPreview',
     component: () => import('@/views/vant/vant.vue'),
-    meta: { title: '预览', public: true }
+    meta: { title: 'route.preview', public: true }
   },
   {
     path: '/scada/:id/preview',
     name: 'ScadaPreview',
     component: () => import('@/views/ScadaPreview.vue'),
-    meta: { title: '组态预览', public: true }
+    meta: { title: 'route.scadaPreview', public: true }
   },
   {
     path: '/graphic/:id/preview',
     name: 'GraphicPreview',
     component: () => import('@/views/GraphicPreview/index.vue'),
-    meta: { title: '图形预览', public: true }
+    meta: { title: 'route.graphicPreview', public: true }
   },
   // 主应用路由 - 使用 MainLayout
   {
@@ -74,55 +74,55 @@ const routes: RouteRecordRaw[] = [
         path: '/dashboard',
         name: 'Dashboard',
         component: () => import('@/views/Dashboard.vue'),
-        meta: { title: '监控面板', icon: 'Odometer' }
+        meta: { title: 'route.dashboard', icon: 'Odometer' }
       },
       {
         path: '/devices',
         name: 'Devices',
         component: () => import('@/views/Devices.vue'),
-        meta: { title: '设备管理', icon: 'Monitor' }
+        meta: { title: 'route.devices', icon: 'Monitor' }
       },
       {
         path: '/channels',
         name: 'NorthChannels',
         component: () => import('@/views/NorthChannels.vue'),
-        meta: { title: '通道管理', icon: 'Connection' }
+        meta: { title: 'route.channels', icon: 'Connection' }
       },
       {
         path: '/rules',
         name: 'Rules',
         component: () => import('@/views/Rules.vue'),
-        meta: { title: '规则引擎', icon: 'Connection' }
+        meta: { title: 'route.rules', icon: 'Connection' }
       },
       {
         path: '/alerts',
         name: 'Alerts',
         component: () => import('@/views/Alerts.vue'),
-        meta: { title: '告警配置', icon: 'Bell' }
+        meta: { title: 'route.alerts', icon: 'Bell' }
       },
       {
         path: '/scada',
         name: 'ScadaList',
         component: () => import('@/views/ProjectList/index.vue'),
-        meta: { title: '项目管理', icon: 'Folder' }
+        meta: { title: 'route.scadaList', icon: 'Folder' }
       },
       {
         path: '/scada/:id',
         name: 'ScadaEdit',
         component: () => import('@/views/ScadaEditor/index.vue'),
-        meta: { title: '组态编辑', icon: 'PictureFilled' }
+        meta: { title: 'route.scadaEdit', icon: 'PictureFilled' }
       },
       {
         path: '/graphic/:id',
         name: 'GraphicEdit',
         component: () => import('@/views/Graphic/index.vue'),
-        meta: { title: '图形编辑', icon: 'PictureFilled' }
+        meta: { title: 'route.graphicEdit', icon: 'PictureFilled' }
       },
       {
         path: '/settings',
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),
-        meta: { title: '系统设置', icon: 'Setting' }
+        meta: { title: 'route.settings', icon: 'Setting' }
       }
     ]
   }
