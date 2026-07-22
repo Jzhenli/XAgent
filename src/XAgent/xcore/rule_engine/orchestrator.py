@@ -194,9 +194,16 @@ class RuleEngineOrchestrator(ILifecycleBase):
         try:
             channels = await self._persistence_manager.load_all_channels()
             for channel_id, channel in channels.items():
-                self.router.register_channel(
-                    channel_id, channel.plugin_name, channel.config
-                )
+                # ✅ 直接注册通道，不检查配置完整性
+                # 配置验证由插件内部在deliver/test_connection时进行
+                try:
+                    self.router.register_channel(
+                        channel_id, channel.plugin_name, channel.config
+                    )
+                    logger.debug(f"Restored channel: {channel_id}")
+                except Exception as e:
+                    logger.error(f"Failed to restore channel {channel_id}: {e}")
+                    
             logger.info(f"Restored {len(channels)} channels from persistence")
 
             pipelines = await self._persistence_manager.load_all_pipelines()
@@ -246,6 +253,88 @@ class RuleEngineOrchestrator(ILifecycleBase):
 
         except Exception as e:
             logger.error(f"Failed to restore from persistence: {e}")
+
+        # 初始化默认通知通道
+        await self._initialize_default_channels()
+
+    async def _initialize_default_channels(self) -> None:
+        """初始化默认通知通道
+
+        确保系统首次部署时有可用的通知通道配置
+        """
+        # 如果没有持久化管理器，跳过初始化
+        if not self._persistence_manager:
+            logger.debug("No persistence manager, skip default channel initialization")
+            return
+
+        try:
+            # 从数据库加载已存在的通道
+            channels = await self._persistence_manager.load_all_channels()
+
+            # 如果数据库中没有通道，创建默认配置
+            if not channels:
+                logger.info("No channels found in database, creating default channels...")
+
+                default_channels = [
+                    {
+                        'channel_id': 'system-notification',
+                        'plugin_name': 'system',
+                        'config': {
+                            'retention_days': 30,
+                            'max_notifications': 1000,
+                            'notify_levels': ['critical', 'warning', 'info'],
+                            'sound_enabled': True,
+                            'desktop_enabled': True,
+                            'auto_read_minutes': 0,
+                            'quiet_hours_enabled': False,
+                            'quiet_hours_start': '22:00',
+                            'quiet_hours_end': '08:00',
+                            'enabled': True
+                        }
+                    },
+                    {
+                        'channel_id': 'email-notification',
+                        'plugin_name': 'email',
+                        'config': {
+                            'smtp_host': '',
+                            'smtp_port': 587,
+                            'smtp_user': '',
+                            'smtp_password': '',
+                            'from_address': '',
+                            'use_tls': True,
+                            'enabled': False  # 默认禁用，需要用户配置
+                        }
+                    }
+                ]
+
+                # 创建默认通道
+                for channel_data in default_channels:
+                    try:
+                        # ✅ 直接持久化和注册，不检查配置完整性
+                        from .persistence import ChannelRecord
+                        await self._persistence_manager.save_channel(ChannelRecord(
+                            id=channel_data['channel_id'],
+                            plugin_name=channel_data['plugin_name'],
+                            config=channel_data['config']
+                        ))
+
+                        # 直接注册到路由器
+                        self.router.register_channel(
+                            channel_id=channel_data['channel_id'],
+                            plugin_name=channel_data['plugin_name'],
+                            config=channel_data['config']
+                        )
+                        logger.info(f"Created default channel: {channel_data['channel_id']}")
+
+                    except Exception as e:
+                        logger.error(f"Error creating default channel {channel_data['channel_id']}: {e}")
+
+                logger.info("Default channels initialization completed")
+            else:
+                logger.info(f"Found {len(channels)} existing channels in database, skip default initialization")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize default channels: {e}")
 
     def _parse_pipeline_location(self, location: str):
         """解析管道位置"""
@@ -445,6 +534,7 @@ class RuleEngineOrchestrator(ILifecycleBase):
             await self._publish_evaluation_event(rule_id, result)
 
             if result.triggered:
+                logger.info(f"Rule triggered: {rule_id}")
                 await self._handle_triggered_rule(
                     rule_id, rule_config, context, result
                 )
@@ -499,9 +589,11 @@ class RuleEngineOrchestrator(ILifecycleBase):
         )
 
         channel_ids = self._rule_channel_map.get(rule_id, [])
+
         if channel_ids:
             try:
                 results = await self.router.deliver(channel_ids, notification)
+
                 success = all(r.success for r in results.values())
 
                 if success and self._event_bus and HAS_CORE:
@@ -985,6 +1077,57 @@ class RuleEngineOrchestrator(ILifecycleBase):
                 return False
 
         return await self.router.unregister_channel(channel_id)
+
+    async def update_delivery_channel_async(
+        self,
+        channel_id: str,
+        plugin_name: str,
+        config: Dict[str, Any]
+    ) -> bool:
+        """异步更新交付通道（简化版）
+
+        ✅ 架构简化：直接保存并注册，配置验证由插件内部处理
+
+        Args:
+            channel_id: 通道ID
+            plugin_name: 插件名称
+            config: 插件配置
+
+        Returns:
+            bool: 是否成功
+        """
+        try:
+            # 1. 保存配置到数据库
+            if self._persistence_manager:
+                from .persistence import ChannelRecord
+                channel_record = ChannelRecord(
+                    id=channel_id,
+                    plugin_name=plugin_name,
+                    config=config
+                )
+                success = await self._persistence_manager.save_channel(channel_record)
+                if not success:
+                    logger.error(f"Failed to save channel {channel_id} to persistence")
+                    return False
+
+            # 2. 注册到router（配置验证由插件内部处理）
+            try:
+                # 先移除旧的（如果存在）
+                if channel_id in self.router._delivery_plugins:
+                    await self.router.unregister_channel(channel_id)
+
+                # 注册新的
+                self.router.register_channel(channel_id, plugin_name, config)
+                logger.info(f"Channel {channel_id} updated and registered")
+            except Exception as e:
+                logger.error(f"Failed to register channel {channel_id}: {e}")
+                return False
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Update delivery channel failed: {e}")
+            return False
 
     def bind_rule_channels(
         self, rule_id: str, channel_ids: List[str]

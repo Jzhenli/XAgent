@@ -151,6 +151,7 @@ class DeliveryRouter:
                     )
                 )
             else:
+                logger.warning(f"Channel '{channel_id}' not found")
                 results[channel_id] = DeliveryResult(
                     status=DeliveryStatus.FAILED,
                     success=False,

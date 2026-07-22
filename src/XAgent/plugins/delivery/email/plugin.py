@@ -6,9 +6,10 @@
 import asyncio
 import logging
 import smtplib
+from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from XAgent.xcore.rule_engine import (
     DeliveryPlugin,
@@ -23,13 +24,16 @@ logger = logging.getLogger(__name__)
 
 class EmailDeliveryPlugin(DeliveryPlugin):
     """邮件交付插件
-    
+
     通过 SMTP 发送邮件通知。
     """
-    
+
     __plugin_name__ = "email"
     __plugin_type__ = "rule_engine.delivery"
-    
+
+    # SMTP超时时间（秒）
+    SMTP_TIMEOUT = 30
+
     def __init__(self):
         super().__init__()
         self._smtp_host: str = ""
@@ -38,6 +42,8 @@ class EmailDeliveryPlugin(DeliveryPlugin):
         self._smtp_password: str = ""
         self._from_address: str = ""
         self._use_tls: bool = True
+        self._use_ssl: bool = False
+        self._default_recipients: List[str] = []  # 默认收件人列表
     
     @classmethod
     def plugin_info(cls) -> PluginMetadata:
@@ -81,16 +87,36 @@ class EmailDeliveryPlugin(DeliveryPlugin):
                     "type": "string",
                     "title": "发件人地址"
                 },
+                "recipients": {
+                    "type": "array",
+                    "title": "收件人列表",
+                    "description": "默认邮件收件人地址列表",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "use_tls": {
                     "type": "boolean",
-                    "title": "使用 TLS",
-                    "default": True
+                    "title": "使用 STARTTLS",
+                    "default": True,
+                    "description": "使用STARTTLS加密（通常用于端口587）"
+                },
+                "use_ssl": {
+                    "type": "boolean",
+                    "title": "使用 SMTP_SSL",
+                    "default": False,
+                    "description": "使用SMTP_SSL加密（通常用于端口465）"
                 }
             },
             "required": ["smtp_host", "smtp_user", "smtp_password", "from_address"]
         }
     
     def initialize(self, config: Dict[str, Any]) -> None:
+        """初始化邮件插件（延迟验证）
+
+        允许不完整配置的初始化，实际验证在deliver/test_connection时进行。
+        这样用户可以先保存配置，后续完善后再启用。
+        """
         self._config = config
         self._smtp_host = config.get("smtp_host", "")
         self._smtp_port = config.get("smtp_port", 587)
@@ -98,40 +124,105 @@ class EmailDeliveryPlugin(DeliveryPlugin):
         self._smtp_password = config.get("smtp_password", "")
         self._from_address = config.get("from_address", "")
         self._use_tls = config.get("use_tls", True)
-        
-        if not all([self._smtp_host, self._smtp_user, self._smtp_password]):
-            raise ValueError("SMTP configuration is incomplete")
-        
-        logger.info(f"Email delivery initialized: {self._smtp_host}:{self._smtp_port}")
+        self._use_ssl = config.get("use_ssl", False)
+        self._default_recipients = config.get("recipients", [])
+
+        # ✅ 不在初始化时验证配置，允许不完整配置
+        # 实际验证在 deliver() 和 test_connection() 时进行
+
+        logger.info(
+            f"Email delivery plugin initialized: {self._smtp_host or '<not configured>'}:{self._smtp_port}, "
+            f"SSL={self._use_ssl}, TLS={self._use_tls}"
+        )
     
+    def _validate_config(self) -> Optional[str]:
+        """验证邮件配置完整性
+
+        Returns:
+            Optional[str]: 配置错误信息，如果配置完整则返回None
+        """
+        errors = []
+        
+        if not self._smtp_host or not self._smtp_host.strip():
+            errors.append("smtp_host is required")
+        
+        if not self._smtp_user or not self._smtp_user.strip():
+            errors.append("smtp_user is required")
+        
+        if not self._smtp_password or not self._smtp_password.strip():
+            errors.append("smtp_password is required")
+        
+        if not self._from_address or not self._from_address.strip():
+            errors.append("from_address is required")
+        
+        if errors:
+            return "Email configuration incomplete: " + ", ".join(errors)
+        
+        return None
     async def deliver(self, notification: Notification) -> DeliveryResult:
+        """发送邮件通知
+
+        Args:
+            notification: 通知对象
+
+        Returns:
+            DeliveryResult: 交付结果
+        """
+        logger.debug(
+            f"Email deliver called - notification_id={notification.notification_id}, "
+            f"level={notification.level}"
+        )
+        
+        # ✅ 延迟验证：在实际发送前检查配置完整性
+        config_error = self._validate_config()
+        if config_error:
+            return DeliveryResult(
+                status=DeliveryStatus.FAILED,
+                success=False,
+                error=config_error
+            )
+        
         try:
-            msg = self._build_message(notification)
-            
+            # 使用通知中的收件人，如果没有则使用配置的默认收件人
             recipients = notification.recipients or []
             if not recipients:
+                recipients = self._default_recipients
+                if recipients:
+                    logger.debug(f"Using default recipients: {recipients}")
+            
+            if not recipients:
+                logger.warning(f"No recipients for notification {notification.notification_id}")
                 return DeliveryResult(
                     status=DeliveryStatus.FAILED,
                     success=False,
                     error="No recipients specified"
                 )
             
-            await asyncio.to_thread(
-                self._send_email, 
-                msg, 
-                recipients
+            # 构建邮件消息
+            msg = self._build_message(notification, recipients)
+            logger.debug(
+                f"Email message built - from={self._from_address}, "
+                f"to={recipients}, subject={msg['Subject']}"
             )
-            
-            logger.info(f"Email sent: {notification.notification_id}")
-            
+
+            # 发送邮件
+            logger.debug(f"Sending email via SMTP - host={self._smtp_host}, port={self._smtp_port}")
+            await asyncio.to_thread(self._send_email, msg, recipients)
+
+            logger.info(f"Email sent successfully to {len(recipients)} recipients")
+
             return DeliveryResult(
                 status=DeliveryStatus.SUCCESS,
                 success=True,
                 message=f"Email sent to {len(recipients)} recipients"
             )
-            
+
         except Exception as e:
-            logger.error(f"Email delivery failed: {e}")
+            logger.error(
+                f"Email delivery failed - notification_id={notification.notification_id}, "
+                f"error={str(e)}",
+                exc_info=True
+            )
             return DeliveryResult(
                 status=DeliveryStatus.FAILED,
                 success=False,
@@ -139,19 +230,54 @@ class EmailDeliveryPlugin(DeliveryPlugin):
             )
     
     async def test_connection(self) -> bool:
+        """测试邮件发送功能
+        
+        发送一封测试邮件到发件人地址，验证邮件发送是否正常。
+        """
+        # ✅ 延迟验证：检查配置完整性
+        config_error = self._validate_config()
+        if config_error:
+            logger.error(f"SMTP configuration incomplete: {config_error}")
+            return False
+        
         try:
-            await asyncio.to_thread(self._test_smtp_connection)
-            logger.info("SMTP connection test passed")
+            # 构建测试邮件
+            test_notification = Notification(
+                notification_id="test-email",
+                rule_id="test",
+                rule_name="邮件通知测试",
+                title="邮件通知测试",
+                message="这是一封测试邮件，用于验证邮件通知功能是否正常工作。",
+                level="info",
+                recipients=[self._from_address],  # 发送给发件人自己
+            )
+            
+            msg = self._build_message(test_notification)
+            
+            await asyncio.to_thread(
+                self._send_email,
+                msg,
+                [self._from_address]
+            )
+            
+            logger.info(f"Test email sent successfully to {self._from_address}")
             return True
         except Exception as e:
             logger.error(f"SMTP connection test failed: {e}")
             return False
     
-    def _build_message(self, notification: Notification) -> MIMEMultipart:
-        """构建邮件消息"""
+    def _build_message(self, notification: Notification, recipients: List[str] = None) -> MIMEMultipart:
+        """构建邮件消息
+        
+        Args:
+            notification: 通知对象
+            recipients: 收件人列表（可选，默认使用notification中的收件人）
+        """
         msg = MIMEMultipart("alternative")
         msg["From"] = self._from_address
-        msg["To"] = ", ".join(notification.recipients or [])
+        # 优先使用传入的recipients，否则使用notification中的
+        to_list = recipients or notification.recipients or []
+        msg["To"] = ", ".join(to_list)
         msg["Subject"] = f"[{notification.level.upper()}] {notification.title}"
         
         text_content = self._build_text_content(notification)
@@ -164,6 +290,14 @@ class EmailDeliveryPlugin(DeliveryPlugin):
     
     def _build_text_content(self, notification: Notification) -> str:
         """构建纯文本内容"""
+        # 格式化触发时间
+        triggered_at_str = ""
+        if notification.triggered_at:
+            try:
+                triggered_at_str = datetime.fromtimestamp(notification.triggered_at).strftime("%Y-%m-%d %H:%M:%S")
+            except (TypeError, ValueError):
+                triggered_at_str = str(notification.triggered_at)
+
         lines = [
             "告警通知",
             "=" * 40,
@@ -177,7 +311,7 @@ class EmailDeliveryPlugin(DeliveryPlugin):
             "",
             f"消息: {notification.message}",
             "",
-            f"触发时间: {notification.triggered_at}",
+            f"触发时间: {triggered_at_str}",
         ]
         return "\n".join(lines)
     
@@ -190,7 +324,15 @@ class EmailDeliveryPlugin(DeliveryPlugin):
             "debug": "#6b7280"
         }
         color = level_colors.get(notification.level, "#6b7280")
-        
+
+        # 格式化触发时间
+        triggered_at_str = ""
+        if notification.triggered_at:
+            try:
+                triggered_at_str = datetime.fromtimestamp(notification.triggered_at).strftime("%Y-%m-%d %H:%M:%S")
+            except (TypeError, ValueError):
+                triggered_at_str = str(notification.triggered_at)
+
         return f"""
         <html>
         <body style="font-family: Arial, sans-serif;">
@@ -204,6 +346,7 @@ class EmailDeliveryPlugin(DeliveryPlugin):
                     <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>点位</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">{notification.point_name}</td></tr>
                     <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>当前值</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">{notification.current_value}</td></tr>
                     <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>阈值</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">{notification.threshold}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>触发时间</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">{triggered_at_str}</td></tr>
                 </table>
                 <p style="margin-top: 16px;">{notification.message}</p>
             </div>
@@ -213,18 +356,29 @@ class EmailDeliveryPlugin(DeliveryPlugin):
     
     def _send_email(self, msg: MIMEMultipart, recipients: List[str]) -> None:
         """发送邮件"""
-        with smtplib.SMTP(self._smtp_host, self._smtp_port) as server:
-            if self._use_tls:
-                server.starttls()
-            server.login(self._smtp_user, self._smtp_password)
-            server.sendmail(self._from_address, recipients, msg.as_string())
-    
+        if self._use_ssl:
+            # SMTP_SSL（端口465）
+            with smtplib.SMTP_SSL(self._smtp_host, self._smtp_port, timeout=self.SMTP_TIMEOUT) as server:
+                server.login(self._smtp_user, self._smtp_password)
+                server.sendmail(self._from_address, recipients, msg.as_string())
+        else:
+            # SMTP + STARTTLS（端口587）
+            with smtplib.SMTP(self._smtp_host, self._smtp_port, timeout=self.SMTP_TIMEOUT) as server:
+                if self._use_tls:
+                    server.starttls()
+                server.login(self._smtp_user, self._smtp_password)
+                server.sendmail(self._from_address, recipients, msg.as_string())
+
     def _test_smtp_connection(self) -> None:
         """测试 SMTP 连接"""
-        with smtplib.SMTP(self._smtp_host, self._smtp_port) as server:
-            if self._use_tls:
-                server.starttls()
-            server.login(self._smtp_user, self._smtp_password)
+        if self._use_ssl:
+            with smtplib.SMTP_SSL(self._smtp_host, self._smtp_port, timeout=self.SMTP_TIMEOUT) as server:
+                server.login(self._smtp_user, self._smtp_password)
+        else:
+            with smtplib.SMTP(self._smtp_host, self._smtp_port, timeout=self.SMTP_TIMEOUT) as server:
+                if self._use_tls:
+                    server.starttls()
+                server.login(self._smtp_user, self._smtp_password)
     
     async def shutdown(self) -> None:
         """关闭插件"""

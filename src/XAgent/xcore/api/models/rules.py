@@ -109,6 +109,22 @@ class ChannelCreateRequest(BaseModel):
     config: Dict[str, Any] = Field(default_factory=dict, description="Channel configuration")
 
 
+class ChannelUpdateRequest(BaseModel):
+    plugin_name: str = Field(..., description="Delivery plugin name")
+    config: Dict[str, Any] = Field(..., description="Channel configuration")
+
+
+class ChannelTestRequest(BaseModel):
+    """Channel test request (optional, for testing unregistered channels)"""
+    plugin_name: Optional[str] = Field(None, description="Delivery plugin name (optional for registered channels)")
+
+
+class ChannelTestResponse(BaseModel):
+    success: bool = Field(..., description="Whether test passed")
+    message: str = Field(..., description="Test result message")
+    channel_id: str = Field(..., description="Channel ID")
+
+
 class ChannelResponse(BaseModel):
     channel_id: str
     plugin_name: str
