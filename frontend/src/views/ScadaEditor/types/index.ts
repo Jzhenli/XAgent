@@ -44,6 +44,66 @@ export interface TextComponentConfig extends BaseComponentConfig {
   textAlign: 'left' | 'center' | 'right'
 }
 
+/** 数值组件配置 */
+export interface NumberComponentConfig extends BaseComponentConfig {
+  showTitle: boolean
+  title: string
+  titleFontSize: number
+  titleFontColor: string
+  decimalPlaces: number
+  unit: string
+  unitFontSize: number
+  unitFontColor: string
+  fontSize: number
+  fontColor: string
+  textAlign: 'left' | 'center' | 'right'
+}
+
+/** 枚举项 */
+export interface EnumValueItem {
+  text: string
+  value: number | string
+}
+
+/** 枚举值组件配置 */
+export interface EnumValueComponentConfig extends BaseComponentConfig {
+  value: number | string
+  enumItems: EnumValueItem[]
+  fontSize: number
+  fontColor: string
+}
+
+/** 写值输入框组件配置 */
+export interface WriteValueComponentConfig extends BaseComponentConfig {
+  value: number | string
+  confirmColor?: string
+  cancelColor?: string
+  /** 是否显示输入框模式 */
+  showInput?: boolean
+  /** 输入框边框颜色 */
+  inputBorderColor?: string
+}
+
+/** 矩形组件配置 */
+export interface RectangleComponentConfig extends BaseComponentConfig {
+  /** 背景模糊半径（px） */
+  blur?: number
+}
+
+/** 圆形组件配置 */
+export interface CircleComponentConfig extends Omit<BaseComponentConfig, 'borderRadius'> {
+  /** 背景模糊半径（px） */
+  blur?: number
+}
+
+/** 图标组件配置 */
+export interface IconComponentConfig extends Omit<BaseComponentConfig, 'borderRadius' | 'backgroundColor' | 'borderColor' | 'borderWidth' | 'fontSize' | 'fontColor' | 'opacity'> {
+  /** 图标名称（对应 xicon_<name> 的基名） */
+  iconName: string
+  /** 图标颜色 */
+  iconColor: string
+}
+
 /** 仪表盘组件配置 */
 export interface GaugeComponentConfig extends BaseComponentConfig {
   min: number
@@ -116,6 +176,32 @@ export interface LineChartComponentConfig
   smooth?: boolean
 }
 
+/** 柱状图组件配置 */
+export interface BarChartComponentConfig extends BaseComponentConfig {
+  /** 时间范围 */
+  timeRange: '1h' | '6h' | '24h' | '7d'
+  /** 是否显示 X 轴标签 */
+  showXAxisLabel?: boolean
+  /** 是否显示 Y 轴标签 */
+  showYAxisLabel?: boolean
+  /** 是否显示 Y 轴线 */
+  showYAxisLine?: boolean
+  /** X 轴标签颜色 */
+  xAxisLabelColor?: string
+  /** X 轴标签字号 */
+  xAxisLabelFontSize?: number
+  /** Y 轴标签颜色 */
+  yAxisLabelColor?: string
+  /** Y 轴标签字号 */
+  yAxisLabelFontSize?: number
+  /** 柱体颜色 */
+  barColor?: string
+  /** 柱体宽度（像素） */
+  barWidth?: number
+  /** 柱体圆角 */
+  barBorderRadius?: number | number[]
+}
+
 /** 折线图数据点 */
 export interface LineChartDataPoint {
   time: string
@@ -175,19 +261,57 @@ export interface ButtonComponentConfig extends BaseComponentConfig {
   borderStyle?: string
 }
 
+/** 空调模式组件配置 */
+export interface AcModeComponentConfig extends BaseComponentConfig {
+  iconSize: number
+  iconColor: string
+  activeIconColor: string
+  fontColor: string
+  activeFontColor: string
+  /** 当前值：编辑态/未绑定点位时的模拟值，预览时优先使用后端实际值 */
+  currentValue: number | string
+  coolValue: number | string
+  heatValue: number | string
+  autoValue: number | string
+  fanValue: number | string
+}
+
+/** 空调风速组件配置 */
+export interface AcFanSpeedComponentConfig extends BaseComponentConfig {
+  fontSize: number
+  activeBackgroundColor: string
+  fontColor: string
+  activeFontColor: string
+  borderRadius: number
+  /** 当前值：编辑态/未绑定点位时的模拟值，预览时优先使用后端实际值 */
+  currentValue: number | string
+  autoValue: number | string
+  highValue: number | string
+  mediumValue: number | string
+  lowValue: number | string
+}
+
 import type { ComponentType } from '../registry'
 
 /** 组件类型到统一配置的映射 */
 export interface ComponentConfigMap {
   text: TextComponentConfig
+  number: NumberComponentConfig
+  'enum-value': EnumValueComponentConfig
+  'write-value': WriteValueComponentConfig
+  rectangle: RectangleComponentConfig
+  circle: CircleComponentConfig
+  icon: IconComponentConfig
   gauge: GaugeComponentConfig
   'chart-line': LineChartComponentConfig
-  'chart-bar': ChartComponentConfig
+  'chart-bar': BarChartComponentConfig
   indicator: IndicatorComponentConfig
   switch: SwitchComponentConfig
   slider: SliderComponentConfig
   image: ImageComponentConfig
   button: ButtonComponentConfig
+  acMode: AcModeComponentConfig
+  acFanSpeed: AcFanSpeedComponentConfig
 }
 
 /** 组件统一配置类型 */

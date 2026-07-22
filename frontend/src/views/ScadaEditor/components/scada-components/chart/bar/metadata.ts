@@ -1,16 +1,23 @@
-import type { ScadaComponentMeta, ChartComponentConfig } from '../../../../types'
+import type { ScadaComponentMeta, BarChartComponentConfig } from '../../../../types'
 import ScadaBarChart from './index.vue'
 import BarChartConfigPanel from './ConfigPanel.vue'
 
-const defaultConfig: ChartComponentConfig = {
+const defaultConfig: BarChartComponentConfig = {
   width: 300,
   height: 200,
-  backgroundColor: '#ffffff',
-  borderRadius: 8,
-  timeRange: '24h',
-  lineColor: '#27ae60',
-  areaFill: false,
-  showLegend: true
+  backgroundColor: '#ffffff00',
+  value: 50,
+  timeRange: '1h',
+  showXAxisLabel: false,
+  showYAxisLabel: false,
+  showYAxisLine: true,
+  xAxisLabelColor: '#666666',
+  xAxisLabelFontSize: 12,
+  yAxisLabelColor: '#666666',
+  yAxisLabelFontSize: 12,
+  barColor: '#27ae60',
+  barWidth: 20,
+  barBorderRadius: 4,
 }
 
 export const chartBarMeta: ScadaComponentMeta = {
@@ -21,9 +28,9 @@ export const chartBarMeta: ScadaComponentMeta = {
     name: 'scadaComponentNames.chartBar',
     icon: '📊',
     category: 'scadaComponentCategories.chart',
-    defaultConfig
+    defaultConfig,
   },
   configTypes: {
-    ChartComponentConfig: null as unknown as ChartComponentConfig
-  }
+    BarChartComponentConfig: null as unknown as BarChartComponentConfig,
+  },
 }

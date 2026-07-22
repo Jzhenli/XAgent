@@ -52,7 +52,7 @@
         </div>
       </div>
 
-      <component v-if="componentConfigPanel && component" :is="componentConfigPanel" :component="component" />
+      <component v-if="componentConfigPanel && component" :is="componentConfigPanel" :key="component.id" :component="component" />
     </div>
 
     <div v-else-if="currentPanel" class="panel-body">
