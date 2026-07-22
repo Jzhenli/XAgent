@@ -15,6 +15,26 @@ export interface ChannelCreateRequest {
   config: Record<string, any>
 }
 
+export interface ChannelUpdateRequest {
+  plugin_name: string
+  config: Record<string, any>
+}
+
+export interface ChannelTestResponse {
+  success: boolean
+  message: string
+  channel_id: string
+}
+
+export interface ChannelListResponse {
+  count: number
+  channels: Array<{
+    channel_id: string
+    plugin_name: string
+    config: Record<string, any>
+  }>
+}
+
 export const ruleApi = {
   async list(): Promise<RuleListResponse> {
     const res = await api.get('/api/rules')
@@ -48,6 +68,21 @@ export const ruleApi = {
 
   async createChannel(data: ChannelCreateRequest): Promise<any> {
     const res = await api.post('/api/rules/channels', data)
+    return res.data
+  },
+
+  async listChannels(): Promise<ChannelListResponse> {
+    const res = await api.get('/api/rules/channels')
+    return res.data
+  },
+
+  async updateChannel(channelId: string, data: ChannelUpdateRequest): Promise<any> {
+    const res = await api.put(`/api/rules/channels/${channelId}`, data)
+    return res.data
+  },
+
+  async testChannel(channelId: string, pluginName?: string): Promise<ChannelTestResponse> {
+    const res = await api.post(`/api/rules/channels/${channelId}/test`, pluginName ? { plugin_name: pluginName } : {})
     return res.data
   },
 

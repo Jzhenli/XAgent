@@ -58,46 +58,8 @@ export const useAlertStore = defineStore('alerts', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const channels = ref<NotificationChannel[]>([
-    {
-      id: 'channel-001',
-      name: '系统通知',
-      type: 'system',
-      enabled: true,
-      config: {
-        retentionDays: 30,
-        maxNotifications: 1000,
-        soundEnabled: true,
-        desktopEnabled: true,
-        autoReadMinutes: 0,
-        quietHoursEnabled: false,
-        quietHoursStart: '22:00',
-        quietHoursEnd: '08:00',
-        notifyLevels: ['critical', 'warning', 'info']
-      } as SystemNotificationConfig
-    },
-    {
-      id: 'channel-002',
-      name: '邮件通知',
-      type: 'email',
-      enabled: true,
-      config: {
-        smtpHost: 'smtp.example.com',
-        smtpPort: 587,
-        fromAddress: 'alert@xagent.com'
-      }
-    },
-    {
-      id: 'channel-003',
-      name: 'Webhook通知',
-      type: 'webhook',
-      enabled: false,
-      config: {
-        url: 'https://hooks.example.com/alert',
-        method: 'POST'
-      }
-    }
-  ])
+  // 动态获取通知渠道（从后端API）
+  const channels = ref<NotificationChannel[]>([])
 
   const pendingAlerts = computed(() =>
     alerts.value.filter(a => a.status === 'new').length
@@ -119,6 +81,181 @@ export const useAlertStore = defineStore('alerts', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  // ✨ 新增：获取通道列表
+  async function fetchChannels() {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await ruleApi.listChannels()
+      channels.value = res.channels.map(mapChannelFromApi)
+    } catch (e: any) {
+      error.value = e.message || '获取通知通道失败'
+      console.error('Failed to fetch channels:', e)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ✨ 新增：映射API响应到前端模型
+  function mapChannelFromApi(channel: any): NotificationChannel {
+    const config = channel.config || {}
+    const pluginName = channel.plugin_name
+
+    // 统一的字段映射函数
+    const mapFields = (fieldMap: Record<string, { from: string[], default: any }>) => {
+      const result: Record<string, any> = {}
+      for (const [toField, { from, default: defaultValue }] of Object.entries(fieldMap)) {
+        // 尝试所有可能的字段名
+        for (const fromField of from) {
+          if (config[fromField] !== undefined) {
+            result[toField] = config[fromField]
+            break
+          }
+        }
+        // 如果没有找到，使用默认值
+        if (result[toField] === undefined) {
+          result[toField] = defaultValue
+        }
+      }
+      return result
+    }
+
+    // System通知通道字段映射
+    if (pluginName === 'system') {
+      const fieldMap = {
+        retentionDays: { from: ['retention_days', 'retentionDays'], default: 30 },
+        maxNotifications: { from: ['max_notifications', 'maxNotifications'], default: 1000 },
+        notifyLevels: { from: ['notify_levels', 'notifyLevels'], default: ['critical', 'warning', 'info'] },
+        soundEnabled: { from: ['sound_enabled', 'soundEnabled'], default: true },
+        desktopEnabled: { from: ['desktop_enabled', 'desktopEnabled'], default: true },
+        autoReadMinutes: { from: ['auto_read_minutes', 'autoReadMinutes'], default: 0 },
+        quietHoursEnabled: { from: ['quiet_hours_enabled', 'quietHoursEnabled'], default: false },
+        quietHoursStart: { from: ['quiet_hours_start', 'quietHoursStart'], default: '22:00' },
+        quietHoursEnd: { from: ['quiet_hours_end', 'quietHoursEnd'], default: '08:00' },
+      }
+      return {
+        id: channel.channel_id,
+        name: getChannelName(pluginName),
+        type: pluginName,
+        enabled: config.enabled ?? true,
+        config: mapFields(fieldMap) as SystemNotificationConfig
+      }
+    }
+
+    // Email通知通道字段映射
+    if (pluginName === 'email') {
+      const fieldMap = {
+        smtpHost: { from: ['smtp_host', 'smtpHost'], default: '' },
+        smtpPort: { from: ['smtp_port', 'smtpPort'], default: 587 },
+        username: { from: ['smtp_user', 'username', 'smtp_username'], default: '' },
+        password: { from: ['smtp_password', 'password', 'smtp_password'], default: '' },
+        fromAddress: { from: ['from_address', 'fromAddress'], default: '' },
+        useTls: { from: ['use_tls', 'useTls'], default: true },
+        useSsl: { from: ['use_ssl', 'useSsl'], default: false },
+        recipients: { from: ['recipients'], default: [] },
+      }
+      return {
+        id: channel.channel_id,
+        name: getChannelName(pluginName),
+        type: pluginName,
+        enabled: config.enabled ?? true,
+        config: mapFields(fieldMap)
+      }
+    }
+
+    // Webhook通知通道字段映射
+    if (pluginName === 'webhook') {
+      const fieldMap = {
+        url: { from: ['url'], default: '' },
+        method: { from: ['method'], default: 'POST' },
+        headers: { from: ['headers'], default: '' },
+        secret: { from: ['secret'], default: '' },
+      }
+      return {
+        id: channel.channel_id,
+        name: getChannelName(pluginName),
+        type: pluginName,
+        enabled: config.enabled ?? true,
+        config: mapFields(fieldMap)
+      }
+    }
+
+    // 其他类型保持原样
+    return {
+      id: channel.channel_id,
+      name: getChannelName(pluginName),
+      type: pluginName,
+      enabled: config.enabled ?? true,
+      config: config
+    }
+  }
+
+  // ✨ 新增：获取通道显示名称
+  function getChannelName(pluginName: string): string {
+    const names: Record<string, string> = {
+      'system': '系统通知',
+      'email': '邮件通知',
+      'webhook': 'Webhook通知'
+    }
+    return names[pluginName] || pluginName
+  }
+
+  // ✨ 新增：将前端驼峰配置转换为后端下划线格式
+  function mapConfigToApi(pluginName: string, config: Record<string, any>, enabled: boolean = true): Record<string, any> {
+    // 统一的字段反向映射函数（前端驼峰 -> 后端下划线）
+    const mapFieldsToBackend = (fieldMap: Record<string, string>) => {
+      const result: Record<string, any> = {}
+      for (const [frontendField, backendField] of Object.entries(fieldMap)) {
+        if (config[frontendField] !== undefined) {
+          result[backendField] = config[frontendField]
+        }
+      }
+      result.enabled = enabled
+      return result
+    }
+
+    if (pluginName === 'email') {
+      const fieldMap = {
+        smtpHost: 'smtp_host',
+        smtpPort: 'smtp_port',
+        username: 'smtp_user',
+        password: 'smtp_password',
+        fromAddress: 'from_address',
+        useTls: 'use_tls',
+        useSsl: 'use_ssl',
+        recipients: 'recipients',
+      }
+      return mapFieldsToBackend(fieldMap)
+    }
+
+    if (pluginName === 'webhook') {
+      const fieldMap = {
+        url: 'url',
+        method: 'method',
+        headers: 'headers',
+        secret: 'secret',
+      }
+      return mapFieldsToBackend(fieldMap)
+    }
+
+    if (pluginName === 'system') {
+      const fieldMap = {
+        retentionDays: 'retention_days',
+        maxNotifications: 'max_notifications',
+        notifyLevels: 'notify_levels',
+        soundEnabled: 'sound_enabled',
+        desktopEnabled: 'desktop_enabled',
+        autoReadMinutes: 'auto_read_minutes',
+        quietHoursEnabled: 'quiet_hours_enabled',
+        quietHoursStart: 'quiet_hours_start',
+        quietHoursEnd: 'quiet_hours_end',
+      }
+      return mapFieldsToBackend(fieldMap)
+    }
+
+    return { ...config, enabled }
   }
 
   async function acknowledgeAlert(id: string) {
@@ -170,17 +307,85 @@ export const useAlertStore = defineStore('alerts', () => {
     }
   }
 
-  const toggleChannel = (id: string) => {
-    const channel = channels.value.find(c => c.id === id)
-    if (channel) {
-      channel.enabled = !channel.enabled
+  // ✨ 改造：更新通道配置（调用后端API + 错误恢复）
+  async function updateChannelConfig(channelId: string, config: Record<string, any>) {
+    const channel = channels.value.find(c => c.id === channelId)
+    if (!channel) return
+
+    // 备份旧配置（用于失败时恢复）
+    const oldConfig = { ...channel.config }
+    const oldEnabled = channel.enabled
+
+    loading.value = true
+    error.value = null
+    try {
+      // 将前端驼峰配置转换为后端下划线格式
+      const apiConfig = mapConfigToApi(channel.type, config, config.enabled ?? channel.enabled)
+
+      await ruleApi.updateChannel(channelId, {
+        plugin_name: channel.type,
+        config: apiConfig
+      })
+
+      // 更新本地状态
+      channel.config = { ...channel.config, ...config }
+      // 如果config中有enabled，更新顶层的enabled
+      if (config.enabled !== undefined) {
+        channel.enabled = config.enabled
+      }
+    } catch (e: any) {
+      error.value = e.message || '保存配置失败'
+
+      // 恢复旧配置
+      channel.config = oldConfig
+      channel.enabled = oldEnabled
+
+      throw e
+    } finally {
+      loading.value = false
     }
   }
 
-  const updateChannelConfig = (id: string, config: Record<string, any>) => {
-    const channel = channels.value.find(c => c.id === id)
-    if (channel) {
-      channel.config = { ...channel.config, ...config }
+  // ✨ 新增：测试通道连接
+  async function testChannel(channelId: string): Promise<boolean> {
+    try {
+      const channel = channels.value.find(c => c.id === channelId)
+      if (!channel) {
+        console.error('Channel not found')
+        return false
+      }
+
+      // 如果channel未启用，传入plugin_name参数测试
+      const res = await ruleApi.testChannel(
+        channelId,
+        channel.enabled ? undefined : channel.type
+      )
+      return res.success
+    } catch (e: any) {
+      console.error('Test channel failed:', e)
+      return false
+    }
+  }
+
+  // ✨ 改造：切换通道启用状态（调用后端API）
+  async function toggleChannel(channelId: string) {
+    const channel = channels.value.find(c => c.id === channelId)
+    if (!channel) return
+
+    const oldEnabled = channel.enabled
+    const newEnabled = !oldEnabled
+
+    try {
+      await updateChannelConfig(channelId, {
+        ...channel.config,
+        enabled: newEnabled
+      })
+
+      channel.enabled = newEnabled
+    } catch (e: any) {
+      // 失败时恢复原状态
+      console.error('Toggle channel failed:', e)
+      throw e
     }
   }
 
@@ -192,12 +397,14 @@ export const useAlertStore = defineStore('alerts', () => {
     pendingAlerts,
     criticalAlerts,
     fetchAlerts,
+    fetchChannels,         // ✨ 新增导出
     acknowledgeAlert,
     resolveAlert,
     ignoreAlert,
     clearResolvedAlerts,
     toggleChannel,
-    updateChannelConfig
+    updateChannelConfig,
+    testChannel            // ✨ 新增导出
   }
 }, {
   persist: {

@@ -200,15 +200,8 @@ export function validateGraph(nodes: RuleNode[], edges: RuleEdge[]): {
     if (!notif?.channel_type) {
       errors.push(`通知节点 "${node.id}" 缺少通知渠道`)
     }
-    if (notif?.channel_type !== 'system' && !notif?.recipients) {
-      errors.push(`通知节点 "${node.id}" 缺少收件人`)
-    }
-    if (notif?.channel_type === 'email' && !notif.smtp_host) {
-      errors.push(`通知节点 "${node.id}" 缺少SMTP服务器`)
-    }
-    if (notif?.channel_type === 'webhook' && !notif.webhook_url) {
-      errors.push(`通知节点 "${node.id}" 缺少Webhook URL`)
-    }
+    // 移除错误的验证：SMTP/Webhook配置应该在通知渠道配置中，而不是在规则节点中
+    // 用户只需要选择通知渠道类型，不需要在规则节点中填写SMTP/Webhook配置
   })
   
   if (edges.length === 0 && nodes.length > 1) {

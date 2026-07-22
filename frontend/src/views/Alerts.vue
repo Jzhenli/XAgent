@@ -337,6 +337,11 @@
           <el-switch v-model="emailConfigForm.useTls" />
         </el-form-item>
 
+        <el-form-item :label="$t('alerts.enableSsl')">
+          <el-switch v-model="emailConfigForm.useSsl" />
+          <span class="form-item-hint">{{ $t('alerts.sslHint') }}</span>
+        </el-form-item>
+
         <el-divider content-position="left">{{ $t('alerts.authInfo') }}</el-divider>
 
         <el-form-item :label="$t('alerts.username')">
@@ -349,6 +354,22 @@
 
         <el-form-item :label="$t('alerts.fromAddressLabel')" prop="fromAddress">
           <el-input v-model="emailConfigForm.fromAddress" placeholder="noreply@example.com" />
+        </el-form-item>
+
+        <el-divider content-position="left">{{ $t('alerts.recipientsLabel') }}</el-divider>
+
+        <el-form-item :label="$t('alerts.recipientsLabel')" prop="recipients">
+          <el-select
+            v-model="emailConfigForm.recipients"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            :placeholder="$t('alerts.recipientsPlaceholder')"
+            style="width: 100%"
+          >
+          </el-select>
+          <span class="form-item-hint">{{ $t('alerts.recipientsHint') }}</span>
         </el-form-item>
       </el-form>
 
@@ -419,8 +440,9 @@ const alertStore = useAlertStore()
 const userStore = useUserStore()
 const { isTablet, isMobile } = useResponsive()
 
-onMounted(() => {
-  alertStore.fetchAlerts()
+onMounted(async () => {
+  await alertStore.fetchAlerts()
+  await alertStore.fetchChannels()  // ✨ 新增：获取通道配置
 })
 
 const channelColSpan = computed(() => {
@@ -464,6 +486,8 @@ const emailConfigForm = reactive({
   password: '',
   fromAddress: '',
   useTls: true,
+  useSsl: false,
+  recipients: [] as string[],
 })
 const emailConfigRules = {
   smtpHost: [{ required: true, message: t('alerts.smtpHostRequired'), trigger: 'blur' }],
@@ -638,6 +662,8 @@ const handleConfigureChannel = (channelId: string) => {
       password: channel.config.password ?? '',
       fromAddress: channel.config.fromAddress ?? '',
       useTls: channel.config.useTls ?? true,
+      useSsl: channel.config.useSsl ?? false,
+      recipients: channel.config.recipients ?? [],
     })
     emailConfigDialogVisible.value = true
   } else if (channel.type === 'webhook') {
@@ -661,9 +687,13 @@ const handleSaveSystemConfig = async () => {
 
   const systemChannel = alertStore.channels.find(c => c.type === 'system')
   if (systemChannel) {
-    alertStore.updateChannelConfig(systemChannel.id, { ...systemConfigForm })
-    ElMessage.success(t('alerts.systemConfigSaved'))
-    systemConfigDialogVisible.value = false
+    try {
+      await alertStore.updateChannelConfig(systemChannel.id, { ...systemConfigForm })
+      ElMessage.success(t('alerts.systemConfigSaved'))
+      systemConfigDialogVisible.value = false
+    } catch {
+      // 错误已在Store中处理
+    }
   }
 }
 
@@ -677,9 +707,13 @@ const handleSaveEmailConfig = async () => {
 
   const emailChannel = alertStore.channels.find(c => c.type === 'email')
   if (emailChannel) {
-    alertStore.updateChannelConfig(emailChannel.id, { ...emailConfigForm })
-    ElMessage.success(t('alerts.emailConfigSaved'))
-    emailConfigDialogVisible.value = false
+    try {
+      await alertStore.updateChannelConfig(emailChannel.id, { ...emailConfigForm })
+      ElMessage.success(t('alerts.emailConfigSaved'))
+      emailConfigDialogVisible.value = false
+    } catch {
+      // 错误已在Store中处理
+    }
   }
 }
 
@@ -693,13 +727,17 @@ const handleSaveWebhookConfig = async () => {
 
   const webhookChannel = alertStore.channels.find(c => c.type === 'webhook')
   if (webhookChannel) {
-    alertStore.updateChannelConfig(webhookChannel.id, { ...webhookConfigForm })
-    ElMessage.success(t('alerts.webhookConfigSaved'))
-    webhookConfigDialogVisible.value = false
+    try {
+      await alertStore.updateChannelConfig(webhookChannel.id, { ...webhookConfigForm })
+      ElMessage.success(t('alerts.webhookConfigSaved'))
+      webhookConfigDialogVisible.value = false
+    } catch {
+      // 错误已在Store中处理
+    }
   }
 }
 
-const handleTestChannel = (channelId: string) => {
+const handleTestChannel = async (channelId: string) => {
   const channel = alertStore.channels.find(c => c.id === channelId)
   if (!channel) return
 
@@ -708,9 +746,20 @@ const handleTestChannel = (channelId: string) => {
     return
   }
 
-  if (channel.type === 'system') {
-    testSystemNotification()
-  }
+  try {
+    const success = await alertStore.testChannel(channelId)
+    if (success) {
+        if (channel.type === 'system') {
+          testSystemNotification()
+        } else {
+          ElMessage.success(t('alerts.channel.testSuccess'))
+        }
+      } else {
+        ElMessage.error(t('alerts.channel.testFailed'))
+      }
+    } catch {
+      ElMessage.error(t('alerts.channel.testFailed'))
+    }
 }
 
 const testSystemNotification = () => {
