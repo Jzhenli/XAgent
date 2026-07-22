@@ -59,6 +59,20 @@ export interface NumberComponentConfig extends BaseComponentConfig {
   textAlign: 'left' | 'center' | 'right'
 }
 
+/** 枚举项 */
+export interface EnumValueItem {
+  text: string
+  value: number | string
+}
+
+/** 枚举值组件配置 */
+export interface EnumValueComponentConfig extends BaseComponentConfig {
+  value: number | string
+  enumItems: EnumValueItem[]
+  fontSize: number
+  fontColor: string
+}
+
 /** 矩形组件配置 */
 export interface RectangleComponentConfig extends BaseComponentConfig {
   /** 背景模糊半径（px） */
@@ -264,6 +278,7 @@ import type { ComponentType } from '../registry'
 export interface ComponentConfigMap {
   text: TextComponentConfig
   number: NumberComponentConfig
+  'enum-value': EnumValueComponentConfig
   rectangle: RectangleComponentConfig
   circle: CircleComponentConfig
   gauge: GaugeComponentConfig

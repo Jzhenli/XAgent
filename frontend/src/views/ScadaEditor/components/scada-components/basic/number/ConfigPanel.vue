@@ -111,7 +111,7 @@
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t("componentConfig.unitFontSize") }}</label>
+        <label>{{ t("componentConfig.numberUnitFontSize") }}</label>
         <input
           type="number"
           min="1"
@@ -125,7 +125,7 @@
         />
       </div>
       <div class="form-group">
-        <label>{{ t("componentConfig.unitFontColor") }}</label>
+        <label>{{ t("componentConfig.numberUnitFontColor") }}</label>
         <el-color-picker
           :model-value="config.unitFontColor"
           show-alpha

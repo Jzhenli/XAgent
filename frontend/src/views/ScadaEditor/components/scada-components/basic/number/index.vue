@@ -1,8 +1,10 @@
 <template>
   <div class="number-container" :style="containerStyle">
-    <span v-if="showTitle" class="number-title" :style="titleStyle">{{ title }}</span>
-    <span class="number-value" :style="valueStyle">{{ displayValue }}</span>
-    <span v-if="unit" class="number-unit" :style="unitStyle">{{ unit }}</span>
+    <div class="number-content">
+      <span v-if="showTitle" class="number-title" :style="titleStyle">{{ title }}</span>
+      <span class="number-value" :style="valueStyle">{{ displayValue }}</span>
+      <span v-if="unit" class="number-unit" :style="unitStyle">{{ unit }}</span>
+    </div>
   </div>
 </template>
 
@@ -79,10 +81,15 @@ const unitStyle = computed(() => ({
   height: 100%;
   display: flex;
   align-items: center;
-  gap: 4px;
   box-sizing: border-box;
   overflow: hidden;
   white-space: nowrap;
+}
+
+.number-content {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
 }
 
 .number-title,

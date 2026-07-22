@@ -15,6 +15,8 @@ export type {
   ImageConfig,
   TextComponentConfig,
   NumberComponentConfig,
+  EnumValueComponentConfig,
+  EnumValueItem,
   GaugeComponentConfig,
   ChartComponentConfig,
   LineChartComponentConfig,
