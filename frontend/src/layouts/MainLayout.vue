@@ -7,8 +7,8 @@
         :class="{ collapsed: isCollapsed || shouldCollapseSidebar, 'fullscreen-hidden': isFullscreenMode }"
       >
         <div class="logo">
-          <span class="logo-icon">⚡</span>
-          <span v-if="!isCollapsed && !shouldCollapseSidebar" class="logo-text">XAgent</span>
+          <img class="logo-image" src="@/assets/login/logo.svg" alt="logo" />
+          <span v-if="!isCollapsed && !shouldCollapseSidebar" class="logo-text">XPlay</span>
         </div>
         
         <el-menu
@@ -50,8 +50,8 @@
     >
       <div class="drawer-content">
         <div class="logo">
-          <span class="logo-icon">⚡</span>
-          <span class="logo-text">XAgent</span>
+          <img class="logo-image" src="@/assets/login/logo.svg" alt="logo" />
+          <span class="logo-text">XPlay</span>
         </div>
         
         <el-menu
@@ -316,6 +316,18 @@ onUnmounted(() => {
   justify-content: center;
 }
 
+.app-aside.collapsed .app-menu .el-menu-item {
+  padding: 0 !important;
+  margin: 4px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.app-aside.collapsed .app-menu .el-menu-item .el-icon {
+  margin: 0;
+}
+
 .app-aside.fullscreen-hidden {
   width: 0 !important;
   overflow: hidden;
@@ -331,8 +343,10 @@ onUnmounted(() => {
   border-bottom: 1px solid var(--border-sidebar);
 }
 
-.logo-icon {
-  font-size: 24px;
+.logo-image {
+  width: 28px;
+  height: 28px;
+  display: block;
 }
 
 .logo-text {

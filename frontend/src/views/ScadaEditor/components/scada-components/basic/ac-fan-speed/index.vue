@@ -4,19 +4,18 @@
     class="ac-fan-speed-container"
     :style="containerStyle"
   >
-    <button
+    <div
       v-for="mode in fanSpeedList"
       :key="mode.key"
-      class="ac-fan-speed-button"
+      class="ac-fan-speed-item"
       :class="{ active: mode.isActive, writing: isOperating && pendingValue === mode.value }"
-      :style="mode.buttonStyle"
-      :disabled="isOperating"
+      :style="mode.itemStyle"
       @click="handleSelectMode(mode)"
     >
       <span class="ac-fan-speed-label" :style="mode.labelStyle">
         {{ mode.label }}
       </span>
-    </button>
+    </div>
   </div>
 </template>
 
@@ -62,7 +61,7 @@ interface FanSpeedItem {
   label: string;
   value: number | string;
   isActive: boolean;
-  buttonStyle: {
+  itemStyle: {
     backgroundColor: string;
     borderRadius: string;
   };
@@ -100,7 +99,7 @@ const buildFanSpeedItem = (
     label,
     value,
     isActive: active,
-    buttonStyle: {
+    itemStyle: {
       backgroundColor: active
         ? cfg.activeBackgroundColor
         : "transparent",
@@ -169,8 +168,8 @@ const fanSpeedList = computed<FanSpeedItem[]>(() => {
  * @param mode 选中的风速项
  */
 const handleSelectMode = async (mode: FanSpeedItem) => {
-  // 编辑态直接拦截
-  if (props.editing) return;
+  // 编辑态或下发中直接拦截
+  if (props.editing || isOperating.value) return;
 
   // 无绑定点位，仅本地更新值
   if (!bindingInfo.value) {
@@ -216,29 +215,24 @@ const handleSelectMode = async (mode: FanSpeedItem) => {
   gap: 4px;
 }
 
-.ac-fan-speed-button {
+.ac-fan-speed-item {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
   cursor: pointer;
   transition: background-color 0.2s, opacity 0.2s;
   padding: 4px 2px;
   background: transparent;
 }
 
-.ac-fan-speed-button:hover:not(:disabled) {
+.ac-fan-speed-item:hover:not(.writing) {
   opacity: 0.85;
 }
 
-.ac-fan-speed-button:disabled {
+.ac-fan-speed-item.writing {
   cursor: not-allowed;
   opacity: 0.6;
-}
-
-.ac-fan-speed-button.writing {
-  opacity: 0.7;
 }
 
 .ac-fan-speed-label {

@@ -9,7 +9,7 @@ const defaultConfig: AcFanSpeedComponentConfig = {
   borderRadius: 8,
   fontSize: 11,
   activeBackgroundColor: 'rgba(64, 158, 255, 1)',
-  fontColor: 'rgba(255, 255, 255, 0.7)',
+  fontColor: 'rgba(0, 0, 0, 1)',
   activeFontColor: 'rgba(255, 255, 255, 1)',
   currentValue: 0,
   autoValue: 0,

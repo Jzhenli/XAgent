@@ -44,6 +44,18 @@ export interface TextComponentConfig extends BaseComponentConfig {
   textAlign: 'left' | 'center' | 'right'
 }
 
+/** 矩形组件配置 */
+export interface RectangleComponentConfig extends BaseComponentConfig {
+  /** 背景模糊半径（px） */
+  blur?: number
+}
+
+/** 圆形组件配置 */
+export interface CircleComponentConfig extends Omit<BaseComponentConfig, 'borderRadius'> {
+  /** 背景模糊半径（px） */
+  blur?: number
+}
+
 /** 仪表盘组件配置 */
 export interface GaugeComponentConfig extends BaseComponentConfig {
   min: number
@@ -236,6 +248,8 @@ import type { ComponentType } from '../registry'
 /** 组件类型到统一配置的映射 */
 export interface ComponentConfigMap {
   text: TextComponentConfig
+  rectangle: RectangleComponentConfig
+  circle: CircleComponentConfig
   gauge: GaugeComponentConfig
   'chart-line': LineChartComponentConfig
   'chart-bar': BarChartComponentConfig
