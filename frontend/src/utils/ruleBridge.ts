@@ -383,7 +383,14 @@ export function graphToBackendCreate(
   }
 
   if (notifConfig) {
-    channelIds.push(`${notifConfig.channel_type}-${ruleId}`)
+    // 使用固定的通知渠道ID，而不是动态创建
+    // system类型 → system-notification
+    // email类型 → email-notification
+    // webhook类型 → webhook-notification
+    const defaultChannelId = `${notifConfig.channel_type}-notification`
+    if (!channelIds.includes(defaultChannelId)) {
+      channelIds.push(defaultChannelId)
+    }
   }
 
   return {
@@ -416,14 +423,10 @@ export function getNotificationChannelCreate(
   ruleId: string,
   notificationNodes: RuleNode[]
 ): { channel_id: string; plugin_name: string; config: NotificationChannelConfig } | null {
-  const notifConfig = buildNotificationChannelConfig(notificationNodes)
-  if (!notifConfig) return null
-
-  return {
-    channel_id: `${notifConfig.channel_type}-${ruleId}`,
-    plugin_name: notifConfig.channel_type,
-    config: notifConfig,
-  }
+  // ✅ 不再为每个规则创建动态channel
+  // 规则应该使用已存在的通知渠道（如email-notification）
+  // 返回null，表示不需要创建新channel
+  return null
 }
 
 export function graphToBackendUpdate(

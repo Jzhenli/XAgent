@@ -389,11 +389,18 @@
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.notificationChannel') }}</label>
-          <select v-model="localData.notification.channel_type" @change="updateData">
+          <select 
+            v-model="localData.notification.channel_type" 
+            @change="updateData"
+            :disabled="NOTIFICATION_CHANNEL_TYPES.length === 0"
+          >
             <option v-for="ct in NOTIFICATION_CHANNEL_TYPES" :key="ct.value" :value="ct.value">
-              {{ t(ct.labelKey) }}
+              {{ ct.label }}
             </option>
           </select>
+          <div v-if="NOTIFICATION_CHANNEL_TYPES.length === 0" class="warning-hint">
+            💡 {{ t('nodeConfig.noAvailableChannels') }}
+          </div>
         </div>
         <div class="form-group info-box">
           <span class="info-icon">💡</span>
@@ -416,8 +423,9 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { RuleNodeData, NodeType } from '@/types/rule'
-import { OPERATORS, LOGIC_OPERATORS, SCHEDULE_MODES, SCHEDULE_FREQUENCIES, WEEKDAYS, NOTIFICATION_LEVELS, NOTIFICATION_CHANNEL_TYPES } from '@/types/rule'
+import { OPERATORS, LOGIC_OPERATORS, SCHEDULE_MODES, SCHEDULE_FREQUENCIES, WEEKDAYS, NOTIFICATION_LEVELS } from '@/types/rule'
 import { useDeviceStore } from '@/stores/devices'
+import { useAlertStore } from '@/stores/alerts'
 import type { DeviceConfig, PointConfig } from '@/api/types'
 
 const { t } = useI18n()
@@ -434,8 +442,29 @@ const emit = defineEmits<{
 }>()
 
 const deviceStore = useDeviceStore()
+const alertStore = useAlertStore()
 
 const localData = ref<RuleNodeData>(JSON.parse(JSON.stringify(props.nodeData || {})))
+
+// 获取已启用的通知渠道（从后端动态获取）
+const availableChannels = computed(() => {
+  return alertStore.channels
+    .filter(channel => channel.enabled)
+    .map(channel => ({
+      value: channel.type,
+      label: channel.name,
+      disabled: false
+    }))
+})
+
+// 渠道类型选项（用于显示）
+const NOTIFICATION_CHANNEL_TYPES = computed(() => {
+  if (availableChannels.value.length === 0) {
+    // 如果没有可用渠道，返回空数组（用户需要先配置通知渠道）
+    return []
+  }
+  return availableChannels.value
+})
 
 watch(() => props.nodeData, (newData) => {
   localData.value = JSON.parse(JSON.stringify(newData || {}))
@@ -458,15 +487,23 @@ const ensureNodeData = () => {
     localData.value.action = { target_asset: '', operation: 'write_setpoint', parameters: {}, delay: 0 }
   }
   if (props.nodeType === 'notification' && !localData.value.notification) {
-    localData.value.notification = { channel_type: 'system', level: 'warning' }
+    // 默认选择第一个可用的通知渠道
+    const defaultChannel = availableChannels.value[0]?.value || 'system'
+    localData.value.notification = { channel_type: defaultChannel, level: 'warning' }
   }
 }
 
 watch(() => props.nodeType, () => { ensureNodeData() }, { immediate: true })
 
 onMounted(() => {
+  // 加载设备（如果还未加载）
   if (deviceStore.devices.length === 0) {
     deviceStore.fetchDevices()
+  }
+  
+  // 加载通知渠道（如果还未加载）
+  if (alertStore.channels.length === 0) {
+    alertStore.fetchChannels()
   }
 })
 
