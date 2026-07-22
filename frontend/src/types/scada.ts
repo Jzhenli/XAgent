@@ -15,6 +15,7 @@ export type {
   ImageConfig,
   TextComponentConfig,
   NumberComponentConfig,
+  WriteValueComponentConfig,
   EnumValueComponentConfig,
   EnumValueItem,
   IconComponentConfig,

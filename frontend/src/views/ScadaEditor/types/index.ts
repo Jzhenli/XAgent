@@ -73,6 +73,13 @@ export interface EnumValueComponentConfig extends BaseComponentConfig {
   fontColor: string
 }
 
+/** 写值输入框组件配置 */
+export interface WriteValueComponentConfig extends BaseComponentConfig {
+  value: number | string
+  confirmColor?: string
+  cancelColor?: string
+}
+
 /** 矩形组件配置 */
 export interface RectangleComponentConfig extends BaseComponentConfig {
   /** 背景模糊半径（px） */
@@ -287,6 +294,7 @@ export interface ComponentConfigMap {
   text: TextComponentConfig
   number: NumberComponentConfig
   'enum-value': EnumValueComponentConfig
+  'write-value': WriteValueComponentConfig
   rectangle: RectangleComponentConfig
   circle: CircleComponentConfig
   icon: IconComponentConfig

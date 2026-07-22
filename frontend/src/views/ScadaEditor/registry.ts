@@ -5,6 +5,7 @@ import type { ScadaComponentMeta } from './types'
 import { gaugeMeta } from './components/scada-components/basic/gauge/metadata'
 import { numberMeta } from './components/scada-components/basic/number/metadata'
 import { enumValueMeta } from './components/scada-components/basic/enum-value/metadata'
+import { writeValueMeta } from './components/scada-components/basic/write-value/metadata'
 import { chartLineMeta } from './components/scada-components/chart/line/metadata'
 import { chartBarMeta } from './components/scada-components/chart/bar/metadata'
 import { indicatorMeta } from './components/scada-components/basic/indicator/metadata'
@@ -25,6 +26,7 @@ export const componentMetaRegistry = {
   gauge: gaugeMeta,
   number: numberMeta,
   'enum-value': enumValueMeta,
+  'write-value': writeValueMeta,
   'chart-line': chartLineMeta,
   'chart-bar': chartBarMeta,
   indicator: indicatorMeta,
