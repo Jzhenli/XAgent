@@ -5,7 +5,7 @@ import CircleConfigPanel from './ConfigPanel.vue'
 const defaultConfig: CircleComponentConfig = {
   width: 120,
   height: 120,
-  backgroundColor: 'rgba(200, 200, 200, 0.3)',
+  backgroundColor: 'rgba(200, 200, 200, 1)',
   borderWidth: 1,
   borderColor: 'rgba(150, 150, 150, 0.5)',
   blur: 0

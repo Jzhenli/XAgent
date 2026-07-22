@@ -102,7 +102,7 @@ const buildFanSpeedItem = (
     itemStyle: {
       backgroundColor: active
         ? cfg.activeBackgroundColor
-        : "transparent",
+        : cfg.backgroundColor || "transparent",
       borderRadius: `${cfg.borderRadius ?? 8}px`,
     },
     labelStyle: {
@@ -118,8 +118,7 @@ const buildFanSpeedItem = (
  * 容器样式
  */
 const containerStyle = computed(() => ({
-  backgroundColor:
-    acConfig.value?.backgroundColor || "rgba(255, 255, 255, 0.1)",
+  backgroundColor: "transparent",
   borderRadius: `${acConfig.value?.borderRadius ?? 8}px`,
 }));
 

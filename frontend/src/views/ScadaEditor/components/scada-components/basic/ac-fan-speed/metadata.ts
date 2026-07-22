@@ -5,7 +5,7 @@ import AcFanSpeedConfigPanel from './ConfigPanel.vue'
 const defaultConfig: AcFanSpeedComponentConfig = {
   width: 220,
   height: 56,
-  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  backgroundColor: 'rgb(198, 195, 195, 1)',
   borderRadius: 8,
   fontSize: 11,
   activeBackgroundColor: 'rgba(64, 158, 255, 1)',
