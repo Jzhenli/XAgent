@@ -3,6 +3,7 @@ import type { ScadaComponentMeta } from './types'
 
 // ─── 导入所有组件元数据 ────────────────────────────────────────
 import { gaugeMeta } from './components/scada-components/basic/gauge/metadata'
+import { numberMeta } from './components/scada-components/basic/number/metadata'
 import { chartLineMeta } from './components/scada-components/chart/line/metadata'
 import { chartBarMeta } from './components/scada-components/chart/bar/metadata'
 import { indicatorMeta } from './components/scada-components/basic/indicator/metadata'
@@ -20,6 +21,7 @@ import { acFanSpeedMeta } from './components/scada-components/basic/ac-fan-speed
 // 新增组件只需在此添加映射，ComponentType 自动推导
 export const componentMetaRegistry = {
   gauge: gaugeMeta,
+  number: numberMeta,
   'chart-line': chartLineMeta,
   'chart-bar': chartBarMeta,
   indicator: indicatorMeta,

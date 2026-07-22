@@ -14,6 +14,7 @@ export type {
   ButtonConfig,
   ImageConfig,
   TextComponentConfig,
+  NumberComponentConfig,
   GaugeComponentConfig,
   ChartComponentConfig,
   LineChartComponentConfig,

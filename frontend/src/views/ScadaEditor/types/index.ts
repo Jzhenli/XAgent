@@ -44,6 +44,21 @@ export interface TextComponentConfig extends BaseComponentConfig {
   textAlign: 'left' | 'center' | 'right'
 }
 
+/** 数值组件配置 */
+export interface NumberComponentConfig extends BaseComponentConfig {
+  showTitle: boolean
+  title: string
+  titleFontSize: number
+  titleFontColor: string
+  decimalPlaces: number
+  unit: string
+  unitFontSize: number
+  unitFontColor: string
+  fontSize: number
+  fontColor: string
+  textAlign: 'left' | 'center' | 'right'
+}
+
 /** 矩形组件配置 */
 export interface RectangleComponentConfig extends BaseComponentConfig {
   /** 背景模糊半径（px） */
@@ -248,6 +263,7 @@ import type { ComponentType } from '../registry'
 /** 组件类型到统一配置的映射 */
 export interface ComponentConfigMap {
   text: TextComponentConfig
+  number: NumberComponentConfig
   rectangle: RectangleComponentConfig
   circle: CircleComponentConfig
   gauge: GaugeComponentConfig
