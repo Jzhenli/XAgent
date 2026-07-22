@@ -314,6 +314,7 @@ onUnmounted(() => {
 
 .app-aside.collapsed .logo {
   justify-content: center;
+  padding-left: 0;
 }
 
 .app-aside.collapsed .app-menu .el-menu-item {
@@ -338,7 +339,7 @@ onUnmounted(() => {
   height: 60px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  padding-left: 26px;
   gap: 8px;
   border-bottom: 1px solid var(--border-sidebar);
 }

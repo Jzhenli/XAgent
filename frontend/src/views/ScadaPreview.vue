@@ -59,7 +59,6 @@ const isFullscreen = ref(false)
 const currentPanel = computed(() => scada.currentPanel)
 
 onMounted(async () => {
-  console.log('ScadaPreview mounted')
   const panelId = route.params.id as string
   if (panelId) {
     await scada.loadPanel(panelId)
