@@ -10,6 +10,8 @@ const defaultConfig: WriteValueComponentConfig = {
   fontColor: '#000000',
   confirmColor: '#67c23a',
   cancelColor: '#f56c6c',
+  showInput: false,
+  inputBorderColor: 'var(--color-primary)',
 }
 
 export const writeValueMeta: ScadaComponentMeta = {

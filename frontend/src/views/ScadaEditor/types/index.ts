@@ -78,6 +78,10 @@ export interface WriteValueComponentConfig extends BaseComponentConfig {
   value: number | string
   confirmColor?: string
   cancelColor?: string
+  /** 是否显示输入框模式 */
+  showInput?: boolean
+  /** 输入框边框颜色 */
+  inputBorderColor?: string
 }
 
 /** 矩形组件配置 */

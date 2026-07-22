@@ -82,16 +82,20 @@ const textStyle = computed(() => ({
   fontSize: `${fontSize.value}px`,
 }))
 
+const showInputMode = computed(() => !!writeValueConfig.value.showInput)
+const inputBorderColor = computed(() => writeValueConfig.value.inputBorderColor || 'var(--color-primary)')
+
 const inputStyle = computed(() => ({
   color: fontColor.value,
   fontSize: `${fontSize.value}px`,
+  borderColor: inputBorderColor.value,
 }))
 
 const isEditing = ref(false)
 const inputValue = ref('')
 const inputRef = ref<HTMLInputElement | null>(null)
 
-const showEditor = computed(() => isEditing.value || !!props.editing)
+const showEditor = computed(() => showInputMode.value && (isEditing.value || !!props.editing))
 
 const confirmColor = computed(() => writeValueConfig.value.confirmColor || '#67c23a')
 const cancelColor = computed(() => writeValueConfig.value.cancelColor || '#f56c6c')
@@ -113,7 +117,7 @@ watch(displayValue, (val) => {
 }, { immediate: true })
 
 const handleClick = () => {
-  if (props.editing) return
+  if (props.editing || !showInputMode.value) return
   isEditing.value = true
   inputValue.value = displayValue.value
   nextTick(() => {
@@ -189,7 +193,7 @@ const handleCancel = () => {
   min-width: 0;
   height: 100%;
   padding: 0 4px;
-  border: 1px solid var(--color-primary);
+  border: 1px solid;
   border-radius: 4px;
   background: transparent;
   text-align: center;

@@ -14,6 +14,27 @@
       </div>
     </div>
 
+    <div class="subsection-title">{{ t('componentConfig.inputModeSection') }}</div>
+    <div class="form-row">
+      <div class="form-group form-group--switch">
+        <label>{{ t('componentConfig.showInput') }}</label>
+        <el-switch
+          :model-value="config.showInput"
+          @change="updateConfig('showInput', $event as boolean)"
+        />
+      </div>
+      <div v-if="config.showInput" class="form-group">
+        <label>{{ t('componentConfig.inputBorderColor') }}</label>
+        <el-color-picker
+          :model-value="config.inputBorderColor"
+          show-alpha
+          @active-change="handleInputBorderColorActiveChange"
+          @change="handleInputBorderColorChange"
+        />
+      </div>
+      <div v-else class="form-group"></div>
+    </div>
+
     <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>
     <div class="form-row">
       <div class="form-group">
@@ -77,6 +98,7 @@ const { config, updateConfig } = useScadaConfig(
 const latestFontColor = ref<string>('')
 const latestConfirmColor = ref<string>('')
 const latestCancelColor = ref<string>('')
+const latestInputBorderColor = ref<string>('')
 
 watch(
   () => config.value.fontColor,
@@ -98,6 +120,14 @@ watch(
   () => config.value.cancelColor,
   (val) => {
     latestCancelColor.value = val || ''
+  },
+  { immediate: true },
+)
+
+watch(
+  () => config.value.inputBorderColor,
+  (val) => {
+    latestInputBorderColor.value = val || ''
   },
   { immediate: true },
 )
@@ -127,6 +157,15 @@ const handleCancelColorActiveChange = (val: string | null) => {
 const handleCancelColorChange = (val: string | null) => {
   const isCleared = val === null || val === undefined || val === ''
   updateConfig('cancelColor', isCleared ? '' : latestCancelColor.value)
+}
+
+const handleInputBorderColorActiveChange = (val: string | null) => {
+  latestInputBorderColor.value = val || ''
+}
+
+const handleInputBorderColorChange = (val: string | null) => {
+  const isCleared = val === null || val === undefined || val === ''
+  updateConfig('inputBorderColor', isCleared ? '' : latestInputBorderColor.value)
 }
 </script>
 
@@ -186,6 +225,16 @@ const handleCancelColorChange = (val: string | null) => {
 
 .form-group :deep(.el-color-picker__trigger) {
   width: 100%;
+}
+
+.form-group--switch {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.form-group--switch :deep(.el-switch) {
+  margin-top: 6px;
 }
 
 .form-row {
