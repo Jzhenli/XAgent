@@ -1576,6 +1576,8 @@
     "textConfig": "文本配置",
     "rectangleConfig": "矩形配置",
     "circleConfig": "圆形配置",
+    "iconConfig": "图标配置",
+    "iconName": "图标名称",
     "operations": "操作",
     "duplicate": "复制",
     "bringToFront": "置顶",
@@ -1641,7 +1643,8 @@
     "acMode": "空调模式",
     "acFanSpeed": "空调风速",
     "rectangle": "矩形",
-    "circle": "圆形"
+    "circle": "圆形",
+    "icon": "图标"
   },
   "ruleNodeCategories": {
     "trigger": "触发器",

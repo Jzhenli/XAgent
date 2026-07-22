@@ -1548,6 +1548,8 @@
     "textConfig": "文本設定",
     "rectangleConfig": "矩形設定",
     "circleConfig": "圓形設定",
+    "iconConfig": "圖示設定",
+    "iconName": "圖示名稱",
     "operations": "操作",
     "duplicate": "複製",
     "bringToFront": "置頂",
@@ -1613,7 +1615,8 @@
     "acMode": "空調模式",
     "acFanSpeed": "空調風速",
     "rectangle": "矩形",
-    "circle": "圓形"
+    "circle": "圓形",
+    "icon": "圖示"
   },
   "ruleNodeCategories": {
     "trigger": "觸發器",

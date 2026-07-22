@@ -85,6 +85,14 @@ export interface CircleComponentConfig extends Omit<BaseComponentConfig, 'border
   blur?: number
 }
 
+/** 图标组件配置 */
+export interface IconComponentConfig extends Omit<BaseComponentConfig, 'borderRadius' | 'backgroundColor' | 'borderColor' | 'borderWidth' | 'fontSize' | 'fontColor' | 'opacity'> {
+  /** 图标名称（对应 xicon_<name> 的基名） */
+  iconName: string
+  /** 图标颜色 */
+  iconColor: string
+}
+
 /** 仪表盘组件配置 */
 export interface GaugeComponentConfig extends BaseComponentConfig {
   min: number
@@ -281,6 +289,7 @@ export interface ComponentConfigMap {
   'enum-value': EnumValueComponentConfig
   rectangle: RectangleComponentConfig
   circle: CircleComponentConfig
+  icon: IconComponentConfig
   gauge: GaugeComponentConfig
   'chart-line': LineChartComponentConfig
   'chart-bar': BarChartComponentConfig

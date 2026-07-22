@@ -1576,6 +1576,8 @@
     "textConfig": "Text Config",
     "rectangleConfig": "Rectangle Config",
     "circleConfig": "Circle Config",
+    "iconConfig": "Icon Config",
+    "iconName": "Icon Name",
     "operations": "Actions",
     "duplicate": "Duplicate",
     "bringToFront": "Bring to Front",
@@ -1641,7 +1643,8 @@
     "acMode": "AC Mode",
     "acFanSpeed": "AC Fan Speed",
     "rectangle": "Rectangle",
-    "circle": "Circle"
+    "circle": "Circle",
+    "icon": "Icon"
   },
   "ruleNodeCategories": {
     "trigger": "Triggers",
