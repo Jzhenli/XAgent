@@ -18,6 +18,7 @@
     "@vue-flow/core": "^1.33.0",
     "@vue-flow/minimap": "^1.4.0",
     "@x-plateform-mono/common": "^1.0.1",
+    "@x-plateform/graphic-editor": "file:./graphic/graphic-editor",
     "axios": "^1.6.0",
     "dayjs": "^1.11.0",
     "echarts": "^5.5.0",
