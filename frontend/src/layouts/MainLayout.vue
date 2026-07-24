@@ -2,7 +2,7 @@
   <el-container class="app-layout">
     <template v-if="showSidebar">
       <el-aside 
-        :width="(isCollapsed || shouldCollapseSidebar) ? '64px' : '200px'" 
+        :width="(isCollapsed || shouldCollapseSidebar) ? '64px' : '188px'" 
         class="app-aside"
         :class="{ collapsed: isCollapsed || shouldCollapseSidebar, 'fullscreen-hidden': isFullscreenMode }"
       >
@@ -344,20 +344,21 @@ onUnmounted(() => {
   height: 60px;
   display: flex;
   align-items: center;
-  padding-left: 26px;
-  gap: 8px;
+  padding-left: 12px;
+  gap: 18px;
   border-bottom: 1px solid var(--border-sidebar);
 }
 
 .logo-image {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   display: block;
 }
 
 .logo-text {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: bold;
+  line-height: 29px;
   color: #fff;
   letter-spacing: 1px;
 }
