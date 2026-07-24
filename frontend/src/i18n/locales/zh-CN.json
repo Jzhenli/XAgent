@@ -1371,7 +1371,25 @@
     "ruleNotFound": "加载规则失败：规则不存在",
     "parseFailed": "无法解析规则图形数据",
     "loadFailed": "加载规则失败",
-    "executionTime": "执行时间"
+    "executionTime": "执行时间",
+    "validationTitle": "请完善以下信息",
+    "validationHint": "以下内容未填写或配置不完整，无法保存：",
+    "errors": {
+      "emptyName": "规则名称不能为空",
+      "emptyCanvas": "画布为空，请添加节点",
+      "missingTrigger": "缺少触发器节点",
+      "missingAction": "缺少执行动作或通知告警节点",
+      "missingConnection": "节点之间没有连线",
+      "triggerMissingSource": "数据触发器“{label}”缺少数据源",
+      "triggerMissingField": "数据触发器“{label}”缺少字段名",
+      "scheduleMissingTime": "定时触发器“{label}”缺少执行时间",
+      "scheduleMissingCron": "定时触发器“{label}”缺少 Cron 表达式",
+      "conditionMissingField": "条件节点“{label}”缺少字段名",
+      "conditionMissingValue": "条件节点“{label}”缺少比较值",
+      "actionMissingTarget": "动作节点“{label}”缺少目标设备",
+      "actionMissingOperation": "动作节点“{label}”缺少操作类型",
+      "notificationMissingChannel": "通知节点“{label}”缺少通知渠道"
+    }
   },
   "ruleNodes": {
     "nodePanel": "节点面板",

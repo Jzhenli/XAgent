@@ -1371,7 +1371,25 @@
     "ruleNotFound": "Failed to load rule: rule does not exist",
     "parseFailed": "Unable to parse rule graph data",
     "loadFailed": "Failed to load rule",
-    "executionTime": "Execution Time"
+    "executionTime": "Execution Time",
+    "validationTitle": "Please complete the following",
+    "validationHint": "The following information is missing or incomplete and cannot be saved:",
+    "errors": {
+      "emptyName": "Rule name is required",
+      "emptyCanvas": "Canvas is empty, please add nodes",
+      "missingTrigger": "Missing trigger node",
+      "missingAction": "Missing action or notification node",
+      "missingConnection": "Nodes are not connected",
+      "triggerMissingSource": "Data trigger \"{label}\" is missing data source",
+      "triggerMissingField": "Data trigger \"{label}\" is missing field name",
+      "scheduleMissingTime": "Schedule trigger \"{label}\" is missing execution time",
+      "scheduleMissingCron": "Schedule trigger \"{label}\" is missing cron expression",
+      "conditionMissingField": "Condition node \"{label}\" is missing field name",
+      "conditionMissingValue": "Condition node \"{label}\" is missing comparison value",
+      "actionMissingTarget": "Action node \"{label}\" is missing target device",
+      "actionMissingOperation": "Action node \"{label}\" is missing operation type",
+      "notificationMissingChannel": "Notification node \"{label}\" is missing notification channel"
+    }
   },
   "ruleNodes": {
     "nodePanel": "Node Panel",
