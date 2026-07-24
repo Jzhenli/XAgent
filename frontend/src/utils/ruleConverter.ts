@@ -130,84 +130,105 @@ export function graphToExpression(nodes: RuleNode[]): string {
   return parts.join(' -> ')
 }
 
-export function validateGraph(nodes: RuleNode[], edges: RuleEdge[]): { 
+export interface GraphValidationError {
+  key: string
+  params?: Record<string, string | number>
+}
+
+export interface ValidateGraphOptions {
+  ruleName?: string
+}
+
+export function validateGraph(
+  nodes: RuleNode[],
+  edges: RuleEdge[],
+  options?: ValidateGraphOptions
+): {
   valid: boolean
-  errors: string[]
+  errors: GraphValidationError[]
 } {
-  const errors: string[] = []
-  
+  const errors: GraphValidationError[] = []
+
+  if (options?.ruleName !== undefined && options.ruleName.trim() === '') {
+    errors.push({ key: 'ruleEditor.errors.emptyName' })
+  }
+
   if (nodes.length === 0) {
-    errors.push('画布为空，请添加节点')
+    errors.push({ key: 'ruleEditor.errors.emptyCanvas' })
     return { valid: false, errors }
   }
-  
+
   const triggerNodes = nodes.filter(n => n.type === 'trigger' || n.type === 'schedule-trigger')
   const conditionNodes = nodes.filter(n => n.type === 'condition')
   const actionNodes = nodes.filter(n => n.type === 'action')
   const notificationNodes = nodes.filter(n => n.type === 'notification')
-  
+
   if (triggerNodes.length === 0) {
-    errors.push('缺少触发器节点')
+    errors.push({ key: 'ruleEditor.errors.missingTrigger' })
   }
-  
+
   if (actionNodes.length === 0 && notificationNodes.length === 0) {
-    errors.push('缺少执行动作或通知告警节点')
+    errors.push({ key: 'ruleEditor.errors.missingAction' })
   }
-  
+
+  const getNodeLabel = (node: RuleNode) => node.data?.label || node.id
+
   // 验证定时触发器
   triggerNodes.forEach(node => {
+    const label = getNodeLabel(node)
     if (node.type === 'schedule-trigger') {
       const schedule = node.data?.scheduleTrigger
       if (!schedule?.time && schedule?.mode !== 'cron') {
-        errors.push(`定时触发器 "${node.id}" 缺少执行时间`)
+        errors.push({ key: 'ruleEditor.errors.scheduleMissingTime', params: { label } })
       }
       if (schedule?.mode === 'cron' && !schedule.cron) {
-        errors.push(`定时触发器 "${node.id}" 缺少Cron表达式`)
+        errors.push({ key: 'ruleEditor.errors.scheduleMissingCron', params: { label } })
       }
     } else if (node.type === 'trigger') {
       const trigger = node.data?.trigger
       if (!trigger?.source) {
-        errors.push(`数据触发器 "${node.id}" 缺少数据源`)
+        errors.push({ key: 'ruleEditor.errors.triggerMissingSource', params: { label } })
       }
       if (!trigger?.field) {
-        errors.push(`数据触发器 "${node.id}" 缺少字段名`)
+        errors.push({ key: 'ruleEditor.errors.triggerMissingField', params: { label } })
       }
     }
   })
-  
+
   conditionNodes.forEach(node => {
+    const label = getNodeLabel(node)
     const cond = node.data?.condition
     if (!cond?.field) {
-      errors.push(`条件节点 "${node.id}" 缺少字段名`)
+      errors.push({ key: 'ruleEditor.errors.conditionMissingField', params: { label } })
     }
     if (!cond?.value && cond?.value !== 0) {
-      errors.push(`条件节点 "${node.id}" 缺少比较值`)
+      errors.push({ key: 'ruleEditor.errors.conditionMissingValue', params: { label } })
     }
   })
-  
+
   actionNodes.forEach(node => {
+    const label = getNodeLabel(node)
     const action = node.data?.action
     if (!action?.target_asset) {
-      errors.push(`动作节点 "${node.id}" 缺少目标设备`)
+      errors.push({ key: 'ruleEditor.errors.actionMissingTarget', params: { label } })
     }
     if (!action?.operation) {
-      errors.push(`动作节点 "${node.id}" 缺少操作类型`)
+      errors.push({ key: 'ruleEditor.errors.actionMissingOperation', params: { label } })
     }
   })
 
   notificationNodes.forEach(node => {
+    const label = getNodeLabel(node)
     const notif = node.data?.notification
     if (!notif?.channel_type) {
-      errors.push(`通知节点 "${node.id}" 缺少通知渠道`)
+      errors.push({ key: 'ruleEditor.errors.notificationMissingChannel', params: { label } })
     }
-    // 移除错误的验证：SMTP/Webhook配置应该在通知渠道配置中，而不是在规则节点中
-    // 用户只需要选择通知渠道类型，不需要在规则节点中填写SMTP/Webhook配置
   })
-  
+
   if (edges.length === 0 && nodes.length > 1) {
-    errors.push('节点之间没有连线')
+    errors.push({ key: 'ruleEditor.errors.missingConnection' })
   }
-  
+
   return { valid: errors.length === 0, errors }
 }
 

@@ -2,7 +2,7 @@
   <el-container class="app-layout">
     <template v-if="showSidebar">
       <el-aside 
-        :width="(isCollapsed || shouldCollapseSidebar) ? '64px' : '200px'" 
+        :width="(isCollapsed || shouldCollapseSidebar) ? '64px' : '188px'" 
         class="app-aside"
         :class="{ collapsed: isCollapsed || shouldCollapseSidebar, 'fullscreen-hidden': isFullscreenMode }"
       >
@@ -84,7 +84,7 @@
             class="menu-toggle-btn"
             @click="toggleDrawer"
           />
-          <span class="page-title">{{ route.meta.title }}</span>
+          <span class="page-title">{{ pageTitle }}</span>
         </div>
         <div class="header-right">
           <el-badge :value="alertStore.pendingAlerts" :hidden="alertStore.pendingAlerts === 0">
@@ -247,6 +247,11 @@ const menuItems = computed(() =>
 
 const activeMenu = computed(() => route.path)
 
+const pageTitle = computed(() => {
+  const title = route.meta.title
+  return title ? t(title as string) : ''
+})
+
 const handleMenuSelect = (path: string) => {
   if (route.path !== path) {
     router.push(path).catch(() => {})
@@ -314,6 +319,7 @@ onUnmounted(() => {
 
 .app-aside.collapsed .logo {
   justify-content: center;
+  padding-left: 0;
 }
 
 .app-aside.collapsed .app-menu .el-menu-item {
@@ -338,20 +344,21 @@ onUnmounted(() => {
   height: 60px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  padding-left: 12px;
+  gap: 18px;
   border-bottom: 1px solid var(--border-sidebar);
 }
 
 .logo-image {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   display: block;
 }
 
 .logo-text {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: bold;
+  line-height: 29px;
   color: #fff;
   letter-spacing: 1px;
 }

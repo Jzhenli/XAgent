@@ -16,7 +16,7 @@
       <div class="toolbar-right">
         <span class="node-count">{{ t('ruleEditor.nodeCount') }}: {{ nodes.length }} | {{ t('ruleEditor.edgeCount') }}: {{ edges.length }}</span>
         <el-button @click="handleClear" :disabled="loading">{{ t('ruleEditor.clear') }}</el-button>
-        <el-button type="primary" :disabled="!canSave" :loading="saving" @click="handleSave">
+        <el-button type="primary" :disabled="saving" :loading="saving" @click="handleSave">
           {{ saving ? t('ruleEditor.saving') : t('ruleEditor.save') }}
         </el-button>
       </div>
@@ -95,7 +95,7 @@ import type { RuleNode, RuleEdge, RuleNodeData, NodeType } from '@/types/rule'
 import { createNode, validateGraph } from '@/utils/ruleConverter'
 import { graphToBackendCreate, graphToBackendUpdate, backendToGraph } from '@/utils/ruleBridge'
 import { useRuleStore } from '@/stores/rules'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
@@ -151,12 +151,6 @@ const selectedNode = computed(() => {
     data: (node.data ?? {}) as RuleNodeData,
     position: node.position,
   }
-})
-
-const canSave = computed(() => {
-  if (saving.value) return false
-  const result = validateGraph(nodes.value, edges.value)
-  return result.valid
 })
 
 const onDragOver = (event: DragEvent) => {
@@ -257,13 +251,19 @@ const handleSave = async () => {
     return vfNode ? { ...n, data: vfNode.data as RuleNodeData } : n
   })
 
-  const result = validateGraph(currentNodes, edges.value)
-  
+  const result = validateGraph(currentNodes, edges.value, { ruleName: ruleName.value })
+
   if (!result.valid) {
-    ElMessage.error(result.errors[0])
+    const messages = result.errors.map(err => t(err.key, err.params ?? {}))
+    const html = `<div style="margin-bottom:8px">${t('ruleEditor.validationHint')}</div><ul style="padding-left:18px;margin:0">${messages.map(m => `<li style="margin-bottom:4px">${m}</li>`).join('')}</ul>`
+    ElMessageBox.alert(html, t('ruleEditor.validationTitle'), {
+      confirmButtonText: t('common.confirm'),
+      dangerouslyUseHTMLString: true,
+      type: 'warning'
+    })
     return
   }
-  
+
   saving.value = true
   
   try {
