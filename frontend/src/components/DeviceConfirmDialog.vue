@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { deviceApi } from '@/api/devices'
 import type { DiscoveredDeviceResponse, DeviceConfig } from '@/api/types'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -112,7 +115,7 @@ const handleClose = () => {
 <template>
   <el-dialog
     v-model="props.visible"
-    title="确认设备信息 - 步骤 3/3"
+    :title="t('devices.confirmDeviceTitle')"
     width="600px"
     @close="handleClose"
   >
@@ -124,7 +127,7 @@ const handleClose = () => {
     >
       <template #title>
         <el-icon><i class="el-icon-info"></i></el-icon>
-        设备信息已自动填充，您可以修改基础信息
+        {{ t('devices.confirmDeviceHint') }}
       </template>
     </el-alert>
 
@@ -132,32 +135,32 @@ const handleClose = () => {
     <el-card shadow="never" class="mb-4">
       <template #header>
         <div class="card-header">
-          <span>基础信息（可修改）</span>
+          <span>{{ t('devices.confirmBasicInfo') }}</span>
         </div>
       </template>
 
       <el-form label-width="100px">
-        <el-form-item label="资产标识">
+        <el-form-item :label="t('devices.asset')">
           <el-input
             v-model="asset"
-            placeholder="自动生成，可修改为自定义标识"
+            :placeholder="t('devices.confirmAssetPlaceholder')"
           />
           <el-text type="info" size="small" class="mt-1">
-            自动生成：bacnet_{设备ID}，可修改为自定义标识
+            {{ t('devices.confirmAssetTip') }}
           </el-text>
         </el-form-item>
 
-        <el-form-item label="设备名称">
+        <el-form-item :label="t('devices.deviceName')">
           <el-input
             v-model="name"
-            placeholder="从设备读取，可修改"
+            :placeholder="t('devices.confirmNamePlaceholder')"
           />
           <el-text type="info" size="small" class="mt-1">
-            从设备读取，可修改
+            {{ t('devices.confirmNameTip') }}
           </el-text>
         </el-form-item>
 
-        <el-form-item label="启用状态">
+        <el-form-item :label="t('devices.enabled')">
           <el-switch v-model="enabled" />
         </el-form-item>
       </el-form>
@@ -167,41 +170,41 @@ const handleClose = () => {
     <el-card shadow="never" class="mb-4" v-if="device">
       <template #header>
         <div class="card-header">
-          <span>BACnet 参数（已确认）</span>
+          <span>{{ t('devices.confirmBacnetParams') }}</span>
         </div>
       </template>
 
       <el-form label-width="100px">
-        <el-form-item label="设备ID">
+        <el-form-item :label="t('devices.deviceId')">
           <el-input
             :value="device.device_id"
             disabled
             class="disabled-input"
           />
           <el-text type="info" size="small" class="mt-1">
-            从设备读取，不可修改（灰显）
+            {{ t('devices.confirmReadonlyTip') }}
           </el-text>
         </el-form-item>
 
-        <el-form-item label="主机地址">
+        <el-form-item :label="t('devices.host')">
           <el-input
             :value="device.address"
             disabled
             class="disabled-input"
           />
           <el-text type="info" size="small" class="mt-1">
-            从设备读取，不可修改（灰显）
+            {{ t('devices.confirmReadonlyTip') }}
           </el-text>
         </el-form-item>
 
-        <el-form-item label="端口">
+        <el-form-item :label="t('devices.port')">
           <el-input
             :value="device.port"
             disabled
             class="disabled-input"
           />
           <el-text type="info" size="small" class="mt-1">
-            从设备读取，不可修改（灰显）
+            {{ t('devices.confirmReadonlyTip') }}
           </el-text>
         </el-form-item>
       </el-form>
@@ -210,9 +213,9 @@ const handleClose = () => {
     <!-- 底部按钮 -->
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleBack">返回重新选择</el-button>
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="handleSave">保存设备</el-button>
+        <el-button @click="handleBack">{{ t('devices.confirmBack') }}</el-button>
+        <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleSave">{{ t('devices.confirmSave') }}</el-button>
       </div>
     </template>
   </el-dialog>
@@ -224,8 +227,8 @@ const handleClose = () => {
 }
 
 .disabled-input {
-  background-color: #f5f5f5;
-  color: #909399;
+  background-color: var(--el-disabled-bg-color);
+  color: var(--el-disabled-text-color);
 }
 
 .dialog-footer {

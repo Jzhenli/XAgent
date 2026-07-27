@@ -278,12 +278,12 @@
   --color-primary-light: rgba(64, 158, 255, 0.15);
 
   /* 背景色 */
-  --bg-base: #1a1a2e;
+  --bg-base: radial-gradient(519% 100% at -1% 0%, #383477 0%, #19162A 100%);;
   --bg-container: #16213e;
-  --bg-header: #16213e;
-  --bg-sidebar: linear-gradient(180deg, #0f3460 0%, #1a1a2e 100%);
+  --bg-header: rgba(0, 0, 0, 0.13);
+  --bg-sidebar: rgba(0,0,0,0.53);
   --bg-sidebar-hover: rgba(255, 255, 255, 0.08);
-  --bg-sidebar-active: linear-gradient(90deg, #409eff, #3a8ee6);
+  --bg-sidebar-active: radial-gradient( 134% 100% at 50% 100%, #00CED1 0%, #6666FF 100%);
   --bg-footer: #16213e;
   --bg-card: #16213e;
   --bg-input: #0f3460;
@@ -305,7 +305,7 @@
   --text-tertiary: #8d9096;
   --text-placeholder: #8d9096;
   --text-disabled: #606266;
-  --text-sidebar: rgba(255, 255, 255, 0.7);
+  --text-sidebar: rgba(255, 255, 255, 0.6);
   --text-sidebar-hover: #ffffff;
   --text-sidebar-active: #ffffff;
   --text-link: #409eff;

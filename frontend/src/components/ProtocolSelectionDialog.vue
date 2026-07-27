@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Connection, Cpu, Monitor, OfficeBuilding } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -21,7 +24,7 @@ const protocols = [
     name: 'Modbus TCP',
     key: 'modbus_tcp',
     icon: Connection,
-    description: 'TCP协议',
+    description: t('devices.protocolDescModbusTcp'),
     color: '#409EFF',
     supportsDiscovery: false
   },
@@ -29,7 +32,7 @@ const protocols = [
     name: 'Modbus RTU',
     key: 'modbus_rtu',
     icon: Cpu,
-    description: '串口协议',
+    description: t('devices.protocolDescModbusRtu'),
     color: '#67C23A',
     supportsDiscovery: false
   },
@@ -37,7 +40,7 @@ const protocols = [
     name: 'KNX',
     key: 'knx',
     icon: OfficeBuilding,
-    description: '楼宇自动化',
+    description: t('devices.protocolDescKnx'),
     color: '#E6A23C',
     supportsDiscovery: false
   },
@@ -45,10 +48,10 @@ const protocols = [
     name: 'BACnet',
     key: 'bacnet',
     icon: Monitor,
-    description: '楼宇自动化',
+    description: t('devices.protocolDescBacnet'),
     color: '#F56C6C',
-    supportsDiscovery: true,  // 标注支持自动发现
-    badge: '支持自动发现'
+    supportsDiscovery: true,
+    badge: t('devices.protocolDiscoveryBadge')
   }
 ]
 
@@ -66,13 +69,13 @@ const handleClose = () => {
 <template>
   <el-dialog
     v-model="props.visible"
-    title="添加设备 - 步骤 1/2"
+    :title="t('devices.selectProtocolTitle')"
     width="700px"
     @close="handleClose"
   >
     <!-- 提示文字 -->
     <el-text type="info" size="large" class="mb-4">
-      选择设备协议类型
+      {{ t('devices.selectProtocolHint') }}
     </el-text>
 
     <!-- 协议卡片网格 -->

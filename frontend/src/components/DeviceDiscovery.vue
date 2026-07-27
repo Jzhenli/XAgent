@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, RefreshRight, Plus, Edit, CircleCheck } from '@element-plus/icons-vue'
 import { deviceApi } from '@/api/devices'
 import type { DiscoveredDeviceResponse, DeviceConfig, NetworkInterfaceResponse } from '@/api/types'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -280,7 +283,7 @@ watch(() => props.visible, async (visible) => {
 <template>
   <el-dialog
     v-model="props.visible"
-    title="BACnet 设备发现"
+    :title="t('devices.deviceDiscovery')"
     :width="dialogWidth"
     @close="handleClose"
   >
@@ -288,17 +291,17 @@ watch(() => props.visible, async (visible) => {
     <div class="steps-compact mb-3">
       <div class="step-item" :class="{ active: currentStep === 0, completed: currentStep > 0 }">
         <div class="step-circle">1</div>
-        <div class="step-text">配置参数</div>
+        <div class="step-text">{{ t('devices.discoveryStep1') }}</div>
       </div>
       <div class="step-line" :class="{ active: currentStep >= 1 }"></div>
       <div class="step-item" :class="{ active: currentStep === 1, completed: currentStep > 1 }">
         <div class="step-circle">2</div>
-        <div class="step-text">搜索设备</div>
+        <div class="step-text">{{ t('devices.discoveryStep2') }}</div>
       </div>
       <div class="step-line" :class="{ active: currentStep >= 2 }"></div>
       <div class="step-item" :class="{ active: currentStep === 2 }">
         <div class="step-circle">3</div>
-        <div class="step-text">查看结果</div>
+        <div class="step-text">{{ t('devices.discoveryStep3') }}</div>
       </div>
     </div>
 
@@ -307,15 +310,15 @@ watch(() => props.visible, async (visible) => {
       <el-card shadow="never">
         <template #header>
           <div class="card-header">
-            <span class="header-title">搜索配置</span>
+            <span class="header-title">{{ t('devices.discoverySearchConfig') }}</span>
           </div>
         </template>
 
         <el-form label-width="80px" size="small">
-          <el-form-item label="选择网卡">
+          <el-form-item :label="t('devices.discoverySelectNic')">
             <el-select
               v-model="selectedInterfaceIp"
-              placeholder="请选择网卡或自动选择最优网卡"
+              :placeholder="t('devices.discoverySelectNicPlaceholder')"
               clearable
               class="w-full"
             >
@@ -326,46 +329,46 @@ watch(() => props.visible, async (visible) => {
                 :value="nic.ip_address"
               />
             </el-select>
-            <div class="form-tip">多网卡环境下建议指定网卡，默认自动选择有线网卡</div>
+            <div class="form-tip">{{ t('devices.discoveryNicTip') }}</div>
           </el-form-item>
 
-          <el-form-item label="网络范围">
+          <el-form-item :label="t('devices.discoveryNetworkRange')">
             <el-input
               v-model="networkRange"
-              placeholder="192.168.1.0/24 (可选，不填则全网广播)"
+              :placeholder="t('devices.discoveryNetworkRangePlaceholder')"
               clearable
             />
           </el-form-item>
 
-          <el-form-item label="设备ID范围">
+          <el-form-item :label="t('devices.discoveryDeviceIdRange')">
             <el-row :gutter="8">
               <el-col :span="12">
                 <el-input-number
                   v-model="deviceIdRangeMin"
-                  placeholder="最小值"
+                  :placeholder="t('devices.discoveryMinValue')"
                   :min="0"
                   clearable
                   class="w-full"
                   controls-position="right"
                 />
-                <div class="form-tip">最小ID</div>
+                <div class="form-tip">{{ t('devices.discoveryMinId') }}</div>
               </el-col>
               <el-col :span="12">
                 <el-input-number
                   v-model="deviceIdRangeMax"
-                  placeholder="最大值"
+                  :placeholder="t('devices.discoveryMaxValue')"
                   :min="0"
                   clearable
                   class="w-full"
                   controls-position="right"
                 />
-                <div class="form-tip">最大ID</div>
+                <div class="form-tip">{{ t('devices.discoveryMaxId') }}</div>
               </el-col>
             </el-row>
-            <div class="form-tip">不填写则搜索所有设备ID (范围: 0-4194303)</div>
+            <div class="form-tip">{{ t('devices.discoveryDeviceIdRangeTip') }}</div>
           </el-form-item>
 
-          <el-form-item label="超时时间">
+          <el-form-item :label="t('devices.discoveryTimeout')">
             <el-input-number
               v-model="timeout"
               :min="0.1"
@@ -374,8 +377,8 @@ watch(() => props.visible, async (visible) => {
               :precision="1"
               controls-position="right"
             />
-            <span class="unit-text">秒</span>
-            <div class="form-tip inline">推荐: 5-10秒</div>
+            <span class="unit-text">{{ t('devices.discoverySeconds') }}</span>
+            <div class="form-tip inline">{{ t('devices.discoveryTimeoutTip') }}</div>
           </el-form-item>
         </el-form>
       </el-card>
@@ -389,9 +392,9 @@ watch(() => props.visible, async (visible) => {
             <Search />
           </el-icon>
           <div class="searching-text">
-            <h3>正在搜索 BACnet 设备...</h3>
-            <p class="sub-text">系统正在发送 Who-Is 广播，等待设备响应</p>
-            <p class="timeout-text">预计等待时间: {{ timeout }} 秒</p>
+            <h3>{{ t('devices.discoverySearching') }}</h3>
+            <p class="sub-text">{{ t('devices.discoverySearchingTip') }}</p>
+            <p class="timeout-text">{{ t('devices.discoveryExpectedTime', { timeout }) }}</p>
           </div>
         </div>
       </el-card>
@@ -404,9 +407,9 @@ watch(() => props.visible, async (visible) => {
         <template #header>
           <div class="card-header">
             <div class="header-left">
-              <span class="header-title">设备列表</span>
-              <el-tag size="small" type="success">{{ discoveredDevices.length }} 发现</el-tag>
-              <el-tag size="small" type="primary">{{ selectedCount }} 已选</el-tag>
+              <span class="header-title">{{ t('devices.discoveryDeviceList') }}</span>
+              <el-tag size="small" type="success">{{ discoveredDevices.length }} {{ t('devices.discoveryFound') }}</el-tag>
+              <el-tag size="small" type="primary">{{ selectedCount }} {{ t('devices.discoverySelected') }}</el-tag>
             </div>
             <el-button
               type="primary"
@@ -414,7 +417,7 @@ watch(() => props.visible, async (visible) => {
               size="small"
               @click="handleResearch"
             >
-              重新搜索
+              {{ t('devices.discoveryResearch') }}
             </el-button>
           </div>
         </template>
@@ -422,10 +425,10 @@ watch(() => props.visible, async (visible) => {
         <!-- 空状态 -->
         <el-empty
           v-if="discoveredDevices.length === 0"
-          description="未发现任何BACnet设备"
+          :description="t('devices.discoveryNoDevices')"
           :image-size="60"
         >
-          <el-button type="primary" size="small" @click="handleResearch">调整参数重新搜索</el-button>
+          <el-button type="primary" size="small" @click="handleResearch">{{ t('devices.discoveryAdjustAndRetry') }}</el-button>
         </el-empty>
 
         <!-- 设备表格 -->
@@ -438,21 +441,21 @@ watch(() => props.visible, async (visible) => {
           size="small"
         >
           <el-table-column type="selection" width="40" />
-          <el-table-column prop="device_id" label="设备ID" width="70" />
-          <el-table-column label="地址" width="130">
+          <el-table-column prop="device_id" :label="t('devices.discoveryDeviceId')" width="70" />
+          <el-table-column :label="t('devices.discoveryAddress')" width="130">
             <template #default="{ row }">
               {{ row.address }}:{{ row.port }}
             </template>
           </el-table-column>
-          <el-table-column prop="device_name" label="设备名称" min-width="100" show-overflow-tooltip />
-          <el-table-column prop="vendor_name" label="厂商" min-width="80" show-overflow-tooltip />
-          <el-table-column prop="model_name" label="型号" min-width="80" show-overflow-tooltip />
+          <el-table-column prop="device_name" :label="t('devices.discoveryDeviceName')" min-width="100" show-overflow-tooltip />
+          <el-table-column prop="vendor_name" :label="t('devices.discoveryVendor')" min-width="80" show-overflow-tooltip />
+          <el-table-column prop="model_name" :label="t('devices.discoveryModel')" min-width="80" show-overflow-tooltip />
 
           <!-- 操作列 -->
-          <el-table-column label="操作" width="70" fixed="right">
+          <el-table-column :label="t('common.actions')" width="70" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <el-tooltip content="快速添加" placement="top">
+                <el-tooltip :content="t('devices.discoveryQuickAdd')" placement="top">
                   <el-button
                     type="primary"
                     :icon="Plus"
@@ -461,7 +464,7 @@ watch(() => props.visible, async (visible) => {
                     @click="handleQuickAddDevice(row)"
                   />
                 </el-tooltip>
-                <el-tooltip content="自定义添加" placement="top">
+                <el-tooltip :content="t('devices.discoveryCustomizeAdd')" placement="top">
                   <el-button
                     type="warning"
                     :icon="Edit"
@@ -483,9 +486,9 @@ watch(() => props.visible, async (visible) => {
             size="small"
             :indeterminate="selectedCount > 0 && selectedCount < discoveredDevices.length"
           >
-            全选当前结果
+            {{ t('devices.discoverySelectAll') }}
           </el-checkbox>
-          <span class="selection-count">{{ selectedCount }}/{{ discoveredDevices.length }} 已选</span>
+          <span class="selection-count">{{ selectedCount }}/{{ discoveredDevices.length }} {{ t('devices.discoverySelected') }}</span>
         </div>
       </el-card>
     </div>
@@ -495,7 +498,7 @@ watch(() => props.visible, async (visible) => {
       <div class="dialog-footer">
         <!-- 步骤 0: 配置 -->
         <template v-if="currentStep === 0">
-          <el-button size="small" @click="handleClose">取消</el-button>
+          <el-button size="small" @click="handleClose">{{ t('common.cancel') }}</el-button>
           <el-button
             size="small"
             type="primary"
@@ -503,19 +506,19 @@ watch(() => props.visible, async (visible) => {
             :loading="searching"
             @click="handleDiscoverDevices"
           >
-            开始发现设备
+            {{ t('devices.discoveryStart') }}
           </el-button>
         </template>
 
         <!-- 步骤 1: 搜索中 -->
         <template v-else-if="currentStep === 1">
-          <el-button size="small" @click="handleClose" :disabled="searching">取消</el-button>
-          <el-button size="small" type="primary" :loading="true">搜索中...</el-button>
+          <el-button size="small" @click="handleClose" :disabled="searching">{{ t('common.cancel') }}</el-button>
+          <el-button size="small" type="primary" :loading="true">{{ t('devices.discoverySearching') }}...</el-button>
         </template>
 
         <!-- 步骤 2: 结果 -->
         <template v-else-if="currentStep === 2">
-          <el-button size="small" @click="handleClose">关闭</el-button>
+          <el-button size="small" @click="handleClose">{{ t('common.close') }}</el-button>
           <el-button
             size="small"
             type="primary"
@@ -523,7 +526,7 @@ watch(() => props.visible, async (visible) => {
             @click="handleBatchAdd"
             :disabled="selectedCount === 0"
           >
-            批量添加所选 ({{ selectedCount }})
+            {{ t('devices.discoveryBatchAdd', { count: selectedCount }) }}
           </el-button>
         </template>
       </div>
@@ -547,7 +550,7 @@ watch(() => props.visible, async (visible) => {
 .header-title {
   font-size: 13px;
   font-weight: 600;
-  color: #303133;
+  color: var(--el-text-color-primary);
 }
 
 .header-left .el-tag {
@@ -590,7 +593,7 @@ watch(() => props.visible, async (visible) => {
 /* 单位文本 */
 .unit-text {
   margin-left: 8px;
-  color: #606266;
+  color: var(--el-text-color-regular);
   font-size: 13px;
 }
 
@@ -603,7 +606,7 @@ watch(() => props.visible, async (visible) => {
 /* 表单提示文本 */
 .form-tip {
   font-size: 11px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
   line-height: 1.4;
   margin-top: 2px;
 }
@@ -632,8 +635,8 @@ watch(() => props.visible, async (visible) => {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #e4e7ed;
-  color: #909399;
+  background: var(--el-border-color);
+  color: var(--el-text-color-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -643,41 +646,41 @@ watch(() => props.visible, async (visible) => {
 }
 
 .step-item.active .step-circle {
-  background: #409EFF;
+  background: var(--el-color-primary);
   color: white;
 }
 
 .step-item.completed .step-circle {
-  background: #67C23A;
+  background: var(--el-color-success);
   color: white;
 }
 
 .step-text {
   font-size: 11px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
   font-weight: 500;
   transition: all 0.3s;
 }
 
 .step-item.active .step-text {
-  color: #409EFF;
+  color: var(--el-color-primary);
   font-weight: 600;
 }
 
 .step-item.completed .step-text {
-  color: #67C23A;
+  color: var(--el-color-success);
 }
 
 .step-line {
   width: 25px;
   height: 2px;
-  background: #e4e7ed;
+  background: var(--el-border-color);
   margin: 0 5px;
   transition: all 0.3s;
 }
 
 .step-line.active {
-  background: #409EFF;
+  background: var(--el-color-primary);
 }
 
 /* 步骤内容 */
@@ -710,7 +713,7 @@ watch(() => props.visible, async (visible) => {
 
 .searching-icon {
   animation: pulse 2s ease-in-out infinite;
-  color: #409EFF;
+  color: var(--el-color-primary);
   margin-bottom: 10px;
 }
 
@@ -718,19 +721,19 @@ watch(() => props.visible, async (visible) => {
   margin: 0 0 6px 0;
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: var(--el-text-color-primary);
 }
 
 .searching-text .sub-text {
   margin: 0 0 6px 0;
   font-size: 11px;
-  color: #606266;
+  color: var(--el-text-color-regular);
 }
 
 .searching-text .timeout-text {
   margin: 0;
   font-size: 11px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
 }
 
 @keyframes pulse {
@@ -768,13 +771,13 @@ watch(() => props.visible, async (visible) => {
   justify-content: space-between;
   align-items: center;
   padding: 4px 0;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--el-border-color-light);
   margin-top: 4px;
 }
 
 .selection-count {
   font-size: 11px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
 }
 
 /* 空状态样式调整 */

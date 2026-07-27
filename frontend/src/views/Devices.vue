@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDeviceStore } from '@/stores/devices'
 import { usePointStore } from '@/stores/points'
 import { useUserStore } from '@/stores/users'
@@ -29,6 +30,7 @@ import ProtocolSelectionDialog from '@/components/ProtocolSelectionDialog.vue'
 import BACnetModeSelectionDialog from '@/components/BACnetModeSelectionDialog.vue'
 import DeviceConfirmDialog from '@/components/DeviceConfirmDialog.vue'
 
+const { t } = useI18n()
 const deviceStore = useDeviceStore()
 const pointStore = usePointStore()
 const userStore = useUserStore()
@@ -934,7 +936,7 @@ onMounted(async () => {
       <div class="toolbar-left">
         <el-input
           v-model="searchQuery"
-          placeholder="搜索设备..."
+          :placeholder="t('devices.searchPlaceholder')"
           :prefix-icon="Search"
           clearable
           class="toolbar-search"
@@ -942,39 +944,39 @@ onMounted(async () => {
         />
         <el-select 
           v-model="statusFilter" 
-          placeholder="状态筛选" 
+          :placeholder="t('devices.statusFilter')" 
           clearable
           class="toolbar-filter"
           @change="handleFilterChange"
         >
-          <el-option label="全部" value="" />
-          <el-option label="在线" value="online" />
-          <el-option label="离线" value="offline" />
+          <el-option :label="t('common.all')" value="" />
+          <el-option :label="t('common.online')" value="online" />
+          <el-option :label="t('common.offline')" value="offline" />
         </el-select>
         <div class="toolbar-stats">
           <span class="stat-item">
             <span class="stat-value">{{ deviceStore.totalDevices }}</span>
-            <span class="stat-label">设备</span>
+            <span class="stat-label">{{ t('devices.totalDevices') }}</span>
           </span>
           <span class="stat-divider">/</span>
           <span class="stat-item stat-online">
             <span class="stat-value">{{ deviceStore.onlineDevices }}</span>
-            <span class="stat-label">在线</span>
+            <span class="stat-label">{{ t('common.online') }}</span>
           </span>
         </div>
       </div>
       <div class="toolbar-right">
         <el-button v-if="userStore.hasPermission('devices', 'create')" type="primary" :icon="Plus" @click="handleAddDevice">
-          新增设备
+          {{ t('devices.addDevice') }}
         </el-button>
         <el-button :icon="Download" @click="handleExportYaml">
-          导出
+          {{ t('common.export') }}
         </el-button>
         <el-button v-if="userStore.hasPermission('devices', 'create')" :icon="Upload" @click="handleImportYaml">
-          导入
+          {{ t('common.import') }}
         </el-button>
         <el-button :icon="Refresh" @click="handleRefresh" :loading="deviceStore.loading">
-          刷新
+          {{ t('common.refresh') }}
         </el-button>
       </div>
     </div>
@@ -995,7 +997,7 @@ onMounted(async () => {
           :class="{ active: activeTab === 'devices' }"
           @click="activeTab = 'devices'"
         >
-          设备列表
+          {{ t('devices.deviceList') }}
           <span v-if="selectedDeviceAsset" class="tab-badge">{{ deviceStore.getDeviceByAsset(selectedDeviceAsset)?.name }}</span>
         </div>
         <div 
@@ -1003,7 +1005,7 @@ onMounted(async () => {
           :class="{ active: activeTab === 'points', disabled: !selectedDeviceAsset }"
           @click="selectedDeviceAsset && (activeTab = 'points')"
         >
-          点位列表
+          {{ t('devices.pointList') }}
           <span v-if="selectedDeviceAsset" class="tab-count">{{ getDevicePoints(selectedDeviceAsset).length }}</span>
         </div>
       </div>
@@ -1011,11 +1013,11 @@ onMounted(async () => {
       <div v-show="activeTab === 'devices'" class="compact-panel device-panel">
         <div v-if="deviceStore.loading && deviceStore.southDevices.length === 0" class="loading-state">
           <el-icon class="is-loading" :size="32"><Refresh /></el-icon>
-          <p>加载设备列表...</p>
+          <p>{{ t('devices.loadingDevices') }}</p>
         </div>
 
         <div v-else-if="filteredSouthDevices.length === 0" class="empty-state">
-          <p>暂无设备</p>
+          <p>{{ t('devices.noDevices') }}</p>
         </div>
 
         <div v-else class="device-grid">
@@ -1037,9 +1039,9 @@ onMounted(async () => {
               <div class="device-card-info">
                 <div class="device-card-name">{{ device.name }}</div>
                 <div class="device-card-meta">
-                  <span>{{ device.pluginName }}</span>
-                  <span>{{ device.pointCount }} 点位</span>
-                </div>
+                <span>{{ device.pluginName }}</span>
+                <span>{{ device.pointCount }} {{ t('devices.devicePoints') }}</span>
+              </div>
               </div>
             </div>
             <div class="device-card-actions">
@@ -1052,10 +1054,10 @@ onMounted(async () => {
               />
               <div class="action-buttons" @click.stop>
                 <el-button v-if="userStore.hasPermission('devices', 'update')" type="primary" link :size="isTouch ? 'default' : 'small'" @click="handleEditDevice(device)">
-                  编辑
+                  {{ t('common.edit') }}
                 </el-button>
                 <el-button v-if="userStore.hasPermission('devices', 'delete')" type="danger" link :size="isTouch ? 'default' : 'small'" @click="handleDeleteDevice(device)">
-                  删除
+                  {{ t('common.delete') }}
                 </el-button>
               </div>
             </div>
@@ -1066,8 +1068,8 @@ onMounted(async () => {
       <div v-show="activeTab === 'points'" class="compact-panel points-panel">
         <div v-if="!selectedDeviceAsset" class="empty-points">
           <el-icon :size="48"><TrendCharts /></el-icon>
-          <p>请先选择一个设备</p>
-          <el-button type="primary" @click="activeTab = 'devices'">返回设备列表</el-button>
+          <p>{{ t('devices.pleaseSelectDevice') }}</p>
+          <el-button type="primary" @click="activeTab = 'devices'">{{ t('devices.returnToDeviceList') }}</el-button>
         </div>
         
         <template v-else>
@@ -1075,13 +1077,13 @@ onMounted(async () => {
             <div class="panel-header-left">
               <el-button link @click="activeTab = 'devices'">
                 <el-icon><RefreshRight /></el-icon>
-                返回设备
+                {{ t('devices.returnToDevice') }}
               </el-button>
             </div>
             <span class="panel-title">{{ deviceStore.getDeviceByAsset(selectedDeviceAsset)?.name || selectedDeviceAsset }}</span>
             <div class="points-actions">
               <el-button v-if="userStore.hasPermission('devices', 'create')" type="primary" :icon="Plus" size="small" @click="handleAddPoint">
-                新增点位
+                {{ t('devices.pointDialog.title') }}
               </el-button>
               <el-button 
                 v-if="userStore.hasPermission('devices', 'create') && currentDevicePluginName === 'bacnet'" 
@@ -1090,7 +1092,7 @@ onMounted(async () => {
                 size="small" 
                 @click="showPointDiscoveryDialog = true"
               >
-                点位发现
+                {{ t('devices.pointDialog.title') }}
               </el-button>
             </div>
           </div>
@@ -1101,8 +1103,8 @@ onMounted(async () => {
             style="width: 100%; flex: 1;"
             height="100%"
           >
-            <el-table-column prop="name" label="点位名称" min-width="120" />
-            <el-table-column label="当前值" min-width="100">
+            <el-table-column prop="name" :label="t('devices.pointName')" min-width="120" />
+            <el-table-column :label="t('devices.currentValue')" min-width="100">
               <template #default="{ row }">
                 <span v-if="row.currentValue !== undefined && row.currentValue !== null" class="current-value">
                   {{ row.currentValue }}{{ row.unit ? ' ' + row.unit : '' }}
@@ -1110,32 +1112,32 @@ onMounted(async () => {
                 <span v-else class="text-muted">--</span>
               </template>
             </el-table-column>
-            <el-table-column label="数据类型" width="100">
+            <el-table-column :label="t('devices.dataType')" width="100">
               <template #default="{ row }">
                 <el-tag size="small">{{ row.data_type }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="质量" width="80">
+            <el-table-column :label="t('devices.quality')" width="80">
               <template #default="{ row }">
                 <el-tag v-if="row.quality" size="small" :type="row.quality === 'good' ? 'success' : row.quality === 'bad' ? 'danger' : 'warning'">
-                  {{ row.quality === 'good' ? '良好' : row.quality === 'bad' ? '异常' : '不确定' }}
+                  {{ row.quality === 'good' ? t('devices.qualityGood') : row.quality === 'bad' ? t('devices.qualityBad') : t('devices.qualityUnknown') }}
                 </el-tag>
                 <span v-else class="text-muted">--</span>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="220" fixed="right">
+            <el-table-column :label="t('common.actions')" width="220" fixed="right">
               <template #default="{ row }">
                 <el-button type="primary" link size="small" @click="handleViewTrend(selectedDeviceAsset!, row.name)">
-                  趋势
+                  {{ t('devices.pointTrend') }}
                 </el-button>
                 <el-button v-if="row.writable && userStore.hasPermission('devices', 'update')" type="warning" link size="small" @click="handleWritePoint(row)">
-                  写值
+                  {{ t('devices.writeValue') }}
                 </el-button>
                 <el-button v-if="userStore.hasPermission('devices', 'update')" type="primary" link size="small" @click="handleEditPoint(row)">
-                  编辑
+                  {{ t('common.edit') }}
                 </el-button>
                 <el-button v-if="userStore.hasPermission('devices', 'delete')" type="danger" link size="small" @click="handleDeletePoint(row.name)">
-                  删除
+                  {{ t('common.delete') }}
                 </el-button>
               </template>
             </el-table-column>
@@ -1147,17 +1149,17 @@ onMounted(async () => {
     <div v-else class="main-content">
       <div class="device-list-panel">
         <div class="panel-header">
-          <span class="panel-title">设备列表</span>
-          <span class="device-count">{{ filteredSouthDevices.length }} 个设备</span>
+          <span class="panel-title">{{ t('devices.deviceList') }}</span>
+          <span class="device-count">{{ filteredSouthDevices.length }} {{ t('devices.deviceCount') }}</span>
         </div>
         
         <div v-if="deviceStore.loading && deviceStore.southDevices.length === 0" class="loading-state">
           <el-icon class="is-loading" :size="32"><Refresh /></el-icon>
-          <p>加载设备列表...</p>
+          <p>{{ t('devices.loadingDevices') }}</p>
         </div>
 
         <div v-else-if="filteredSouthDevices.length === 0" class="empty-state">
-          <p>暂无设备</p>
+          <p>{{ t('devices.noDevices') }}</p>
         </div>
 
         <div v-else class="device-list">
@@ -1217,15 +1219,15 @@ onMounted(async () => {
       <div class="points-panel">
         <div v-if="!selectedDeviceAsset" class="empty-points">
           <el-icon :size="48"><TrendCharts /></el-icon>
-          <p>请从左侧选择一个设备查看点位列表</p>
+          <p>{{ t('devices.selectDeviceToViewPoints') }}</p>
         </div>
         
         <template v-else>
           <div class="panel-header">
-            <span class="panel-title">{{ deviceStore.getDeviceByAsset(selectedDeviceAsset)?.name || selectedDeviceAsset }} 点位列表</span>
+            <span class="panel-title">{{ deviceStore.getDeviceByAsset(selectedDeviceAsset)?.name || selectedDeviceAsset }} {{ t('devices.pointList') }}</span>
             <div class="points-actions">
               <el-button v-if="userStore.hasPermission('devices', 'create')" type="primary" :icon="Plus" size="small" @click="handleAddPoint">
-                新增点位
+                {{ t('devices.addPoint') }}
               </el-button>
               <el-button 
                 v-if="userStore.hasPermission('devices', 'create') && currentDevicePluginName === 'bacnet'" 
@@ -1234,7 +1236,7 @@ onMounted(async () => {
                 size="small" 
                 @click="showPointDiscoveryDialog = true"
               >
-                点位发现
+                {{ t('devices.discoverPoints') }}
               </el-button>
             </div>
           </div>
@@ -1245,9 +1247,9 @@ onMounted(async () => {
             style="width: 100%; flex: 1;"
             height="100%"
           >
-            <el-table-column prop="name" label="点位名称" width="150" />
-            <el-table-column prop="description" label="描述" width="150" />
-            <el-table-column label="当前值" width="120">
+            <el-table-column prop="name" :label="t('devices.pointName')" width="150" />
+            <el-table-column prop="description" :label="t('common.description')" width="150" />
+            <el-table-column :label="t('devices.currentValue')" width="120">
               <template #default="{ row }">
                 <span v-if="row.currentValue !== undefined && row.currentValue !== null" class="current-value">
                   {{ row.currentValue }}{{ row.unit ? ' ' + row.unit : '' }}
@@ -1255,43 +1257,43 @@ onMounted(async () => {
                 <span v-else class="text-muted">--</span>
               </template>
             </el-table-column>
-            <el-table-column label="数据类型" width="100">
+            <el-table-column :label="t('devices.dataType')" width="100">
               <template #default="{ row }">
                 <el-tag size="small">{{ row.data_type }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="质量" width="80">
+            <el-table-column :label="t('devices.quality')" width="80">
               <template #default="{ row }">
                 <el-tag v-if="row.quality" size="small" :type="row.quality === 'good' ? 'success' : row.quality === 'bad' ? 'danger' : 'warning'">
-                  {{ row.quality === 'good' ? '良好' : row.quality === 'bad' ? '异常' : '不确定' }}
+                  {{ row.quality === 'good' ? t('devices.qualityGood') : row.quality === 'bad' ? t('devices.qualityBad') : t('devices.qualityUnknown') }}
                 </el-tag>
                 <span v-else class="text-muted">--</span>
               </template>
             </el-table-column>
-            <el-table-column label="更新时间" width="170">
+            <el-table-column :label="t('devices.lastUpdate')" width="170">
               <template #default="{ row }">
                 <span v-if="row.lastUpdate">{{ row.lastUpdate }}</span>
                 <span v-else class="text-muted">--</span>
               </template>
             </el-table-column>
-            <el-table-column label="配置" min-width="150">
+            <el-table-column :label="t('common.config')" min-width="150">
               <template #default="{ row }">
                 <span class="config-preview">{{ JSON.stringify(row.config) }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="220" fixed="right">
+            <el-table-column :label="t('common.actions')" width="220" fixed="right">
               <template #default="{ row }">
                 <el-button type="primary" link size="small" @click="handleViewTrend(selectedDeviceAsset!, row.name)">
-                  趋势
+                  {{ t('devices.pointTrend') }}
                 </el-button>
                 <el-button v-if="row.writable && userStore.hasPermission('devices', 'update')" type="warning" link size="small" @click="handleWritePoint(row)">
-                  写值
+                  {{ t('devices.writeValue') }}
                 </el-button>
                 <el-button v-if="userStore.hasPermission('devices', 'update')" type="primary" link size="small" @click="handleEditPoint(row)">
-                  编辑
+                  {{ t('common.edit') }}
                 </el-button>
                 <el-button v-if="userStore.hasPermission('devices', 'delete')" type="danger" link size="small" @click="handleDeletePoint(row.name)">
-                  删除
+                  {{ t('common.delete') }}
                 </el-button>
               </template>
             </el-table-column>
@@ -1302,26 +1304,26 @@ onMounted(async () => {
     
     <el-dialog 
       v-model="showDeviceDialog" 
-      :title="isEditing ? '编辑设备' : '新增设备'"
+      :title="isEditing ? t('devices.editDevice') : t('devices.addDevice')"
       width="min(600px, 90vw)"
       :close-on-click-modal="false"
     >
       <el-form ref="deviceFormRef" :model="deviceForm" :rules="deviceFormRules" label-width="100px">
-        <el-form-item label="资产标识" prop="asset">
+        <el-form-item :label="t('devices.asset')" prop="asset">
           <el-input 
             v-model="deviceForm.asset" 
-            placeholder="仅允许字母、数字、下划线、连字符"
+            :placeholder="t('devices.assetPlaceholder')"
             :disabled="isEditing"
           />
         </el-form-item>
-        <el-form-item label="设备名称">
-          <el-input v-model="deviceForm.name" placeholder="请输入设备名称（留空则使用资产标识）" />
+        <el-form-item :label="t('devices.deviceName')">
+          <el-input v-model="deviceForm.name" :placeholder="t('devices.namePlaceholder')" />
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="deviceForm.description" type="textarea" :rows="2" placeholder="请输入设备描述" />
+        <el-form-item :label="t('common.description')">
+          <el-input v-model="deviceForm.description" type="textarea" :rows="2" :placeholder="t('devices.descriptionPlaceholder')" />
         </el-form-item>
-        <el-form-item label="协议类型" prop="pluginName">
-          <el-select v-model="deviceForm.pluginName" placeholder="请选择协议" @change="handlePluginChange">
+        <el-form-item :label="t('devices.protocolType')" prop="pluginName">
+          <el-select v-model="deviceForm.pluginName" :placeholder="t('devices.selectProtocol')" @change="handlePluginChange">
             <el-option 
               v-for="opt in pluginOptions" 
               :key="opt.value" 
@@ -1333,24 +1335,24 @@ onMounted(async () => {
         
         <!-- Modbus TCP: 主机地址和端口 -->
         <template v-if="deviceForm.pluginName === 'modbus_tcp'">
-          <el-form-item label="主机地址" prop="host">
-            <el-input v-model="deviceForm.host" placeholder="请输入主机地址，如 192.168.1.100" />
+          <el-form-item :label="t('devices.host')" prop="host">
+            <el-input v-model="deviceForm.host" :placeholder="t('devices.hostPlaceholder')" />
           </el-form-item>
-          <el-form-item label="端口">
+          <el-form-item :label="t('devices.port')">
             <el-input-number v-model="deviceForm.port" :min="1" :max="65535" />
           </el-form-item>
         </template>
         
         <!-- Modbus RTU: 串口参数 -->
         <template v-if="deviceForm.pluginName === 'modbus_rtu'">
-          <el-form-item label="串口设备" prop="serial_port">
-            <el-input v-model="deviceForm.serial_port" placeholder="如 /dev/ttyUSB0 或 COM3" />
+          <el-form-item :label="t('devices.serialPort')" prop="serial_port">
+            <el-input v-model="deviceForm.serial_port" :placeholder="t('devices.serialPortPlaceholder')" />
             <div style="font-size: 12px; color: #909399; margin-top: 4px;">
               Linux: /dev/ttyUSB0, /dev/ttyS0 等；Windows: COM3, COM4 等
             </div>
           </el-form-item>
-          <el-form-item label="波特率">
-            <el-select v-model="deviceForm.baudrate" placeholder="请选择波特率">
+          <el-form-item :label="t('devices.baudrate')">
+            <el-select v-model="deviceForm.baudrate" :placeholder="t('devices.selectBaudrate')">
               <el-option :value="1200" label="1200" />
               <el-option :value="2400" label="2400" />
               <el-option :value="4800" label="4800" />
@@ -1361,16 +1363,16 @@ onMounted(async () => {
               <el-option :value="115200" label="115200" />
             </el-select>
           </el-form-item>
-          <el-form-item label="校验位">
+          <el-form-item :label="t('devices.parity')">
             <el-radio-group v-model="deviceForm.parity">
-              <el-radio value="N">无校验 (N)</el-radio>
-              <el-radio value="E">偶校验 (E)</el-radio>
-              <el-radio value="O">奇校验 (O)</el-radio>
+              <el-radio value="N">{{ t('devices.parityNone') }}</el-radio>
+              <el-radio value="E">{{ t('devices.parityEven') }}</el-radio>
+              <el-radio value="O">{{ t('devices.parityOdd') }}</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="停止位">
+              <el-form-item :label="t('devices.stopbits')">
                 <el-radio-group v-model="deviceForm.stopbits">
                   <el-radio :value="1">1</el-radio>
                   <el-radio :value="2">2</el-radio>
@@ -1378,7 +1380,7 @@ onMounted(async () => {
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="数据位">
+              <el-form-item :label="t('devices.bytesize')">
                 <el-radio-group v-model="deviceForm.bytesize">
                   <el-radio :value="7">7</el-radio>
                   <el-radio :value="8">8</el-radio>
@@ -1389,113 +1391,113 @@ onMounted(async () => {
         </template>
         
         <!-- Modbus TCP/RTU 共有参数 -->
-        <el-form-item v-if="deviceForm.pluginName === 'modbus_tcp' || deviceForm.pluginName === 'modbus_rtu'" label="从站ID">
+        <el-form-item v-if="deviceForm.pluginName === 'modbus_tcp' || deviceForm.pluginName === 'modbus_rtu'" :label="t('devices.slaveId')">
           <el-input-number v-model="deviceForm.slave_id" :min="0" :max="255" />
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'modbus_tcp' || deviceForm.pluginName === 'modbus_rtu'" label="采集周期(秒)">
+        <el-form-item v-if="deviceForm.pluginName === 'modbus_tcp' || deviceForm.pluginName === 'modbus_rtu'" :label="t('devices.collectionInterval')">
           <el-input-number v-model="deviceForm.interval" :min="1" :max="3600" />
           <div style="font-size: 12px; color: #909399; margin-top: 4px;">
-            数据采集间隔时间，推荐1-5秒。
+            {{ t('devices.collectionIntervalHint') }}
           </div>
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'bacnet'" label="设备ID">
+        <el-form-item v-if="deviceForm.pluginName === 'bacnet'" :label="t('devices.deviceId')">
           <el-input-number v-model="deviceForm.device_id" :min="0" :max="4194303" />
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'bacnet'" label="采集周期(秒)">
+        <el-form-item v-if="deviceForm.pluginName === 'bacnet'" :label="t('devices.collectionInterval')">
           <el-input-number v-model="deviceForm.interval" :min="1" :max="3600" />
           <div style="font-size: 12px; color: #909399; margin-top: 4px;">
-            数据采集间隔时间，推荐5-10秒。
+            {{ t('devices.bacnetIntervalHint') }}
           </div>
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'bacnet'" label="主机地址" prop="host">
-          <el-input v-model="deviceForm.host" placeholder="请输入主机地址" />
+        <el-form-item v-if="deviceForm.pluginName === 'bacnet'" :label="t('devices.host')" prop="host">
+          <el-input v-model="deviceForm.host" :placeholder="t('devices.hostPlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'bacnet'" label="端口">
+        <el-form-item v-if="deviceForm.pluginName === 'bacnet'" :label="t('devices.port')">
           <el-input-number v-model="deviceForm.port" :min="1" :max="65535" />
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'knx'" label="网关IP" prop="host">
-          <el-input v-model="deviceForm.host" placeholder="KNX/IP 网关地址" />
+        <el-form-item v-if="deviceForm.pluginName === 'knx'" :label="t('devices.gatewayIp')" prop="host">
+          <el-input v-model="deviceForm.host" :placeholder="t('devices.gatewayIpPlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'knx'" label="端口">
+        <el-form-item v-if="deviceForm.pluginName === 'knx'" :label="t('devices.port')">
           <el-input-number v-model="deviceForm.port" :min="1" :max="65535" />
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'knx'" label="本地IP">
-          <el-input v-model="deviceForm.local_ip" placeholder="可选，本地IP地址" />
+        <el-form-item v-if="deviceForm.pluginName === 'knx'" :label="t('devices.localIp')">
+          <el-input v-model="deviceForm.local_ip" :placeholder="t('devices.localIpPlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'knx'" label="连接模式">
-          <el-select v-model="deviceForm.connection_type" placeholder="请选择连接模式">
-            <el-option label="自动模式 (推荐)" value="automatic" />
-            <el-option label="UDP隧道模式" value="tunneling" />
-            <el-option label="TCP隧道模式" value="tunneling_tcp" />
-            <el-option label="路由模式" value="routing" />
-            <el-option label="安全TCP隧道" value="tunneling_tcp_secure" />
-            <el-option label="安全路由模式" value="routing_secure" />
+        <el-form-item v-if="deviceForm.pluginName === 'knx'" :label="t('devices.connectionMode')">
+          <el-select v-model="deviceForm.connection_type" :placeholder="t('devices.selectConnectionMode')">
+            <el-option :label="t('devices.connectionAutomatic')" value="automatic" />
+            <el-option :label="t('devices.connectionTunneling')" value="tunneling" />
+            <el-option :label="t('devices.connectionTunnelingTcp')" value="tunneling_tcp" />
+            <el-option :label="t('devices.connectionRouting')" value="routing" />
+            <el-option :label="t('devices.connectionTunnelingTcpSecure')" value="tunneling_tcp_secure" />
+            <el-option :label="t('devices.connectionRoutingSecure')" value="routing_secure" />
           </el-select>
           <div style="font-size: 12px; color: #909399; margin-top: 4px;">
-            推荐使用自动模式。如遇连接数满问题，请选择路由模式。
+            {{ t('devices.connectionModeHint') }}
           </div>
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'knx'" label="采集周期(秒)">
+        <el-form-item v-if="deviceForm.pluginName === 'knx'" :label="t('devices.collectionInterval')">
           <el-input-number v-model="deviceForm.interval" :min="1" :max="3600" />
           <div style="font-size: 12px; color: #909399; margin-top: 4px;">
-            数据采集间隔时间，推荐5-10秒。
+            {{ t('devices.knxIntervalHint') }}
           </div>
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'knx'" label="同步模式">
-          <el-select v-model="deviceForm.sync_mode" placeholder="请选择同步模式">
-            <el-option label="智能模式 (推荐)" value="smart" />
-            <el-option label="主动模式" value="always" />
-            <el-option label="被动模式" value="passive" />
+        <el-form-item v-if="deviceForm.pluginName === 'knx'" :label="t('devices.syncMode')">
+          <el-select v-model="deviceForm.sync_mode" :placeholder="t('devices.selectSyncMode')">
+            <el-option :label="t('devices.syncSmart')" value="smart" />
+            <el-option :label="t('devices.syncAlways')" value="always" />
+            <el-option :label="t('devices.syncPassive')" value="passive" />
           </el-select>
           <div style="font-size: 12px; color: #909399; margin-top: 4px;">
-            智能模式自动平衡性能和数据新鲜度。
+            {{ t('devices.syncModeHint') }}
           </div>
         </el-form-item>
-        <el-form-item v-if="deviceForm.pluginName === 'knx'" label="同步间隔(分钟)">
+        <el-form-item v-if="deviceForm.pluginName === 'knx'" :label="t('devices.syncInterval')">
           <el-input-number v-model="deviceForm.sync_interval" :min="5" :max="1440" />
           <div style="font-size: 12px; color: #909399; margin-top: 4px;">
-            智能模式下主动同步的时间间隔，默认60分钟。
+            {{ t('devices.syncIntervalHint') }}
           </div>
         </el-form-item>
-        <el-form-item label="超时(秒)">
+        <el-form-item :label="t('devices.timeout')">
           <el-input-number v-model="deviceForm.timeout" :min="1" :max="60" />
         </el-form-item>
-        <el-form-item label="启用">
+        <el-form-item :label="t('devices.enabled')">
           <el-switch v-model="deviceForm.enabled" />
         </el-form-item>
-        <el-form-item label="标签">
-          <el-input v-model="deviceForm.tags" placeholder="多个标签用逗号分隔，如: 厂房1,温度" />
+        <el-form-item :label="t('common.tags')">
+          <el-input v-model="deviceForm.tags" :placeholder="t('devices.tagsPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showDeviceDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveDevice" :loading="saving">保存</el-button>
+        <el-button @click="showDeviceDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleSaveDevice" :loading="saving">{{ t('common.save') }}</el-button>
       </template>
     </el-dialog>
 
     <el-dialog 
       v-model="showPointDialog" 
-      :title="isEditingPoint ? '编辑点位' : '新增点位'"
+      :title="isEditingPoint ? t('devices.editPoint') : t('devices.addPoint')"
       width="min(700px, 92vw)"
       :close-on-click-modal="false"
     >
       <el-form ref="pointFormRef" :model="pointForm" :rules="pointFormRules" label-width="100px">
-        <el-form-item label="点位名称" prop="name">
+        <el-form-item :label="t('devices.pointName')" prop="name">
           <el-input 
             v-model="pointForm.name" 
-            placeholder="仅允许字母、数字、下划线、连字符、中文"
+            :placeholder="t('devices.pointNamePlaceholder')"
             :disabled="isEditingPoint"
           />
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="pointForm.description" placeholder="请输入点位描述" />
+        <el-form-item :label="t('common.description')">
+          <el-input v-model="pointForm.description" :placeholder="t('devices.pointDescriptionPlaceholder')" />
         </el-form-item>
         
-        <el-divider content-position="left">协议配置</el-divider>
+        <el-divider :content-position="t('devices.dividerLeft')">{{ t('devices.protocolConfig') }}</el-divider>
         
         <template v-if="currentDevicePluginName === 'modbus_tcp' || currentDevicePluginName === 'modbus_rtu'">
-          <el-form-item label="数据类型" prop="data_type">
-            <el-select v-model="pointForm.data_type" placeholder="请选择数据类型">
+          <el-form-item :label="t('devices.dataType')" prop="data_type">
+            <el-select v-model="pointForm.data_type" :placeholder="t('devices.selectDataType')">
               <el-option 
                 v-for="opt in modbusDataTypes" 
                 :key="opt.value" 
@@ -1504,11 +1506,11 @@ onMounted(async () => {
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="寄存器地址" prop="address">
-            <el-input-number v-model="pointForm.address" :min="0" :max="65535" placeholder="Modbus寄存器地址" />
+          <el-form-item :label="t('devices.registerAddress')" prop="address">
+            <el-input-number v-model="pointForm.address" :min="0" :max="65535" :placeholder="t('devices.registerAddressPlaceholder')" />
           </el-form-item>
-          <el-form-item label="寄存器类型">
-            <el-select v-model="pointForm.register_type" placeholder="请选择寄存器类型">
+          <el-form-item :label="t('devices.registerType')">
+            <el-select v-model="pointForm.register_type" :placeholder="t('devices.selectRegisterType')">
               <el-option 
                 v-for="opt in registerTypes" 
                 :key="opt.value" 
@@ -1517,32 +1519,32 @@ onMounted(async () => {
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="寄存器数量">
-            <el-input-number v-model="pointForm.count" :min="1" :max="16" placeholder="多字节数据类型需要多个寄存器" />
+          <el-form-item :label="t('devices.registerCount')">
+            <el-input-number v-model="pointForm.count" :min="1" :max="16" :placeholder="t('devices.registerCountPlaceholder')" />
           </el-form-item>
-          <el-form-item label="缩放因子">
-            <el-input-number v-model="pointForm.scale" placeholder="可选，如 0.1" :precision="4" :step="0.1" clearable />
+          <el-form-item :label="t('devices.scale')">
+            <el-input-number v-model="pointForm.scale" :placeholder="t('devices.scalePlaceholder')" :precision="4" :step="0.1" clearable />
           </el-form-item>
-          <el-form-item label="偏移量">
-            <el-input-number v-model="pointForm.offset" placeholder="可选，如 -273.15" :precision="4" clearable />
+          <el-form-item :label="t('devices.offset')">
+            <el-input-number v-model="pointForm.offset" :placeholder="t('devices.offsetPlaceholder')" :precision="4" clearable />
           </el-form-item>
-          <el-form-item label="字节顺序">
+          <el-form-item :label="t('devices.byteOrder')">
             <el-radio-group v-model="pointForm.byte_order">
-              <el-radio value="big">大端 (Big)</el-radio>
-              <el-radio value="little">小端 (Little)</el-radio>
+              <el-radio value="big">{{ t('devices.byteOrderBig') }}</el-radio>
+              <el-radio value="little">{{ t('devices.byteOrderLittle') }}</el-radio>
             </el-radio-group>
           </el-form-item>
-          <el-form-item label="字顺序">
+          <el-form-item :label="t('devices.wordOrder')">
             <el-radio-group v-model="pointForm.word_order">
-              <el-radio value="big">大端 (Big)</el-radio>
-              <el-radio value="little">小端 (Little，西门子/三菱)</el-radio>
+              <el-radio value="big">{{ t('devices.wordOrderBig') }}</el-radio>
+              <el-radio value="little">{{ t('devices.wordOrderLittle') }}</el-radio>
             </el-radio-group>
           </el-form-item>
         </template>
         
         <template v-else-if="currentDevicePluginName === 'knx'">
-          <el-form-item label="数据类型" prop="data_type">
-            <el-select v-model="pointForm.data_type" placeholder="请选择数据类型">
+          <el-form-item :label="t('devices.dataType')" prop="data_type">
+            <el-select v-model="pointForm.data_type" :placeholder="t('devices.selectDataType')">
               <el-option 
                 v-for="opt in knxDataTypes" 
                 :key="opt.value" 
@@ -1551,29 +1553,29 @@ onMounted(async () => {
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="组地址" prop="group_address">
-            <el-input v-model="pointForm.group_address" placeholder="KNX组地址，如 1/2/3" />
+          <el-form-item :label="t('devices.groupAddress')" prop="group_address">
+            <el-input v-model="pointForm.group_address" :placeholder="t('devices.groupAddressPlaceholder')" />
           </el-form-item>
-          <el-form-item label="状态地址">
-            <el-input v-model="pointForm.status_address" placeholder="可选，状态组地址" />
+          <el-form-item :label="t('devices.statusAddress')">
+            <el-input v-model="pointForm.status_address" :placeholder="t('devices.statusAddressPlaceholder')" />
           </el-form-item>
-          <el-form-item label="控制地址">
-            <el-input v-model="pointForm.control_address" placeholder="可选，控制组地址" />
+          <el-form-item :label="t('devices.controlAddress')">
+            <el-input v-model="pointForm.control_address" :placeholder="t('devices.controlAddressPlaceholder')" />
           </el-form-item>
-          <el-form-item label="可写">
+          <el-form-item :label="t('devices.writable')">
             <el-switch v-model="pointForm.writable" />
           </el-form-item>
-          <el-form-item label="缩放因子">
-            <el-input-number v-model="pointForm.scale" placeholder="可选" :precision="4" :step="0.1" clearable />
+          <el-form-item :label="t('devices.scale')">
+            <el-input-number v-model="pointForm.scale" :placeholder="t('devices.optionalPlaceholder')" :precision="4" :step="0.1" clearable />
           </el-form-item>
-          <el-form-item label="偏移量">
-            <el-input-number v-model="pointForm.offset" placeholder="可选" :precision="4" clearable />
+          <el-form-item :label="t('devices.offset')">
+            <el-input-number v-model="pointForm.offset" :placeholder="t('devices.optionalPlaceholder')" :precision="4" clearable />
           </el-form-item>
         </template>
         
         <template v-else-if="currentDevicePluginName === 'bacnet'">
-          <el-form-item label="对象类型" prop="object_type">
-            <el-select v-model="pointForm.object_type" placeholder="请选择对象类型" @change="pointForm.data_type = pointForm.object_type">
+          <el-form-item :label="t('devices.objectType')" prop="object_type">
+            <el-select v-model="pointForm.object_type" :placeholder="t('devices.selectObjectType')" @change="pointForm.data_type = pointForm.object_type">
               <el-option 
                 v-for="opt in bacnetDataTypes" 
                 :key="opt.value" 
@@ -1582,107 +1584,107 @@ onMounted(async () => {
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="对象实例" prop="object_instance">
-            <el-input-number v-model="pointForm.object_instance" :min="0" placeholder="BACnet对象实例ID" />
+          <el-form-item :label="t('devices.objectInstance')" prop="object_instance">
+            <el-input-number v-model="pointForm.object_instance" :min="0" :placeholder="t('devices.objectInstancePlaceholder')" />
           </el-form-item>
-          <el-form-item label="属性">
-            <el-input v-model="pointForm.property" placeholder="默认为 presentValue" />
+          <el-form-item :label="t('devices.property')">
+            <el-input v-model="pointForm.property" :placeholder="t('devices.propertyPlaceholder')" />
           </el-form-item>
-          <el-form-item label="缩放因子">
-            <el-input-number v-model="pointForm.scale" placeholder="可选" :precision="4" :step="0.1" clearable />
+          <el-form-item :label="t('devices.scale')">
+            <el-input-number v-model="pointForm.scale" :placeholder="t('devices.optionalPlaceholder')" :precision="4" :step="0.1" clearable />
           </el-form-item>
-          <el-form-item label="偏移量">
-            <el-input-number v-model="pointForm.offset" placeholder="可选" :precision="4" clearable />
+          <el-form-item :label="t('devices.offset')">
+            <el-input-number v-model="pointForm.offset" :placeholder="t('devices.optionalPlaceholder')" :precision="4" clearable />
           </el-form-item>
         </template>
         
         <template v-else>
-          <el-form-item label="数据类型" prop="data_type">
-            <el-input v-model="pointForm.data_type" placeholder="协议特定类型" />
+          <el-form-item :label="t('devices.dataType')" prop="data_type">
+            <el-input v-model="pointForm.data_type" :placeholder="t('devices.protocolSpecificType')" />
           </el-form-item>
-          <el-form-item label="协议配置">
+          <el-form-item :label="t('devices.protocolConfig')">
             <el-input 
               v-model="pointForm.configJson" 
               type="textarea" 
               :rows="4" 
-              placeholder='JSON格式的协议配置'
+              :placeholder="t('devices.configJsonPlaceholder')"
             />
           </el-form-item>
         </template>
         
-        <el-divider content-position="left">通用配置</el-divider>
+        <el-divider :content-position="t('devices.dividerLeft')">{{ t('devices.generalConfig') }}</el-divider>
         
-        <el-form-item label="标准类型">
+        <el-form-item :label="t('devices.standardType')">
           <el-input 
-            :value="pointForm.standard_data_type || '自动推导'" 
+            :value="pointForm.standard_data_type || t('devices.autoDerived')" 
             disabled 
-            placeholder="由插件根据数据类型自动推导"
+            :placeholder="t('devices.standardTypePlaceholder')"
           />
           <div style="font-size: 12px; color: #909399; margin-top: 4px;">
-            此字段由系统根据数据类型自动推导，无需手动设置
+            {{ t('devices.standardTypeHint') }}
           </div>
         </el-form-item>
-        <el-form-item label="单位">
-          <el-input v-model="pointForm.unit" placeholder="如 °C, %, V, A" />
+        <el-form-item :label="t('devices.unit')">
+          <el-input v-model="pointForm.unit" :placeholder="t('devices.unitPlaceholder')" />
         </el-form-item>
         
-        <el-divider content-position="left">元数据 (可选)</el-divider>
+        <el-divider :content-position="t('devices.dividerLeft')">{{ t('devices.metadata') }}</el-divider>
         
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="最小值">
-              <el-input-number v-model="pointForm.min" placeholder="可选" clearable style="width: 100%" />
+            <el-form-item :label="t('devices.minValue')">
+              <el-input-number v-model="pointForm.min" :placeholder="t('devices.optionalPlaceholder')" clearable style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="最大值">
-              <el-input-number v-model="pointForm.max" placeholder="可选" clearable style="width: 100%" />
+            <el-form-item :label="t('devices.maxValue')">
+              <el-input-number v-model="pointForm.max" :placeholder="t('devices.optionalPlaceholder')" clearable style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="高报警">
-              <el-input-number v-model="pointForm.alarm_high" placeholder="可选" clearable style="width: 100%" />
+            <el-form-item :label="t('devices.highAlarm')">
+              <el-input-number v-model="pointForm.alarm_high" :placeholder="t('devices.optionalPlaceholder')" clearable style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="低报警">
-              <el-input-number v-model="pointForm.alarm_low" placeholder="可选" clearable style="width: 100%" />
+            <el-form-item :label="t('devices.lowAlarm')">
+              <el-input-number v-model="pointForm.alarm_low" :placeholder="t('devices.optionalPlaceholder')" clearable style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
         
-        <el-form-item label="启用">
+        <el-form-item :label="t('devices.enabled')">
           <el-switch v-model="pointForm.enabled" />
         </el-form-item>
-        <el-form-item label="标签">
-          <el-input v-model="pointForm.tags" placeholder="多个标签用逗号分隔" />
+        <el-form-item :label="t('common.tags')">
+          <el-input v-model="pointForm.tags" :placeholder="t('devices.tagsPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showPointDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSavePoint" :loading="savingPoint">保存</el-button>
+        <el-button @click="showPointDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleSavePoint" :loading="savingPoint">{{ t('common.save') }}</el-button>
       </template>
     </el-dialog>
     
     <el-dialog 
       v-model="showWriteDialog" 
-      title="写入点位值"
+      :title="t('devices.writePointValue')"
       width="min(480px, 90vw)"
       :close-on-click-modal="false"
     >
       <div class="write-info">
         <div class="write-info-row">
-          <span class="write-info-label">设备</span>
+          <span class="write-info-label">{{ t('devices.device') }}</span>
           <span class="write-info-value">{{ deviceStore.getDeviceByAsset(writeForm.deviceAsset)?.name || writeForm.deviceAsset }}</span>
         </div>
         <div class="write-info-row">
-          <span class="write-info-label">点位</span>
+          <span class="write-info-label">{{ t('devices.point') }}</span>
           <span class="write-info-value">{{ writeForm.pointName }}</span>
         </div>
         <div class="write-info-row">
-          <span class="write-info-label">当前值</span>
+          <span class="write-info-label">{{ t('devices.currentValue') }}</span>
           <span class="write-info-value current-value">{{ writeForm.currentValue }}{{ writeForm.unit ? ' ' + writeForm.unit : '' }}</span>
         </div>
       </div>
@@ -1690,11 +1692,11 @@ onMounted(async () => {
       <div class="write-form">
         <template v-if="writeForm.pointType === 'digital'">
           <div class="write-bool-control">
-            <span class="write-bool-label">目标值</span>
+            <span class="write-bool-label">{{ t('devices.targetValue') }}</span>
             <el-switch 
               v-model="writeForm.boolValue"
-              active-text="开"
-              inactive-text="关"
+              :active-text="t('devices.on')"
+              :inactive-text="t('devices.off')"
               style="--el-switch-on-color: #27ae60"
             />
           </div>
@@ -1702,32 +1704,32 @@ onMounted(async () => {
         <template v-else>
           <el-input 
             v-model="writeForm.value" 
-            :placeholder="writeForm.currentValue !== '--' ? `当前值: ${writeForm.currentValue}` : '请输入要写入的值'"
+            :placeholder="writeForm.currentValue !== '--' ? t('devices.writePlaceholder', { value: writeForm.currentValue }) : t('devices.writePlaceholderEmpty')"
             clearable
           >
             <template v-if="writeForm.unit" #append>{{ writeForm.unit }}</template>
           </el-input>
           <div v-if="writeForm.unit" class="write-hint">
-            输入数值后将下发到设备，请确认写入值在合理范围内
+            {{ t('devices.writeHint') }}
           </div>
         </template>
       </div>
       <template #footer>
-        <el-button @click="showWriteDialog = false">取消</el-button>
+        <el-button @click="showWriteDialog = false">{{ t('common.cancel') }}</el-button>
         <el-button 
           type="warning" 
           :loading="writing" 
           :disabled="writeForm.pointType !== 'digital' && !writeForm.value.trim()"
           @click="handleWriteSubmit"
         >
-          确认写入
+          {{ t('devices.confirmWrite') }}
         </el-button>
       </template>
     </el-dialog>
     
     <el-drawer
       v-model="showTrend"
-      title="点位趋势"
+      :title="t('devices.pointTrend')"
       direction="rtl"
       size="70%"
       :with-header="false"
@@ -1807,9 +1809,9 @@ onMounted(async () => {
   gap: 12px;
   margin-bottom: 16px;
   padding: 12px 16px;
-  background: #fff;
+  background: var(--el-bg-color);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--el-box-shadow);
   flex-shrink: 0;
 }
 
@@ -1834,7 +1836,7 @@ onMounted(async () => {
   gap: 4px;
   margin-left: 8px;
   padding-left: 12px;
-  border-left: 1px solid #ebeef5;
+  border-left: 1px solid var(--el-border-color-light);
 }
 
 .stat-item {
@@ -1846,22 +1848,22 @@ onMounted(async () => {
 .stat-value {
   font-size: 18px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--el-text-color-primary);
 }
 
 .stat-label {
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
 }
 
 .stat-divider {
-  color: #dcdfe6;
+  color: var(--el-border-color);
   font-size: 14px;
   margin: 0 2px;
 }
 
 .stat-online .stat-value {
-  color: #27ae60;
+  color: var(--el-color-success);
 }
 
 .toolbar-right {
@@ -1883,12 +1885,12 @@ onMounted(async () => {
 
 .compact-tabs {
   display: flex;
-  background: #fff;
+  background: var(--el-bg-color);
   border-radius: 8px;
   padding: 4px;
   gap: 4px;
   flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--el-box-shadow);
 }
 
 .compact-tab {
@@ -1899,7 +1901,7 @@ onMounted(async () => {
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  color: #606266;
+  color: var(--el-text-color-regular);
   background: transparent;
   transition: all 0.2s ease;
   display: flex;
@@ -1909,11 +1911,11 @@ onMounted(async () => {
 }
 
 .compact-tab:hover {
-  background: #f5f7fa;
+  background: var(--el-fill-color);
 }
 
 .compact-tab.active {
-  background: #409eff;
+  background: var(--el-color-primary);
   color: #fff;
 }
 
@@ -1934,8 +1936,8 @@ onMounted(async () => {
 }
 
 .compact-tab:not(.active) .tab-badge {
-  background: #e6f7ff;
-  color: #409eff;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
 }
 
 .tab-count {
@@ -1946,15 +1948,15 @@ onMounted(async () => {
 }
 
 .compact-tab:not(.active) .tab-count {
-  background: #f0f0f0;
-  color: #606266;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-regular);
 }
 
 .compact-panel {
   flex: 1;
-  background: #fff;
+  background: var(--el-bg-color);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--el-box-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1974,20 +1976,20 @@ onMounted(async () => {
 .device-card-compact {
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid #e4e7ed;
-  background: #fff;
+  border: 1px solid var(--el-border-color);
+  background: var(--el-bg-color);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .device-card-compact:hover {
-  border-color: #409eff;
+  border-color: var(--el-color-primary);
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
 }
 
 .device-card-compact.selected {
-  border-color: #409eff;
-  background: #ecf5ff;
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
 }
 
 .device-card-compact.offline {
@@ -2009,13 +2011,13 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: #ffebee;
-  color: #e74c3c;
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
 }
 
 .device-card-status.online {
-  background: #e8f5e9;
-  color: #27ae60;
+  background: var(--el-color-success-light-9);
+  color: var(--el-color-success);
 }
 
 .device-card-info {
@@ -2026,7 +2028,7 @@ onMounted(async () => {
 .device-card-name {
   font-size: 15px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--el-text-color-primary);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2037,7 +2039,7 @@ onMounted(async () => {
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
 }
 
 .device-card-actions {
@@ -2045,7 +2047,7 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   padding-top: 12px;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--el-border-color-light);
 }
 
 .action-buttons {
@@ -2062,9 +2064,9 @@ onMounted(async () => {
   width: 320px;
   min-width: 260px;
   flex-shrink: 0;
-  background: #fff;
+  background: var(--el-bg-color);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--el-box-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2075,19 +2077,19 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid var(--el-border-color-light);
   flex-shrink: 0;
 }
 
 .panel-title {
   font-size: 16px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--el-text-color-primary);
 }
 
 .device-count {
   font-size: 13px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
 }
 
 .device-list {
@@ -2109,12 +2111,12 @@ onMounted(async () => {
 }
 
 .device-item:hover {
-  background: #f5f7fa;
+  background: var(--el-fill-color);
 }
 
 .device-item.selected {
-  background: #ecf5ff;
-  border-color: #409eff;
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary);
 }
 
 .device-item.offline {
@@ -2129,13 +2131,13 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: #ffebee;
-  color: #e74c3c;
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
 }
 
 .device-item-status.online {
-  background: #e8f5e9;
-  color: #27ae60;
+  background: var(--el-color-success-light-9);
+  color: var(--el-color-success);
 }
 
 .device-item-content {
@@ -2153,7 +2155,7 @@ onMounted(async () => {
 .device-item-name {
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--el-text-color-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2163,7 +2165,7 @@ onMounted(async () => {
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
 }
 
 .device-item-actions {
@@ -2184,9 +2186,9 @@ onMounted(async () => {
 
 .points-panel {
   flex: 1;
-  background: #fff;
+  background: var(--el-bg-color);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--el-box-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2199,7 +2201,7 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #c0c4cc;
+  color: var(--el-text-color-disabled);
 }
 
 .empty-points p {
@@ -2215,7 +2217,7 @@ onMounted(async () => {
 
 .config-preview {
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--el-text-color-secondary);
   word-break: break-all;
   max-width: 200px;
   overflow: hidden;
@@ -2225,12 +2227,12 @@ onMounted(async () => {
 }
 
 .text-muted {
-  color: #c0c4cc;
+  color: var(--el-text-color-disabled);
 }
 
 .current-value {
   font-weight: 600;
-  color: #409eff;
+  color: var(--el-color-primary);
 }
 
 .write-info {
@@ -2249,16 +2251,16 @@ onMounted(async () => {
   width: 60px;
   flex-shrink: 0;
   font-size: 13px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
 }
 
 .write-info-value {
   font-size: 14px;
-  color: #2c3e50;
+  color: var(--el-text-color-primary);
 }
 
 .write-info-value.current-value {
-  color: #409eff;
+  color: var(--el-color-primary);
   font-weight: 600;
 }
 
@@ -2274,12 +2276,12 @@ onMounted(async () => {
 
 .write-bool-label {
   font-size: 14px;
-  color: #606266;
+  color: var(--el-text-color-regular);
 }
 
 .write-hint {
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
   margin-top: 8px;
   line-height: 1.5;
 }
@@ -2290,7 +2292,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   padding: 60px 0;
-  color: #95a5a6;
+  color: var(--el-text-color-secondary);
 }
 
 .loading-state p {
@@ -2302,7 +2304,7 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   padding: 60px 0;
-  color: #95a5a6;
+  color: var(--el-text-color-secondary);
   font-size: 14px;
 }
 
