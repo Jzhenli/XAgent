@@ -41,7 +41,7 @@
 
         <div class="aside-footer">
           <div class="collapse-btn" @click="toggleCollapse">
-            <Icon name="sidebar" :size="32" :color="{ normal: 'white' }" />
+            <Icon name="sidebar" type="color-white" :size="32" :color="{ normal: 'white' }" />
           </div>
         </div>
       </el-aside>
@@ -103,9 +103,9 @@
           >
             <Icon
               name="alarm"
-              type="color-white"
+              type="mono-line"
               :size="24"
-              :color="{ normal: 'white' }"
+              :color="{ normal: 'rgba(247, 111, 131, 1)' }"
               @click="router.push('/alerts')"
             />
           </el-badge>

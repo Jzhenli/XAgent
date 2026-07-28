@@ -22,6 +22,7 @@
   --bg-sidebar-active: linear-gradient(90deg, #3498db, #2980b9);
   --bg-footer: #ffffff;
   --bg-card: #ffffff;
+  --bg-card-s: rgba(255, 255, 255, 0.07);
   --bg-input: #ffffff;
   --bg-hover: #f5f7fa;
   --bg-dialog: #ffffff;
@@ -285,7 +286,8 @@
   --bg-sidebar-hover: rgba(255, 255, 255, 0.08);
   --bg-sidebar-active: radial-gradient( 134% 100% at 50% 100%, #00CED1 0%, #6666FF 100%);
   --bg-footer: #16213e;
-  --bg-card: #16213e;
+  --bg-card: rgba(0, 0, 0, 0.53);
+  --bg-card-s: rgba(255, 255, 255, 0.07);
   --bg-input: #0f3460;
   --bg-hover: #1f2b47;
   --bg-dialog: #16213e;
@@ -299,7 +301,7 @@
   --bg-disabled: #2a2a4e;
 
   /* 文本色 */
-  --text-primary: #e4e7ed;
+  --text-primary: rgba(255, 255, 255, 1);
   --text-regular: #c0c4cc;
   --text-secondary: #a3a6ad;
   --text-tertiary: #8d9096;

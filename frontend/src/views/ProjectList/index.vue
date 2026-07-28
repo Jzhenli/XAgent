@@ -1,19 +1,20 @@
 <template>
   <div class="project-list-container">
     <div class="header">
-      <h2>{{ $t("scada.title") }}</h2>
+      <span class="header-title">{{ $t("scada.title") }}</span>
       <div class="header-actions">
-        <el-button
-          type="success"
-          :icon="VideoPlay"
-          @click="handleStartSlideshow"
-        >
+        <div class="btn btn-preview" @click="handleStartSlideshow">
           {{ $t("scada.previewAll") }}
-        </el-button>
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">
-          {{ $t("scada.newProject") }}
-        </el-button>
-        <el-dropdown trigger="hover" placement="bottom-end" @command="handleMoreCommand">
+        </div>
+        <div class="btn btn-create" @click="openCreateDialog">
+          <el-icon :size="16"><Plus /></el-icon>
+          <span>{{ $t("scada.newProject") }}</span>
+        </div>
+        <el-dropdown
+          trigger="hover"
+          placement="bottom-end"
+          @command="handleMoreCommand"
+        >
           <el-icon class="more-icon" :size="32">
             <svg viewBox="0 0 24 24" width="1em" height="1em">
               <circle cx="12" cy="5" r="2" fill="currentColor" />
@@ -161,7 +162,9 @@ const loadProjects = async (): Promise<boolean> => {
 
   try {
     const res = await projectApi.list();
-    projects.value = (res?.items ?? []).sort((a, b) => a.createdAt - b.createdAt);
+    projects.value = (res?.items ?? []).sort(
+      (a, b) => a.createdAt - b.createdAt,
+    );
 
     return true;
   } catch (error) {
@@ -451,25 +454,30 @@ const formatTime = (timestamp: number) => {
 
 <style scoped>
 .project-list-container {
-  height: calc(100vh - 100px - 32px);
-  background-color: var(--bg-secondary);
+  height: calc(100vh - 100px);
+  background-color: var(--bg-card);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-radius: 16px;
+  backdrop-filter: blur(48px);
 }
 
 .header {
+  height: 60px;
+  padding: 0 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
   flex-shrink: 0;
 }
 
-.header h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
+.header-title {
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: left;
+  font-style: normal;
   color: var(--text-primary);
 }
 
@@ -487,7 +495,7 @@ const formatTime = (timestamp: number) => {
 .scrollable-content {
   flex: 1;
   overflow-y: auto;
-  padding-right: 8px;
+  padding: 12px 18px;
 }
 
 .project-grid {
@@ -542,5 +550,37 @@ const formatTime = (timestamp: number) => {
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 14px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-preview {
+  background-color: rgba(0, 206, 209, 1);
+  color: white;
+}
+
+.btn-preview:hover {
+  background-color: rgba(0, 206, 209, 1);
+}
+
+.btn-create {
+  background-color: rgba(102, 102, 255, 1);
+  color: white;
+}
+
+.btn-create:hover {
+  background-color: rgba(102, 102, 255, 0.9);
 }
 </style>

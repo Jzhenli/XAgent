@@ -484,6 +484,7 @@ kbd {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  background-color: var(--bg-container);
 }
 
 .editor-right {
