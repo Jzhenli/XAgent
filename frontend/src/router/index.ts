@@ -121,7 +121,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/settings',
         name: 'Settings',
-        component: () => import('@/views/Settings.vue'),
+        component: () => import('@/views/Settings/index.vue'),
         meta: { title: 'route.settings', icon: 'Setting' }
       }
     ]
