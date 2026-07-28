@@ -60,15 +60,15 @@ import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 import { useScadaConfig } from '@/views/ScadaEditor/hooks/useScadaEditor'
 
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
 const { t } = useI18n()
 
 /** 当前仪表盘组件配置 */
-const gaugeConfig = computed(() => props.config.config as GaugeComponentConfig)
-const binding = computed(() => props.config.binding)
+const gaugeConfig = computed(() => props.component.config as GaugeComponentConfig)
+const binding = computed(() => props.component.binding)
 const fallbackValue = computed(() => gaugeConfig.value?.value ?? 48)
 
 /** 点位绑定：读取当前值并提供写入能力 */
@@ -78,7 +78,7 @@ const { currentValue, boundPoint, writeValue } = useScadaBinding(
   fallbackValue,
 )
 
-const { updateValue } = useScadaConfig(props.config as ScadaComponent<'gauge'>)
+const { updateValue } = useScadaConfig(props.component as ScadaComponent<'gauge'>)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 数据范围配置
@@ -108,7 +108,7 @@ const strokeLinecap = computed(() => gaugeConfig.value?.strokeLinecap ?? 'round'
 // 填充色与渐变
 // ═══════════════════════════════════════════════════════════════════════════════
 const fillColor = computed(() => gaugeConfig.value?.fillColor ?? '#4a90e2')
-const gradientId = computed(() => `gauge-gradient-${props.config.id}`)
+const gradientId = computed(() => `gauge-gradient-${props.component.id}`)
 
 const isValidGradient = (gradient?: string[] | null): gradient is [string, string, string] =>
   Array.isArray(gradient) && gradient.length === 3 && gradient.every((color) => !!color)

@@ -51,14 +51,14 @@ import type { ScadaComponent, WriteValueComponentConfig } from '@/types/scada'
 import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
 const { t } = useI18n()
 
-const writeValueConfig = computed(() => props.config.config as WriteValueComponentConfig)
-const binding = computed(() => props.config.binding)
+const writeValueConfig = computed(() => props.component.config as WriteValueComponentConfig)
+const binding = computed(() => props.component.binding)
 const fallbackValue = computed(() => writeValueConfig.value.value ?? '')
 
 const { currentValue, writeValue } = useScadaBinding(binding, {}, fallbackValue)

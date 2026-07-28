@@ -10,11 +10,11 @@ import { computed } from 'vue'
 import type { ScadaComponent } from '@/types/scada'
 
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
-const rectangleConfig = computed(() => (props.config as ScadaComponent<'rectangle'>).config)
+const rectangleConfig = computed(() => (props.component as ScadaComponent<'rectangle'>).config)
 
 const containerStyle = computed(() => ({
   backgroundColor: rectangleConfig.value?.backgroundColor || 'rgba(200, 200, 200, 0.3)',

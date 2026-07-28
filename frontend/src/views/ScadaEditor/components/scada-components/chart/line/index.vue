@@ -11,14 +11,14 @@ import { useScadaLineChart } from '../../../../hooks/useScadaLineChart'
 
 export interface LineChartProps {
   /** 组件完整配置对象 */
-  config: ScadaComponent
+  component: ScadaComponent
   /** 是否处于编辑模式 */
   editing?: boolean
 }
 
 const props = defineProps<LineChartProps>()
 
-const configRef = computed(() => props.config)
+const configRef = computed(() => props.component)
 const { containerRef, containerStyle } = useScadaLineChart(configRef)
 </script>
 

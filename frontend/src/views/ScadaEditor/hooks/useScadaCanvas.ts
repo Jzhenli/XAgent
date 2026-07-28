@@ -1,4 +1,5 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useScadaEditor } from './useScadaEditor'
 import type { ScadaComponent, CanvasPosition, DragState, BoxSelectState, ResizeState, ResizeHandle, GuideLine, ContextMenuState, ContextAction } from '../types'
 import type { ComponentType } from '../registry'
@@ -8,6 +9,7 @@ import type { ComponentType } from '../registry'
  * 负责画布上的拖拽、框选、缩放、辅助线、键盘快捷键等交互逻辑
  */
 export function useScadaCanvas() {
+  const { t } = useI18n()
   const scada = useScadaEditor()
 
   /** 画布DOM引用 */
@@ -172,7 +174,7 @@ export function useScadaCanvas() {
       })
     }
 
-    scada.pushUndoOperation('move', '移动组件', [...selectedComponentIds.value])
+    scada.pushUndoOperation('move', t('scada.undoOperations.move'), [...selectedComponentIds.value])
   }
 
   /**
@@ -311,7 +313,7 @@ export function useScadaCanvas() {
     e.stopPropagation()
     scada.selectComponent(componentId)
 
-    scada.pushUndoOperation('resize', '调整尺寸', [componentId])
+    scada.pushUndoOperation('resize', t('scada.undoOperations.resize'), [componentId])
 
     resizeState.value = {
       active: true,

@@ -15,13 +15,13 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 
 const { t } = useI18n()
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
-const switchConfig = computed(() => props.config.config as SwitchComponentConfig)
-const binding = computed(() => props.config.binding)
-const fallbackValue = computed(() => props.config.config.value)
+const switchConfig = computed(() => props.component.config as SwitchComponentConfig)
+const binding = computed(() => props.component.binding)
+const fallbackValue = computed(() => props.component.config.value)
 
 const onValue = computed(() => switchConfig.value?.onValue ?? 1)
 const offValue = computed(() => switchConfig.value?.offValue ?? 0)

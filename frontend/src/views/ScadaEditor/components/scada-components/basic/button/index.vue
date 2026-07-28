@@ -21,13 +21,13 @@ import { ElMessage } from 'element-plus'
 const { t } = useI18n()
 
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
-const buttonConfig = computed(() => props.config.config as ButtonComponentConfig)
-const binding = computed(() => props.config.binding)
-const fallbackValue = computed(() => props.config.config.value)
+const buttonConfig = computed(() => props.component.config as ButtonComponentConfig)
+const binding = computed(() => props.component.binding)
+const fallbackValue = computed(() => props.component.config.value)
 
 const { currentValue, writeValue } = useScadaBinding(
   binding,

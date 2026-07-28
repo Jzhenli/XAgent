@@ -44,7 +44,7 @@ export function useScadaUndo() {
   const canRedo = computed(() => redoStack.value.length > 0)
 
   const generateOpId = (): string =>
-    `op-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    `op-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 
   const pushOperation = (
     type: OperationType,

@@ -141,7 +141,7 @@ import { ref, computed, markRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePointStore } from '@/stores/points'
 import { getConfigPanel } from '../component-registry'
-import { useScadaProps } from '../hooks/useScadaEditor'
+import { useScadaProps } from '../hooks/useScadaProps'
 
 const { t } = useI18n()
 const pointStore = usePointStore()

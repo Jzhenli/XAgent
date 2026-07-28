@@ -46,7 +46,7 @@
       >
         <component
           :is="getComponent(comp.type)"
-          :config="comp"
+          :component="comp"
           :editing="isEditing"
           @select="$emit('select', comp.id)"
         />
@@ -75,6 +75,10 @@ import { getComponent } from '../registry'
 import type { GuideLine, ResizeHandle } from '../types'
 
 const resizeHandles: ResizeHandle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
+
+defineEmits<{
+  (e: 'select', id: string): void
+}>()
 
 const {
   canvasRef,

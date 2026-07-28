@@ -18,14 +18,14 @@ import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
 const { t } = useI18n()
 
-const sliderConfig = computed(() => props.config.config as SliderComponentConfig)
-const binding = computed(() => props.config.binding)
+const sliderConfig = computed(() => props.component.config as SliderComponentConfig)
+const binding = computed(() => props.component.binding)
 const fallbackValue = computed(() =>
   typeof sliderConfig.value.value === 'number' ? sliderConfig.value.value : sliderConfig.value.min ?? 0,
 )
@@ -50,7 +50,7 @@ const percentage = computed(() => {
   return Math.max(0, Math.min(1, raw))
 })
 
-const isVertical = computed(() => (props.config.config.height ?? 40) > (props.config.config.width ?? 200))
+const isVertical = computed(() => (props.component.config.height ?? 40) > (props.component.config.width ?? 200))
 
 const trackStyle = computed(() => ({
   backgroundColor: trackColor.value,

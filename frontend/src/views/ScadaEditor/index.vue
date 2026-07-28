@@ -179,9 +179,14 @@ const {
   isDirty: scada.isDirty,
   routeName: 'ScadaEditor',
   onSave: async () => {
-    await scada.savePanel()
-    ElMessage.success(t('scada.savePanelSuccess'))
-    router.push({ name: 'ScadaList' })
+    try {
+      await scada.savePanel()
+      ElMessage.success(t('scada.savePanelSuccess'))
+      router.push({ name: 'ScadaList' })
+    } catch (e) {
+      console.error('Failed to save panel:', e)
+      ElMessage.error(t('common.operationFailed'))
+    }
   },
   onDiscard: () => {
     scada.discardDraft()
@@ -233,8 +238,13 @@ const handleZoomReset = () => {
 }
 
 const handleSave = async () => {
-  await scada.savePanel()
-  ElMessage.success(t('scada.savePanelSuccess'))
+  try {
+    await scada.savePanel()
+    ElMessage.success(t('scada.savePanelSuccess'))
+  } catch (e) {
+    console.error('Failed to save panel:', e)
+    ElMessage.error(t('common.operationFailed'))
+  }
 }
 
 const handlePreview = () => {

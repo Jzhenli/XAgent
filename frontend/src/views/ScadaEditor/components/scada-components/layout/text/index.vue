@@ -12,11 +12,11 @@ import { computed, watch } from 'vue'
 import type { ScadaComponent } from '@/types/scada'
 
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
-const textConfig = computed(() => (props.config as ScadaComponent<'text'>).config)
+const textConfig = computed(() => (props.component as ScadaComponent<'text'>).config)
 
 const displayContent = computed(() => {
   const content = textConfig.value?.content

@@ -6,7 +6,7 @@ import { getComponentTemplate, componentMetaRegistry } from '../component-regist
  * 生成唯一组件ID
  */
 export function generateComponentId(): string {
-  return `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  return `comp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
 
 /**
