@@ -18,7 +18,7 @@
         </el-select>
 
         <div
-          class="action-btn primary"
+          class="action-btn accent"
           :class="{ loading: loading }"
           @click="handleRefreshClick"
         >
@@ -181,10 +181,10 @@ onMounted(fetchLogs)
   user-select: none;
 }
 
-.action-btn.primary {
-  color: #fff;
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+.action-btn.accent {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.13);
 }
 
 .action-btn.download {
@@ -202,8 +202,8 @@ onMounted(fetchLogs)
 .btn-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

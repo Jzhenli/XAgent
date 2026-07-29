@@ -12,18 +12,7 @@
 
       <LogViewer v-if="activeMenu === 'logs'" />
 
-      <BackupPanel
-        v-if="activeMenu === 'backup'"
-        :backup-list="backupList"
-        :backup-loading="backupLoading"
-        :export-loading="exportLoading"
-        :import-loading="importLoading"
-        @create="handleCreateBackup"
-        @download="handleDownloadConfig"
-        @import="handleImportConfig"
-        @delete="handleDeleteBackup"
-        @restore="handleRestoreBackup"
-      />
+      <BackupPanel v-if="activeMenu === 'backup'" />
 
       <UserManagement v-if="activeMenu === 'users'" />
 
@@ -40,7 +29,6 @@ import { useI18n } from "vue-i18n";
 import { useResponsive } from "@/utils/useResponsive";
 import { useUserStore } from "@/stores/users";
 import { useGeneralConfig } from "./composables/useGeneralConfig";
-import { useBackup } from "./composables/useBackup";
 import SettingsNav from "./components/SettingsNav.vue";
 import GeneralConfig from "./components/GeneralConfig.vue";
 import LogViewer from "./components/LogViewer.vue";
@@ -68,26 +56,12 @@ const userStore = useUserStore();
 const { systemConfig, configLoading, loadSystemConfig, handleSave } =
   useGeneralConfig();
 
-const {
-  backupList,
-  backupLoading,
-  exportLoading,
-  importLoading,
-  loadBackupList,
-  handleCreateBackup,
-  handleDownloadConfig,
-  handleImportConfig,
-  handleDeleteBackup,
-  handleRestoreBackup,
-} = useBackup();
-
 onMounted(async () => {
   userStore.restoreSession();
   await Promise.all([
     userStore.fetchUsers(),
     userStore.fetchRoles(),
     userStore.fetchPermissionMatrix(),
-    loadBackupList(),
     loadSystemConfig(),
   ]);
 });

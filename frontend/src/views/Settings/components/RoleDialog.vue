@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogVisible" :title="title" width="min(480px, 92vw)" destroy-on-close>
+  <el-dialog v-model="dialogVisible" :title="title" width="min(480px, 92vw)" destroy-on-close class="settings-dialog">
     <el-form label-width="90px">
       <el-form-item :label="$t('settings.role.name')" v-if="!editingRoleName">
         <el-input v-model="form.name" :placeholder="$t('settings.role.name_placeholder')" />
@@ -45,3 +45,24 @@ const dialogVisible = computed({
   set: (val) => emit('update:visible', val),
 })
 </script>
+
+<style>
+.settings-dialog {
+  --el-bg-color: var(--bg-modal);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.settings-dialog .el-dialog__header {
+  border-bottom: 1px solid var(--border-light, #ebeef5);
+}
+
+.settings-dialog .el-dialog__body {
+  background: var(--bg-modal);
+}
+
+.settings-dialog .el-dialog__footer {
+  background: var(--bg-modal);
+  border-top: 1px solid var(--border-light, #ebeef5);
+}
+</style>

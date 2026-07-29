@@ -6,14 +6,14 @@
         <span class="config-hint-inline save-hint">
           {{ $t("settings.general.storage_config_hint") }}
         </span>
-        <el-button
-          class="save-button"
-          type="primary"
+        <div
+          class="action-btn download"
+          :class="{ loading: configLoading }"
           @click="emit('save')"
-          :loading="configLoading"
         >
+          <span v-if="configLoading" class="btn-spinner"></span>
           {{ $t("settings.general.save_config") }}
-        </el-button>
+        </div>
         
       </div>
     </div>
@@ -330,6 +330,58 @@ const storageFields: NumberField<keyof StorageConfig>[] = [
   :deep(.el-form-item__label) {
     font-size: 13px;
   }
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 80px;
+  height: 32px;
+  padding: 0 15px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-primary);
+  background: var(--bg-color);
+  border: 1px solid var(--border-base);
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.action-btn:hover,
+.action-btn:active {
+  color: var(--text-primary);
+  background: var(--bg-color);
+  border-color: var(--border-base);
+}
+
+.action-btn.download {
+  color: #fff;
+  background: rgba(102, 102, 255, 1);
+  border-color: rgba(102, 102, 255, 1);
+}
+
+.action-btn.download:hover,
+.action-btn.download:active {
+  color: #fff;
+  background: rgba(102, 102, 255, 1);
+  border-color: rgba(102, 102, 255, 1);
+}
+
+.action-btn.loading {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 </style>
 

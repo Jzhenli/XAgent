@@ -43,7 +43,8 @@
     "on": "On",
     "off": "Off",
     "tip": "Tip",
-    "duplicateSuffix": " (copy)"
+    "duplicateSuffix": " (copy)",
+    "dash": "-"
   },
   "layout": {
     "dashboard": "Dashboard",
@@ -604,8 +605,8 @@
     "syncSmart": "Smart Mode (Recommended)",
     "syncAlways": "Always Mode",
     "syncPassive": "Passive Mode",
-    "syncIntervalHint": "Active sync interval in smart mode, default 60 minutes.",
-    "timeout": "Timeout (sec)",
+    "smartSyncIntervalHint": "Active sync interval in smart mode, default 60 minutes.",
+    "timeoutSeconds": "Timeout (sec)",
     "editPoint": "Edit Point",
     "addPoint": "Add Point",
     "discoverPoints": "Discover Points",
