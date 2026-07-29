@@ -974,7 +974,8 @@
     },
     "visualization": {
       "polling_interval": "Polling Interval",
-      "milliseconds": "ms"
+      "milliseconds": "ms",
+      "config_hint": "Visualization config takes effect immediately"
     },
     "config_saved": "Config Saved",
     "config_load_failed": "Config Load Failed",

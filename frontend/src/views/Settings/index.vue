@@ -10,7 +10,7 @@
         @save="handleSave"
       />
 
-      <LogsPanel v-if="activeMenu === 'logs'" />
+      <LogViewer v-if="activeMenu === 'logs'" />
 
       <BackupPanel
         v-if="activeMenu === 'backup'"
@@ -43,7 +43,7 @@ import { useGeneralConfig } from "./composables/useGeneralConfig";
 import { useBackup } from "./composables/useBackup";
 import SettingsNav from "./components/SettingsNav.vue";
 import GeneralConfig from "./components/GeneralConfig.vue";
-import LogsPanel from "./components/LogsPanel.vue";
+import LogViewer from "./components/LogViewer.vue";
 import BackupPanel from "./components/BackupPanel.vue";
 import UserManagement from "./components/UserManagement.vue";
 import PermissionMatrix from "./components/PermissionMatrix.vue";

@@ -974,7 +974,8 @@
     },
     "visualization": {
       "polling_interval": "读值周期",
-      "milliseconds": "毫秒"
+      "milliseconds": "毫秒",
+      "config_hint": "可视化配置将立即生效"
     },
     "config_saved": "配置已保存",
     "config_load_failed": "配置加载失败",
