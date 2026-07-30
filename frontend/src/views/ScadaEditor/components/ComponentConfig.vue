@@ -194,63 +194,102 @@ const triggerBgImageUpload = () => {
 
 <style scoped>
 .config-panel {
-  width: 280px;
-  background: var(--bg-container);
-  border-left: 1px solid var(--border-base);
+  width: 300px;
+  background: transparent;
+  border-left: none;
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
 .panel-header {
-  height: 44px;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--border-base);
-  background: var(--bg-hover);
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.15);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(168, 85, 247, 0.08) 100%);
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .panel-header h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
 }
 
 .panel-body {
   flex: 1;
-  padding: 12px;
+  padding: 16px;
   overflow-y: auto;
 }
 
+.panel-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.panel-body::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.3);
+  border-radius: 3px;
+}
+
+.panel-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.5);
+}
+
 .config-section {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .config-section:last-child {
   border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .section-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--scada-cyan);
   text-transform: uppercase;
-  margin-bottom: 10px;
+  letter-spacing: 1.5px;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 14px;
+  background: linear-gradient(180deg, var(--scada-cyan) 0%, var(--scada-purple) 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
 }
 
 .form-group {
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 .form-group label {
   display: block;
   font-size: 12px;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  color: var(--text-regular);
+  margin-bottom: 6px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 .hidden-file-input {
@@ -259,27 +298,30 @@ const triggerBgImageUpload = () => {
 
 .form-group input, .form-group select {
   width: 100%;
-  padding: 6px 8px;
-  border: 1px solid var(--border-base);
-  border-radius: 4px;
+  padding: 8px 12px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 6px;
   font-size: 13px;
-  background-color: var(--bg-input);
+  background: var(--scada-bg-elevated);
   color: var(--text-primary);
+  transition: all 0.2s ease;
 }
 
 .form-group input::placeholder,
 .form-group select::placeholder {
-  color: var(--text-placeholder);
+  color: var(--text-tertiary);
 }
 
 .form-group input:focus, .form-group select:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--scada-cyan);
+  background: rgba(34, 211, 238, 0.05);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15), 0 0 12px rgba(34, 211, 238, 0.2);
 }
 
 .form-row {
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 
 .form-row .form-group {
@@ -288,7 +330,7 @@ const triggerBgImageUpload = () => {
 
 .color-input {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 
@@ -299,8 +341,8 @@ const triggerBgImageUpload = () => {
 .preset-buttons {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .bg-image-control {
@@ -314,16 +356,17 @@ const triggerBgImageUpload = () => {
 }
 
 .bg-image-card {
-  border: 1px solid var(--border-base);
-  border-radius: 6px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .bg-image-preview {
   width: 100%;
   height: 100px;
   overflow: hidden;
-  background: var(--bg-secondary);
+  background: var(--scada-bg-elevated);
 }
 
 .bg-image-preview img {
@@ -335,8 +378,8 @@ const triggerBgImageUpload = () => {
 .bg-image-actions {
   display: flex;
   gap: 8px;
-  padding: 8px;
-  background: var(--bg-container);
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .bg-image-actions .el-button {
@@ -349,27 +392,31 @@ const triggerBgImageUpload = () => {
   align-items: center;
   justify-content: center;
   height: 100px;
-  border: 2px dashed var(--border-base);
-  border-radius: 6px;
+  border: 2px dashed rgba(34, 211, 238, 0.3);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .bg-upload-area:hover {
-  border-color: var(--color-primary);
-  background: rgba(64, 158, 255, 0.05);
+  border-color: var(--scada-cyan);
+  background: var(--scada-bg-hover);
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.2);
 }
 
 .upload-icon {
-  font-size: 32px;
-  color: var(--text-secondary);
+  font-size: 36px;
+  color: var(--scada-cyan);
   line-height: 1;
   margin-bottom: 8px;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
 }
 
 .upload-text {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
+  letter-spacing: 0.5px;
 }
 
 .preset-buttons :deep(.el-button) {
@@ -378,14 +425,28 @@ const triggerBgImageUpload = () => {
   align-items: center;
   width: 100%;
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
+  background: var(--scada-bg-elevated);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  color: var(--text-regular);
+  border-radius: 6px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+}
+
+.preset-buttons :deep(.el-button:hover) {
+  background: rgba(34, 211, 238, 0.1);
+  border-color: var(--scada-cyan);
+  color: var(--scada-cyan);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.2);
 }
 
 .info-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border-light);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--scada-bg-elevated);
+  border-radius: 4px;
 }
 
 .info-item:last-child {
@@ -394,13 +455,14 @@ const triggerBgImageUpload = () => {
 
 .info-label {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
 }
 
 .info-value {
   font-size: 12px;
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 600;
+  font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .empty-state {
@@ -409,16 +471,76 @@ const triggerBgImageUpload = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
+  gap: 12px;
 }
 
 .empty-icon {
-  font-size: 48px;
-  margin-bottom: 8px;
+  font-size: 56px;
+  margin-bottom: 0;
+  filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.3));
 }
 
 .empty-state p {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+:deep(.el-select),
+:deep(.el-input__wrapper) {
+  background: var(--scada-bg-elevated) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.2) inset !important;
+  transition: all 0.2s ease !important;
+}
+
+:deep(.el-select:hover .el-input__wrapper),
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--scada-cyan-glow) inset !important;
+}
+
+:deep(.el-select.is-focus .el-input__wrapper),
+:deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px var(--scada-cyan) inset, 0 0 12px rgba(34, 211, 238, 0.2) !important;
+}
+
+:deep(.el-select__placeholder),
+:deep(.el-input__inner::placeholder) {
+  color: var(--text-tertiary) !important;
+}
+
+:deep(.el-select__selected-item),
+:deep(.el-input__inner) {
+  color: var(--text-primary) !important;
+}
+
+:deep(.el-select__caret) {
+  color: var(--scada-cyan) !important;
+}
+
+:deep(.el-radio) {
+  color: var(--text-regular) !important;
+}
+
+:deep(.el-radio__input.is-checked + .el-radio__label) {
+  color: var(--scada-cyan) !important;
+}
+
+:deep(.el-radio__input.is-checked .el-radio__inner) {
+  background-color: var(--scada-cyan) !important;
+  border-color: var(--scada-cyan) !important;
+}
+
+:deep(.el-radio__inner) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(34, 211, 238, 0.3) !important;
+}
+
+:deep(.el-color-picker__trigger) {
+  background: var(--scada-bg-elevated) !important;
+  border-color: rgba(34, 211, 238, 0.3) !important;
+  border-radius: 6px !important;
 }
 </style>

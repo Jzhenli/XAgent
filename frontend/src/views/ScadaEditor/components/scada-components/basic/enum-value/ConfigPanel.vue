@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="config-section">
     <div class="section-title">{{ t("componentConfig.enumValueConfig") }}</div>
 
@@ -194,10 +194,10 @@ const handleColorChange = (field: ColorField, val: string | null) => {
 .form-group select {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid var(--border-base);
-  border-radius: 4px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 6px;
   font-size: 13px;
-  background-color: var(--bg-input);
+  background-color: var(--scada-bg-elevated);
   color: var(--text-primary);
 }
 

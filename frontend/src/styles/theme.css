@@ -7,6 +7,15 @@
 /* ==================== 浅色主题（默认） ==================== */
 :root,
 [data-theme='light'] {
+  /* SCADA编辑器主题色 */
+  --scada-cyan: #3498db;
+  --scada-cyan-glow: rgba(52, 152, 219, 0.3);
+  --scada-purple: #9b59b6;
+  --scada-purple-glow: rgba(155, 89, 182, 0.3);
+  --scada-bg-elevated: rgba(255, 255, 255, 0.6);
+  --scada-bg-hover: rgba(52, 152, 219, 0.08);
+  --scada-border-glow: 1px solid rgba(52, 152, 219, 0.3);
+
   /* 主色调 */
   --color-primary: #3498db;
   --color-primary-hover: #2980b9;
@@ -273,6 +282,15 @@
 
 /* ==================== 深色主题 ==================== */
 [data-theme='dark'] {
+  /* SCADA编辑器主题色（酷炫风格） */
+  --scada-cyan: #22d3ee;
+  --scada-cyan-glow: rgba(34, 211, 238, 0.4);
+  --scada-purple: #a855f7;
+  --scada-purple-glow: rgba(168, 85, 247, 0.4);
+  --scada-bg-elevated: rgba(255, 255, 255, 0.03);
+  --scada-bg-hover: rgba(34, 211, 238, 0.08);
+  --scada-border-glow: 1px solid rgba(34, 211, 238, 0.2);
+
   /* 主色调 */
   --color-primary: #409eff;
   --color-primary-hover: #66b1ff;
@@ -531,4 +549,31 @@
   --el-menu-active-color: #ffffff;
   --el-menu-text-color: rgba(255, 255, 255, 0.7);
   --el-menu-hover-text-color: #ffffff;
+}
+
+/* ==================== 数字输入框 spin-button 全局样式 ==================== */
+/* 修复浏览器原生数字输入框在聚焦/激活时 spin-button 显示白色背景的问题 */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+  width: 20px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+input[type="number"]::-webkit-inner-spin-button:hover,
+input[type="number"]::-webkit-outer-spin-button:hover {
+  opacity: 1;
+}
+
+input[type="number"]::-webkit-inner-spin-button:active,
+input[type="number"]::-webkit-outer-spin-button:active {
+  opacity: 1;
 }

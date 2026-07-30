@@ -117,8 +117,8 @@ const canvasStyle = computed(() => ({
 
 const gridStyle = computed(() => ({
   backgroundSize: `${gridSize.value * zoom.value}px ${gridSize.value * zoom.value}px`,
-  backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)`
+  backgroundImage: `linear-gradient(to right, rgba(34, 211, 238, 0.15) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(168, 85, 247, 0.15) 1px, transparent 1px)`
 }))
 
 const getGuideLineStyle = (line: GuideLine) => {
@@ -152,8 +152,9 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
   position: relative;
   overflow: hidden;
   cursor: crosshair;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(34, 211, 238, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(34, 211, 238, 0.15);
 }
 
 .grid-overlay {
@@ -170,16 +171,24 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
 
 .guide-line {
   position: absolute;
-  background-color: #409eff;
+  background: linear-gradient(90deg, transparent, var(--scada-cyan), transparent);
   z-index: 100;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+}
+
+.guide-line.guide-y {
+  background: linear-gradient(180deg, transparent, var(--scada-cyan), transparent);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
 }
 
 .box-select {
   position: absolute;
-  border: 2px dashed #409eff;
-  background-color: rgba(64, 158, 255, 0.1);
+  border: 1.5px dashed var(--scada-cyan);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(168, 85, 247, 0.08) 100%);
   z-index: 200;
   pointer-events: none;
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+  border-radius: 4px;
 }
 
 .components-layer {
@@ -192,10 +201,12 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
   cursor: move;
   user-select: none;
   box-sizing: border-box;
+  transition: transform 0.2s ease;
 }
 
 .component-wrapper.component-hidden {
   opacity: 0.3;
+  filter: grayscale(0.5);
 }
 
 .component-wrapper.component-locked {
@@ -208,29 +219,50 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
 
 .selection-border {
   position: absolute;
-  inset: -4px;
-  border: 2px solid #409eff;
-  border-radius: 4px;
+  inset: -5px;
+  border: 2px solid transparent;
+  border-radius: 6px;
   pointer-events: none;
+  background:
+    linear-gradient(90deg, var(--scada-cyan) 0%, var(--scada-purple) 100%) border-box,
+    transparent padding-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  box-shadow: 0 0 20px var(--scada-cyan-glow), 0 0 40px var(--scada-purple-glow);
+  animation: border-flow 3s ease infinite;
+  background-size: 200% 200%;
+}
+
+@keyframes border-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 .resize-handle {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  background: #fff;
-  border: 1px solid #409eff;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(135deg, var(--scada-cyan) 0%, var(--scada-purple) 100%);
+  border: 2px solid rgba(2, 6, 23, 0.8);
   border-radius: 50%;
   cursor: pointer;
   pointer-events: auto;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.6);
+  transition: all 0.2s ease;
 }
 
-.resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
-.resize-handle.n { top: -4px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
-.resize-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
-.resize-handle.e { top: 50%; right: -4px; transform: translateY(-50%); cursor: e-resize; }
-.resize-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
-.resize-handle.s { bottom: -4px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
-.resize-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
-.resize-handle.w { top: 50%; left: -4px; transform: translateY(-50%); cursor: w-resize; }
+.resize-handle:hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.8), 0 0 30px rgba(168, 85, 247, 0.5);
+}
+
+.resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+.resize-handle.n { top: -6px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+.resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
+.resize-handle.e { top: 50%; right: -6px; transform: translateY(-50%); cursor: e-resize; }
+.resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+.resize-handle.s { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+.resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+.resize-handle.w { top: 50%; left: -6px; transform: translateY(-50%); cursor: w-resize; }
 </style>
