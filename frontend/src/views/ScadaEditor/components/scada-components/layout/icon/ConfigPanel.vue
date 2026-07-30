@@ -131,6 +131,13 @@ const iconOptions = computed(() => {
 .form-group select,
 .form-group :deep(.el-select) {
   width: 100%;
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.form-group input::placeholder,
+.form-group select::placeholder {
+  color: var(--text-placeholder);
 }
 
 .form-group input:focus,

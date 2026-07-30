@@ -1,5 +1,13 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/users'
+import NProgress from 'nprogress'
+import 'nprogress/nprogress.css'
+
+NProgress.configure({
+  showSpinner: false,
+  trickleSpeed: 200,
+  minimum: 0.3,
+})
 
 const ROUTE_PERMISSION_MAP: Record<string, string> = {
   '/dashboard': 'dashboard',
@@ -145,6 +153,7 @@ function findFirstAllowedPath(userStore: ReturnType<typeof useUserStore>): strin
 }
 
 router.beforeEach(async (to, _from, next) => {
+  NProgress.start()
   document.title = 'XPlay'
 
   if (to.meta.public) {
@@ -186,6 +195,14 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   next()
+})
+
+router.afterEach(() => {
+  NProgress.done()
+})
+
+router.onError(() => {
+  NProgress.done()
 })
 
 export default router

@@ -96,6 +96,13 @@ const { config, updateConfig } = useScadaConfig(props.component as ScadaComponen
   border: 1px solid var(--border-base);
   border-radius: 4px;
   font-size: 13px;
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.form-group input::placeholder,
+.form-group select::placeholder {
+  color: var(--text-placeholder);
 }
 
 .form-group input:focus,

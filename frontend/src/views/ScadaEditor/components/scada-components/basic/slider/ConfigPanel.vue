@@ -115,6 +115,12 @@ const { config, updateConfig } = useScadaConfig(
   border: 1px solid var(--border-base);
   border-radius: 4px;
   font-size: 13px;
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.form-group input::placeholder {
+  color: var(--text-placeholder);
 }
 
 .form-group input:focus {
