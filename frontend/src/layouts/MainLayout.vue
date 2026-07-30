@@ -293,16 +293,16 @@ const allMenuItems = computed(() => [
     resource: "scada",
   },
   {
-    path: "/alerts",
-    title: t("layout.alerts"),
-    icon: "alarm",
-    resource: "alerts",
-  },
-  {
     path: "/rules",
     title: t("layout.rules"),
     icon: "graphic",
     resource: "rules",
+  },
+  {
+    path: "/alerts",
+    title: t("layout.alerts"),
+    icon: "alarm",
+    resource: "alerts",
   },
   {
     path: "/settings",
