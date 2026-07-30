@@ -13,6 +13,7 @@
         <el-dropdown
           trigger="hover"
           placement="bottom-end"
+          popper-class="project-dropdown-popper"
           @command="handleMoreCommand"
         >
           <el-icon class="more-icon" :size="32">
@@ -528,7 +529,7 @@ const formatTime = (timestamp: number) => {
   cursor: pointer;
   color: var(--text-secondary);
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 8px;
   transition:
     color 0.2s,
     background-color 0.2s;
@@ -541,15 +542,48 @@ const formatTime = (timestamp: number) => {
 }
 
 :deep(.project-more-menu) {
-  padding: 4px;
-  border-radius: 8px;
-  min-width: 120px;
+  padding: 6px;
+  border-radius: 12px;
+  min-width: 140px;
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-light);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.16),
+    0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 :deep(.project-more-menu .el-dropdown__item) {
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
+  color: var(--text-primary);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+:deep(.project-more-menu .el-dropdown__item:hover) {
+  background-color: var(--el-fill-color-light) !important;
+  color: var(--el-color-primary) !important;
+}
+
+:deep(.project-more-menu .el-dropdown__item .el-icon) {
+  color: var(--text-secondary);
+}
+
+:deep(.project-more-menu .el-dropdown__item:hover .el-icon) {
+  color: var(--el-color-primary);
+}
+
+:deep(.project-more-menu .el-dropdown-menu__item.is-disabled) {
+  color: var(--text-disabled);
+}
+
+:deep(.project-more-menu .el-dropdown-menu__item.is-divider) {
+  height: 1px;
+  margin: 4px 0;
+  padding: 0;
+  background-color: var(--border-light);
 }
 
 .btn {
@@ -582,5 +616,18 @@ const formatTime = (timestamp: number) => {
 
 .btn-create:hover {
   background-color: rgba(102, 102, 255, 0.9);
+}
+</style>
+
+<style>
+.project-dropdown-popper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.project-dropdown-popper .el-popper__arrow {
+  display: none !important;
 }
 </style>

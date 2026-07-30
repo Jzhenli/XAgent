@@ -27,14 +27,14 @@
             :key="item.path"
             :index="item.path"
           >
-            <el-icon>
+            
               <Icon
                 :name="item.icon"
                 :size="28"
                 type="mono-filled"
                 :color="{ normal: 'white' }"
               />
-            </el-icon>
+            
             <span style="margin-left: 14px">{{ item.title }}</span>
           </el-menu-item>
         </el-menu>
@@ -72,9 +72,9 @@
             :key="item.path"
             :index="item.path"
           >
-            <el-icon>
+            
               <Icon :name="item.icon" :size="32" :color="{ normal: 'white' }" />
-            </el-icon>
+           
             <span style="margin-left: 14px">{{ item.title }}</span>
           </el-menu-item>
         </el-menu>
