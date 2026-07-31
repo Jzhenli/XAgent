@@ -6,6 +6,7 @@ import type { DeviceConfig, DeviceStatus, BatchOperationResult } from '@/api/typ
 export interface DeviceListItem {
   asset: string
   name: string
+  description?: string
   enabled: boolean
   status: DeviceStatus
   connectionStatus: 'online' | 'offline' | 'unknown'
@@ -48,6 +49,7 @@ function mapDeviceToListItem(device: DeviceConfig, connectionStatusMap: Record<s
   return {
     asset: device.asset,
     name: device.name || device.asset,
+    description: device.description,
     enabled: device.enabled,
     status: device.status || 'active',
     connectionStatus: connectionStatus as 'online' | 'offline' | 'unknown',

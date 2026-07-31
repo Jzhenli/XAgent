@@ -117,6 +117,7 @@ export function mapDeviceWithPoints(device: DeviceConfig, readingData?: ReadingD
   return {
     asset: device.asset,
     name: device.name || device.asset,
+    description: device.description,
     enabled: device.enabled,
     status: device.status || 'active',
     pluginName: device.plugin?.name || '',

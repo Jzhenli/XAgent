@@ -55,18 +55,18 @@ watch(() => props.device, () => {
 // 保存设备
 const handleSave = async () => {
   if (!props.device) {
-    ElMessage.error('没有选择设备')
+    ElMessage.error(t('devices.noDeviceSelected'))
     return
   }
 
   // 验证必填字段
   if (!asset.value.trim()) {
-    ElMessage.error('资产标识不能为空')
+    ElMessage.error(t('devices.assetRequired'))
     return
   }
 
   if (!name.value.trim()) {
-    ElMessage.error('设备名称不能为空')
+    ElMessage.error(t('devices.deviceNameRequired'))
     return
   }
 
@@ -93,12 +93,12 @@ const handleSave = async () => {
     // 创建设备
     await deviceApi.create(deviceConfig)
 
-    ElMessage.success('设备保存成功')
+    ElMessage.success(t('devices.deviceSaved'))
     emit('success')
     emit('close')
   } catch (error: any) {
-    const detail = error?.response?.data?.detail || error?.message || '未知错误'
-    ElMessage.error(`保存失败: ${detail}`)
+    const detail = error?.response?.data?.detail || error?.message || t('common.unknownError')
+    ElMessage.error(t('devices.saveDeviceFailed', { detail }))
   }
 }
 
@@ -114,7 +114,7 @@ const handleClose = () => {
 
 <template>
   <el-dialog
-    v-model="props.visible"
+    :model-value="props.visible"
     :title="t('devices.confirmDeviceTitle')"
     width="600px"
     @close="handleClose"

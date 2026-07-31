@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, RefreshRight, Upload, Edit, CircleCheck } from '@element-plus/icons-vue'
 import { deviceApi } from '@/api/devices'
@@ -17,6 +18,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 // 当前步骤 (0: 配置, 1: 搜索中, 2: 搜索结果)
 const currentStep = ref(0)
@@ -112,7 +114,7 @@ const handleClearFilter = () => {
 // 搜索点位
 const handleDiscoverPoints = async () => {
   if (!props.deviceAsset) {
-    ElMessage.warning('请先选择设备')
+    ElMessage.warning(t('devices.pleaseSelectDevice'))
     return
   }
 
@@ -153,12 +155,12 @@ const handleDiscoverPoints = async () => {
       currentStep.value = 2
 
       if (response.total === 0) {
-        ElMessage.warning('未发现任何点位，请检查对象类型选择')
+        ElMessage.warning(t('devices.discoveryNoPointsFound'))
       } else {
-        ElMessage.success(`发现 ${response.total} 个点位`)
+        ElMessage.success(t('devices.discoveryFoundPoints', { count: response.total }))
       }
     } else {
-      ElMessage.error('点位发现失败')
+      ElMessage.error(t('devices.pointDiscoveryFailed'))
       currentStep.value = 0
     }
   } catch (error: any) {
@@ -167,8 +169,8 @@ const handleDiscoverPoints = async () => {
       await new Promise(resolve => setTimeout(resolve, minDisplayTime - elapsedTime))
     }
 
-    const detail = error?.response?.data?.detail || error?.message || '未知错误'
-    ElMessage.error(`点位发现失败: ${detail}`)
+    const detail = error?.response?.data?.detail || error?.message || t('common.unknownError')
+    ElMessage.error(t('devices.pointDiscoveryFailedWithDetail', { detail }))
     currentStep.value = 0
   } finally {
     searching.value = false
@@ -189,7 +191,7 @@ const handleResearch = () => {
 // 批量编辑
 const handleBatchEdit = () => {
   if (selectedPoints.value.length === 0) {
-    ElMessage.warning('请先选择要编辑的点位')
+    ElMessage.warning(t('devices.pleaseSelectPointsToEdit'))
     return
   }
   showBatchEditDialog.value = true
@@ -197,23 +199,23 @@ const handleBatchEdit = () => {
 
 const handleBatchEditConfirm = () => {
   showBatchEditDialog.value = false
-  ElMessage.success(`已对 ${selectedPoints.value.length} 个点位应用批量编辑`)
+  ElMessage.success(t('devices.batchEditApplied', { count: selectedPoints.value.length }))
 }
 
 // 批量添加点位
 const handleBatchAdd = async () => {
   if (selectedPoints.value.length === 0) {
-    ElMessage.warning('请先选择要添加的点位')
+    ElMessage.warning(t('devices.pleaseSelectPointsToAdd'))
     return
   }
 
   try {
     await ElMessageBox.confirm(
-      `确定要批量添加 ${selectedPoints.value.length} 个点位吗？`,
-      '批量添加确认',
+      t('devices.batchAddPointsConfirm', { count: selectedPoints.value.length }),
+      t('devices.batchAddConfirmTitle'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'info'
       }
     )
@@ -253,12 +255,12 @@ const handleBatchAdd = async () => {
       emit('success')
       handleClose()
     } else {
-      ElMessage.error('批量添加失败')
+      ElMessage.error(t('devices.batchAddFailed'))
     }
   } catch (error: any) {
     if (error !== 'cancel') {
-      const detail = error?.response?.data?.detail || error?.message || '未知错误'
-      ElMessage.error(`批量添加失败: ${detail}`)
+      const detail = error?.response?.data?.detail || error?.message || t('common.unknownError')
+      ElMessage.error(t('devices.batchAddFailedWithDetail', { detail }))
     }
   }
 }
@@ -286,8 +288,8 @@ const resetForm = () => {
 
 <template>
   <el-dialog
-    v-model="props.visible"
-    title="BACnet 点位发现"
+    :model-value="props.visible"
+    :title="t('devices.pointDiscoveryTitle')"
     :width="dialogWidth"
     @close="handleClose"
   >
@@ -295,17 +297,17 @@ const resetForm = () => {
     <div class="steps-compact mb-3">
       <div class="step-item" :class="{ active: currentStep === 0, completed: currentStep > 0 }">
         <div class="step-circle">1</div>
-        <div class="step-text">配置参数</div>
+        <div class="step-text">{{ t('devices.discoveryStep1') }}</div>
       </div>
       <div class="step-line" :class="{ active: currentStep >= 1 }"></div>
       <div class="step-item" :class="{ active: currentStep === 1, completed: currentStep > 1 }">
         <div class="step-circle">2</div>
-        <div class="step-text">搜索点位</div>
+        <div class="step-text">{{ t('devices.pointDiscoveryStep2') }}</div>
       </div>
       <div class="step-line" :class="{ active: currentStep >= 2 }"></div>
       <div class="step-item" :class="{ active: currentStep === 2 }">
         <div class="step-circle">3</div>
-        <div class="step-text">查看结果</div>
+        <div class="step-text">{{ t('devices.discoveryStep3') }}</div>
       </div>
     </div>
 
@@ -314,12 +316,12 @@ const resetForm = () => {
       <el-card shadow="never">
         <template #header>
           <div class="card-header">
-            <span>对象类型选择</span>
+            <span>{{ t('devices.objectTypeSelection') }}</span>
           </div>
         </template>
 
         <el-form label-width="80px">
-          <el-form-item label="对象类型">
+          <el-form-item :label="t('devices.objectType')">
             <el-checkbox-group v-model="selectedObjectTypes" class="compact-checkbox-group">
               <el-checkbox label="analogInput">AI</el-checkbox>
               <el-checkbox label="analogOutput">AO</el-checkbox>
@@ -332,7 +334,7 @@ const resetForm = () => {
               <el-checkbox label="multiStateValue">MV</el-checkbox>
             </el-checkbox-group>
             <el-text type="info" size="small" class="mt-1">
-              AI/AO/AV: 模拟量 | BI/BO/BV: 二进制 | MI/MO/MV: 多状态
+              {{ t('devices.objectTypeHint') }}
             </el-text>
           </el-form-item>
         </el-form>
@@ -347,8 +349,8 @@ const resetForm = () => {
             <Search />
           </el-icon>
           <div class="searching-text">
-            <h3>正在搜索点位...</h3>
-            <p class="sub-text">系统正在读取设备对象列表</p>
+            <h3>{{ t('devices.discoveringPoints') }}</h3>
+            <p class="sub-text">{{ t('devices.discoveringPointsTip') }}</p>
             <el-progress
               :percentage="searchProgress"
               :status="searchProgress === 100 ? 'success' : undefined"
@@ -366,12 +368,12 @@ const resetForm = () => {
         <template #header>
           <div class="card-header">
             <div class="header-left">
-              <span class="header-title">点位列表</span>
+              <span class="header-title">{{ t('devices.pointList') }}</span>
               <el-tag type="success" size="small" effect="plain">
-                发现 {{ discoveredPoints.length }}
+                {{ t('devices.foundCount', { count: discoveredPoints.length }) }}
               </el-tag>
               <el-tag type="primary" size="small" effect="plain">
-                已选 {{ selectedCount }}
+                {{ t('devices.selectedCount', { count: selectedCount }) }}
               </el-tag>
             </div>
             <el-button
@@ -380,7 +382,7 @@ const resetForm = () => {
               size="small"
               @click="handleResearch"
             >
-              重新搜索
+              {{ t('devices.research') }}
             </el-button>
           </div>
         </template>
@@ -389,7 +391,7 @@ const resetForm = () => {
         <div v-if="discoveredPoints.length > 0" class="filter-section mb-2">
           <el-input
             v-model="filterText"
-            placeholder="搜索点位名称、描述、类型或ID..."
+            :placeholder="t('devices.pointFilterPlaceholder')"
             clearable
             :prefix-icon="Search"
             size="small"
@@ -406,19 +408,19 @@ const resetForm = () => {
         <!-- 空状态 -->
         <el-empty
           v-if="discoveredPoints.length === 0"
-          description="未发现任何点位"
+          :description="t('devices.discoveryNoPoints')"
           :image-size="60"
         >
-          <el-button type="primary" size="small" @click="handleResearch">调整参数重新搜索</el-button>
+          <el-button type="primary" size="small" @click="handleResearch">{{ t('devices.adjustAndResearch') }}</el-button>
         </el-empty>
 
         <!-- 搜索无结果 -->
         <el-empty
           v-else-if="filteredPoints.length === 0 && filterText"
-          description="未找到匹配的点位"
+          :description="t('devices.noMatchingPoints')"
           :image-size="50"
         >
-          <el-button type="primary" size="small" @click="handleClearFilter">清空搜索</el-button>
+          <el-button type="primary" size="small" @click="handleClearFilter">{{ t('devices.clearSearch') }}</el-button>
         </el-empty>
 
         <!-- 点位表格 -->
@@ -431,18 +433,18 @@ const resetForm = () => {
           size="small"
         >
           <el-table-column type="selection" width="40" />
-          <el-table-column prop="object_type" label="类型" width="80">
+          <el-table-column prop="object_type" :label="t('devices.type')" width="80">
             <template #default="{ row }">
               <el-tag size="small" effect="plain">{{ row.object_type }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="object_instance" label="ID" width="50" align="center" />
-          <el-table-column prop="object_name" label="名称" min-width="100" show-overflow-tooltip />
-          <el-table-column prop="description" label="描述" min-width="80" show-overflow-tooltip />
-          <el-table-column prop="writable" label="属性" width="45" align="center">
+          <el-table-column prop="object_instance" :label="t('devices.id')" width="50" align="center" />
+          <el-table-column prop="object_name" :label="t('devices.name')" min-width="100" show-overflow-tooltip />
+          <el-table-column prop="description" :label="t('devices.description')" min-width="80" show-overflow-tooltip />
+          <el-table-column prop="writable" :label="t('devices.access')" width="45" align="center">
             <template #default="{ row }">
               <el-tag :type="row.writable ? 'success' : 'info'" size="small" effect="plain">
-                {{ row.writable ? '写' : '读' }}
+                {{ row.writable ? t('common.write') : t('common.read') }}
               </el-tag>
             </template>
           </el-table-column>
@@ -455,10 +457,10 @@ const resetForm = () => {
             :indeterminate="selectedCount > 0 && selectedCount < filteredPoints.length"
             size="small"
           >
-            全选当前结果
+            {{ t('devices.selectAllCurrent') }}
           </el-checkbox>
           <el-text type="info" size="small">
-            {{ selectedCount }}/{{ filteredPoints.length }} 已选
+            {{ t('devices.selectedOfTotal', { selected: selectedCount, total: filteredPoints.length }) }}
           </el-text>
         </div>
       </el-card>
@@ -469,7 +471,7 @@ const resetForm = () => {
       <div class="dialog-footer">
         <!-- 步骤 0: 配置 -->
         <template v-if="currentStep === 0">
-          <el-button size="small" @click="handleClose">取消</el-button>
+          <el-button size="small" @click="handleClose">{{ t('common.cancel') }}</el-button>
           <el-button
             size="small"
             type="primary"
@@ -478,26 +480,26 @@ const resetForm = () => {
             :disabled="selectedObjectTypes.length === 0"
             @click="handleDiscoverPoints"
           >
-            开始发现点位
+            {{ t('devices.startPointDiscovery') }}
           </el-button>
         </template>
 
         <!-- 步骤 1: 搜索中 -->
         <template v-else-if="currentStep === 1">
-          <el-button size="small" @click="handleClose" :disabled="searching">取消</el-button>
-          <el-button size="small" type="primary" :loading="true">搜索中...</el-button>
+          <el-button size="small" @click="handleClose" :disabled="searching">{{ t('common.cancel') }}</el-button>
+          <el-button size="small" type="primary" :loading="true">{{ t('devices.searching') }}</el-button>
         </template>
 
         <!-- 步骤 2: 结果 -->
         <template v-else-if="currentStep === 2">
-          <el-button size="small" @click="handleClose">关闭</el-button>
+          <el-button size="small" @click="handleClose">{{ t('common.close') }}</el-button>
           <el-button
             size="small"
             :icon="Edit"
             @click="handleBatchEdit"
             :disabled="selectedCount === 0"
           >
-            批量编辑 ({{ selectedCount }})
+            {{ t('devices.batchEditWithCount', { count: selectedCount }) }}
           </el-button>
           <el-button
             size="small"
@@ -506,7 +508,7 @@ const resetForm = () => {
             @click="handleBatchAdd"
             :disabled="selectedCount === 0"
           >
-            批量添加已选 ({{ selectedCount }})
+            {{ t('devices.batchAddSelected', { count: selectedCount }) }}
           </el-button>
         </template>
       </div>
@@ -516,23 +518,23 @@ const resetForm = () => {
   <!-- 批量编辑对话框 -->
   <el-dialog
     v-model="showBatchEditDialog"
-    title="批量编辑"
+    :title="t('devices.batchEdit')"
     width="380px"
   >
     <el-form :model="batchEditForm" label-width="80px">
-      <el-form-item label="单位">
-        <el-input v-model="batchEditForm.unit" placeholder="如: °C, %" clearable />
+      <el-form-item :label="t('devices.unit')">
+        <el-input v-model="batchEditForm.unit" :placeholder="t('devices.pointDialog.unitPlaceholder')" clearable />
       </el-form-item>
-      <el-form-item label="缩放因子">
+      <el-form-item :label="t('devices.scaleFactor')">
         <el-input-number v-model="batchEditForm.scale" :precision="2" :step="0.1" clearable />
       </el-form-item>
-      <el-form-item label="偏移量">
+      <el-form-item :label="t('devices.offset')">
         <el-input-number v-model="batchEditForm.offset" :precision="2" :step="0.1" clearable />
       </el-form-item>
-      <el-form-item label="报警上限">
+      <el-form-item :label="t('devices.highAlarm')">
         <el-input-number v-model="batchEditForm.alarm_high" clearable />
       </el-form-item>
-      <el-form-item label="报警下限">
+      <el-form-item :label="t('devices.lowAlarm')">
         <el-input-number v-model="batchEditForm.alarm_low" clearable />
       </el-form-item>
     </el-form>
@@ -543,13 +545,13 @@ const resetForm = () => {
       class="mb-4"
     >
       <template #title>
-        将对 {{ selectedCount }} 个点位应用以上设置
+        {{ t('devices.batchEditHint', { count: selectedCount }) }}
       </template>
     </el-alert>
 
     <template #footer>
-      <el-button @click="showBatchEditDialog = false">取消</el-button>
-      <el-button type="primary" @click="handleBatchEditConfirm">应用修改</el-button>
+      <el-button @click="showBatchEditDialog = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" @click="handleBatchEditConfirm">{{ t('common.apply') }}</el-button>
     </template>
   </el-dialog>
 </template>

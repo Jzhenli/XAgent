@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Edit, Search } from '@element-plus/icons-vue'
 
 interface Props {
@@ -13,25 +13,26 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 // 模式定义
 const modes = [
   {
-    name: '手动配置',
+    name: t('devices.manualConfig'),
     key: 'manual',
     icon: Edit,
-    description: '手动填写所有参数',
+    description: t('devices.manualConfigDesc'),
     color: '#909399',
     recommended: false
   },
   {
-    name: '自动发现',
+    name: t('devices.autoDiscover'),
     key: 'discover',
     icon: Search,
-    description: '自动搜索网络中的设备',
+    description: t('devices.autoDiscoverDesc'),
     color: '#67C23A',
-    recommended: true,  // 推荐
-    badge: '⭐ 推荐'
+    recommended: true,
+    badge: '⭐ ' + t('devices.recommended')
   }
 ]
 
@@ -48,14 +49,14 @@ const handleClose = () => {
 
 <template>
   <el-dialog
-    v-model="props.visible"
-    title="BACnet 模式选择"
+    :model-value="props.visible"
+    :title="t('devices.bacnetModeTitle')"
     width="500px"
     @close="handleClose"
   >
     <!-- 提示文字 -->
     <el-text type="info" size="large" class="mb-4">
-      选择配置方式
+      {{ t('devices.selectConfigMode') }}
     </el-text>
 
     <!-- 模式卡片 -->
@@ -104,7 +105,7 @@ const handleClose = () => {
     <!-- 底部按钮 -->
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
+        <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
       </div>
     </template>
   </el-dialog>

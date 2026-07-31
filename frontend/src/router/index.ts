@@ -87,7 +87,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/devices',
         name: 'Devices',
-        component: () => import('@/views/Devices.vue'),
+        component: () => import('@/views/Devices/index.vue'),
         meta: { title: 'route.devices', icon: 'Monitor' }
       },
       {

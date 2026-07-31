@@ -68,7 +68,7 @@ const handleClose = () => {
 
 <template>
   <el-dialog
-    v-model="props.visible"
+    :model-value="props.visible"
     :title="t('devices.selectProtocolTitle')"
     width="700px"
     @close="handleClose"
@@ -124,7 +124,7 @@ const handleClose = () => {
     <!-- 底部按钮 -->
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
+        <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
       </div>
     </template>
   </el-dialog>

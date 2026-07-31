@@ -118,12 +118,12 @@ const handleDiscoverDevices = async () => {
       currentStep.value = 2
 
       if (response.total === 0) {
-        ElMessage.warning('未发现任何BACnet设备，请检查网络连接或调整搜索参数')
+        ElMessage.warning(t('devices.discoveryNoDevicesFound'))
       } else {
-        ElMessage.success(`发现 ${response.total} 个BACnet设备`)
+        ElMessage.success(t('devices.discoveryFoundDevices', { count: response.total }))
       }
     } else {
-      ElMessage.error('设备发现失败')
+      ElMessage.error(t('devices.discoveryFailed'))
       // 返回配置步骤
       currentStep.value = 0
     }
@@ -135,8 +135,8 @@ const handleDiscoverDevices = async () => {
       await new Promise(resolve => setTimeout(resolve, minDisplayTime - elapsedTime))
     }
 
-    const detail = error?.response?.data?.detail || error?.message || '未知错误'
-    ElMessage.error(`设备发现失败: ${detail}`)
+    const detail = error?.response?.data?.detail || error?.message || t('common.unknownError')
+    ElMessage.error(t('devices.discoveryFailedWithDetail', { detail }))
     // 返回配置步骤
     currentStep.value = 0
   } finally {
@@ -169,7 +169,7 @@ const handleQuickAddDevice = async (device: DiscoveredDeviceResponse) => {
     // 创建设备（修正：方法名应该是create而不是createDevice）
     await deviceApi.create(deviceConfig)
 
-    ElMessage.success(`设备 ${deviceConfig.name} 已成功添加`)
+    ElMessage.success(t('devices.deviceAddedSuccess', { name: deviceConfig.name }))
     emit('success')
 
     // 从列表中移除已添加的设备
@@ -178,8 +178,8 @@ const handleQuickAddDevice = async (device: DiscoveredDeviceResponse) => {
       discoveredDevices.value.splice(index, 1)
     }
   } catch (error: any) {
-    const detail = error?.response?.data?.detail || error?.message || '未知错误'
-    ElMessage.error(`添加失败: ${detail}`)
+    const detail = error?.response?.data?.detail || error?.message || t('common.unknownError')
+    ElMessage.error(t('devices.addDeviceFailed', { detail }))
   }
 }
 
@@ -191,17 +191,17 @@ const handleCustomizeDevice = (device: DiscoveredDeviceResponse) => {
 // 批量添加设备
 const handleBatchAdd = async () => {
   if (selectedDevices.value.length === 0) {
-    ElMessage.warning('请先选择要添加的设备')
+    ElMessage.warning(t('devices.pleaseSelectDevices'))
     return
   }
 
   try {
     await ElMessageBox.confirm(
-      `确定要批量添加 ${selectedDevices.value.length} 个设备吗？`,
-      '批量添加确认',
+      t('devices.batchAddConfirm', { count: selectedDevices.value.length }),
+      t('devices.batchAddConfirmTitle'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'info'
       }
     )
@@ -228,20 +228,20 @@ const handleBatchAdd = async () => {
     const response = await deviceApi.batchCreate(devicesToAdd)  // 修正：方法名应该是batchCreate而不是batchCreateDevices
 
     if (response.succeeded > 0) {
-      ElMessage.success(`成功添加 ${response.succeeded} 个设备`)
+      ElMessage.success(t('devices.batchAddSuccess', { count: response.succeeded }))
       emit('success')
       handleClose()
     } else {
-      ElMessage.error('批量添加失败')
+      ElMessage.error(t('devices.batchAddFailed'))
     }
 
     if (response.failed > 0) {
-      ElMessage.warning(`${response.failed} 个设备添加失败`)
+      ElMessage.warning(t('devices.batchAddPartialFailed', { count: response.failed }))
     }
   } catch (error: any) {
     if (error !== 'cancel') {
-      const detail = error?.response?.data?.detail || error?.message || '未知错误'
-      ElMessage.error(`批量添加失败: ${detail}`)
+      const detail = error?.response?.data?.detail || error?.message || t('common.unknownError')
+      ElMessage.error(t('devices.batchAddFailedWithDetail', { detail }))
     }
   }
 }
@@ -270,11 +270,11 @@ watch(() => props.visible, async (visible) => {
         console.log('自动选择最高优先级网卡:', networkInterfaces.value[0].name, networkInterfaces.value[0].ip_address)
       } else {
         selectedInterfaceIp.value = ''
-        ElMessage.warning('未找到可用的IPv4网卡')
+        ElMessage.warning(t('devices.noNetworkInterface'))
       }
     } catch (error: any) {
       console.error('获取网卡列表失败:', error)
-      ElMessage.error('获取网卡列表失败')
+      ElMessage.error(t('devices.getNetworkInterfacesFailed'))
     }
   }
 })
@@ -282,7 +282,7 @@ watch(() => props.visible, async (visible) => {
 
 <template>
   <el-dialog
-    v-model="props.visible"
+    :model-value="props.visible"
     :title="t('devices.deviceDiscovery')"
     :width="dialogWidth"
     @close="handleClose"
