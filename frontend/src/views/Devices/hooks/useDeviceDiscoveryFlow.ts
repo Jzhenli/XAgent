@@ -106,7 +106,7 @@ export function useDeviceDiscoveryFlow(showDeviceDialog: Ref<boolean>) {
     showConfirmDialog.value = true
   }
 
-  const handleQuickAddDevice = async () => {
+  const handleQuickAddDevice = async (device: DiscoveredDeviceResponse) => {
     await refreshDeviceLists()
   }
 

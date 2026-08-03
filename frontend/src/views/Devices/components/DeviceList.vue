@@ -465,7 +465,8 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   border-color: rgba(102, 102, 255, 1);
 }
 
-.device-item.offline {
+.device-item.offline .device-status-icon,
+.device-item.offline .device-item-content {
   opacity: 0.7;
 }
 
@@ -509,6 +510,8 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
 .delete-text {
   color: var(--el-color-danger);
 }
+
+@import "./DialogCommon.css";
 
 /* ========== 下拉菜单样式 ========== */
 :deep(.device-dropdown-popper) {
@@ -583,7 +586,7 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   background: rgba(102, 102, 255, 0.1);
 }
 
-.device-card.offline {
+.device-card.offline .device-card-header {
   opacity: 0.7;
 }
 

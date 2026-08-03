@@ -4,7 +4,8 @@
     :title="t('devices.selectProtocolTitle')"
     width="800px"
     class="x-dialog"
-    align-center  
+    align-center
+    :close-on-click-modal="false"
     @close="handleClose"
   >
     <!-- 协议卡片网格 -->
@@ -142,6 +143,7 @@ const handleClose = () => {
 /* 让同一行的 el-col 等高，保证卡片高度一致 */
 .protocol-grid .el-col {
   display: flex;
+  min-width: 0;
 }
 
 .protocol-card {
@@ -151,6 +153,8 @@ const handleClose = () => {
   transition: all 0.3s;
   background: rgba(255, 255, 255, 0.07);
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .protocol-card:hover {
@@ -186,6 +190,10 @@ const handleClose = () => {
 
 .discovery-badge {
   margin-top: 10px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 取消按钮：暗色主题使用半透明白色边框，亮色主题自动切换为深色系 */

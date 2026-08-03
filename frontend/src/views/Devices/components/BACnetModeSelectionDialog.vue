@@ -5,6 +5,7 @@
     width="600px"
     class="x-dialog"
     align-center
+    :close-on-click-modal="false"
     @close="handleClose"
   >
     <!-- 模式卡片 -->

@@ -292,6 +292,7 @@ const resetForm = () => {
     :title="t('devices.pointDiscoveryTitle')"
     :width="dialogWidth"
     class="x-dialog"
+    :close-on-click-modal="false"
     @close="handleClose"
   >
     <!-- 步骤条 -->
@@ -520,6 +521,7 @@ const resetForm = () => {
     :title="t('devices.batchEdit')"
     width="380px"
     class="x-dialog"
+    :close-on-click-modal="false"
   >
     <el-form :model="batchEditForm" label-width="80px">
       <el-form-item :label="t('devices.unit')">

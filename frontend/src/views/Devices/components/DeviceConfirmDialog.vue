@@ -1,3 +1,113 @@
+<template>
+  <el-dialog
+    :model-value="props.visible"
+    :title="t('devices.confirmDeviceTitle')"
+    width="600px"
+    class="x-dialog device-confirm-dialog"
+    :close-on-click-modal="false"
+    align-center
+    @close="handleClose"
+  >
+    <!-- 信息提示区 -->
+    <el-alert
+      type="info"
+      :closable="false"
+      class="mb-4"
+    >
+      <template #title>
+        <el-icon><i class="el-icon-info"></i></el-icon>
+        {{ t('devices.confirmDeviceHint') }}
+      </template>
+    </el-alert>
+
+    <!-- 基础信息区（可修改） -->
+    <el-card shadow="never" class="mb-4">
+      <template #header>
+        <div class="card-header">
+          <span>{{ t('devices.confirmBasicInfo') }}</span>
+        </div>
+      </template>
+
+      <el-form label-width="100px">
+        <el-form-item :label="t('devices.asset')">
+          <el-input
+            v-model="asset"
+            :placeholder="t('devices.confirmAssetPlaceholder')"
+          />
+          <el-text type="info" size="small" class="mt-1">
+            {{ t('devices.confirmAssetTip') }}
+          </el-text>
+        </el-form-item>
+
+        <el-form-item :label="t('devices.deviceName')">
+          <el-input
+            v-model="name"
+            :placeholder="t('devices.confirmNamePlaceholder')"
+          />
+          <el-text type="info" size="small" class="mt-1">
+            {{ t('devices.confirmNameTip') }}
+          </el-text>
+        </el-form-item>
+
+        <el-form-item :label="t('devices.enabled')">
+          <el-switch v-model="enabled" />
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- BACnet 参数区（不可修改） -->
+    <el-card shadow="never" class="mb-4" v-if="device">
+      <template #header>
+        <div class="card-header">
+          <span>{{ t('devices.confirmBacnetParams') }}</span>
+        </div>
+      </template>
+
+      <el-form label-width="100px">
+        <el-form-item :label="t('devices.deviceId')">
+          <el-input
+            :value="device.device_id"
+            disabled
+            class="disabled-input"
+          />
+          <el-text type="info" size="small" class="mt-1">
+            {{ t('devices.confirmReadonlyTip') }}
+          </el-text>
+        </el-form-item>
+
+        <el-form-item :label="t('devices.host')">
+          <el-input
+            :value="device.address"
+            disabled
+            class="disabled-input"
+          />
+          <el-text type="info" size="small" class="mt-1">
+            {{ t('devices.confirmReadonlyTip') }}
+          </el-text>
+        </el-form-item>
+
+        <el-form-item :label="t('devices.port')">
+          <el-input
+            :value="device.port"
+            disabled
+            class="disabled-input"
+          />
+          <el-text type="info" size="small" class="mt-1">
+            {{ t('devices.confirmReadonlyTip') }}
+          </el-text>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 底部按钮 -->
+    <template #footer>
+      <el-button @click="handleBack">{{ t('devices.confirmBack') }}</el-button>
+      <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" @click="handleSave">{{ t('devices.confirmSave') }}</el-button>
+    </template>
+  </el-dialog>
+</template>
+
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -112,133 +222,51 @@ const handleClose = () => {
 }
 </script>
 
-<template>
-  <el-dialog
-    :model-value="props.visible"
-    :title="t('devices.confirmDeviceTitle')"
-    width="600px"
-    class="x-dialog"
-    @close="handleClose"
-  >
-    <!-- 信息提示区 -->
-    <el-alert
-      type="info"
-      :closable="false"
-      class="mb-4"
-    >
-      <template #title>
-        <el-icon><i class="el-icon-info"></i></el-icon>
-        {{ t('devices.confirmDeviceHint') }}
-      </template>
-    </el-alert>
-
-    <!-- 基础信息区（可修改） -->
-    <el-card shadow="never" class="mb-4">
-      <template #header>
-        <div class="card-header">
-          <span>{{ t('devices.confirmBasicInfo') }}</span>
-        </div>
-      </template>
-
-      <el-form label-width="100px">
-        <el-form-item :label="t('devices.asset')">
-          <el-input
-            v-model="asset"
-            :placeholder="t('devices.confirmAssetPlaceholder')"
-          />
-          <el-text type="info" size="small" class="mt-1">
-            {{ t('devices.confirmAssetTip') }}
-          </el-text>
-        </el-form-item>
-
-        <el-form-item :label="t('devices.deviceName')">
-          <el-input
-            v-model="name"
-            :placeholder="t('devices.confirmNamePlaceholder')"
-          />
-          <el-text type="info" size="small" class="mt-1">
-            {{ t('devices.confirmNameTip') }}
-          </el-text>
-        </el-form-item>
-
-        <el-form-item :label="t('devices.enabled')">
-          <el-switch v-model="enabled" />
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- BACnet 参数区（不可修改） -->
-    <el-card shadow="never" class="mb-4" v-if="device">
-      <template #header>
-        <div class="card-header">
-          <span>{{ t('devices.confirmBacnetParams') }}</span>
-        </div>
-      </template>
-
-      <el-form label-width="100px">
-        <el-form-item :label="t('devices.deviceId')">
-          <el-input
-            :value="device.device_id"
-            disabled
-            class="disabled-input"
-          />
-          <el-text type="info" size="small" class="mt-1">
-            {{ t('devices.confirmReadonlyTip') }}
-          </el-text>
-        </el-form-item>
-
-        <el-form-item :label="t('devices.host')">
-          <el-input
-            :value="device.address"
-            disabled
-            class="disabled-input"
-          />
-          <el-text type="info" size="small" class="mt-1">
-            {{ t('devices.confirmReadonlyTip') }}
-          </el-text>
-        </el-form-item>
-
-        <el-form-item :label="t('devices.port')">
-          <el-input
-            :value="device.port"
-            disabled
-            class="disabled-input"
-          />
-          <el-text type="info" size="small" class="mt-1">
-            {{ t('devices.confirmReadonlyTip') }}
-          </el-text>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 底部按钮 -->
-    <template #footer>
-      <el-button @click="handleBack">{{ t('devices.confirmBack') }}</el-button>
-      <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
-      <el-button type="primary" @click="handleSave">{{ t('devices.confirmSave') }}</el-button>
-    </template>
-  </el-dialog>
-</template>
-
 <style>
 /* 引入 Devices 模块通用弹框样式（需 unscoped，弹框内容 teleport 到 body） */
 @import './DialogCommon.css';
+
+/* 自定义添加弹框的卡片与禁用输入框，与 x-dialog 风格统一 */
+.device-confirm-dialog .el-card {
+  background-color: transparent;
+  border-color: var(--border-base);
+}
+
+.device-confirm-dialog .el-card__header {
+  border-bottom-color: var(--border-base);
+}
+
+.device-confirm-dialog .el-card__header .card-header {
+  color: var(--text-primary);
+}
+
+.device-confirm-dialog .disabled-input .el-input__wrapper {
+  background-color: transparent !important;
+  border-bottom-color: var(--border-base) !important;
+}
+
+.device-confirm-dialog .disabled-input .el-input__inner {
+  color: var(--text-secondary) !important;
+}
+
+.device-confirm-dialog .el-alert {
+  background-color: transparent;
+  border: 1px solid var(--border-base);
+}
+
+.device-confirm-dialog .el-alert__title {
+  color: var(--text-primary);
+}
+
+.device-confirm-dialog .el-alert__description {
+  color: var(--text-secondary);
+}
 </style>
 
 <style scoped>
 /* 卡片标题 */
 .card-header {
   font-weight: bold;
-  color: var(--text-primary);
-}
-
-/* 只读/禁用输入框：保持灰色背景以区分可编辑字段 */
-.disabled-input :deep(.el-input__wrapper) {
-  background-color: var(--el-disabled-bg-color) !important;
-}
-
-.disabled-input :deep(.el-input__inner) {
-  color: var(--el-disabled-text-color) !important;
 }
 
 .mb-4 {

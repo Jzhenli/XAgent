@@ -219,6 +219,7 @@
 
     <DeviceDiscovery
       :visible="showDiscoveryDialog"
+      :existing-devices="deviceStore.devices"
       @close="showDiscoveryDialog = false"
       @success="handleDeviceDiscoverySuccess"
       @quickAdd="handleQuickAddDevice"

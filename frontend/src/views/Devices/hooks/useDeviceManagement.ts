@@ -186,7 +186,8 @@ export function useDeviceManagement() {
         {
           confirmButtonText: t('common.confirm'),
           cancelButtonText: t('common.cancel'),
-          type: 'warning'
+          type: 'warning',
+          customClass: 'x-message-box'
         }
       )
       await deviceStore.deleteDevice(device.asset)
