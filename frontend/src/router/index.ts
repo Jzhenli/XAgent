@@ -93,7 +93,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/channels',
         name: 'NorthChannels',
-        component: () => import('@/views/NorthChannels.vue'),
+        component: () => import('@/views/Tunnels/index.vue'),
         meta: { title: 'route.channels', icon: 'Connection' }
       },
       {
