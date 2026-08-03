@@ -51,14 +51,6 @@ export function useDeviceManagement() {
     }
   ]
 
-  const handlePluginChange = (form: DeviceFormData, val: string) => {
-    const opt = pluginOptions.find(o => o.value === val)
-    if (opt && opt.defaultConfig) {
-      Object.assign(form, opt.defaultConfig)
-    }
-    deviceFormRef.value?.clearValidate()
-  }
-
   const handleToggleDevice = async (asset: string) => {
     try {
       await deviceStore.toggleDevice(asset)
@@ -223,7 +215,6 @@ export function useDeviceManagement() {
     editingAsset,
     saving,
     pluginOptions,
-    handlePluginChange,
     handleToggleDevice,
     handleRefresh,
     handleEditDevice,

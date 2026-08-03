@@ -33,11 +33,12 @@ const isSubmitDisabled = computed(() => {
 </script>
 
 <template>
-  <el-dialog 
-    v-model="dialogVisible" 
+  <el-dialog
+    v-model="dialogVisible"
     :title="t('devices.writePointValue')"
     width="min(480px, 90vw)"
     :close-on-click-modal="false"
+    class="x-dialog"
   >
     <div class="write-info">
       <div class="write-info-row">
@@ -93,7 +94,13 @@ const isSubmitDisabled = computed(() => {
   </el-dialog>
 </template>
 
+<style>
+/* 引入 Devices 模块通用弹框样式（需 unscoped，弹框内容 teleport 到 body） */
+@import './DialogCommon.css';
+</style>
+
 <style scoped>
+/* ========== 写值信息展示区 ========== */
 .write-info {
   display: flex;
   flex-direction: column;
@@ -110,19 +117,20 @@ const isSubmitDisabled = computed(() => {
   width: 60px;
   flex-shrink: 0;
   font-size: 13px;
-  color: var(--el-text-color-secondary);
+  color: var(--text-secondary);
 }
 
 .write-info-value {
   font-size: 14px;
-  color: var(--el-text-color-primary);
+  color: var(--text-primary);
 }
 
 .write-info-value.current-value {
-  color: var(--el-color-primary);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
+/* ========== 写值输入区 ========== */
 .write-form {
   padding: 0 4px;
 }
@@ -135,12 +143,12 @@ const isSubmitDisabled = computed(() => {
 
 .write-bool-label {
   font-size: 14px;
-  color: var(--el-text-color-regular);
+  color: var(--text-regular);
 }
 
 .write-hint {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--text-secondary);
   margin-top: 8px;
   line-height: 1.5;
 }

@@ -48,11 +48,12 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <el-dialog 
-    v-model="dialogVisible" 
+  <el-dialog
+    v-model="dialogVisible"
     :title="isEditing ? t('devices.editPoint') : t('devices.addPoint')"
     width="min(700px, 92vw)"
     :close-on-click-modal="false"
+    class="x-dialog"
   >
     <el-form ref="formRefInternal" :model="form" :rules="pointFormRules" label-width="100px">
       <el-form-item :label="t('devices.pointName')" prop="name">
@@ -197,7 +198,7 @@ const handleSave = async () => {
           disabled 
           :placeholder="t('devices.standardTypePlaceholder')"
         />
-        <div style="font-size: 12px; color: #909399; margin-top: 4px;">
+        <div class="form-hint">
           {{ t('devices.standardTypeHint') }}
         </div>
       </el-form-item>
@@ -210,24 +211,24 @@ const handleSave = async () => {
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item :label="t('devices.minValue')">
-            <el-input-number v-model="form.min" :placeholder="t('devices.optionalPlaceholder')" clearable style="width: 100%" />
+            <el-input-number v-model="form.min" :placeholder="t('devices.optionalPlaceholder')" clearable class="full-width" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item :label="t('devices.maxValue')">
-            <el-input-number v-model="form.max" :placeholder="t('devices.optionalPlaceholder')" clearable style="width: 100%" />
+            <el-input-number v-model="form.max" :placeholder="t('devices.optionalPlaceholder')" clearable class="full-width" />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item :label="t('devices.highAlarm')">
-            <el-input-number v-model="form.alarm_high" :placeholder="t('devices.optionalPlaceholder')" clearable style="width: 100%" />
+            <el-input-number v-model="form.alarm_high" :placeholder="t('devices.optionalPlaceholder')" clearable class="full-width" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item :label="t('devices.lowAlarm')">
-            <el-input-number v-model="form.alarm_low" :placeholder="t('devices.optionalPlaceholder')" clearable style="width: 100%" />
+            <el-input-number v-model="form.alarm_low" :placeholder="t('devices.optionalPlaceholder')" clearable class="full-width" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -245,3 +246,15 @@ const handleSave = async () => {
     </template>
   </el-dialog>
 </template>
+
+<style>
+/* 引入 Devices 模块通用弹框样式（需 unscoped，弹框内容 teleport 到 body） */
+@import './DialogCommon.css';
+</style>
+
+<style scoped>
+/* 数字输入框在 el-col 内撑满宽度 */
+.full-width {
+  width: 100%;
+}
+</style>

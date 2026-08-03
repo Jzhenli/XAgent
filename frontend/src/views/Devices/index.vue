@@ -146,7 +146,6 @@
       :is-editing="isEditing"
       :saving="saving"
       :plugin-options="pluginOptions"
-      @plugin-change="onPluginChange"
       @save="onSaveDevice"
     />
 
@@ -317,7 +316,6 @@ const {
   isEditing,
   saving,
   pluginOptions,
-  handlePluginChange,
   handleToggleDevice,
   handleRefresh,
   handleEditDevice,
@@ -479,10 +477,6 @@ const onDeleteDevice = (device: DeviceListItem) => {
       selectedDeviceAsset.value = null;
     }
   });
-};
-
-const onPluginChange = (val: string) => {
-  handlePluginChange(deviceForm.value, val);
 };
 
 const onSaveDevice = () => {

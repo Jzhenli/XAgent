@@ -291,6 +291,7 @@ const resetForm = () => {
     :model-value="props.visible"
     :title="t('devices.pointDiscoveryTitle')"
     :width="dialogWidth"
+    class="x-dialog"
     @close="handleClose"
   >
     <!-- 步骤条 -->
@@ -316,7 +317,7 @@ const resetForm = () => {
       <el-card shadow="never">
         <template #header>
           <div class="card-header">
-            <span>{{ t('devices.objectTypeSelection') }}</span>
+            <span class="header-title">{{ t('devices.objectTypeSelection') }}</span>
           </div>
         </template>
 
@@ -468,50 +469,48 @@ const resetForm = () => {
 
     <!-- 底部操作按钮 -->
     <template #footer>
-      <div class="dialog-footer">
-        <!-- 步骤 0: 配置 -->
-        <template v-if="currentStep === 0">
-          <el-button size="small" @click="handleClose">{{ t('common.cancel') }}</el-button>
-          <el-button
-            size="small"
-            type="primary"
-            :icon="Search"
-            :loading="searching"
-            :disabled="selectedObjectTypes.length === 0"
-            @click="handleDiscoverPoints"
-          >
-            {{ t('devices.startPointDiscovery') }}
-          </el-button>
-        </template>
+      <!-- 步骤 0: 配置 -->
+      <template v-if="currentStep === 0">
+        <el-button size="small" @click="handleClose">{{ t('common.cancel') }}</el-button>
+        <el-button
+          size="small"
+          type="primary"
+          :icon="Search"
+          :loading="searching"
+          :disabled="selectedObjectTypes.length === 0"
+          @click="handleDiscoverPoints"
+        >
+          {{ t('devices.startPointDiscovery') }}
+        </el-button>
+      </template>
 
-        <!-- 步骤 1: 搜索中 -->
-        <template v-else-if="currentStep === 1">
-          <el-button size="small" @click="handleClose" :disabled="searching">{{ t('common.cancel') }}</el-button>
-          <el-button size="small" type="primary" :loading="true">{{ t('devices.searching') }}</el-button>
-        </template>
+      <!-- 步骤 1: 搜索中 -->
+      <template v-else-if="currentStep === 1">
+        <el-button size="small" @click="handleClose" :disabled="searching">{{ t('common.cancel') }}</el-button>
+        <el-button size="small" type="primary" :loading="true">{{ t('devices.searching') }}</el-button>
+      </template>
 
-        <!-- 步骤 2: 结果 -->
-        <template v-else-if="currentStep === 2">
-          <el-button size="small" @click="handleClose">{{ t('common.close') }}</el-button>
-          <el-button
-            size="small"
-            :icon="Edit"
-            @click="handleBatchEdit"
-            :disabled="selectedCount === 0"
-          >
-            {{ t('devices.batchEditWithCount', { count: selectedCount }) }}
-          </el-button>
-          <el-button
-            size="small"
-            type="primary"
-            :icon="CircleCheck"
-            @click="handleBatchAdd"
-            :disabled="selectedCount === 0"
-          >
-            {{ t('devices.batchAddSelected', { count: selectedCount }) }}
-          </el-button>
-        </template>
-      </div>
+      <!-- 步骤 2: 结果 -->
+      <template v-else-if="currentStep === 2">
+        <el-button size="small" @click="handleClose">{{ t('common.close') }}</el-button>
+        <el-button
+          size="small"
+          :icon="Edit"
+          @click="handleBatchEdit"
+          :disabled="selectedCount === 0"
+        >
+          {{ t('devices.batchEditWithCount', { count: selectedCount }) }}
+        </el-button>
+        <el-button
+          size="small"
+          type="primary"
+          :icon="CircleCheck"
+          @click="handleBatchAdd"
+          :disabled="selectedCount === 0"
+        >
+          {{ t('devices.batchAddSelected', { count: selectedCount }) }}
+        </el-button>
+      </template>
     </template>
   </el-dialog>
 
@@ -520,6 +519,7 @@ const resetForm = () => {
     v-model="showBatchEditDialog"
     :title="t('devices.batchEdit')"
     width="380px"
+    class="x-dialog"
   >
     <el-form :model="batchEditForm" label-width="80px">
       <el-form-item :label="t('devices.unit')">
@@ -556,19 +556,13 @@ const resetForm = () => {
   </el-dialog>
 </template>
 
+<style>
+/* 引入 Devices 模块通用弹框样式（需 unscoped，弹框内容 teleport 到 body） */
+@import './DialogCommon.css';
+</style>
+
 <style scoped>
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
+/* ========== 通用间距工具类 ========== */
 .w-full {
   width: 100%;
 }
@@ -601,7 +595,40 @@ const resetForm = () => {
   margin-left: 8px;
 }
 
-/* 紧凑步骤条 */
+/* ========== 卡片头部 ========== */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.header-left .el-tag {
+  font-size: 11px;
+}
+
+/* ========== 表格底部 ========== */
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-top: 1px solid var(--border-base);
+  margin-top: 4px;
+}
+
+/* ========== 紧凑步骤条 ========== */
 .steps-compact {
   display: flex;
   align-items: center;
@@ -619,8 +646,8 @@ const resetForm = () => {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #e4e7ed;
-  color: #909399;
+  background: var(--border-base);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -630,76 +657,48 @@ const resetForm = () => {
 }
 
 .step-item.active .step-circle {
-  background: #409EFF;
+  background: var(--color-primary);
   color: white;
 }
 
 .step-item.completed .step-circle {
-  background: #67C23A;
+  background: var(--color-success);
   color: white;
 }
 
 .step-text {
   font-size: 11px;
-  color: #909399;
+  color: var(--text-secondary);
   font-weight: 500;
   transition: all 0.3s;
 }
 
 .step-item.active .step-text {
-  color: #409EFF;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .step-item.completed .step-text {
-  color: #67C23A;
+  color: var(--color-success);
 }
 
 .step-line {
   width: 25px;
   height: 2px;
-  background: #e4e7ed;
+  background: var(--border-base);
   margin: 0 5px;
   transition: all 0.3s;
 }
 
 .step-line.active {
-  background: #409EFF;
+  background: var(--color-primary);
 }
 
-/* 步骤内容 */
+/* ========== 步骤内容与搜索动画 ========== */
 .step-content {
   min-height: 200px;
 }
 
-/* 卡片header优化 */
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.header-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.header-left .el-tag {
-  font-size: 11px;
-}
-
-/* 表格底部 */
-.table-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 0;
-  border-top: 1px solid #ebeef5;
-  margin-top: 4px;
-}
-
-/* 搜索中动画 */
 .searching-card {
   min-height: 200px;
   display: flex;
@@ -714,7 +713,7 @@ const resetForm = () => {
 
 .searching-icon {
   animation: pulse 2s ease-in-out infinite;
-  color: #409EFF;
+  color: var(--color-primary);
   margin-bottom: 10px;
 }
 
@@ -722,13 +721,13 @@ const resetForm = () => {
   margin: 0 0 6px 0;
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: var(--text-primary);
 }
 
 .searching-text .sub-text {
   margin: 0 0 10px 0;
   font-size: 11px;
-  color: #606266;
+  color: var(--text-regular);
 }
 
 .progress-bar {
@@ -747,7 +746,7 @@ const resetForm = () => {
   }
 }
 
-/* 紧凑的checkbox组 */
+/* ========== 紧凑复选框组 ========== */
 .compact-checkbox-group {
   display: flex;
   flex-wrap: wrap;
@@ -758,7 +757,7 @@ const resetForm = () => {
   margin-right: 0;
 }
 
-/* 搜索过滤样式 */
+/* ========== 搜索过滤 ========== */
 .filter-section {
   display: flex;
   align-items: center;
@@ -769,7 +768,7 @@ const resetForm = () => {
   width: 100%;
 }
 
-/* 表格紧凑样式 */
+/* ========== 表格紧凑样式 ========== */
 .el-table {
   font-size: 11px;
 }
@@ -787,13 +786,12 @@ const resetForm = () => {
   padding: 4px 0;
 }
 
-/* 空状态样式调整 */
+/* ========== 空状态样式调整 ========== */
 .el-empty {
   padding: 8px 0;
 }
 
-/* 响应式设计 - 保持合理比例 */
-/* 小屏幕适配（<768px） */
+/* ========== 响应式适配 ========== */
 @media (max-width: 767px) {
   .el-table {
     max-height: 140px !important;
@@ -808,7 +806,6 @@ const resetForm = () => {
   }
 }
 
-/* 中屏幕适配（768px-1023px） */
 @media (min-width: 768px) and (max-width: 1023px) {
   .el-table {
     max-height: 180px !important;
@@ -825,7 +822,6 @@ const resetForm = () => {
   }
 }
 
-/* 大屏幕适配（1024px-1439px） */
 @media (min-width: 1024px) and (max-width: 1439px) {
   .el-table {
     max-height: 200px !important;
@@ -847,7 +843,6 @@ const resetForm = () => {
   }
 }
 
-/* 超大屏幕适配（≥1440px） */
 @media (min-width: 1440px) {
   .el-table {
     max-height: 220px !important;

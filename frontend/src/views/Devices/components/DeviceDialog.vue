@@ -5,7 +5,8 @@
     :title="isEditing ? t('devices.editDevice') : t('devices.addDevice')"
     width="min(600px, 90vw)"
     :close-on-click-modal="false"
-    class="device-dialog"
+    align-center
+    class="x-dialog device-dialog"
   >
     <el-form
       ref="formRefInternal"
@@ -34,18 +35,7 @@
         />
       </el-form-item>
       <el-form-item :label="t('devices.protocolType')" prop="pluginName">
-        <el-select
-          v-model="form.pluginName"
-          :placeholder="t('devices.selectProtocol')"
-          @change="emit('plugin-change', form.pluginName)"
-        >
-          <el-option
-            v-for="opt in pluginOptions"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
+        <div class="protocol-display">{{ selectedPluginLabel }}</div>
       </el-form-item>
 
       <!-- Modbus TCP 参数 -->
@@ -206,7 +196,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', val: boolean): void
   (e: 'save'): void
-  (e: 'plugin-change', val: string): void
 }>()
 
 const { t } = useI18n()
@@ -218,6 +207,12 @@ const formRefInternal = ref()
 const isModbus = computed(() =>
   props.form.pluginName === 'modbus_tcp' || props.form.pluginName === 'modbus_rtu'
 )
+
+/** 当前协议类型展示文本 */
+const selectedPluginLabel = computed(() => {
+  const opt = props.pluginOptions.find(o => o.value === props.form.pluginName)
+  return opt?.label || props.form.pluginName
+})
 
 /** 串口波特率选项 */
 const baudrateOptions = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]
@@ -252,159 +247,22 @@ const handleSave = async () => {
 </script>
 
 <style>
-/* ========== 对话框容器 ========== */
-.device-dialog {
-  background-color: var(--bg-card) !important;
-  border-radius: 16px !important;
-  overflow: hidden;
-  border: 1px solid var(--border-base) !important;
-  box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.28),
-    0 8px 24px rgba(0, 0, 0, 0.14),
-    0 2px 6px rgba(0, 0, 0, 0.08) !important;
-}
+/* 引入 Devices 模块通用弹框样式 */
+@import './DialogCommon.css';
 
-.device-dialog .el-dialog__header {
-  background-color: var(--bg-card) !important;
-  padding: 16px 20px;
-  margin-right: 0;
-}
-
-.device-dialog .el-dialog__title {
+.protocol-display {
+  width: 100%;
+  height: 32px;
+  line-height: 32px;
   color: var(--text-primary);
-  font-size: 16px;
-  font-weight: 600;
+  border-bottom: 1px solid var(--border-base);
+  padding: 0 11px;
+  box-sizing: border-box;
 }
 
+/* 弹框内容超出时显示滚动条 */
 .device-dialog .el-dialog__body {
-  background-color: var(--bg-card) !important;
-  padding: 20px;
-}
-
-.device-dialog .el-dialog__footer {
-  background-color: var(--bg-card) !important;
-  padding: 14px 20px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-/* ========== 表单标签 ========== */
-.device-dialog .el-form-item__label {
-  color: var(--text-primary);
-  text-align: left !important;
-  font-weight: 500;
-}
-
-.device-dialog .el-form-item.is-required .el-form-item__label::before {
-  color: var(--color-danger);
-}
-
-/* ========== 表单控件通用样式 ========== */
-.device-dialog .el-input__wrapper,
-.device-dialog .el-select__wrapper,
-.device-dialog .el-textarea__wrapper {
-  box-shadow: none !important;
-  border: none !important;
-  border-bottom: 1px solid var(--border-base) !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  transition: border-color 0.2s;
-}
-
-.device-dialog .el-input__wrapper.is-focus,
-.device-dialog .el-select.is-focused .el-select__wrapper,
-.device-dialog .el-textarea__wrapper.is-focus {
-  border-bottom-color: var(--color-primary) !important;
-}
-
-.device-dialog .el-input__inner,
-.device-dialog .el-textarea__inner {
-  background: transparent !important;
-  color: var(--text-primary) !important;
-}
-
-.device-dialog .el-input__inner::placeholder,
-.device-dialog .el-textarea__inner::placeholder {
-  color: var(--text-placeholder);
-}
-
-.device-dialog .el-input__wrapper.is-disabled,
-.device-dialog .el-textarea.is-disabled .el-textarea__wrapper {
-  background: transparent !important;
-}
-
-/* ========== 数字输入框 ========== */
-.device-dialog .el-input-number {
-  border: 1px solid var(--border-base) !important;
-  border-radius: 4px !important;
-  background: var(--bg-card) !important;
-}
-
-.device-dialog .el-input-number .el-input__wrapper {
-  border: none !important;
-  background: transparent !important;
-}
-
-.device-dialog .el-input-number__decrease,
-.device-dialog .el-input-number__increase {
-  background: var(--bg-card) !important;
-  border-color: var(--border-base) !important;
-  color: var(--text-secondary) !important;
-}
-
-.device-dialog .el-input-number__decrease:hover,
-.device-dialog .el-input-number__increase:hover {
-  color: var(--color-primary) !important;
-}
-
-/* ========== 单选 / 开关 ========== */
-.device-dialog .el-radio__input.is-checked .el-radio__inner {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.device-dialog .el-radio__input.is-checked + .el-radio__label {
-  color: var(--color-primary);
-}
-
-.device-dialog .el-switch.is-checked .el-switch__core {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-/* ========== 按钮 ========== */
-.device-dialog .el-button {
-  transition: all 0.2s !important;
-}
-
-.device-dialog .el-button:not(.el-button--primary) {
-  background-color: var(--el-button-bg-color) !important;
-  border-color: var(--el-button-border-color) !important;
-  color: var(--text-regular) !important;
-}
-
-.device-dialog .el-button:not(.el-button--primary):hover {
-  background-color: var(--el-button-hover-bg-color) !important;
-  border-color: var(--el-color-primary) !important;
-  color: var(--color-primary) !important;
-}
-
-.device-dialog .el-button--primary {
-  background-color: rgba(102, 102, 255, 1) !important;
-  border-color: rgba(102, 102, 255, 1) !important;
-  color: #fff !important;
-}
-
-.device-dialog .el-button--primary:hover {
-  background-color: rgba(102, 102, 255, 0.88) !important;
-  border-color: rgba(102, 102, 255, 0.88) !important;
-}
-
-/* ========== 表单项提示文字 ========== */
-.form-hint {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 4px;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 </style>

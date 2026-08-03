@@ -147,49 +147,61 @@
           </template>
         </el-table-column>
         <!-- 操作列：趋势图 / 写值 / 编辑 / 删除 -->
-        <el-table-column :label="t('common.actions')" width="220" fixed="right">
+        <el-table-column :label="t('common.actions')" width="200" fixed="right">
           <template #default="{ row }">
-            <!-- 查看趋势 -->
-            <el-button
-              type="primary"
-              link
-              size="small"
-              @click="emit('viewTrend', selectedAsset!, row.name)"
-            >
-              {{ t("devices.pointTrend") }}
-            </el-button>
-            <!-- 写入值（需可写权限 + 写权限） -->
-            <el-button
-              v-if="
-                row.writable && userStore.hasPermission('devices', 'update')
-              "
-              type="warning"
-              link
-              size="small"
-              @click="emit('writeValue', row)"
-            >
-              {{ t("devices.writeValue") }}
-            </el-button>
-            <!-- 编辑点位 -->
-            <el-button
-              v-if="userStore.hasPermission('devices', 'update')"
-              type="primary"
-              link
-              size="small"
-              @click="emit('editPoint', row)"
-            >
-              {{ t("common.edit") }}
-            </el-button>
-            <!-- 删除点位 -->
-            <el-button
-              v-if="userStore.hasPermission('devices', 'delete')"
-              type="danger"
-              link
-              size="small"
-              @click="emit('deletePoint', row.name)"
-            >
-              {{ t("common.delete") }}
-            </el-button>
+            <div class="action-icons">
+              <!-- 查看趋势 -->
+              <el-tooltip :content="t('devices.pointTrend')" placement="top">
+                <Icon
+                  name="trend"
+                  type="mono-line"
+                  :size="24"
+                  :color="{ normal: 'var(--el-text-color-primary)' }"
+                  @click="emit('viewTrend', selectedAsset!, row.name)"
+                />
+              </el-tooltip>
+              <!-- 写入值（需可写权限 + 写权限） -->
+              <el-tooltip
+                v-if="
+                  row.writable && userStore.hasPermission('devices', 'update')
+                "
+                :content="t('devices.writeValue')"
+                placement="top"
+              >
+                <Icon
+                  name="input"
+                  :size="24"
+                  :color="{ normal: 'var(--el-color-warning)' }"
+                  @click="emit('writeValue', row)"
+                />
+              </el-tooltip>
+              <!-- 编辑点位 -->
+              <el-tooltip
+                v-if="userStore.hasPermission('devices', 'update')"
+                :content="t('common.edit')"
+                placement="top"
+              >
+                <Icon
+                  name="edit"
+                  :size="24"
+                  :color="{ normal: 'rgba(102, 102, 255, 1)' }"
+                  @click="emit('editPoint', row)"
+                />
+              </el-tooltip>
+              <!-- 删除点位 -->
+              <el-tooltip
+                v-if="userStore.hasPermission('devices', 'delete')"
+                :content="t('common.delete')"
+                placement="top"
+              >
+                <Icon
+                  name="delete"
+                  :size="24"
+                  :color="{ normal: 'var(--el-color-danger)' }"
+                  @click="emit('deletePoint', row.name)"
+                />
+              </el-tooltip>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -200,6 +212,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { useUserStore } from "@/stores/users";
+import { Icon } from "@/icon/index";
 import { TrendCharts, Plus, Search, ArrowLeft } from "@element-plus/icons-vue";
 
 /**
@@ -340,6 +353,13 @@ const userStore = useUserStore();
 .action-btn.success {
   color: #fff;
   background: var(--color-success);
+}
+
+/* 操作图标组 */
+.action-icons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 /* 配置单元格：截断显示 */

@@ -117,6 +117,7 @@ const handleClose = () => {
     :model-value="props.visible"
     :title="t('devices.confirmDeviceTitle')"
     width="600px"
+    class="x-dialog"
     @close="handleClose"
   >
     <!-- 信息提示区 -->
@@ -212,29 +213,32 @@ const handleClose = () => {
 
     <!-- 底部按钮 -->
     <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="handleBack">{{ t('devices.confirmBack') }}</el-button>
-        <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="handleSave">{{ t('devices.confirmSave') }}</el-button>
-      </div>
+      <el-button @click="handleBack">{{ t('devices.confirmBack') }}</el-button>
+      <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" @click="handleSave">{{ t('devices.confirmSave') }}</el-button>
     </template>
   </el-dialog>
 </template>
 
+<style>
+/* 引入 Devices 模块通用弹框样式（需 unscoped，弹框内容 teleport 到 body） */
+@import './DialogCommon.css';
+</style>
+
 <style scoped>
+/* 卡片标题 */
 .card-header {
   font-weight: bold;
+  color: var(--text-primary);
 }
 
-.disabled-input {
-  background-color: var(--el-disabled-bg-color);
-  color: var(--el-disabled-text-color);
+/* 只读/禁用输入框：保持灰色背景以区分可编辑字段 */
+.disabled-input :deep(.el-input__wrapper) {
+  background-color: var(--el-disabled-bg-color) !important;
 }
 
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+.disabled-input :deep(.el-input__inner) {
+  color: var(--el-disabled-text-color) !important;
 }
 
 .mb-4 {

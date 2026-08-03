@@ -167,7 +167,7 @@
           name="download"
           :size="24"
           :title="t('common.export')"
-          :color="{ normal: 'white' }"
+          :color="{ normal: 'var(--el-text-color-primary)' }"
           @click="emit('export')"
         />
         <Icon
@@ -176,7 +176,7 @@
           name="import"
           :size="24"
           :title="t('common.import')"
-          :color="{ normal: 'white' }"
+          :color="{ normal: 'var(--el-text-color-primary)' }"
           @click="emit('import')"
         />
         <Icon
@@ -184,7 +184,7 @@
           name="refresh"
           :size="24"
           :title="t('common.refresh')"
-          :color="{ normal: 'white' }"
+          :color="{ normal: 'var(--el-text-color-primary)' }"
           @click="emit('refresh')"
         />
         <Icon
@@ -522,7 +522,7 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   padding: 6px;
   border-radius: 8px;
   min-width: 140px;
-  background: var(--bg-card) !important;
+  background: var(--bg-modal) !important;
   border: 1px solid var(--border-light);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
@@ -531,7 +531,7 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 14px;
-  background: transparent !important;
+  background: var(--bg-modal) !important;
   color: var(--text-primary) !important;
 }
 
