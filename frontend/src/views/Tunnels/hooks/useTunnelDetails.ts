@@ -15,7 +15,7 @@ export function useTunnelDetails() {
    */
   const selectedChannel = computed(() => {
     if (!selectedChannelId.value) return null
-    return channelStore.getChannelById(selectedChannelId.value)
+    return channelStore.getChannelById(selectedChannelId.value) ?? null
   })
 
   /**
@@ -62,16 +62,6 @@ export function useTunnelDetails() {
     }
   }
 
-  /**
-   * 格式化数字（添加千分位，大数转 k）
-   */
-  const formatNumber = (num: number): string => {
-    if (num >= 10000) {
-      return (num / 1000).toFixed(1) + 'k'
-    }
-    return num.toLocaleString()
-  }
-
   return {
     selectedChannelId,
     activeTab,
@@ -79,7 +69,6 @@ export function useTunnelDetails() {
     handleViewDetails,
     handleBackToList,
     handleTestConnection,
-    handleRestartChannel,
-    formatNumber
+    handleRestartChannel
   }
 }

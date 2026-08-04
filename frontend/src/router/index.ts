@@ -99,7 +99,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/rules',
         name: 'Rules',
-        component: () => import('@/views/Rules.vue'),
+        component: () => import('@/views/Rules/index.vue'),
         meta: { title: 'route.rules', icon: 'Connection' }
       },
       {

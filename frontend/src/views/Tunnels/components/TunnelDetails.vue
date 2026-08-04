@@ -101,7 +101,7 @@
               <div class="config-item">
                 <span class="config-label">{{ t('channels.adapter') }}</span>
                 <span class="config-value">
-                  <el-tag v-if="channel.adapter.adapter" size="small" type="primary">{{ channel.adapter.adapter }}</el-tag>
+                  <el-tag v-if="channel.adapter.adapter && channel.adapter.adapter !== 'standard'" size="small" type="primary">{{ channel.adapter.adapter }}</el-tag>
                   <span v-else class="muted">{{ t('channels.standard') }}</span>
                 </span>
               </div>

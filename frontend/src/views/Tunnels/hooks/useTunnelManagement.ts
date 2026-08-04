@@ -174,8 +174,20 @@ export function useTunnelManagement() {
     form.description = fullChannel.description || ''
     form.enabled = channel.enabled
     form.protocol = channel.protocol
-    form.host = fullChannel.connection.broker || fullChannel.connection.remote_host || ''
-    form.port = fullChannel.connection.port || fullChannel.connection.remote_port || 1883
+    // 根据协议解析 host 和 port（HTTP 从 endpoint 解析，参考 channels store 的 mapChannelToListItem）
+    if (fullChannel.protocol === 'http') {
+      try {
+        const url = new URL(fullChannel.connection.endpoint || '')
+        form.host = url.hostname
+        form.port = parseInt(url.port) || (url.protocol === 'https:' ? 443 : 80)
+      } catch {
+        form.host = fullChannel.connection.endpoint || ''
+        form.port = 80
+      }
+    } else {
+      form.host = fullChannel.connection.broker || fullChannel.connection.remote_host || ''
+      form.port = fullChannel.connection.port || fullChannel.connection.remote_port || 1883
+    }
     form.username = fullChannel.connection.username || ''
     form.password = ''
     form.client_id = fullChannel.connection.client_id || ''
@@ -195,7 +207,7 @@ export function useTunnelManagement() {
     form.mapping_config = JSON.stringify(fullChannel.adapter.mapping_config || {}, null, 2)
     form.endpoint = fullChannel.connection.endpoint || ''
     form.method = fullChannel.connection.method || 'POST'
-    form.headers = JSON.stringify(fullChannel.adapter.headers || {}, null, 2)
+    form.headers = JSON.stringify(fullChannel.connection.headers || fullChannel.adapter.headers || {}, null, 2)
     form.timeout = fullChannel.connection.timeout || 30
     form.immediate_upload = fullChannel.upload_strategy.immediate_upload
     form.batch_size = fullChannel.upload_strategy.batch_size
@@ -269,16 +281,16 @@ export function useTunnelManagement() {
       connection.timeout = form.timeout
       if (form.username) connection.username = form.username
       if (form.password) connection.password = form.password
-
-      adapterType = 'http'
       try {
         const headers = JSON.parse(form.headers)
         if (Object.keys(headers).length > 0) {
-          adapterConfig.headers = headers
+          connection.headers = headers
         }
       } catch (e) {
         console.error('Invalid headers JSON:', e)
       }
+
+      adapterType = 'http'
     }
 
     const config: NorthChannelConfig = {
