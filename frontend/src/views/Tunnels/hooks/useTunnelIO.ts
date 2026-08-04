@@ -6,6 +6,9 @@ import { useChannelStore } from '@/stores/channels'
 import { channelApi } from '@/api/channels'
 import type { NorthChannelConfig } from '@/api/types'
 
+/** ElMessageBox 取消操作的标记值 */
+const EL_MESSAGEBOX_CANCEL = 'cancel'
+
 export function useTunnelIO() {
   const { t } = useI18n()
   const channelStore = useChannelStore()
@@ -90,8 +93,9 @@ export function useTunnelIO() {
       }
       await channelStore.fetchChannels()
     } catch (e: unknown) {
-      if ((e as any) !== 'cancel') {
-        ElMessage.error(t('channels.importFailed', { message: e instanceof Error ? e.message : t('common.unknownError') }))
+      if (e !== EL_MESSAGEBOX_CANCEL) {
+        const errorMsg = e instanceof Error ? e.message : t('common.unknownError')
+        ElMessage.error(t('channels.importFailed', { message: errorMsg }))
       }
     }
   }

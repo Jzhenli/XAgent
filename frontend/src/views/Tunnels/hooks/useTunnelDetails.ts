@@ -41,7 +41,7 @@ export function useTunnelDetails() {
       ElMessage.info(t('channels.testingConnection'))
       const result = await channelStore.testConnection(id)
       if (result.success) {
-        ElMessage.success(t('channels.connectionSuccess', { latency: result.latency }))
+        ElMessage.success(t('channels.connectionSuccess', { latency: result.latency ?? '--' }))
       } else {
         ElMessage.error(t('channels.connectionFailed', { message: result.message }))
       }

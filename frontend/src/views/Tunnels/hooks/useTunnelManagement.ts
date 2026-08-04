@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useChannelStore } from '@/stores/channels'
 import { channelApi } from '@/api/channels'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { NorthChannelConfig, NorthChannelProtocol } from '@/api/types'
+import type { NorthChannelConfig, NorthChannelProtocol, NorthChannelConnection } from '@/api/types'
 import type { ChannelListItem } from '@/stores/channels'
 import type { ChannelFormData, ProtocolOption } from '../types'
 import { createInitialChannelForm } from '../types'
@@ -74,6 +74,8 @@ export function useTunnelManagement() {
 
   const adapterDefaultsCache = ref<Record<string, unknown>>({})
   const productKey = ref('')
+  /** 适配器加载请求版本号，用于防止竞态条件 */
+  let adapterRequestVersion = 0
 
   const mqttAdapterOptions = [
     { label: t('channels.adapterStandard'), value: 'standard', description: t('channels.adapterStandardDesc') },
@@ -112,7 +114,7 @@ export function useTunnelManagement() {
   }
 
   /**
-   * 适配器变更处理
+   * 适配器变更处理（带竞态防护）
    */
   const handleAdapterChange = async (form: ChannelFormData, adapter: string) => {
     form.adapter = adapter
@@ -125,7 +127,10 @@ export function useTunnelManagement() {
 
     // 新增模式或者编辑模式下 adapter_config 为空时，加载默认配置
     if (!isEditing.value || !form.adapter_config || form.adapter_config === '{}') {
+      const requestVersion = ++adapterRequestVersion
       const defaults = await loadAdapterDefaults(adapter)
+      // 竞态防护：仅当请求版本号仍为最新时才应用结果
+      if (requestVersion !== adapterRequestVersion) return
       if (defaults) {
         form.adapter_config = JSON.stringify(defaults, null, 2)
         productKey.value = (defaults.productKey as string) || ''
@@ -209,11 +214,11 @@ export function useTunnelManagement() {
     form.method = fullChannel.connection.method || 'POST'
     form.headers = JSON.stringify(fullChannel.connection.headers || fullChannel.adapter.headers || {}, null, 2)
     form.timeout = fullChannel.connection.timeout || 30
-    form.immediate_upload = fullChannel.upload_strategy.immediate_upload
-    form.batch_size = fullChannel.upload_strategy.batch_size
-    form.interval = fullChannel.upload_strategy.interval
-    form.retry_times = fullChannel.upload_strategy.retry_times
-    form.retry_interval = fullChannel.upload_strategy.retry_interval || 5
+    form.immediate_upload = fullChannel.upload_strategy?.immediate_upload ?? true
+    form.batch_size = fullChannel.upload_strategy?.batch_size ?? 100
+    form.interval = fullChannel.upload_strategy?.interval ?? 5
+    form.retry_times = fullChannel.upload_strategy?.retry_times ?? 3
+    form.retry_interval = fullChannel.upload_strategy?.retry_interval || 5
     form.tags = (fullChannel.tags || []).join(', ')
 
     try {
@@ -299,7 +304,7 @@ export function useTunnelManagement() {
       enabled: form.enabled,
       protocol: form.protocol,
       status: 'offline',
-      connection: connection as NorthChannelConfig['connection'],
+      connection: connection as NorthChannelConnection,
       adapter: {
         type: adapterType,
         ...adapterConfig
@@ -325,9 +330,11 @@ export function useTunnelManagement() {
   }
 
   /**
-   * 保存通道
+   * 保存通道（带重复提交防护）
    */
   const handleSaveTunnel = async (form: ChannelFormData) => {
+    // 防止重复提交
+    if (saving.value) return
     saving.value = true
     try {
       const config = buildChannelConfig(form)
@@ -341,7 +348,8 @@ export function useTunnelManagement() {
       }
       showTunnelDialog.value = false
     } catch (e: unknown) {
-      const detail = (e as any)?.response?.data?.detail || (e instanceof Error ? e.message : t('common.unknownError'))
+      const errorObj = e as { response?: { data?: { detail?: string } }; message?: string }
+      const detail = errorObj?.response?.data?.detail || (e instanceof Error ? e.message : t('common.unknownError'))
       ElMessage.error(isEditing.value ? t('channels.updateFailed', { message: detail }) : t('channels.createFailed', { message: detail }))
     } finally {
       saving.value = false

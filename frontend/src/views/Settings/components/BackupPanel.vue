@@ -111,6 +111,22 @@ import { configApi, type ConfigBackup } from '@/api/config'
 
 const { t } = useI18n()
 
+/** 通用错误提取工具 */
+type ErrorLike = { response?: { data?: { detail?: string } }; message?: string }
+
+const getErrorMessage = (e: unknown, fallback: string): string => {
+  if (e instanceof Error) return e.message
+  if (typeof e === 'string') return e
+  const err = e as ErrorLike
+  return err?.response?.data?.detail || fallback
+}
+
+/** 从下载 URL 中安全提取 token，缺失时返回空字符串 */
+const extractToken = (url: string): string => {
+  const idx = url.indexOf('token=')
+  return idx !== -1 ? url.substring(idx + 6) : ''
+}
+
 /* ------------------------------ 状态 ------------------------------ */
 
 /** 备份列表数据 */
@@ -144,8 +160,8 @@ async function loadBackupList() {
     backupLoading.value = true
     const res = await configApi.listConfigs()
     backupList.value = res.configs
-  } catch (e: any) {
-    ElMessage.error(e.response?.data?.detail || t('settings.backup.load_failed'))
+  } catch (e: unknown) {
+    ElMessage.error(getErrorMessage(e, t('settings.backup.load_failed')))
   } finally {
     backupLoading.value = false
   }
@@ -164,8 +180,8 @@ async function createBackup() {
     } else {
       ElMessage.error(res.error || t('settings.backup.export_failed'))
     }
-  } catch (e: any) {
-    ElMessage.error(e.response?.data?.detail || t('settings.backup.export_failed'))
+  } catch (e: unknown) {
+    ElMessage.error(getErrorMessage(e, t('settings.backup.export_failed')))
   } finally {
     exportLoading.value = false
   }
@@ -192,9 +208,9 @@ async function downloadBackup(backup?: ConfigBackup) {
   }
   try {
     const url = configApi.getDownloadUrl(filename)
-    const token = url.split('token=')[1]
+    const token = extractToken(url)
     const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     })
     if (!response.ok) {
       throw new Error(`${t('settings.backup.download_failed')}: ${response.statusText}`)
@@ -206,8 +222,8 @@ async function downloadBackup(backup?: ConfigBackup) {
     a.download = filename
     a.click()
     URL.revokeObjectURL(downloadUrl)
-  } catch (e: any) {
-    ElMessage.error(e.message || t('settings.backup.download_failed'))
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : t('settings.backup.download_failed'))
   }
 }
 
@@ -227,6 +243,12 @@ async function importBackup(uploadFile: UploadFile) {
         cancelButtonText: t('common.cancel'),
       }
     )
+  } catch {
+    // 用户取消确认
+    return
+  }
+
+  try {
     importLoading.value = true
     const res = await configApi.importConfig(file, true)
     if (res.success) {
@@ -235,8 +257,8 @@ async function importBackup(uploadFile: UploadFile) {
     } else {
       ElMessage.error(res.error || t('settings.backup.import_failed'))
     }
-  } catch {
-    // 用户取消导入
+  } catch (e: unknown) {
+    ElMessage.error(getErrorMessage(e, t('settings.backup.import_failed')))
   } finally {
     importLoading.value = false
   }
@@ -280,13 +302,13 @@ async function restoreBackup(backup: ConfigBackup) {
     )
     // 下载备份文件
     const url = configApi.getDownloadUrl(backup.filename)
-    const token = url.split('token=')[1]
+    const token = extractToken(url)
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 30000)
 
     try {
       const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         signal: controller.signal,
       })
       clearTimeout(timeoutId)
@@ -305,16 +327,16 @@ async function restoreBackup(backup: ConfigBackup) {
       } else {
         ElMessage.error(res.error || t('settings.backup.restore_failed'))
       }
-    } catch (fetchError: any) {
+    } catch (fetchError: unknown) {
       clearTimeout(timeoutId)
-      if (fetchError.name === 'AbortError') {
+      if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
         throw new Error(t('settings.backup.download_timeout'))
       }
       throw fetchError
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     if (e !== 'cancel') {
-      ElMessage.error(e.response?.data?.detail || e.message || t('settings.backup.restore_failed'))
+      ElMessage.error(e instanceof Error ? e.message : t('settings.backup.restore_failed'))
     }
   } finally {
     importLoading.value = false

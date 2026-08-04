@@ -71,6 +71,8 @@ interface LogLine {
   message: string
 }
 
+type ErrorLike = { response?: { data?: { detail?: string } } }
+
 const logs = ref<LogLine[]>([])
 const selectedLevel = ref('')
 const loading = ref(false)
@@ -95,8 +97,9 @@ const fetchLogs = async () => {
       }
     })
     logs.value = response.data.logs
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || t('settings.log.fetchFailed'))
+  } catch (error: unknown) {
+    const err = error as ErrorLike
+    ElMessage.error(err?.response?.data?.detail || t('settings.log.fetchFailed'))
   } finally {
     loading.value = false
   }

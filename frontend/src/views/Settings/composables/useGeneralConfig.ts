@@ -7,6 +7,11 @@ const BYTES_PER_MB = 1024 * 1024
 const MAX_LOG_SIZE_MB = 100
 const MIN_LOG_SIZE_MB = 1
 
+type ErrorLike = {
+  response?: { data?: { detail?: { errors?: string[]; message?: string } | string } }
+  message?: string
+}
+
 export function useGeneralConfig() {
   const { t } = useI18n()
 
@@ -45,8 +50,9 @@ export function useGeneralConfig() {
           max_bytes: safeBytesToMB(config.logging.max_bytes)
         }
       }
-    } catch (e: any) {
-      ElMessage.error(e.response?.data?.detail || t('settings.config_load_failed'))
+    } catch (e: unknown) {
+      const err = e as ErrorLike
+      ElMessage.error(typeof err?.response?.data?.detail === 'string' ? err.response.data.detail : t('settings.config_load_failed'))
     } finally {
       configLoading.value = false
     }
@@ -67,9 +73,10 @@ export function useGeneralConfig() {
       if (result.warnings && result.warnings.length > 0) {
         ElMessage.warning(result.warnings.join('\n'))
       }
-    } catch (e: any) {
-      const detail = e.response?.data?.detail
-      if (detail?.errors && Array.isArray(detail.errors)) {
+    } catch (e: unknown) {
+      const err = e as ErrorLike
+      const detail = err?.response?.data?.detail
+      if (typeof detail === 'object' && detail !== null && 'errors' in detail && Array.isArray(detail.errors)) {
         const firstError = detail.errors[0]
         ElMessage.error({
           message: firstError,
@@ -82,12 +89,12 @@ export function useGeneralConfig() {
             duration: 3000
           })
         }
-      } else if (detail?.message && detail.message.includes('重载失败')) {
+      } else if (typeof detail === 'object' && detail !== null && 'message' in detail && typeof detail.message === 'string' && detail.message.includes('重载失败')) {
         ElMessage.warning({
           message: t('settings.general.reload_failed_hint'),
           duration: 5000
         })
-      } else if (detail?.message) {
+      } else if (typeof detail === 'object' && detail !== null && 'message' in detail && typeof detail.message === 'string') {
         ElMessage.error({
           message: detail.message,
           duration: 5000

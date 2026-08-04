@@ -268,6 +268,7 @@ import WriteValueDialog from "./components/WriteValueDialog.vue";
 import { createInitialDeviceForm, createInitialPointForm } from "./types";
 import type { DeviceFormData, PointFormData, WriteFormData } from "./types";
 import type { DeviceListItem } from "@/stores/devices";
+import type { PointDisplay } from "@/stores/points";
 
 const { t } = useI18n();
 const deviceStore = useDeviceStore();
@@ -507,7 +508,7 @@ const onAddPoint = () => {
   handleAddPoint(pointForm.value);
 };
 
-const onEditPoint = (point: any) => {
+const onEditPoint = (point: PointDisplay) => {
   handleEditPoint(point, pointForm.value);
 };
 
@@ -519,7 +520,7 @@ const onDeletePoint = (pointName: string) => {
   handleDeletePoint(pointName);
 };
 
-const onWritePoint = (point: any) => {
+const onWritePoint = (point: PointDisplay) => {
   handleWritePoint(point, writeForm.value);
 };
 
@@ -538,9 +539,15 @@ const handleBackToDevices = () => {
 
 // ==================== 初始化 ====================
 onMounted(async () => {
-  await deviceStore.fetchDevices();
-  await deviceStore.fetchConnectionStatus();
-  await pointStore.fetchDevicesWithPoints();
+  try {
+    await Promise.all([
+      deviceStore.fetchDevices(),
+      deviceStore.fetchConnectionStatus(),
+      pointStore.fetchDevicesWithPoints(),
+    ]);
+  } catch (e: unknown) {
+    console.error('[Devices] Failed to initialize:', e);
+  }
 });
 </script>
 

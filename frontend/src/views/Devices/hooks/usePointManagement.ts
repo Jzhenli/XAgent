@@ -4,6 +4,7 @@ import { usePointStore } from '@/stores/points'
 import { useDeviceStore } from '@/stores/devices'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { PointConfig } from '@/api/types'
+import type { PointDisplay } from '@/stores/points'
 import type { PointFormData, WriteFormData } from '../types'
 import { createInitialPointForm } from '../types'
 
@@ -91,7 +92,7 @@ export function usePointManagement(
     showPointDialog.value = true
   }
 
-  const handleEditPoint = (point: any, form: PointFormData) => {
+  const handleEditPoint = (point: PointDisplay, form: PointFormData) => {
     isEditingPoint.value = true
     editingPointName.value = point.name
     const config = point.config || {}
@@ -241,7 +242,7 @@ export function usePointManagement(
     }
   }
 
-  const handleWritePoint = (point: any, writeForm: WriteFormData) => {
+  const handleWritePoint = (point: PointDisplay, writeForm: WriteFormData) => {
     if (!selectedDeviceAsset.value) return
     const isDigital = point.type === 'digital' || point.standard_data_type === 'bool'
     writeForm.deviceAsset = selectedDeviceAsset.value

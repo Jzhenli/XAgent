@@ -379,6 +379,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { FormInstance } from 'element-plus'
 import type { NorthChannelProtocol } from '@/api/types'
 import type { ChannelFormData, ProtocolOption, MqttAdapterOption } from '../types'
 
@@ -395,6 +396,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', val: boolean): void
   (e: 'update:productKey', val: string): void
+  (e: 'updateAdapterConfig', config: string): void
   (e: 'save'): void
   (e: 'protocolChange', form: ChannelFormData, val: NorthChannelProtocol): void
   (e: 'adapterChange', form: ChannelFormData, val: string): void
@@ -402,10 +404,10 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const formRefInternal = ref()
+const formRefInternal = ref<FormInstance>()
 
 /**
- * productKey 本地双向绑定，同时同步到 adapter_config
+ * productKey 本地双向绑定，通过 emit 同步 adapter_config 而非直接修改 props
  */
 const localProductKey = computed({
   get: () => props.productKey,
@@ -415,7 +417,7 @@ const localProductKey = computed({
       try {
         const config = JSON.parse(props.form.adapter_config || '{}')
         config.productKey = val
-        props.form.adapter_config = JSON.stringify(config, null, 2)
+        emit('updateAdapterConfig', JSON.stringify(config, null, 2))
       } catch {
         // ignore
       }

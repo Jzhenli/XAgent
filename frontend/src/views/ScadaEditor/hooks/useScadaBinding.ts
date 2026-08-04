@@ -130,7 +130,11 @@ export function useScadaBinding(
   /** 手动触发一次绑定设备的刷新 */
   const refresh = async () => {
     if (scada.isEditing.value || !binding.value) return
-    await refreshDevicePoints(binding.value.deviceId)
+    try {
+      await refreshDevicePoints(binding.value.deviceId)
+    } catch (e) {
+      console.error('[useScadaBinding] Failed to refresh device points:', e)
+    }
   }
 
   /** 向点位写入值 */
@@ -143,10 +147,15 @@ export function useScadaBinding(
       return { success: false, message: t('scadaBinding.pointNotWritable', { name: binding.value.pointName }) }
     }
 
-    if (injectedReader) {
-      return injectedReader.writePoint(binding.value.deviceId, binding.value.pointName, value)
+    try {
+      if (injectedReader) {
+        return injectedReader.writePoint(binding.value.deviceId, binding.value.pointName, value)
+      }
+      return pointStore.writePoint(binding.value.deviceId, binding.value.pointName, value)
+    } catch (e) {
+      console.error('[useScadaBinding] Failed to write point value:', e)
+      return { success: false, message: t('common.operationFailed') }
     }
-    return pointStore.writePoint(binding.value.deviceId, binding.value.pointName, value)
   }
 
   const isValid = computed(() => boundPoint.value !== null)

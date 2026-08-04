@@ -267,7 +267,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, RefreshRight, Edit, CircleCheck } from '@element-plus/icons-vue'
@@ -304,9 +304,24 @@ const DIALOG_WIDTH_MAP = [
   { max: Infinity, width: '900px' }
 ]
 
+/** 响应式屏幕宽度，用于 dialogWidth 自动响应窗口 resize */
+const screenWidth = ref(window.innerWidth)
+
 const dialogWidth = computed(() => {
-  const screenWidth = window.innerWidth
-  return DIALOG_WIDTH_MAP.find(item => screenWidth < item.max)?.width ?? '700px'
+  return DIALOG_WIDTH_MAP.find(item => screenWidth.value < item.max)?.width ?? '700px'
+})
+
+/** 窗口 resize 监听：更新 screenWidth 以触发 dialogWidth 重新计算 */
+function onWindowResize() {
+  screenWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  window.addEventListener('resize', onWindowResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', onWindowResize)
 })
 
 // 默选对象类型
@@ -320,6 +335,9 @@ const selectedObjectTypes = ref<string[]>([
 const searching = ref(false)
 const searchProgress = ref(0)
 const discoveredPoints = ref<DiscoveredPoint[]>([])
+
+/** 进度模拟定时器 ID，用于在弹窗关闭或搜索失败时清除，避免内存泄漏 */
+let progressTimer: ReturnType<typeof setInterval> | null = null
 
 // 点位选择
 const selectedPoints = ref<DiscoveredPoint[]>([])
@@ -401,7 +419,7 @@ const handleDiscoverPoints = async () => {
 
   try {
     // 模拟进度更新（实际进度由后端控制）
-    const progressInterval = setInterval(() => {
+    progressTimer = setInterval(() => {
       if (searchProgress.value < 90) {
         searchProgress.value += 10
       }
@@ -411,7 +429,6 @@ const handleDiscoverPoints = async () => {
       object_types: selectedObjectTypes.value
     })
 
-    clearInterval(progressInterval)
     searchProgress.value = 100
 
     // 确保最少显示时间
@@ -438,6 +455,11 @@ const handleDiscoverPoints = async () => {
     ElMessage.error(t('devices.pointDiscoveryFailedWithDetail', { detail }))
     currentStep.value = STEP_CONFIG
   } finally {
+    // 无论成功/失败/关闭，都清除进度定时器
+    if (progressTimer) {
+      clearInterval(progressTimer)
+      progressTimer = null
+    }
     searching.value = false
     searchProgress.value = 0
   }
@@ -555,8 +577,13 @@ function resetBatchEditForm(): void {
   }
 }
 
-/** 关闭弹窗，重置内部状态 */
+/** 关闭弹窗，重置内部状态，清除进行中的定时器避免内存泄漏 */
 const handleClose = () => {
+  // 清除进度模拟定时器（防止搜索进行中关闭弹窗导致泄漏）
+  if (progressTimer) {
+    clearInterval(progressTimer)
+    progressTimer = null
+  }
   currentStep.value = STEP_CONFIG
   searching.value = false
   searchProgress.value = 0

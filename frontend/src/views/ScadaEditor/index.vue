@@ -211,9 +211,14 @@ onMounted(async () => {
 
   if (results[0].status === 'rejected') {
     console.error('Failed to load panel:', results[0].reason)
+    ElMessage.error(t('scada.loadPanelFailed'))
+  } else if (results[0].value === null) {
+    console.error('Panel not found or failed to parse:', panelId)
+    ElMessage.error(t('scada.loadPanelFailed'))
   }
   if (results[1].status === 'rejected') {
     console.error('Failed to load devices:', results[1].reason)
+    ElMessage.error(t('scada.loadDevicesFailed'))
   }
 
   isLoading.value = false
@@ -306,7 +311,8 @@ const handleImportFileChange = async (event: Event) => {
     } else {
       ElMessage.error(t('scada.invalidPanelFile'))
     }
-  } catch {
+  } catch (e) {
+    console.error('Failed to import panel:', e)
     ElMessage.error(t('scada.importFailed'))
   } finally {
     input.value = ''

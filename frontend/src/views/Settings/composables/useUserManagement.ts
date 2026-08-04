@@ -7,6 +7,15 @@ import { userApi, type UserInfo, type RoleInfo } from '@/api/users'
 /** 用户状态类型 */
 type UserStatus = 'active' | 'inactive' | 'locked'
 
+/** 通用错误提取类型 */
+type ErrorLike = {
+  response?: { data?: { detail?: unknown; message?: string } }
+  message?: string
+}
+
+/** FastAPI 校验错误项 */
+type ValidationError = { msg?: string }
+
 /** 用户表单数据结构 */
 interface UserForm {
   username: string
@@ -152,11 +161,12 @@ export function useUserManagement() {
    * @param fallbackKey - 兜底国际化 key
    * @returns 可直接展示的错误文本
    */
-  function getErrorMessage(e: any, fallbackKey: string): string {
-    const data = e?.response?.data
+  function getErrorMessage(e: unknown, fallbackKey: string): string {
+    if (e === 'cancel') return ''
+    const data = (e as ErrorLike)?.response?.data
     // FastAPI 校验错误：detail 为数组，每项含 msg 字段
     if (Array.isArray(data?.detail)) {
-      return data.detail.map((item: any) => item.msg || JSON.stringify(item)).join('; ')
+      return data.detail.map((item: ValidationError) => item.msg || JSON.stringify(item)).join('; ')
     }
     // FastAPI 普通错误：detail 为字符串
     if (typeof data?.detail === 'string' && data.detail) {
@@ -167,7 +177,7 @@ export function useUserManagement() {
       return data.message
     }
     // Axios 自带 message（如 Network Error、Timeout）
-    if (typeof e?.message === 'string' && e.message) {
+    if (e instanceof Error) {
       return e.message
     }
     return t(fallbackKey)
@@ -259,7 +269,7 @@ export function useUserManagement() {
         if (!handleResult(result, t('settings.user.create_success'))) return
       }
       userDialogVisible.value = false
-    } catch (e: any) {
+    } catch (e: unknown) {
       ElMessage.error(getErrorMessage(e, 'settings.operation_failed'))
     }
   }
@@ -309,7 +319,7 @@ export function useUserManagement() {
       const result = response.data as ApiResult
       if (!handleResult(result, t('settings.password.change_success'))) return
       passwordDialogVisible.value = false
-    } catch (e: any) {
+    } catch (e: unknown) {
       ElMessage.error(getErrorMessage(e, 'settings.password.change_failed'))
     }
   }
@@ -367,7 +377,7 @@ export function useUserManagement() {
         if (!handleResult(result, t('settings.role.create_success'))) return
       }
       roleDialogVisible.value = false
-    } catch (e: any) {
+    } catch (e: unknown) {
       ElMessage.error(getErrorMessage(e, 'settings.operation_failed'))
     }
   }

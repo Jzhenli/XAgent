@@ -139,6 +139,7 @@
       :protocol-options="protocolOptions"
       :mqtt-adapter-options="mqttAdapterOptions"
       v-model:product-key="productKey"
+      @update-adapter-config="(val: string) => tunnelForm.adapter_config = val"
       @save="onSaveTunnel"
       @protocol-change="handleProtocolChange"
       @adapter-change="handleAdapterChange"

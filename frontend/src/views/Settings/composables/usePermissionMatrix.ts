@@ -3,6 +3,8 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/users'
 
+type ErrorLike = { response?: { data?: { detail?: string } } }
+
 export function usePermissionMatrix() {
   const { t } = useI18n()
   const userStore = useUserStore()
@@ -56,8 +58,9 @@ export function usePermissionMatrix() {
       await userStore.updatePermissionMatrix(activePermissionRole.value, permissionEditData.value)
       ElMessage.success(t('settings.permission.update_success'))
       isEditingPermissions.value = false
-    } catch (e: any) {
-      ElMessage.error(e.response?.data?.detail || t('settings.permission.update_failed'))
+    } catch (e: unknown) {
+      const err = e as ErrorLike
+      ElMessage.error(err?.response?.data?.detail || t('settings.permission.update_failed'))
     }
   }
 

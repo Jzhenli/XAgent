@@ -149,18 +149,12 @@ const autoFillForm = () => {
 }
 
 // 监听visible变化，触发自动填充（immediate: 处理以 visible=true 挂载的场景）
+// device 变化时 visible 必然为 true，由 visible watch 统一处理，无需额外 watch device
 watch(() => props.visible, (val) => {
   if (val) {
     autoFillForm()
   }
 }, { immediate: true })
-
-// 监听 device 变化，对话框保持打开时切换设备也能刷新表单
-watch(() => props.device, () => {
-  if (props.visible) {
-    autoFillForm()
-  }
-})
 
 // 保存设备
 const handleSave = async () => {

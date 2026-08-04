@@ -221,6 +221,7 @@ import { useI18n } from "vue-i18n";
 import { useUserStore } from "@/stores/users";
 import { Icon } from "@/icon/index";
 import { TrendCharts, Plus, Search, ArrowLeft } from "@element-plus/icons-vue";
+import type { PointDisplay } from "@/stores/points";
 
 /**
  * Props 定义
@@ -235,7 +236,7 @@ import { TrendCharts, Plus, Search, ArrowLeft } from "@element-plus/icons-vue";
 const props = defineProps<{
   selectedAsset: string | null;
   deviceName: string;
-  points: any[];
+  points: PointDisplay[];
   currentPluginName: string;
   isCompact: boolean;
   showAddBtn: boolean;
@@ -257,8 +258,8 @@ const emit = defineEmits<{
   (e: "add"): void;
   (e: "discover"): void;
   (e: "viewTrend", asset: string, pointName: string): void;
-  (e: "writeValue", point: any): void;
-  (e: "editPoint", point: any): void;
+  (e: "writeValue", point: PointDisplay): void;
+  (e: "editPoint", point: PointDisplay): void;
   (e: "deletePoint", pointName: string): void;
 }>();
 

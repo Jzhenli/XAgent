@@ -323,7 +323,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Search, RefreshRight, CircleCheck, Loading } from "@element-plus/icons-vue";
@@ -366,11 +366,26 @@ const DIALOG_WIDTH_MAP = [
   { max: Infinity, width: "900px" },
 ];
 
+/** 响应式屏幕宽度，用于 dialogWidth 自动响应窗口 resize */
+const screenWidth = ref(window.innerWidth);
+
 const dialogWidth = computed(() => {
-  const screenWidth = window.innerWidth;
   return (
-    DIALOG_WIDTH_MAP.find((item) => screenWidth < item.max)?.width ?? "700px"
+    DIALOG_WIDTH_MAP.find((item) => screenWidth.value < item.max)?.width ?? "700px"
   );
+});
+
+/** 窗口 resize 监听：更新 screenWidth 以触发 dialogWidth 重新计算 */
+function onWindowResize() {
+  screenWidth.value = window.innerWidth;
+}
+
+onMounted(() => {
+  window.addEventListener("resize", onWindowResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", onWindowResize);
 });
 
 /** 网卡列表与当前选中的网卡 IP */

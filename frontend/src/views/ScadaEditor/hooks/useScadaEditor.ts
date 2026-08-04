@@ -460,6 +460,7 @@ export function useScadaEditor() {
     if (!panel || clipboard.value.length === 0) return
 
     const newIds: string[] = []
+
     clipboard.value.forEach((clipComp, index) => {
       const offset = index * 20
       const newComponent = cloneComponent(clipComp, {
@@ -467,6 +468,7 @@ export function useScadaEditor() {
         y: y !== undefined ? y + offset : clipComp.y + 20
       }, t('common.duplicateSuffix'))
       newIds.push(newComponent.id)
+      panel.components.push(newComponent)
     })
 
     undo.pushOperation(
@@ -474,15 +476,6 @@ export function useScadaEditor() {
       t('scada.undoOperations.paste', { count: newIds.length }),
       newIds
     )
-
-    clipboard.value.forEach((clipComp, index) => {
-      const offset = index * 20
-      const newComponent = cloneComponent(clipComp, {
-        x: x !== undefined ? x + offset : clipComp.x + 20,
-        y: y !== undefined ? y + offset : clipComp.y + 20
-      }, t('common.duplicateSuffix'))
-      panel.components.push(newComponent)
-    })
 
     panel.updatedAt = Date.now()
 
