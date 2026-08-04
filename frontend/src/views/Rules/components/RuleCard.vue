@@ -32,7 +32,7 @@
       <span class="meta-item">
         <span class="meta-label">{{ t('rules.executionCount') }}:</span>
         <span class="meta-value"
-          >{{ rule.executionCount }} {{ t('rules.times') }}</span
+          >{{ rule.executionCount ?? 0 }} {{ t('rules.times') }}</span
         >
       </span>
       <span class="meta-item">

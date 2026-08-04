@@ -36,21 +36,3 @@ export const RULE_TYPE_FILTER_OPTIONS: ReadonlyArray<{
   { value: 'alert', labelKey: 'rules.typeAlert' },
   { value: 'schedule', labelKey: 'rules.typeSchedule' },
 ]
-
-/**
- * 获取规则类型对应的国际化文案 key
- * @param type 规则类型字符串
- * @returns 国际化 key，未知类型返回空字符串
- */
-export const getRuleTypeLabelKey = (type: string): string => {
-  return RULE_TYPE_LABEL_KEYS[type as RuleType] ?? ''
-}
-
-/**
- * 获取规则类型对应的 el-tag 样式类型
- * @param type 规则类型字符串
- * @returns el-tag 类型，未知类型返回 'info'
- */
-export const getRuleTypeTagType = (type: string): string => {
-  return RULE_TYPE_TAG_TYPES[type as RuleType] ?? 'info'
-}

@@ -1,99 +1,135 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRuleStore } from '@/stores/rules'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRuleStore } from '@/stores/rules'
+import type { Rule } from '@/types/rule'
 
 /**
  * 规则管理 Hook
- *
- * 封装规则的启用/禁用、复制、删除、刷新等 CRUD 操作，
- * 以及规则编辑器抽屉的开关与当前编辑规则 ID 的状态管理。
+ * 封装规则 CRUD、编辑器状态、刷新等业务逻辑
  */
 export function useRuleManagement() {
   const { t } = useI18n()
   const ruleStore = useRuleStore()
 
-  /** 编辑器抽屉是否可见 */
+  // ==================== 编辑器状态 ====================
   const showEditor = ref(false)
-  /** 当前编辑的规则 ID (为 null 时表示新建) */
   const currentRuleId = ref<string | null>(null)
 
-  /**
-   * 打开规则编辑器
-   * @param ruleId 传入则编辑已有规则，否则新建规则
-   */
+  /** 打开编辑器（新建或编辑） */
   const openEditor = (ruleId?: string) => {
-    currentRuleId.value = ruleId || null
+    currentRuleId.value = ruleId ?? null
     showEditor.value = true
   }
 
-  /** 关闭规则编辑器 */
+  /** 关闭编辑器并重置状态 */
   const closeEditor = () => {
     showEditor.value = false
+    currentRuleId.value = null
   }
 
-  /** 编辑器保存成功后刷新规则列表 */
-  const handleEditorSaved = () => {
-    ruleStore.fetchRules()
-  }
+  // ==================== 规则 CRUD ====================
 
-  /**
-   * 切换规则启用状态
-   */
+  /** 启用/禁用规则切换 */
   const handleToggleRule = async (id: string) => {
     try {
       await ruleStore.toggleRule(id)
+
       const rule = ruleStore.rules.find((r) => r.id === id)
       if (rule) {
         ElMessage.success(
-          rule.enabled ? t('rules.ruleEnabled') : t('rules.ruleDisabled'),
+          rule.enabled ? t('rules.ruleEnabled') : t('rules.ruleDisabled')
         )
+      } else {
+        // 规则可能已被删除
+        ElMessage.warning(t('rules.ruleNotFound'))
       }
-    } catch {
-      ElMessage.error(t('common.operationFailed'))
+    } catch (e: any) {
+      const detail = e.response?.data?.detail
+      const msg = detail
+        ? (Array.isArray(detail) ? detail.map((d: any) => d.msg || d).join('; ') : String(detail))
+        : (e.message || t('rules.operationFailed'))
+      ElMessage.error(msg)
     }
   }
 
-  /**
-   * 复制规则 (生成 "(副本)" 并默认禁用)
-   */
-  const handleCopyRule = async (id: string) => {
+  /** 复制规则（深拷贝后打开编辑器） */
+  const handleCopyRule = async (ruleId: string) => {
     try {
-      await ruleStore.copyRule(id)
+      const rule = await ruleStore.getRule(ruleId)
+      if (!rule) {
+        ElMessage.warning(t('rules.ruleNotFound'))
+        return
+      }
+
+      // 深拷贝规则数据，清除 ID 以创建新规则
+      const copiedRule = JSON.parse(JSON.stringify(rule))
+      copiedRule.name = `${copiedRule.name} ${t('rules.copySuffix')}`
+      delete copiedRule.id
+
+      await ruleStore.createRule(copiedRule)
       ElMessage.success(t('rules.ruleCopied'))
-    } catch {
-      ElMessage.error(t('rules.copyFailed'))
+      await ruleStore.fetchRules()
+    } catch (e: any) {
+      const detail = e.response?.data?.detail
+      const msg = detail
+        ? (Array.isArray(detail) ? detail.map((d: any) => d.msg || d).join('; ') : String(detail))
+        : (e.message || t('rules.copyFailed'))
+      ElMessage.error(msg)
     }
   }
 
-  /**
-   * 删除规则 (带二次确认弹窗)
-   */
-  const handleDeleteRule = (id: string, name: string) => {
-    ElMessageBox.confirm(
-      t('rules.deleteConfirmMessage', { name }),
-      t('rules.deleteConfirmTitle'),
-      {
-        confirmButtonText: t('common.confirm'),
-        cancelButtonText: t('common.cancel'),
-        type: 'warning',
-      },
-    )
-      .then(async () => {
-        try {
-          await ruleStore.deleteRule(id)
-          ElMessage.success(t('rules.ruleDeleted'))
-        } catch {
-          ElMessage.error(t('rules.deleteFailed'))
+  /** 删除规则（含确认弹窗） */
+  const handleDeleteRule = async (id: string, name?: string) => {
+    try {
+      await ElMessageBox.confirm(
+        t('rules.deleteConfirm', { name: name || '' }),
+        t('rules.deleteTitle'),
+        {
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+          type: 'warning'
         }
-      })
-      .catch(() => {})
+      )
+    } catch {
+      // 用户取消操作
+      return
+    }
+
+    try {
+      await ruleStore.deleteRule(id)
+      ElMessage.success(t('rules.ruleDeleted'))
+    } catch (e: any) {
+      const detail = e.response?.data?.detail
+      const msg = detail
+        ? (Array.isArray(detail) ? detail.map((d: any) => d.msg || d).join('; ') : String(detail))
+        : (e.message || t('rules.deleteFailed'))
+      ElMessage.error(msg)
+    }
   }
+
+  // ==================== 数据刷新 ====================
 
   /** 刷新规则列表 */
   const handleRefresh = async () => {
-    await ruleStore.fetchRules()
-    ElMessage.success(t('rules.refreshSuccess'))
+    try {
+      await ruleStore.fetchRules()
+      ElMessage.success(t('rules.listRefreshed'))
+    } catch (e: any) {
+      const detail = e.response?.data?.detail
+      const msg = detail
+        ? (Array.isArray(detail) ? detail.map((d: any) => d.msg || d).join('; ') : String(detail))
+        : (e.message || t('rules.refreshFailed'))
+      ElMessage.error(msg)
+    }
+  }
+
+  /** 编辑器保存成功后刷新列表并关闭编辑器 */
+  const handleEditorSaved = () => {
+    ruleStore.fetchRules().catch(() => {
+      // 静默处理，刷新失败不影响编辑器关闭
+    })
+    closeEditor()
   }
 
   return {
@@ -101,10 +137,10 @@ export function useRuleManagement() {
     currentRuleId,
     openEditor,
     closeEditor,
-    handleEditorSaved,
     handleToggleRule,
     handleCopyRule,
     handleDeleteRule,
     handleRefresh,
+    handleEditorSaved
   }
 }

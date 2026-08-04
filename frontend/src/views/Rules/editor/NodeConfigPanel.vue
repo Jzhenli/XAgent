@@ -1,12 +1,13 @@
 <template>
   <div class="node-config-panel">
+    <!-- 面板头部：标题 + 删除按钮 -->
     <div class="panel-header">
       <h3>{{ panelTitle }}</h3>
       <button class="delete-btn" @click="handleDelete" :title="t('nodeConfig.deleteNode')">
         🗑️
       </button>
     </div>
-    
+
     <div class="panel-body">
       <!-- 数据触发器配置 -->
       <template v-if="nodeType === 'trigger' && localData.trigger">
@@ -73,7 +74,7 @@
           ></textarea>
         </div>
       </template>
-      
+
       <!-- 定时触发器配置 -->
       <template v-if="nodeType === 'schedule-trigger' && localData.scheduleTrigger">
         <div class="form-group">
@@ -84,7 +85,8 @@
             </option>
           </select>
         </div>
-        
+
+        <!-- 周期模式配置 -->
         <template v-if="localData.scheduleTrigger.mode === 'periodic'">
           <div class="form-group">
             <label>{{ t('nodeConfig.executionFrequency') }}</label>
@@ -94,21 +96,21 @@
               </option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label>{{ t('nodeConfig.executionTime') }}</label>
-            <input 
-              v-model="localData.scheduleTrigger.time" 
-              type="time" 
+            <input
+              v-model="localData.scheduleTrigger.time"
+              type="time"
               @input="updateData"
             >
           </div>
-          
+
           <div v-if="localData.scheduleTrigger.frequency === 'weekly'" class="form-group">
             <label>{{ t('nodeConfig.selectWeekday') }}</label>
             <div class="weekday-selector">
-              <button 
-                v-for="day in WEEKDAYS" 
+              <button
+                v-for="day in WEEKDAYS"
                 :key="day.value"
                 class="weekday-btn"
                 :class="{ active: isDaySelected(day.value) }"
@@ -119,32 +121,34 @@
             </div>
           </div>
         </template>
-        
+
+        <!-- 一次性模式配置 -->
         <template v-if="localData.scheduleTrigger.mode === 'once'">
           <div class="form-group">
             <label>{{ t('nodeConfig.executionTime') }}</label>
-            <input 
-              v-model="localData.scheduleTrigger.time" 
-              type="time" 
+            <input
+              v-model="localData.scheduleTrigger.time"
+              type="time"
               @input="updateData"
             >
           </div>
           <div class="form-group">
             <label>{{ t('nodeConfig.executionDate') }}</label>
-            <input 
-              v-model="localData.scheduleTrigger.startDate" 
-              type="date" 
+            <input
+              v-model="localData.scheduleTrigger.startDate"
+              type="date"
               @input="updateData"
             >
           </div>
         </template>
-        
+
+        <!-- Cron 表达式模式配置 -->
         <template v-if="localData.scheduleTrigger.mode === 'cron'">
           <div class="form-group">
             <label>{{ t('nodeConfig.cronExpression') }}</label>
-            <input 
-              v-model="localData.scheduleTrigger.cron" 
-              type="text" 
+            <input
+              v-model="localData.scheduleTrigger.cron"
+              type="text"
               :placeholder="t('nodeConfig.cronFormat')"
               @input="updateData"
             >
@@ -157,42 +161,42 @@
             <p>0 0 9 ? * MON-FRI - {{ t('ruleEditor.executionTime') }}9:00</p>
           </div>
         </template>
-        
+
         <div class="form-group">
           <label>{{ t('nodeConfig.effectiveDateRange') }}</label>
           <div class="date-range">
-            <input 
-              v-model="localData.scheduleTrigger.startDate" 
-              type="date" 
+            <input
+              v-model="localData.scheduleTrigger.startDate"
+              type="date"
               @input="updateData"
               :placeholder="t('nodeConfig.startDate')"
             >
             <span>{{ t('nodeConfig.to') }}</span>
-            <input 
-              v-model="localData.scheduleTrigger.endDate" 
-              type="date" 
+            <input
+              v-model="localData.scheduleTrigger.endDate"
+              type="date"
               @input="updateData"
               :placeholder="t('nodeConfig.endDate')"
             >
           </div>
         </div>
-        
+
         <div class="form-group">
           <label>{{ t('nodeConfig.description') }}</label>
-          <textarea 
-            v-model="localData.scheduleTrigger.description" 
+          <textarea
+            v-model="localData.scheduleTrigger.description"
             :placeholder="t('nodeConfig.optionalDesc')"
             @input="updateData"
           ></textarea>
         </div>
       </template>
-      
+
       <!-- 条件判断配置 -->
       <template v-if="nodeType === 'condition' && localData.condition">
         <div class="form-group">
           <label>{{ t('nodeConfig.fieldName') }}</label>
           <el-select
-            v-if="triggerPoints.length > 0"
+            v-if="allDevicePoints.length > 0"
             v-model="localData.condition.field"
             :placeholder="t('nodeConfig.selectOrEnterField')"
             filterable
@@ -202,7 +206,7 @@
             @change="updateData"
           >
             <el-option
-              v-for="point in triggerPoints"
+              v-for="point in allDevicePoints"
               :key="point.name"
               :label="point.description || point.name"
               :value="point.name"
@@ -226,18 +230,18 @@
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.comparisonValue') }}</label>
-          <input 
-            v-model="localData.condition.value" 
-            type="text" 
+          <input
+            v-model="localData.condition.value"
+            type="text"
             placeholder="e.g. 30"
             @input="updateData"
           >
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.duration') }}</label>
-          <input 
-            v-model.number="localData.condition.duration" 
-            type="number" 
+          <input
+            v-model.number="localData.condition.duration"
+            type="number"
             min="0"
             :placeholder="t('nodeConfig.instantTrigger')"
             @input="updateData"
@@ -246,14 +250,14 @@
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.description') }}</label>
-          <textarea 
-            v-model="localData.condition.description" 
+          <textarea
+            v-model="localData.condition.description"
             :placeholder="t('nodeConfig.optionalDesc')"
             @input="updateData"
           ></textarea>
         </div>
       </template>
-      
+
       <!-- 逻辑运算配置 -->
       <template v-if="nodeType === 'logic' && localData.logic">
         <div class="form-group">
@@ -271,14 +275,14 @@
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.description') }}</label>
-          <textarea 
-            v-model="localData.logic.description" 
+          <textarea
+            v-model="localData.logic.description"
             :placeholder="t('nodeConfig.optionalDesc')"
             @input="updateData"
           ></textarea>
         </div>
       </template>
-      
+
       <!-- 执行动作配置 -->
       <template v-if="nodeType === 'action' && localData.action">
         <div class="form-group">
@@ -344,7 +348,7 @@
           </div>
           <div class="form-group">
             <label>{{ t('nodeConfig.writeValue') }}</label>
-            <input 
+            <input
               v-model="actionValue"
               type="text"
               placeholder="e.g. true / 1 / 25.5"
@@ -358,9 +362,9 @@
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.delayExecution') }}</label>
-          <input 
-            v-model.number="localData.action.delay" 
-            type="number" 
+          <input
+            v-model.number="localData.action.delay"
+            type="number"
             min="0"
             :placeholder="t('nodeConfig.immediateExecution')"
             @input="updateData"
@@ -369,8 +373,8 @@
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.description') }}</label>
-          <textarea 
-            v-model="localData.action.description" 
+          <textarea
+            v-model="localData.action.description"
             :placeholder="t('nodeConfig.optionalDesc')"
             @input="updateData"
           ></textarea>
@@ -389,16 +393,16 @@
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.notificationChannel') }}</label>
-          <select 
-            v-model="localData.notification.channel_type" 
+          <select
+            v-model="localData.notification.channel_type"
             @change="updateData"
-            :disabled="NOTIFICATION_CHANNEL_TYPES.length === 0"
+            :disabled="notificationChannelTypes.length === 0"
           >
-            <option v-for="ct in NOTIFICATION_CHANNEL_TYPES" :key="ct.value" :value="ct.value">
+            <option v-for="ct in notificationChannelTypes" :key="ct.value" :value="ct.value">
               {{ ct.label }}
             </option>
           </select>
-          <div v-if="NOTIFICATION_CHANNEL_TYPES.length === 0" class="warning-hint">
+          <div v-if="notificationChannelTypes.length === 0" class="warning-hint">
             💡 {{ t('nodeConfig.noAvailableChannels') }}
           </div>
         </div>
@@ -431,8 +435,11 @@ import type { DeviceConfig, PointConfig } from '@/api/types'
 const { t } = useI18n()
 
 const props = defineProps<{
+  /** 节点 ID */
   nodeId: string
+  /** 节点类型 */
   nodeType: NodeType
+  /** 节点数据 */
   nodeData: RuleNodeData
 }>()
 
@@ -444,9 +451,10 @@ const emit = defineEmits<{
 const deviceStore = useDeviceStore()
 const alertStore = useAlertStore()
 
+/** 本地副本数据（编辑期间暂存，作为唯一数据源） */
 const localData = ref<RuleNodeData>(JSON.parse(JSON.stringify(props.nodeData || {})))
 
-// 获取已启用的通知渠道（从后端动态获取）
+/** 已启用的通知渠道列表 */
 const availableChannels = computed(() => {
   return alertStore.channels
     .filter(channel => channel.enabled)
@@ -457,19 +465,27 @@ const availableChannels = computed(() => {
     }))
 })
 
-// 渠道类型选项（用于显示）
-const NOTIFICATION_CHANNEL_TYPES = computed(() => {
+/** 通知渠道类型下拉选项 */
+const notificationChannelTypes = computed(() => {
   if (availableChannels.value.length === 0) {
-    // 如果没有可用渠道，返回空数组（用户需要先配置通知渠道）
     return []
   }
   return availableChannels.value
 })
 
-watch(() => props.nodeData, (newData) => {
-  localData.value = JSON.parse(JSON.stringify(newData || {}))
-}, { deep: true })
+/** 所有设备的所有启用的点位（供条件节点字段选择器使用） */
+const allDevicePoints = computed<PointConfig[]>(() => {
+  return devices.value
+    .filter(d => d.enabled && d.points)
+    .flatMap(d => d.points?.filter(p => p.enabled) || [])
+})
 
+// ==================== 数据同步 ====================
+
+/**
+ * 确保各类型节点的数据结构已初始化
+ * 注意：通知渠道默认值在 onMounted 中异步设置，此处仅做结构初始化
+ */
 const ensureNodeData = () => {
   if (props.nodeType === 'trigger' && !localData.value.trigger) {
     localData.value.trigger = { source: '', field: '' }
@@ -487,32 +503,41 @@ const ensureNodeData = () => {
     localData.value.action = { target_asset: '', operation: 'write_setpoint', parameters: {}, delay: 0 }
   }
   if (props.nodeType === 'notification' && !localData.value.notification) {
-    // 默认选择第一个可用的通知渠道
-    const defaultChannel = availableChannels.value[0]?.value || 'system'
-    localData.value.notification = { channel_type: defaultChannel, level: 'warning' }
+    // 先设置结构，渠道默认值在渠道加载完成后异步设置
+    localData.value.notification = { channel_type: '', level: 'warning' }
   }
 }
 
-watch(() => props.nodeType, () => { ensureNodeData() }, { immediate: true })
+ensureNodeData()
 
-onMounted(() => {
-  // 加载设备（如果还未加载）
+/** 挂载时初始化设备数据，并异步设置通知渠道默认值 */
+onMounted(async () => {
   if (deviceStore.devices.length === 0) {
     deviceStore.fetchDevices()
   }
-  
-  // 加载通知渠道（如果还未加载）
   if (alertStore.channels.length === 0) {
-    alertStore.fetchChannels()
+    await alertStore.fetchChannels()
+  }
+
+  // 渠道加载完成后，如果通知节点还未设置渠道，使用第一个可用渠道
+  if (props.nodeType === 'notification' && localData.value.notification) {
+    const currentChannel = localData.value.notification.channel_type
+    if (!currentChannel && availableChannels.value.length > 0) {
+      localData.value.notification.channel_type = availableChannels.value[0].value
+    }
   }
 })
 
+// ==================== 设备/点位选择器 ====================
+
 const devices = computed<DeviceConfig[]>(() => deviceStore.devices)
 
+/** 触发器可用设备（已启用且有点位） */
 const triggerDevices = computed(() =>
   devices.value.filter(d => d.enabled && d.points && d.points.length > 0)
 )
 
+/** 当前选中的触发器设备 */
 const selectedTriggerDevice = computed<DeviceConfig | undefined>({
   get: () => {
     const source = localData.value.trigger?.source
@@ -528,13 +553,16 @@ const selectedTriggerDevice = computed<DeviceConfig | undefined>({
   }
 })
 
+/** 触发器设备的可用点位 */
 const triggerPoints = computed<PointConfig[]>(() => {
   if (!selectedTriggerDevice.value) return []
   return selectedTriggerDevice.value.points?.filter(p => p.enabled) || []
 })
 
+/** 动作节点可用设备（已启用） */
 const actionDevices = computed(() => devices.value.filter(d => d.enabled))
 
+/** 当前选中的动作目标设备 */
 const selectedActionDevice = computed<DeviceConfig | undefined>({
   get: () => {
     const targetAsset = localData.value.action?.target_asset
@@ -551,11 +579,13 @@ const selectedActionDevice = computed<DeviceConfig | undefined>({
   }
 })
 
+/** 动作目标设备的可写点位 */
 const actionPoints = computed<PointConfig[]>(() => {
   if (!selectedActionDevice.value) return []
   return selectedActionDevice.value.points?.filter(p => p.enabled) || []
 })
 
+/** 动作节点选中的写入点位 */
 const selectedActionPoint = computed<string>({
   get: () => localData.value.action?.parameters?.point || '',
   set: (val: string) => {
@@ -569,6 +599,10 @@ const selectedActionPoint = computed<string>({
   }
 })
 
+/**
+ * 动作写入值
+ * 空字符串和纯文本保留为字符串，纯数字才转为 number
+ */
 const actionValue = computed<string>({
   get: () => {
     const v = localData.value.action?.parameters?.value
@@ -576,16 +610,27 @@ const actionValue = computed<string>({
   },
   set: (val: string) => {
     if (localData.value.action) {
-      const numVal = Number(val)
-      localData.value.action.parameters = {
-        ...localData.value.action.parameters,
-        value: isNaN(numVal) ? val : numVal,
+      // 空字符串保持为空字符串，不转为 0
+      if (val === '') {
+        localData.value.action.parameters = {
+          ...localData.value.action.parameters,
+          value: '',
+        }
+      } else {
+        const numVal = Number(val)
+        localData.value.action.parameters = {
+          ...localData.value.action.parameters,
+          value: isNaN(numVal) ? val : numVal,
+        }
       }
       updateData()
     }
   }
 })
 
+// ==================== 面板操作 ====================
+
+/** 根据节点类型返回对应的面板标题 */
 const panelTitle = computed(() => {
   const titles: Record<NodeType, string> = {
     trigger: t('nodeConfig.triggerTitle'),
@@ -598,26 +643,30 @@ const panelTitle = computed(() => {
   return titles[props.nodeType]
 })
 
+/** 通知配置变更时同步更新 */
 const updateData = () => {
   emit('update', { ...localData.value })
 }
 
+/** 删除当前节点 */
 const handleDelete = () => {
   emit('delete', props.nodeId)
 }
 
+/** 切换定时任务的星期选择（创建新数组避免共享引用） */
 const toggleDay = (day: number) => {
   if (!localData.value.scheduleTrigger) return
   const days = localData.value.scheduleTrigger.days
   const index = days.indexOf(day)
   if (index === -1) {
-    days.push(day)
+    localData.value.scheduleTrigger.days = [...days, day]
   } else {
-    days.splice(index, 1)
+    localData.value.scheduleTrigger.days = days.filter(d => d !== day)
   }
   updateData()
 }
 
+/** 判断指定星期是否已选中 */
 const isDaySelected = (day: number) => {
   return localData.value.scheduleTrigger?.days?.includes(day) || false
 }
@@ -818,17 +867,6 @@ const isDaySelected = (day: number) => {
 
 .cron-examples p {
   margin: 4px 0;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: auto;
 }
 
 .info-box {

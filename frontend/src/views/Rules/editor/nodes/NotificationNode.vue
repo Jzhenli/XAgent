@@ -34,8 +34,10 @@ import type { RuleNodeData } from '@/types/rule'
 const { t } = useI18n()
 const { node } = useNode<RuleNodeData>()
 
+/** 通知节点数据 */
 const nodeData = computed(() => node.data?.notification)
 
+/** 通知渠道标签 */
 const channelLabel = computed(() => {
   if (nodeData.value?.channel_type === 'system') return '🔔 ' + t('ruleNodes.systemNotification')
   if (nodeData.value?.channel_type === 'email') return '📧 ' + t('ruleNodes.email')
@@ -43,6 +45,7 @@ const channelLabel = computed(() => {
   return t('nodeViews.notConfigured')
 })
 
+/** 告警等级标签 */
 const levelLabel = computed(() => {
   const level = nodeData.value?.level || 'warning'
   const labels: Record<string, string> = {
@@ -54,6 +57,7 @@ const levelLabel = computed(() => {
   return labels[level] || level
 })
 
+/** 告警等级对应颜色 */
 const levelColor = computed(() => {
   const level = nodeData.value?.level || 'warning'
   const colors: Record<string, string> = {

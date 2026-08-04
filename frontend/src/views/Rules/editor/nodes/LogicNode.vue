@@ -2,18 +2,18 @@
   <div class="rule-node logic-node">
     <Handle type="target" :position="Position.Top" />
     <Handle type="target" :position="Position.Left" id="left" />
-    
+
     <div class="node-header">
       <span class="node-icon">🔀</span>
       <span class="node-title">{{ t('nodeViews.logic') }}</span>
     </div>
-    
+
     <div class="node-body">
       <div class="logic-operator" :style="{ color: operatorColor }">
         {{ operatorLabel }}
       </div>
     </div>
-    
+
     <Handle type="source" :position="Position.Bottom" />
     <Handle type="target" :position="Position.Right" id="right" />
   </div>
@@ -28,8 +28,10 @@ import type { RuleNodeData } from '@/types/rule'
 const { t } = useI18n()
 const { node } = useNode<RuleNodeData>()
 
+/** 逻辑节点数据 */
 const nodeData = computed(() => node.data?.logic)
 
+/** 操作符标签 */
 const operatorLabel = computed(() => {
   const op = nodeData.value?.operator
   const labels: Record<string, string> = {
@@ -40,6 +42,7 @@ const operatorLabel = computed(() => {
   return labels[op || 'and'] || 'AND'
 })
 
+/** 操作符对应颜色 */
 const operatorColor = computed(() => {
   const op = nodeData.value?.operator
   const colors: Record<string, string> = {

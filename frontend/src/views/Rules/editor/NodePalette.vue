@@ -4,8 +4,9 @@
       <h3>{{ t('ruleNodes.nodePanel') }}</h3>
       <p class="hint">{{ t('ruleNodes.dragHint') }}</p>
     </div>
-    
+
     <div class="palette-body">
+      <!-- 按分类展示节点模板（触发器/条件/动作等） -->
       <div v-for="(templates, category) in categories" :key="category" class="category-section">
         <div class="category-title">{{ t(category) }}</div>
         <div
@@ -41,6 +42,7 @@ const emit = defineEmits<{
 
 const { isTablet, isMobile } = useResponsive()
 
+/** 开始拖拽时将节点类型写入 dataTransfer 并通知父组件 */
 const onDragStart = (type: NodeType, event: DragEvent) => {
   if (event.dataTransfer) {
     event.dataTransfer.setData('application/vueflow', type)
@@ -49,6 +51,7 @@ const onDragStart = (type: NodeType, event: DragEvent) => {
   emit('dragStart', type, event)
 }
 
+/** 将节点模板按 category 分组 */
 const categories = computed(() => {
   const cats: Record<string, typeof NODE_TEMPLATES> = {}
   NODE_TEMPLATES.forEach(template => {
@@ -61,6 +64,7 @@ const categories = computed(() => {
   return cats
 })
 
+/** 根据屏幕尺寸动态调整面板宽度 */
 const paletteWidth = computed(() => {
   if (isMobile.value) return '180px'
   if (isTablet.value) return '200px'
@@ -187,15 +191,15 @@ const paletteWidth = computed(() => {
   .palette-header {
     padding: 12px;
   }
-  
+
   .palette-header h3 {
     font-size: 15px;
   }
-  
+
   .palette-body {
     padding: 10px;
   }
-  
+
   .category-title {
     font-size: 11px;
   }
@@ -205,23 +209,23 @@ const paletteWidth = computed(() => {
   .palette-header {
     padding: 10px;
   }
-  
+
   .palette-header h3 {
     font-size: 14px;
   }
-  
+
   .palette-header .hint {
     font-size: 11px;
   }
-  
+
   .palette-body {
     padding: 8px;
   }
-  
+
   .category-section {
     margin-bottom: 12px;
   }
-  
+
   .category-title {
     font-size: 10px;
     margin-bottom: 6px;

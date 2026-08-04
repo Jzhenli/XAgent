@@ -1,12 +1,12 @@
 <template>
   <div class="rule-node condition-node">
     <Handle type="target" :position="Position.Top" />
-    
+
     <div class="node-header">
       <span class="node-icon">⚙️</span>
       <span class="node-title">{{ t('nodeViews.condition') }}</span>
     </div>
-    
+
     <div class="node-body">
       <div class="node-info" :class="{ 'has-data': hasValidData }">
         <div class="condition-expression">
@@ -19,7 +19,7 @@
         </div>
       </div>
     </div>
-    
+
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -33,11 +33,15 @@ import type { RuleNodeData } from '@/types/rule'
 const { t } = useI18n()
 const { node } = useNode<RuleNodeData>()
 
+/** 条件节点数据 */
 const nodeData = computed(() => node.data?.condition)
-const hasValidData = computed(() => 
+
+/** 是否配置了有效的条件字段和值 */
+const hasValidData = computed(() =>
   nodeData.value?.field && nodeData.value?.value
 )
 
+/** 操作符符号显示映射 */
 const operatorSymbol = computed(() => {
   const op = nodeData.value?.operator
   const symbols: Record<string, string> = {
@@ -52,6 +56,7 @@ const operatorSymbol = computed(() => {
   return symbols[op || ''] || op
 })
 
+/** 持续时间格式化文本 */
 const durationText = computed(() => {
   const duration = nodeData.value?.duration || 0
   if (duration === 0) return t('nodeViews.instant')

@@ -52,7 +52,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRuleStore } from '@/stores/rules'
 import { useUserStore } from '@/stores/users'
-import RuleEditorCanvas from '@/components/RuleEditorCanvas.vue'
+import RuleEditorCanvas from './editor/RuleEditorCanvas.vue'
 import RuleToolbar from './components/RuleToolbar.vue'
 import RuleList from './components/RuleList.vue'
 import { useRuleManagement } from './hooks/useRuleManagement'
@@ -114,7 +114,9 @@ const { handleExportRules, handleImportRules } = useRuleIO()
 
 // ==================== 初始化 ====================
 onMounted(() => {
-  ruleStore.fetchRules()
+  ruleStore.fetchRules().catch((e: any) => {
+    console.error('Failed to fetch rules on mount:', e)
+  })
 })
 </script>
 

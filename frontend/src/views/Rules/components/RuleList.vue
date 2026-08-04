@@ -5,36 +5,45 @@
     <span>{{ t('rules.loadingMessage') }}</span>
   </div>
 
-  <!-- 错误状态 -->
-  <div v-else-if="error" class="state-block">
-    <span>{{ error }}</span>
-    <el-button size="small" @click="emit('retry')">
-      {{ t('common.retry') }}
-    </el-button>
-  </div>
+  <!-- 规则列表（含刷新指示器和错误横幅） -->
+  <template v-else>
+    <!-- 刷新中横幅（已有数据时显示，不覆盖列表） -->
+    <div v-if="loading" class="status-banner loading-banner">
+      <el-icon class="is-loading"><Loading /></el-icon>
+      <span>{{ t('rules.refreshing') }}</span>
+    </div>
 
-  <!-- 空状态 (区分有筛选条件) -->
-  <div v-else-if="rules.length === 0" class="state-block">
-    <span>{{
-      hasFilter ? t('rules.noMatchingRules') : t('rules.emptyMessage')
-    }}</span>
-  </div>
+    <!-- 错误横幅（不覆盖已有数据） -->
+    <div v-if="error" class="status-banner error-banner">
+      <span>{{ error }}</span>
+      <el-button size="small" text @click="emit('retry')">
+        {{ t('common.retry') }}
+      </el-button>
+    </div>
 
-  <!-- 规则卡片列表 -->
-  <div v-else class="rules-list">
-    <RuleCard
-      v-for="rule in rules"
-      :key="rule.id"
-      :rule="rule"
-      :can-create="canCreate"
-      :can-update="canUpdate"
-      :can-delete="canDelete"
-      @toggle="emit('toggle', $event)"
-      @edit="emit('edit', $event)"
-      @copy="emit('copy', $event)"
-      @delete="(id: string, name: string) => emit('delete', id, name)"
-    />
-  </div>
+    <!-- 空状态 (区分有筛选条件) -->
+    <div v-if="rules.length === 0" class="state-block">
+      <span>{{
+        hasFilter ? t('rules.noMatchingRules') : t('rules.emptyMessage')
+      }}</span>
+    </div>
+
+    <!-- 规则卡片列表 -->
+    <div v-else class="rules-list">
+      <RuleCard
+        v-for="rule in rules"
+        :key="rule.id"
+        :rule="rule"
+        :can-create="canCreate"
+        :can-update="canUpdate"
+        :can-delete="canDelete"
+        @toggle="emit('toggle', $event)"
+        @edit="emit('edit', $event)"
+        @copy="emit('copy', $event)"
+        @delete="(id: string, name: string) => emit('delete', id, name)"
+      />
+    </div>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -80,6 +89,26 @@ const { t } = useI18n()
   padding: 48px;
   color: var(--rule-loading-color);
   font-size: 14px;
+}
+
+.status-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.loading-banner {
+  background: var(--color-info-light, #f0f9ff);
+  color: var(--color-info-text, #0369a1);
+}
+
+.error-banner {
+  background: var(--color-danger-light, #fef2f2);
+  color: var(--color-danger, #dc2626);
 }
 
 .rules-list {

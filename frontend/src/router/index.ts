@@ -105,7 +105,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/alerts',
         name: 'Alerts',
-        component: () => import('@/views/Alerts.vue'),
+        component: () => import('@/views/Alarms/index.vue'),
         meta: { title: 'route.alerts', icon: 'Bell' }
       },
       {

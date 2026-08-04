@@ -1,12 +1,12 @@
 <template>
   <div class="rule-node schedule-trigger">
     <Handle type="target" :position="Position.Top" />
-    
+
     <div class="node-header">
       <span class="node-icon">⏰</span>
       <span class="node-title">{{ node.data?.label || t('nodeViews.scheduleTrigger') }}</span>
     </div>
-    
+
     <div class="node-body">
       <div class="node-info has-data">
         <div class="info-row">
@@ -21,7 +21,7 @@
         </div>
       </div>
     </div>
-    
+
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -35,25 +35,27 @@ import type { RuleNodeData } from '@/types/rule'
 const { t } = useI18n()
 const { node } = useNode<RuleNodeData>()
 
+/** 定时触发器数据 */
 const scheduleData = computed(() => node.data?.scheduleTrigger)
 
+/** 根据定时模式返回格式化的显示文本 */
 const getScheduleDisplay = computed(() => {
   if (!scheduleData.value) return t('nodeViews.notConfigured')
-  
+
   if (scheduleData.value.mode === 'cron') {
     return scheduleData.value.cron || t('nodeViews.cronExpression')
   }
-  
+
   if (scheduleData.value.mode === 'once') {
     return `${t('nodeViews.once')}: ${scheduleData.value.time}`
   }
-  
+
   const freqMap: Record<string, string> = {
     daily: t('nodeViews.daily'),
     weekly: t('nodeViews.weekly'),
     monthly: t('nodeViews.monthly')
   }
-  
+
   const freq = freqMap[scheduleData.value.frequency || 'daily']
   return `${freq} ${scheduleData.value.time}`
 })

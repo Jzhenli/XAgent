@@ -1,12 +1,12 @@
 <template>
   <div class="rule-node action-node">
     <Handle type="target" :position="Position.Top" />
-    
+
     <div class="node-header">
       <span class="node-icon">⚡</span>
       <span class="node-title">{{ t('nodeViews.action') }}</span>
     </div>
-    
+
     <div class="node-body">
       <div class="node-info" :class="{ 'has-data': hasValidData }">
         <div class="info-row">
@@ -22,7 +22,7 @@
         </div>
       </div>
     </div>
-    
+
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -36,11 +36,15 @@ import type { RuleNodeData } from '@/types/rule'
 const { t } = useI18n()
 const { node } = useNode<RuleNodeData>()
 
+/** 动作节点数据 */
 const nodeData = computed(() => node.data?.action)
-const hasValidData = computed(() => 
+
+/** 是否配置了有效的目标设备和操作 */
+const hasValidData = computed(() =>
   nodeData.value?.target_asset && nodeData.value?.operation
 )
 
+/** 延迟时间格式化文本 */
 const delayText = computed(() => {
   const delay = nodeData.value?.delay || 0
   if (delay === 0) return t('nodeViews.instant')

@@ -1,12 +1,12 @@
 <template>
   <div class="rule-node trigger-node">
     <Handle type="target" :position="Position.Top" />
-    
+
     <div class="node-header">
       <span class="node-icon">🎯</span>
       <span class="node-title">{{ t('nodeViews.trigger') }}</span>
     </div>
-    
+
     <div class="node-body">
       <div class="node-info" :class="{ 'has-data': hasValidData }">
         <div class="info-row">
@@ -19,7 +19,7 @@
         </div>
       </div>
     </div>
-    
+
     <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
@@ -33,8 +33,11 @@ import type { RuleNodeData } from '@/types/rule'
 const { t } = useI18n()
 const { node } = useNode<RuleNodeData>()
 
+/** 触发器数据 */
 const nodeData = computed(() => node.data?.trigger)
-const hasValidData = computed(() => 
+
+/** 是否配置了有效的触发源和字段 */
+const hasValidData = computed(() =>
   nodeData.value?.source && nodeData.value?.field
 )
 </script>
