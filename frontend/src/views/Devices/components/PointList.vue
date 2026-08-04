@@ -70,20 +70,15 @@
         <el-table-column
           prop="name"
           :label="t('devices.pointName')"
-          :width="isCompact ? 120 : 150"
         />
         <!-- 描述列（仅非紧凑模式显示） -->
         <el-table-column
           v-if="!isCompact"
           prop="description"
           :label="t('common.description')"
-          width="150"
         />
         <!-- 实时数值列：显示当前值 + 单位 -->
-        <el-table-column
-          :label="t('devices.currentValue')"
-          :width="isCompact ? 100 : 120"
-        >
+        <el-table-column :label="t('devices.currentValue')">
           <template #default="{ row }">
             <span
               v-if="row.currentValue !== undefined && row.currentValue !== null"
@@ -95,13 +90,16 @@
           </template>
         </el-table-column>
         <!-- 数据类型列 -->
-        <el-table-column :label="t('devices.dataType')" width="100">
+        <el-table-column :label="t('devices.dataType')">
           <template #default="{ row }">
-            <el-tag size="small">{{ row.data_type }}</el-tag>
+            <el-tag
+              size="small"
+              :type="getDataTypeTagType(row.data_type)"
+            >{{ row.data_type }}</el-tag>
           </template>
         </el-table-column>
         <!-- 质量状态列：good(绿) / bad(红) / unknown(黄) -->
-        <el-table-column :label="t('devices.quality')" width="80">
+        <el-table-column :label="t('devices.quality')">
           <template #default="{ row }">
             <el-tag
               v-if="row.quality"
@@ -129,7 +127,6 @@
         <el-table-column
           v-if="!isCompact"
           :label="t('devices.lastUpdate')"
-          width="170"
         >
           <template #default="{ row }">
             <span v-if="row.lastUpdate">{{ row.lastUpdate }}</span>
@@ -140,14 +137,21 @@
         <el-table-column
           v-if="!isCompact"
           :label="t('common.config')"
-          min-width="150"
         >
           <template #default="{ row }">
-            <span class="config-cell">{{ JSON.stringify(row.config) }}</span>
+            <el-tooltip
+              :content="JSON.stringify(row.config, null, 2)"
+              placement="top"
+              :show-after="300"
+              popper-class="config-tooltip"
+              teleported
+            >
+              <span class="config-cell">{{ JSON.stringify(row.config) }}</span>
+            </el-tooltip>
           </template>
         </el-table-column>
         <!-- 操作列：趋势图 / 写值 / 编辑 / 删除 -->
-        <el-table-column :label="t('common.actions')" width="200" fixed="right">
+        <el-table-column :label="t('common.actions')" fixed="right">
           <template #default="{ row }">
             <div class="action-icons">
               <!-- 查看趋势 -->
@@ -260,6 +264,43 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const userStore = useUserStore();
+
+/**
+ * 根据数据类型返回对应的 el-tag 类型（用于彩色显示）
+ */
+function getDataTypeTagType(dataType: string): "" | "success" | "warning" | "danger" | "info" {
+  if (!dataType) return "";
+
+  // 整数类型 → 绿色
+  if (/^(u?int(16|32|64)?)$/.test(dataType)) return "success";
+
+  // 物理量 / 模拟量 → 绿色
+  const physicalTypes = [
+    "temperature", "humidity", "voltage", "current", "power", "energy",
+    "co2", "brightness", "dimming", "blinds", "percent",
+    "analogInput", "analogOutput", "analogValue",
+  ];
+  if (physicalTypes.includes(dataType)) return "success";
+
+  // 浮点类型 → 黄色
+  if (/^float/.test(dataType)) return "warning";
+
+  // 多状态类型 → 黄色
+  if (dataType.startsWith("multiState")) return "warning";
+
+  // 布尔 / 二进制 / 开关 → 红色
+  const binaryTypes = [
+    "bool", "binary", "switch",
+    "binaryInput", "binaryOutput", "binaryValue",
+  ];
+  if (binaryTypes.includes(dataType)) return "danger";
+
+  // 字符串 / 场景 / 颜色 → 蓝色
+  const stringLikeTypes = ["string", "scene", "color_rgb"];
+  if (stringLikeTypes.includes(dataType)) return "info";
+
+  return "";
+}
 </script>
 
 <style scoped>
@@ -455,10 +496,36 @@ const userStore = useUserStore();
 }
 
 /* ========== el-tag 样式优化 ========== */
-.point-list :deep(.el-tag) {
+/* 默认标签（无类型）：中性灰色 */
+.point-list :deep(.el-tag:not(.el-tag--success):not(.el-tag--danger):not(.el-tag--warning):not(.el-tag--info)) {
   background: var(--bg-hover) !important;
   border-color: var(--border-light) !important;
   color: var(--text-regular) !important;
+}
+
+/* 有类型标签：使用主题变量，自动适配深浅色 */
+.point-list :deep(.el-tag--success) {
+  background: var(--color-success-light) !important;
+  border-color: var(--color-success) !important;
+  color: var(--color-success) !important;
+}
+
+.point-list :deep(.el-tag--danger) {
+  background: var(--color-danger-light) !important;
+  border-color: var(--color-danger) !important;
+  color: var(--color-danger) !important;
+}
+
+.point-list :deep(.el-tag--warning) {
+  background: var(--color-warning-light) !important;
+  border-color: var(--color-warning) !important;
+  color: var(--color-warning) !important;
+}
+
+.point-list :deep(.el-tag--info) {
+  background: var(--color-info-light) !important;
+  border-color: var(--color-info) !important;
+  color: var(--color-info) !important;
 }
 
 /* ========== el-button 样式优化 ========== */
@@ -488,5 +555,19 @@ const userStore = useUserStore();
   .panel-title {
     font-size: 14px;
   }
+}
+</style>
+
+<!-- 非 scoped 样式：用于 teleported tooltip 的全局样式 -->
+<style>
+.config-tooltip {
+  max-width: 420px !important;
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+  max-height: 320px !important;
+  overflow-y: auto !important;
+  font-family: "Consolas", "Monaco", "Courier New", monospace !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
 }
 </style>
