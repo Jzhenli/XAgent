@@ -5,7 +5,7 @@
     width="min(700px, 92vw)"
     :close-on-click-modal="false"
     align-center
-    class="x-dialog"
+    class="x-dialog point-dialog"
   >
     <!-- 表单滚动区域：字段较多时限制高度，避免弹框超出视口 -->
     <div class="point-dialog-scroll-body">
@@ -14,6 +14,7 @@
         :model="form"
         :rules="pointFormRules"
         label-width="100px"
+        label-position="left"
       >
         <!-- 基础信息 -->
         <el-form-item :label="t('devices.pointName')" prop="name">
@@ -30,9 +31,9 @@
           />
         </el-form-item>
 
-        <el-divider :content-position="t('devices.dividerLeft')">
-          {{ t('devices.protocolConfig') }}
-        </el-divider>
+        <div class="section-divider">
+          <span class="section-divider-title">{{ t('devices.protocolConfig') }}</span>
+        </div>
 
         <!-- Modbus TCP/RTU 协议配置 -->
         <template v-if="isModbus">
@@ -40,6 +41,7 @@
             <el-select
               v-model="form.data_type"
               :placeholder="t('devices.selectDataType')"
+              :teleported="false"
             >
               <el-option
                 v-for="opt in modbusDataTypes"
@@ -61,6 +63,7 @@
             <el-select
               v-model="form.register_type"
               :placeholder="t('devices.selectRegisterType')"
+              :teleported="false"
             >
               <el-option
                 v-for="opt in registerTypes"
@@ -106,6 +109,7 @@
             <el-select
               v-model="form.data_type"
               :placeholder="t('devices.selectDataType')"
+              :teleported="false"
             >
               <el-option
                 v-for="opt in knxDataTypes"
@@ -147,6 +151,7 @@
             <el-select
               v-model="form.object_type"
               :placeholder="t('devices.selectObjectType')"
+              :teleported="false"
               @change="form.data_type = form.object_type"
             >
               <el-option
@@ -196,9 +201,9 @@
           </el-form-item>
         </template>
 
-        <el-divider :content-position="t('devices.dividerLeft')">
-          {{ t('devices.generalConfig') }}
-        </el-divider>
+        <div class="section-divider">
+          <span class="section-divider-title">{{ t('devices.generalConfig') }}</span>
+        </div>
 
         <!-- 通用配置：标准类型、单位 -->
         <el-form-item :label="t('devices.standardType')">
@@ -218,9 +223,9 @@
           />
         </el-form-item>
 
-        <el-divider :content-position="t('devices.dividerLeft')">
-          {{ t('devices.metadata') }}
-        </el-divider>
+        <div class="section-divider">
+          <span class="section-divider-title">{{ t('devices.metadata') }}</span>
+        </div>
 
         <!-- 元数据：量程与报警阈值 -->
         <el-row :gutter="20">
@@ -360,6 +365,11 @@ const handleSave = async () => {
 <style>
 /* 引入 Devices 模块通用弹框样式（需 unscoped，弹框内容 teleport 到 body） */
 @import './DialogCommon.css';
+
+/* 单独设置 PointDialog 弹框 body 的内边距（放在 unscoped 中以确保命中 teleport 的 DOM） */
+.point-dialog .el-dialog__body {
+  padding: 20px 0 20px 20px !important;
+}
 </style>
 
 <style scoped>
@@ -371,8 +381,62 @@ const handleSave = async () => {
   padding-right: 8px;
 }
 
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 18px;
+}
+
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--border-light);
+}
+
+.section-divider-title {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 表单项间距统一，避免过密或过疏 */
+:deep(.point-dialog .el-form-item) {
+  margin-bottom: 18px;
+}
+
+:deep(.point-dialog .el-form-item__label) {
+  color: var(--text-regular);
+  font-weight: 500;
+  text-align: left;
+}
+
+/* 单选组与开关在表单项内垂直居中 */
+:deep(.point-dialog .el-radio-group),
+:deep(.point-dialog .el-switch) {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
 /* 数字输入框在 el-col 内撑满宽度 */
 .full-width {
   width: 100%;
+}
+
+/* 滚动条：与深色主题更协调 */
+.point-dialog-scroll-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.point-dialog-scroll-body::-webkit-scrollbar-thumb {
+  background-color: var(--border-base);
+  border-radius: 3px;
+}
+
+.point-dialog-scroll-body::-webkit-scrollbar-track {
+  background-color: transparent;
 }
 </style>

@@ -56,6 +56,38 @@
   color: var(--color-danger);
 }
 
+/* ========== 下拉菜单内容 ========== */
+.x-dialog .el-select-dropdown,
+.x-dialog .el-dropdown__popper .el-dropdown-menu,
+.x-dialog .el-dropdown__popper.el-popper.is-light {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-base) !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.x-dialog .el-select-dropdown__item,
+.x-dialog .el-dropdown-menu__item {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.x-dialog .el-select-dropdown__item.hover,
+.x-dialog .el-select-dropdown__item:hover,
+.x-dialog .el-dropdown-menu__item:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.x-dialog .el-select-dropdown__item.selected {
+  color: var(--color-primary);
+}
+
+.x-dialog .el-dropdown__popper .el-popper__arrow::before {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-base) !important;
+}
+
 /* ========== 文本输入框 / 下拉框 / 文本域 ========== */
 .x-dialog .el-input__wrapper,
 .x-dialog .el-select__wrapper,

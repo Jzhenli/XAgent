@@ -228,7 +228,8 @@ export function usePointManagement(
         {
           confirmButtonText: t('common.confirm'),
           cancelButtonText: t('common.cancel'),
-          type: 'warning'
+          type: 'warning',
+          customClass: 'x-message-box'
         }
       )
       await pointStore.removePoint(selectedDeviceAsset.value!, pointName)

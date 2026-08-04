@@ -170,8 +170,9 @@
               >
                 <Icon
                   name="input"
+                  type="mono-line"
                   :size="24"
-                  :color="{ normal: 'var(--el-color-warning)' }"
+                  :color="{ normal: 'var(--el-text-color-primary)' }"
                   @click="emit('writeValue', row)"
                 />
               </el-tooltip>
@@ -183,8 +184,9 @@
               >
                 <Icon
                   name="edit"
+                  type="mono-line"
                   :size="24"
-                  :color="{ normal: 'rgba(102, 102, 255, 1)' }"
+                  :color="{ normal: 'var(--el-text-color-primary)' }"
                   @click="emit('editPoint', row)"
                 />
               </el-tooltip>
@@ -196,8 +198,9 @@
               >
                 <Icon
                   name="delete"
+                  type="mono-line"
                   :size="24"
-                  :color="{ normal: 'var(--el-color-danger)' }"
+                  :color="{ normal: 'var(--el-text-color-primary)' }"
                   @click="emit('deletePoint', row.name)"
                 />
               </el-tooltip>

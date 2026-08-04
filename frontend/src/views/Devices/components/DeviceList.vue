@@ -365,6 +365,7 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
 </script>
 
 <style scoped>
+@import "./DialogCommon.css";
 /* ========== 桌面端：设备列表面板 ========== */
 .device-list-panel {
   width: 320px;
@@ -510,8 +511,6 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
 .delete-text {
   color: var(--el-color-danger);
 }
-
-@import "./DialogCommon.css";
 
 /* ========== 下拉菜单样式 ========== */
 :deep(.device-dropdown-popper) {
