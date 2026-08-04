@@ -584,7 +584,7 @@
     "pleaseSelectPointsToAdd": "Please select points to add",
     "batchAddPointsConfirm": "Are you sure you want to batch add {count} points?",
     "objectTypeSelection": "Object Type Selection",
-    "objectTypeHint": "AI/AO/AV: Analog | BI/BO/BV: Binary | MI/MO/MV: Multi-state",
+    "objectTypeHint": "AI/AO/AV: Analog; BI/BO/BV: Binary; MI/MO/MV: Multi-state",
     "pointFilterPlaceholder": "Search point name, description, type or ID...",
     "noMatchingPoints": "No matching points",
     "clearSearch": "Clear search",

@@ -584,7 +584,7 @@
     "pleaseSelectPointsToAdd": "請先選擇要新增的點位",
     "batchAddPointsConfirm": "確定要批次新增 {count} 個點位嗎？",
     "objectTypeSelection": "物件類型選擇",
-    "objectTypeHint": "AI/AO/AV: 類比量 | BI/BO/BV: 二進位 | MI/MO/MV: 多狀態",
+    "objectTypeHint": "AI/AO/AV：類比量；BI/BO/BV：二進位；MI/MO/MV：多狀態",
     "pointFilterPlaceholder": "搜尋點位名稱、描述、類型或 ID...",
     "noMatchingPoints": "沒有符合的點位",
     "clearSearch": "清空搜尋",
