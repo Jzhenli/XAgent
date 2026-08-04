@@ -1915,7 +1915,9 @@
     "aggregation1min": "1 Minute",
     "aggregation5min": "5 Minutes",
     "aggregation15min": "15 Minutes",
-    "aggregation1h": "1 Hour"
+    "aggregation1h": "1 Hour",
+    "statistics": "Statistics",
+    "pointInfo": "Point Info"
   },
   "dragStart": "Drag Start",
   "cancel": "Cancel",

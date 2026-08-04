@@ -1915,7 +1915,9 @@
     "aggregation1min": "1分鐘",
     "aggregation5min": "5分鐘",
     "aggregation15min": "15分鐘",
-    "aggregation1h": "1小時"
+    "aggregation1h": "1小時",
+    "statistics": "統計資訊",
+    "pointInfo": "點位資訊"
   },
   "dragStart": "拖曳開始",
   "cancel": "取消",

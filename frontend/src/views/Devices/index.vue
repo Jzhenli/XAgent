@@ -187,6 +187,7 @@
       direction="rtl"
       size="70%"
       :with-header="false"
+      class="trend-drawer"
     >
       <PointTrend
         :device-name="selectedPointForTrend?.deviceAsset"
@@ -822,5 +823,23 @@ onMounted(async () => {
     padding: 6px 10px;
     font-size: 13px;
   }
+}
+</style>
+
+<style>
+/* 趋势图抽屉样式（需 unscoped，抽屉内容 teleport 到 body） */
+.trend-drawer .el-drawer {
+  /* 抽屉从右侧滑出，左侧边缘需要明显边界 */
+  border-left: 1px solid var(--border-base) !important;
+  box-shadow:
+    -8px 0 24px rgba(0, 0, 0, 0.25),
+    -2px 0 6px rgba(0, 0, 0, 0.12) !important;
+}
+
+.trend-drawer .el-drawer__body {
+  background-color: var(--bg-card) !important;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 </style>
