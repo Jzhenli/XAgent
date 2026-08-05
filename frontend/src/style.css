@@ -38,9 +38,9 @@ html, body {
 }
 
 .rule-node {
-  padding: 8px 12px;
+  padding: 12px 16px;
   border-radius: 8px;
-  min-width: 120px;
+  min-width: 160px;
   box-shadow: var(--shadow-dark);
   transition: var(--transition-fast);
 }
@@ -199,6 +199,8 @@ html, body {
   box-shadow: var(--shadow-base);
   border-radius: 8px;
   overflow: hidden;
+  background: var(--bg-container);
+  border: 1px solid var(--border-base);
 }
 
 .vue-flow__controls-button {
@@ -206,16 +208,31 @@ html, body {
   height: 32px;
   border: none;
   background: var(--bg-container);
+  color: var(--text-primary);
 }
 
 .vue-flow__controls-button:hover {
   background: var(--bg-hover);
 }
 
+.vue-flow__controls-button svg {
+  fill: var(--text-primary);
+}
+
 .vue-flow__minimap {
+  background: var(--bg-container);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--shadow-base);
+}
+
+.vue-flow__minimap-mask {
+  fill: var(--bg-hover);
+}
+
+.vue-flow__minimap-node {
+  fill: var(--color-primary);
+  stroke: var(--color-primary-hover);
 }
 
 .el-message {

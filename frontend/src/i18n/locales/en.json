@@ -897,6 +897,8 @@
     "clearSuccess": "Resolved alerts cleared",
     "clearFailed": "Clear failed",
     "operationFailed": "Operation failed",
+    "totalAlerts": "Total Alerts",
+    "totalChannels": "Total Channels",
     "channel": {
       "email": "Email",
       "sms": "SMS",
@@ -1533,7 +1535,6 @@
     "notificationLevel": "Alert Level",
     "notificationChannel": "Notification Channel",
     "channelConfigHint": "Detailed channel configuration (recipients, SMTP, Webhook, etc.) is managed in the alert configuration page",
-    "noAvailableChannels": "No available notification channels",
     "points": "points",
     "pointsLabel": "Points",
     "to": "to",

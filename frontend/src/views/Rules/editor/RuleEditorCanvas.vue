@@ -39,7 +39,7 @@
           v-model:edges="edges"
           :node-types="nodeTypes"
           :default-edge-options="{ type: 'smoothstep', animated: true }"
-          :fit-view-on-init="true"
+          :initial-viewport="{ x: 0, y: 0, zoom: 1 }"
           :snap-to-grid="true"
           :snap-grid="[15, 15]"
           class="vue-flow-container"
@@ -48,7 +48,7 @@
           @connect="onConnect"
           @node-click="onNodeClick"
         >
-          <Background pattern-color="#aaa" :gap="20" />
+          <Background pattern-color="#aaa" :gap="25" />
           <Controls />
           <MiniMap />
         </VueFlow>
@@ -68,7 +68,6 @@
           :node-type="selectedNode.type as NodeType"
           :node-data="selectedNode.data ?? {}"
           @update="handleNodeUpdate"
-          @delete="handleNodeDelete"
         />
       </div>
 

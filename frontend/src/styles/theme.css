@@ -7,6 +7,8 @@
 /* ==================== 浅色主题（默认） ==================== */
 :root,
 [data-theme='light'] {
+  color-scheme: light;
+
   /* SCADA编辑器主题色 */
   --scada-cyan: #3498db;
   --scada-cyan-glow: rgba(52, 152, 219, 0.3);
@@ -85,6 +87,8 @@
   --color-danger-light: rgba(231, 76, 60, 0.1);
   --color-info: #909399;
   --color-info-light: rgba(144, 147, 153, 0.1);
+  --color-info-border: #dcdfe6;
+  --color-info-text: #606266;
 
   /* 节点颜色（保持原有渐变） */
   --node-trigger-bg: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
@@ -284,6 +288,8 @@
 
 /* ==================== 深色主题 ==================== */
 [data-theme='dark'] {
+  color-scheme: dark;
+
   /* SCADA编辑器主题色（酷炫风格） */
   --scada-cyan: #22d3ee;
   --scada-cyan-glow: rgba(34, 211, 238, 0.4);
@@ -309,7 +315,7 @@
   --bg-footer: #16213e;
   --bg-card: rgba(0, 0, 0, 0.53);
   --bg-card-s: rgba(255, 255, 255, 0.07);
-  --bg-input: #0f3460;
+  --bg-input: #1a2744;
   --bg-hover: #1f2b47;
   --bg-dialog: #16213e;
   --bg-drawer: #16213e;
@@ -362,6 +368,8 @@
   --color-danger-light: rgba(245, 108, 108, 0.15);
   --color-info: #909399;
   --color-info-light: rgba(144, 147, 153, 0.15);
+  --color-info-border: #3a3a5e;
+  --color-info-text: #c0c4cc;
 
   /* 节点颜色（深色模式适配） */
   --node-trigger-bg: linear-gradient(135deg, #409eff 0%, #3a8ee6 100%);
@@ -521,7 +529,7 @@
   --el-color-info-light-9: #f2f3f4;
 
   /* 输入框 */
-  --el-input-bg-color: #0f3460;
+  --el-input-bg-color: #1a2744;
   --el-input-border-color: #3a3a5e;
   --el-input-hover-border-color: #409eff;
   --el-input-focus-border-color: #409eff;

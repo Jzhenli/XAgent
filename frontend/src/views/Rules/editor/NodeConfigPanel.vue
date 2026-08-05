@@ -1,11 +1,8 @@
 <template>
   <div class="node-config-panel">
-    <!-- 面板头部：标题 + 删除按钮 -->
+    <!-- 面板头部：标题 -->
     <div class="panel-header">
       <h3>{{ panelTitle }}</h3>
-      <button class="delete-btn" @click="handleDelete" :title="t('nodeConfig.deleteNode')">
-        🗑️
-      </button>
     </div>
 
     <div class="panel-body">
@@ -441,7 +438,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update', data: RuleNodeData): void
-  (e: 'delete', nodeId: string): void
 }>()
 
 const deviceStore = useDeviceStore()
@@ -649,11 +645,6 @@ const updateData = () => {
   emit('update', { ...localData.value })
 }
 
-/** 删除当前节点 */
-const handleDelete = () => {
-  emit('delete', props.nodeId)
-}
-
 /** 切换定时任务的星期选择（创建新数组避免共享引用） */
 const toggleDay = (day: number) => {
   if (!localData.value.scheduleTrigger) return
@@ -675,7 +666,7 @@ const isDaySelected = (day: number) => {
 
 <style scoped>
 .node-config-panel {
-  width: 280px;
+  width: 100%;
   background: var(--bg-container);
   border-left: 1px solid var(--border-base);
   display: flex;
@@ -687,7 +678,6 @@ const isDaySelected = (day: number) => {
   border-bottom: 1px solid var(--border-base);
   background: var(--bg-hover);
   display: flex;
-  justify-content: space-between;
   align-items: center;
 }
 
@@ -695,21 +685,6 @@ const isDaySelected = (day: number) => {
   margin: 0;
   font-size: 15px;
   color: var(--text-primary);
-}
-
-.delete-btn {
-  padding: 4px 8px;
-  border: none;
-  background: var(--color-danger);
-  color: var(--text-white);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background 0.2s;
-}
-
-.delete-btn:hover {
-  background: var(--color-danger-dark, #c0392b);
 }
 
 .panel-body {
@@ -738,8 +713,15 @@ const isDaySelected = (day: number) => {
   border: 1px solid var(--border-base);
   border-radius: 6px;
   font-size: 13px;
+  background-color: var(--bg-input);
+  color: var(--text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-placeholder);
 }
 
 .form-group input:focus,
@@ -748,6 +730,28 @@ const isDaySelected = (day: number) => {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.form-group select option {
+  background-color: var(--bg-container);
+  color: var(--text-primary);
+}
+
+.form-group input[type="time"]::-webkit-calendar-picker-indicator,
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.7);
+  transition: filter 0.2s;
+}
+
+.form-group input[type="time"]::-webkit-calendar-picker-indicator:hover,
+.form-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(0.5);
+}
+
+.form-group input[type="time"],
+.form-group input[type="date"] {
+  color-scheme: inherit;
 }
 
 .form-group textarea {
