@@ -146,6 +146,9 @@ const loading = ref(false)
 /** 画布容器 DOM 引用（用于拖放坐标计算） */
 const canvasContainerRef = ref<HTMLElement | null>(null)
 
+/** 画布视口是否已初始化（VueFlow viewport ready） */
+const viewportReady = ref(false)
+
 /** 竞态控制：当前正在加载的规则 ID */
 let loadingRuleId: string | null = null
 
@@ -174,6 +177,14 @@ const selectedNode = computed<RuleNode | null>(() => {
 
 // ==================== 拖拽事件处理 ====================
 
+/** VueFlow 视口初始化完成回调 */
+onVueFlowInit(() => {
+  viewportReady.value = true
+  if (nodes.value.length > 0) {
+    fitView()
+  }
+})
+
 /** 拖拽悬停时阻止默认行为并设置放置效果 */
 const onDragOver = (event: DragEvent) => {
   event.preventDefault()
@@ -187,6 +198,8 @@ const onDragOver = (event: DragEvent) => {
  * 使用 currentTarget（画布容器）计算坐标，避免 target 为子元素时的偏移
  */
 const onDrop = (event: DragEvent) => {
+  if (!viewportReady.value) return
+
   const type = event.dataTransfer?.getData('application/vueflow') as NodeType
   if (!type) return
 
@@ -368,8 +381,9 @@ const loadRule = async (ruleId: string) => {
       edges.value = graphData.edges
       ruleName.value = graphData.name
       ruleDescription.value = graphData.description
-      await nextTick()
-      fitView()
+      if (viewportReady.value) {
+        nextTick(() => fitView())
+      }
     } else {
       ElMessage.warning(t('ruleEditor.parseFailed'))
     }
@@ -390,8 +404,6 @@ const loadRule = async (ruleId: string) => {
 onMounted(() => {
   if (props.ruleId) {
     loadRule(props.ruleId)
-  } else {
-    nextTick(() => fitView())
   }
 })
 

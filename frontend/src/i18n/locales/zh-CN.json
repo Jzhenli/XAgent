@@ -1533,6 +1533,7 @@
     "notificationLevel": "告警级别",
     "notificationChannel": "通知渠道",
     "channelConfigHint": "通知渠道的详细配置（收件人、SMTP、Webhook 等）请在告警配置页面中统一管理",
+    "noAvailableChannels": "暂无可用通知渠道",
     "points": "点位",
     "pointsLabel": "点位",
     "to": "至",

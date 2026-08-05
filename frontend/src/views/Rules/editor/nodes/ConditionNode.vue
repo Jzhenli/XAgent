@@ -75,9 +75,9 @@ const durationText = computed(() => {
 .condition-expression {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-family: 'Consolas', monospace;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .condition-expression .field {
@@ -96,11 +96,11 @@ const durationText = computed(() => {
 }
 
 .duration-badge {
-  margin-top: 6px;
-  padding: 2px 8px;
+  margin-top: 4px;
+  padding: 1px 6px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-  font-size: 11px;
+  border-radius: 8px;
+  font-size: 10px;
   color: var(--text-white);
 }
 </style>

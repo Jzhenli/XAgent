@@ -58,16 +58,16 @@ const operatorColor = computed(() => {
 .logic-node {
   background: var(--node-logic-bg);
   border: 2px solid var(--node-logic-border);
-  min-width: 120px;
+  min-width: 90px;
 }
 
 .logic-operator {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
   text-align: center;
-  padding: 8px 16px;
+  padding: 4px 10px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: 4px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 </style>

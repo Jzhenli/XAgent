@@ -1533,6 +1533,7 @@
     "notificationLevel": "警示層級",
     "notificationChannel": "通知管道",
     "channelConfigHint": "通知管道的詳細設定（收件人、SMTP、Webhook 等）請在警示設定頁面中統一管理",
+    "noAvailableChannels": "暫無可用通知管道",
     "points": "點位",
     "pointsLabel": "點位",
     "to": "至",

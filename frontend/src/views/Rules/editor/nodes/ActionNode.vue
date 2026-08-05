@@ -61,11 +61,11 @@ const delayText = computed(() => {
 }
 
 .delay-badge {
-  margin-top: 6px;
-  padding: 2px 8px;
+  margin-top: 4px;
+  padding: 1px 6px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-  font-size: 11px;
+  border-radius: 8px;
+  font-size: 10px;
   color: var(--text-white);
 }
 </style>

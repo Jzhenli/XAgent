@@ -78,9 +78,9 @@ const levelColor = computed(() => {
 
 .level-badge {
   margin-left: auto;
-  padding: 1px 8px;
-  border-radius: 10px;
-  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 9px;
   color: var(--text-white);
   font-weight: 600;
   text-transform: uppercase;
