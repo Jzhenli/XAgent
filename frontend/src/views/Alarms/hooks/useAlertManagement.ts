@@ -51,6 +51,7 @@ export function useAlertManagement() {
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),
         type: 'warning',
+        customClass: 'x-message-box',
       },
     )
       .then(async () => {

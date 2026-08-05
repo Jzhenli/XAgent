@@ -161,8 +161,20 @@ const { t } = useI18n()
 }
 
 .toolbar-right .el-button--danger:hover {
-  background-color: var(--el-color-danger-light-9) !important;
-  border-color: var(--el-color-danger-light-5) !important;
+  background-color: rgba(245, 108, 108, 0.25) !important;
+  border-color: rgba(245, 108, 108, 0.6) !important;
+  color: var(--el-color-danger) !important;
+}
+
+.toolbar-right .el-button--danger.is-plain {
+  background-color: rgba(245, 108, 108, 0.15) !important;
+  border-color: rgba(245, 108, 108, 0.4) !important;
+  color: var(--el-color-danger) !important;
+}
+
+.toolbar-right .el-button--danger.is-plain:hover {
+  background-color: rgba(245, 108, 108, 0.25) !important;
+  border-color: rgba(245, 108, 108, 0.6) !important;
   color: var(--el-color-danger) !important;
 }
 

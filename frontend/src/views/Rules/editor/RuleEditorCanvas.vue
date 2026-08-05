@@ -33,7 +33,7 @@
     <div v-else class="editor-main">
       <NodePalette @drag-start="onDragStart" />
 
-      <div ref="canvasContainerRef" class="editor-canvas" @drop="onDrop" @dragover="onDragOver">
+      <div ref="canvasContainerRef" class="editor-canvas" @drop="onDrop" @dragover="onDragOver" @click="onCanvasClick">
         <VueFlow
           v-model:nodes="nodes"
           v-model:edges="edges"
@@ -47,19 +47,44 @@
           @edges-change="onEdgesChange"
           @connect="onConnect"
           @node-click="onNodeClick"
+          @node-context-menu="onNodeContextMenu"
+          @edge-context-menu="onEdgeContextMenu"
         >
           <Background pattern-color="#aaa" :gap="25" />
           <Controls />
           <MiniMap />
         </VueFlow>
+
+        <!-- 右键菜单 -->
+        <Teleport to="body">
+          <div
+            v-if="contextMenuVisible"
+            class="context-menu"
+            :style="{ left: contextMenuPos.x + 'px', top: contextMenuPos.y + 'px' }"
+            @click.stop
+          >
+            <template v-if="contextMenuType === 'node'">
+              <div class="context-menu-item" @click="handleContextDeleteNode">
+                <Icon type="mono-line" name="delete" :size="20" :color="{ normal: 'var(--el-text-color-primary)' }"/>
+                <span>{{ t('ruleEditor.deleteNode') }}</span>
+              </div>
+            </template>
+            <template v-else-if="contextMenuType === 'edge'">
+              <div class="context-menu-item" @click="handleContextDeleteEdge">
+                <Icon type="mono-line" name="delete" :size="20" :color="{ normal: 'var(--el-text-color-primary)' }"/>
+                <span>{{ t('ruleEditor.deleteEdge') }}</span>
+              </div>
+            </template>
+          </div>
+        </Teleport>
       </div>
 
       <!-- 选中节点时显示配置面板 -->
       <div v-if="selectedNode" class="config-panel">
         <div class="panel-header">
           <span>{{ t('ruleEditor.nodeConfig') }}</span>
-          <el-button type="danger" link size="small" @click="handleNodeDelete(selectedNode.id)">
-            {{ t('ruleEditor.deleteNode') }}
+          <el-button type="danger" link size="small" @click="handleResetNodeData">
+            {{ t('ruleEditor.resetData') }}
           </el-button>
         </div>
         <NodeConfigPanel
@@ -103,9 +128,11 @@ import ActionNode from './nodes/ActionNode.vue'
 import NotificationNode from './nodes/NotificationNode.vue'
 
 import type { RuleNode, RuleEdge, RuleNodeData, NodeType } from '@/types/rule'
+import { NODE_TEMPLATES } from '@/types/rule'
 import { createNode, validateGraph } from '@/utils/ruleConverter'
 import { graphToBackendCreate, graphToBackendUpdate, backendToGraph } from '@/utils/ruleBridge'
 import { useRuleStore } from '@/stores/rules'
+import { Icon } from '@/icon'
 
 const { t } = useI18n()
 
@@ -116,7 +143,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'saved'): void
+  (e: 'saved', ruleId?: string): void
 }>()
 
 const ruleStore = useRuleStore()
@@ -126,6 +153,7 @@ const {
   addNodes,
   addEdges,
   removeNodes,
+  removeEdges,
   updateNodeData,
   findNode,
   project,
@@ -147,6 +175,73 @@ const canvasContainerRef = ref<HTMLElement | null>(null)
 
 /** 画布视口是否已初始化（VueFlow viewport ready） */
 const viewportReady = ref(false)
+
+/** 右键菜单状态 */
+const contextMenuVisible = ref(false)
+const contextMenuPos = ref({ x: 0, y: 0 })
+const contextMenuType = ref<'node' | 'edge'>('node')
+const contextMenuTargetId = ref<string>('')
+
+/** 关闭右键菜单 */
+const closeContextMenu = () => {
+  contextMenuVisible.value = false
+}
+
+/** 画布点击空白处关闭右键菜单 */
+const onCanvasClick = () => {
+  closeContextMenu()
+}
+
+/** 节点右键菜单 */
+const onNodeContextMenu = ({ node, event }: any) => {
+  event.preventDefault()
+  selectedNodeId.value = node.id
+  contextMenuType.value = 'node'
+  contextMenuTargetId.value = node.id
+  contextMenuPos.value = { x: event.clientX, y: event.clientY }
+  contextMenuVisible.value = true
+}
+
+/** 连线右键菜单 */
+const onEdgeContextMenu = ({ edge, event }: any) => {
+  event.preventDefault()
+  contextMenuType.value = 'edge'
+  contextMenuTargetId.value = edge.id
+  contextMenuPos.value = { x: event.clientX, y: event.clientY }
+  contextMenuVisible.value = true
+}
+
+/** 删除节点（右键菜单） */
+const handleContextDeleteNode = () => {
+  const nodeId = contextMenuTargetId.value
+  if (nodeId) {
+    removeNodes([nodeId])
+    if (selectedNodeId.value === nodeId) {
+      selectedNodeId.value = null
+    }
+  }
+  closeContextMenu()
+}
+
+/** 删除连线（右键菜单） */
+const handleContextDeleteEdge = () => {
+  const edgeId = contextMenuTargetId.value
+  if (edgeId) {
+    removeEdges([edgeId])
+  }
+  closeContextMenu()
+}
+
+/** 重置节点数据为默认值 */
+const handleResetNodeData = () => {
+  if (!selectedNodeId.value) return
+  const node = findNode(selectedNodeId.value)
+  if (!node) return
+  const template = NODE_TEMPLATES.find(t => t.type === node.type)
+  if (template) {
+    updateNodeData(selectedNodeId.value, JSON.parse(JSON.stringify(template.defaultData)))
+  }
+}
 
 /** 竞态控制：当前正在加载的规则 ID */
 let loadingRuleId: string | null = null
@@ -270,13 +365,7 @@ const handleNodeUpdate = (data: RuleNodeData) => {
   updateNodeData(selectedNodeId.value, data)
 }
 
-/** 删除指定节点 */
-const handleNodeDelete = (nodeId: string) => {
-  removeNodes([nodeId])
-  if (selectedNodeId.value === nodeId) {
-    selectedNodeId.value = null
-  }
-}
+/** 节点操作 */
 
 // ==================== 保存 & 清除 ====================
 
@@ -321,6 +410,7 @@ const handleSave = async () => {
       )
       await ruleStore.updateRule(props.ruleId, updateData)
       ElMessage.success(t('ruleEditor.ruleSaved'))
+      emit('saved', props.ruleId)
     } else {
       // 创建新规则
       const createData = graphToBackendCreate(
@@ -329,11 +419,10 @@ const handleSave = async () => {
         currentNodes,
         edges.value
       )
-      await ruleStore.createRule(createData)
+      const response = await ruleStore.createRule(createData)
       ElMessage.success(t('ruleEditor.ruleCreated'))
+      emit('saved', response.rule_id)
     }
-    emit('saved')
-    emit('close')
   } catch (e: any) {
     const detail = e.response?.data?.detail
     const msg = detail
@@ -404,7 +493,15 @@ onMounted(() => {
   if (props.ruleId) {
     loadRule(props.ruleId)
   }
+  document.addEventListener('click', onDocumentClick)
 })
+
+/** 全局点击关闭右键菜单 */
+const onDocumentClick = (e: MouseEvent) => {
+  if (contextMenuVisible.value) {
+    closeContextMenu()
+  }
+}
 
 /** ruleId 变化时重新加载或重置 */
 watch(() => props.ruleId, (newId) => {
@@ -419,9 +516,10 @@ watch(() => props.ruleId, (newId) => {
   }
 })
 
-/** 组件卸载时清理竞态标记 */
+/** 组件卸载时清理竞态标记和事件监听 */
 onBeforeUnmount(() => {
   loadingRuleId = null
+  document.removeEventListener('click', onDocumentClick)
 })
 </script>
 
@@ -458,10 +556,16 @@ onBeforeUnmount(() => {
   color: var(--text-secondary);
 }
 
+.clear-btn {
+  background-color: transparent !important;
+  border-color: var(--border-base) !important;
+  color: var(--text-primary) !important;
+}
+
 .clear-btn:hover {
-  background-color: var(--el-button-bg-color) !important;
-  border-color: var(--el-button-border-color) !important;
-  color: var(--el-text-color-regular) !important;
+  background-color: var(--bg-hover) !important;
+  border-color: var(--border-base) !important;
+  color: var(--text-primary) !important;
 }
 
 .editor-loading {
@@ -537,5 +641,35 @@ onBeforeUnmount(() => {
 .empty-content .hint {
   font-size: 12px;
   color: var(--text-secondary);
+}
+</style>
+
+<style>
+.context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg-container);
+  border: 1px solid var(--border-base);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 4px 0;
+  min-width: 140px;
+  user-select: none;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  white-space: nowrap;
+}
+
+.context-menu-item:hover {
+  background: var(--bg-hover);
 }
 </style>

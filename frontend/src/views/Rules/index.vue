@@ -37,6 +37,8 @@
       direction="rtl"
       size="80%"
       :with-header="true"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
     >
       <RuleEditorCanvas
         :rule-id="currentRuleId"

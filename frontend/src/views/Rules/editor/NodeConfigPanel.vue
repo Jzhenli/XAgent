@@ -258,11 +258,19 @@
       <template v-if="nodeType === 'logic' && localData.logic">
         <div class="form-group">
           <label>{{ t('nodeConfig.logicOperator') }}</label>
-          <select v-model="localData.logic.operator" @change="updateData">
-            <option v-for="op in LOGIC_OPERATORS" :key="op.value" :value="op.value">
-              {{ t(op.labelKey) }}
-            </option>
-          </select>
+          <el-select
+            v-model="localData.logic.operator"
+            :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.logicOperator') })"
+            style="width: 100%"
+            @change="updateData"
+          >
+            <el-option
+              v-for="op in LOGIC_OPERATORS"
+              :key="op.value"
+              :label="t(op.labelKey)"
+              :value="op.value"
+            />
+          </el-select>
         </div>
         <div class="logic-hint">
           <p><strong>AND:</strong> {{ t('nodeConfig.logicAnd') }}</p>
@@ -430,7 +438,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { RuleNodeData, NodeType } from '@/types/rule'
 import { OPERATORS, LOGIC_OPERATORS, SCHEDULE_MODES, SCHEDULE_FREQUENCIES, WEEKDAYS, NOTIFICATION_LEVELS } from '@/types/rule'
@@ -519,6 +527,12 @@ const ensureNodeData = () => {
 }
 
 ensureNodeData()
+
+/** 外部数据变化时同步本地数据（如重置节点数据为默认值） */
+watch(() => props.nodeData, (newData) => {
+  localData.value = JSON.parse(JSON.stringify(newData || {}))
+  ensureNodeData()
+}, { deep: true })
 
 /** 挂载时初始化设备数据，并异步设置通知渠道默认值 */
 onMounted(async () => {
@@ -730,6 +744,7 @@ const isDaySelected = (day: number) => {
   color: var(--text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
+  color-scheme: dark;
 }
 
 .form-group input::placeholder,

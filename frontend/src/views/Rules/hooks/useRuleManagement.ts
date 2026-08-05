@@ -115,12 +115,14 @@ export function useRuleManagement() {
     }
   }
 
-  /** 编辑器保存成功后刷新列表并关闭编辑器 */
-  const handleEditorSaved = () => {
+  /** 编辑器保存成功后刷新列表，保持编辑器打开 */
+  const handleEditorSaved = (ruleId?: string) => {
+    if (ruleId) {
+      currentRuleId.value = ruleId
+    }
     ruleStore.fetchRules().catch(() => {
-      // 静默处理，刷新失败不影响编辑器关闭
+      // 静默处理，刷新失败不影响编辑器使用
     })
-    closeEditor()
   }
 
   return {

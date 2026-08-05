@@ -244,4 +244,7 @@
 
   /* 标签页 */
   --el-tabs-header-bg-color: #16213e !important;
+
+  /* 遮罩层 */
+  --el-mask-color: rgba(0, 0, 0, 0.5) !important;
 }

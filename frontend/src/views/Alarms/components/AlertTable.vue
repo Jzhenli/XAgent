@@ -180,6 +180,20 @@ const getStatusTag = (status: AlertStatus) =>
   background: var(--el-color-primary-light-9) !important;
 }
 
+/* 加载状态遮罩修复 */
+.alert-table :deep(.el-loading-mask) {
+  background-color: var(--el-mask-color) !important;
+}
+
+/* 空状态背景修复 */
+.alert-table :deep(.el-empty) {
+  background: transparent;
+}
+
+.alert-table :deep(.el-empty__description p) {
+  color: var(--el-text-color-secondary);
+}
+
 /* ========== 标签样式 ========== */
 .level-tag,
 .status-tag {
