@@ -127,6 +127,7 @@ const {
   addNodes,
   addEdges,
   removeNodes,
+  updateNodeData,
   findNode,
   project,
   fitView,
@@ -159,7 +160,7 @@ const nodeTypes: Record<string, any> = {
 }
 
 /** 当前选中的节点信息（供配置面板使用） */
-const selectedNode = computed(() => {
+const selectedNode = computed<RuleNode | null>(() => {
   if (!selectedNodeId.value) return null
   const node = findNode(selectedNodeId.value)
   if (!node) return null
@@ -250,18 +251,11 @@ const onNodeClick = ({ node }: { node: { id: string } }) => {
 
 /**
  * 配置面板更新时同步节点数据
- * 仅更新 nodes ref（v-model 会自动同步到 VueFlow 内部状态）
+ * 使用 updateNodeData 同时更新 VueFlow 内部状态和 v-model 绑定的 nodes ref
  */
 const handleNodeUpdate = (data: RuleNodeData) => {
   if (!selectedNodeId.value) return
-
-  const nodeIndex = nodes.value.findIndex(n => n.id === selectedNodeId.value)
-  if (nodeIndex !== -1) {
-    nodes.value[nodeIndex] = {
-      ...nodes.value[nodeIndex],
-      data: { ...data }
-    }
-  }
+  updateNodeData(selectedNodeId.value, data)
 }
 
 /** 删除指定节点 */
@@ -277,9 +271,15 @@ const handleNodeDelete = (nodeId: string) => {
 /** 保存当前规则（新增或更新） */
 const handleSave = async () => {
   // 收集最新节点数据（从 VueFlow 内部 store 同步获取最新 data）
-  const currentNodes = nodes.value.map(n => {
+  const currentNodes: RuleNode[] = nodes.value.map(n => {
     const vfNode = findNode(n.id)
-    return vfNode ? { ...n, data: vfNode.data as RuleNodeData } : n
+    if (!vfNode) return n
+    return {
+      id: n.id,
+      type: n.type,
+      position: n.position,
+      data: vfNode.data as RuleNodeData,
+    }
   })
 
   // 表单校验

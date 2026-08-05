@@ -10,7 +10,7 @@
       @update:type-filter="typeFilter = $event"
       @create="openEditor()"
       @import="handleImportRules"
-      @export="handleExportRules"
+      @export="handleExportRules(filteredRules)"
       @refresh="handleRefresh"
     />
 
@@ -120,8 +120,16 @@ onMounted(() => {
 })
 </script>
 
+<style>
+@import './components/DialogCommon.css';
+</style>
+
 <style scoped>
 .rules-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   padding: 0;
+  gap: 12px;
 }
 </style>

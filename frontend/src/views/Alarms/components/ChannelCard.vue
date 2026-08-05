@@ -1,15 +1,21 @@
 <template>
-  <el-card class="channel-card" shadow="hover">
+  <div
+    class="channel-card"
+    :class="{ disabled: !channel.enabled }"
+  >
     <!-- 头部: 图标 + 名称 + 类型标签 + 启用开关 -->
     <div class="channel-header">
-      <div class="channel-icon">{{ channelIcon }}</div>
+      <div class="channel-icon" :class="channel.type">
+        {{ channelIcon }}
+      </div>
       <div class="channel-info">
         <div class="channel-name">{{ channel.name }}</div>
-        <el-tag size="small">{{ channelTypeLabel }}</el-tag>
+        <el-tag size="small" effect="plain" round>{{ channelTypeLabel }}</el-tag>
       </div>
       <el-switch
         v-if="canUpdate"
         :model-value="channel.enabled"
+        :active-color="'rgba(102, 102, 255, 1)'"
         @change="emit('toggle', channel.id)"
       />
     </div>
@@ -25,7 +31,7 @@
       <!-- Webhook -->
       <div v-if="channel.type === 'webhook'" class="config-item">
         <span class="label">URL:</span>
-        <span class="value">{{ channel.config.url }}</span>
+        <span class="value">{{ truncateUrl(channel.config.url) }}</span>
       </div>
 
       <!-- 系统通知 -->
@@ -35,20 +41,20 @@
           <span class="value">{{ channel.config.retentionDays }} {{ t('alerts.days') }}</span>
         </div>
         <div class="config-item">
-          <span class="label">{{ t('alerts.notificationLimit') }}:</span>
-          <span class="value">{{ channel.config.maxNotifications }} {{ t('alerts.items') }}</span>
-        </div>
-        <div class="config-item">
           <span class="label">{{ t('alerts.notificationLevels') }}:</span>
           <span class="value">{{ systemNotifyLevelLabels }}</span>
         </div>
         <div class="config-item">
           <span class="label">{{ t('alerts.desktopNotification') }}:</span>
-          <span class="value">{{ channel.config.desktopEnabled ? t('alerts.enabled') : t('alerts.disabled') }}</span>
+          <span class="value" :class="{ enabled: channel.config.desktopEnabled }">
+            {{ channel.config.desktopEnabled ? t('alerts.enabled') : t('alerts.disabled') }}
+          </span>
         </div>
         <div class="config-item">
           <span class="label">{{ t('alerts.sound') }}:</span>
-          <span class="value">{{ channel.config.soundEnabled ? t('alerts.enabled') : t('alerts.disabled') }}</span>
+          <span class="value" :class="{ enabled: channel.config.soundEnabled }">
+            {{ channel.config.soundEnabled ? t('alerts.enabled') : t('alerts.disabled') }}
+          </span>
         </div>
         <div v-if="channel.config.quietHoursEnabled" class="config-item">
           <span class="label">{{ t('alerts.doNotDisturb') }}:</span>
@@ -66,24 +72,27 @@
         size="small"
         @click="emit('configure', channel.id)"
       >
+        <el-icon class="btn-icon"><Setting /></el-icon>
         {{ t('alerts.configure') }}
       </el-button>
       <el-button
         v-if="canUpdate"
-        type="primary"
+        type="success"
         link
         size="small"
         @click="emit('test', channel.id)"
       >
+        <el-icon class="btn-icon"><Promotion /></el-icon>
         {{ t('common.test') }}
       </el-button>
     </div>
-  </el-card>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Setting, Promotion } from '@element-plus/icons-vue'
 import type { NotificationChannel } from '@/stores/alerts'
 import {
   CHANNEL_TYPE_ICONS,
@@ -124,56 +133,85 @@ const systemNotifyLevelLabels = computed(() => {
   const levels: AlertLevel[] = props.channel.config.notifyLevels ?? []
   return levels.map((l) => t(ALERT_LEVEL_LABEL_KEYS[l] ?? '') || l).join('、')
 })
+
+/** 截断长 URL */
+const truncateUrl = (url: string) => {
+  if (!url) return ''
+  return url.length > 40 ? url.slice(0, 37) + '...' : url
+}
 </script>
 
 <style scoped>
 .channel-card {
-  margin-bottom: 16px;
-  height: 100%;
-}
-
-.channel-card :deep(.el-card__body) {
+  background: var(--el-bg-color);
+  border-radius: 12px;
+  border: 1px solid var(--el-border-color-light);
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  gap: 12px;
+  transition: all 0.2s ease;
 }
 
+.channel-card:hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.channel-card.disabled {
+  opacity: 0.65;
+}
+
+/* ========== 头部 ========== */
 .channel-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
 }
 
 .channel-icon {
-  width: 40px;
-  height: 40px;
-  background: var(--bg-hover);
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.channel-icon.email {
+  background: var(--el-color-primary-light-9);
+}
+
+.channel-icon.webhook {
+  background: var(--el-color-success-light-9);
+}
+
+.channel-icon.system {
+  background: var(--el-color-warning-light-9);
 }
 
 .channel-info {
   flex: 1;
+  min-width: 0;
 }
 
 .channel-name {
+  font-size: 15px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--el-text-color-primary);
   margin-bottom: 4px;
 }
 
+/* ========== 配置区 ========== */
 .channel-config {
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
   padding: 12px;
-  background: var(--bg-hover);
-  border-radius: 6px;
-  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
 }
 
@@ -181,22 +219,55 @@ const systemNotifyLevelLabels = computed(() => {
   display: flex;
   gap: 8px;
   font-size: 13px;
+  line-height: 1.5;
 }
 
 .config-item .label {
-  color: var(--text-secondary);
-  min-width: 70px;
+  color: var(--el-text-color-secondary);
+  min-width: 80px;
+  flex-shrink: 0;
 }
 
 .config-item .value {
-  color: var(--text-primary);
+  color: var(--el-text-color-primary);
+  word-break: break-all;
 }
 
+.config-item .value.enabled {
+  color: var(--el-color-success);
+}
+
+/* ========== 底部操作 ========== */
 .channel-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid var(--border-base);
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.btn-icon {
+  margin-right: 4px;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .channel-card {
+    padding: 14px;
+  }
+
+  .channel-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .config-item {
+    font-size: 12px;
+  }
+
+  .config-item .label {
+    min-width: 70px;
+  }
 }
 </style>

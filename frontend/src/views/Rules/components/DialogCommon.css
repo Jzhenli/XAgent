@@ -1,0 +1,80 @@
+.x-message-box {
+  background-color: var(--bg-modal) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  border: 1px solid var(--border-base) !important;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.28),
+    0 8px 24px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  vertical-align: middle;
+}
+
+.x-message-box .el-message-box__header {
+  background-color: var(--bg-card) !important;
+  padding: 16px 20px !important;
+}
+
+.x-message-box .el-message-box__title {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.x-message-box .el-message-box__headerbtn {
+  top: 16px;
+  right: 16px;
+}
+
+.x-message-box .el-message-box__headerbtn .el-message-box__close {
+  color: var(--text-secondary);
+}
+
+.x-message-box .el-message-box__headerbtn .el-message-box__close:hover {
+  color: var(--color-primary);
+}
+
+.x-message-box .el-message-box__content {
+  background-color: var(--bg-card) !important;
+  padding: 20px !important;
+  color: var(--text-primary);
+}
+
+.x-message-box .el-message-box__status {
+  color: var(--color-primary) !important;
+}
+
+.x-message-box .el-message-box__btns {
+  background-color: var(--bg-card) !important;
+  padding: 14px 20px !important;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.x-message-box .el-message-box__btns .el-button {
+  transition: all 0.2s !important;
+}
+
+.x-message-box .el-message-box__btns .el-button:not(.el-button--primary) {
+  background-color: var(--el-button-bg-color) !important;
+  border-color: var(--el-button-border-color) !important;
+  color: var(--text-regular) !important;
+}
+
+.x-message-box .el-message-box__btns .el-button:not(.el-button--primary):hover {
+  background-color: var(--el-button-hover-bg-color) !important;
+  border-color: var(--el-color-primary) !important;
+  color: var(--color-primary) !important;
+}
+
+.x-message-box .el-message-box__btns .el-button--primary {
+  background-color: rgba(102, 102, 255, 1) !important;
+  border-color: rgba(102, 102, 255, 1) !important;
+  color: #fff !important;
+}
+
+.x-message-box .el-message-box__btns .el-button--primary:hover {
+  background-color: rgba(102, 102, 255, 0.88) !important;
+  border-color: rgba(102, 102, 255, 0.88) !important;
+}

@@ -1,26 +1,29 @@
 <template>
   <div class="channels-section">
-    <el-row :gutter="20">
-      <el-col
+    <div v-if="channels.length === 0" class="empty-channels">
+      <el-empty :description="t('alerts.noChannels')">
+        <template #image>
+          <div class="empty-icon">🔔</div>
+        </template>
+      </el-empty>
+    </div>
+
+    <div v-else class="channel-grid">
+      <ChannelCard
         v-for="channel in channels"
         :key="channel.id"
-        :span="channelColSpan"
-      >
-        <ChannelCard
-          :channel="channel"
-          :can-update="canUpdate"
-          @toggle="emit('toggle', $event)"
-          @configure="emit('configure', $event)"
-          @test="emit('test', $event)"
-        />
-      </el-col>
-    </el-row>
+        :channel="channel"
+        :can-update="canUpdate"
+        @toggle="emit('toggle', $event)"
+        @configure="emit('configure', $event)"
+        @test="emit('test', $event)"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useResponsive } from '@/utils/useResponsive'
+import { useI18n } from 'vue-i18n'
 import type { NotificationChannel } from '@/stores/alerts'
 import ChannelCard from './ChannelCard.vue'
 
@@ -37,18 +40,47 @@ const emit = defineEmits<{
   (e: 'test', id: string): void
 }>()
 
-const { isTablet, isMobile } = useResponsive()
-
-/** 响应式列宽 (移动端满宽 / 平板半宽 / 桌面三分之一) */
-const channelColSpan = computed(() => {
-  if (isMobile.value) return 24
-  if (isTablet.value) return 12
-  return 8
-})
+const { t } = useI18n()
 </script>
 
 <style scoped>
 .channels-section {
-  padding: 16px 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.channel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  padding-bottom: 16px;
+}
+
+.empty-channels {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 300px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 1200px) {
+  .channel-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .channel-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 </style>

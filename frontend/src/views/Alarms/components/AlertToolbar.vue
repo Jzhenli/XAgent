@@ -43,9 +43,16 @@
     <!-- 右侧: 刷新 / 清除已解决 -->
     <div class="toolbar-right">
       <el-button :loading="loading" @click="emit('refresh')">
+        <el-icon class="refresh-icon"><Refresh /></el-icon>
         {{ t('common.refresh') }}
       </el-button>
-      <el-button v-if="canDelete" type="danger" @click="emit('clearAll')">
+      <el-button
+        v-if="canDelete"
+        type="danger"
+        plain
+        @click="emit('clearAll')"
+      >
+        <el-icon><Delete /></el-icon>
         {{ t('alerts.clearResolved') }}
       </el-button>
     </div>
@@ -54,7 +61,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Refresh, Delete } from '@element-plus/icons-vue'
 import {
   ALERT_LEVEL_FILTER_OPTIONS,
   ALERT_STATUS_FILTER_OPTIONS,
@@ -89,21 +96,53 @@ const { t } = useI18n()
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
   margin-bottom: 16px;
+  background: var(--el-bg-color);
+  border-radius: 12px;
+  border: 1px solid var(--el-border-color-light);
 }
 
 .toolbar-left {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
 .toolbar-search {
-  width: 250px;
+  width: 280px;
+}
+
+.toolbar-search :deep(.el-input__wrapper) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--el-border-color) !important;
+  border-radius: 0 !important;
+}
+
+.toolbar-search :deep(.el-input__wrapper:hover),
+.toolbar-search :deep(.el-input__wrapper.is-focus) {
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--el-color-primary) !important;
 }
 
 .toolbar-filter {
-  width: 120px;
+  width: 140px;
+}
+
+.toolbar-filter :deep(.el-select__wrapper) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--el-border-color) !important;
+  border-radius: 0 !important;
+}
+
+.toolbar-filter :deep(.el-select__wrapper:hover),
+.toolbar-filter :deep(.el-select__wrapper.is-focused) {
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--el-color-primary) !important;
 }
 
 .toolbar-right {
@@ -111,23 +150,46 @@ const { t } = useI18n()
   gap: 8px;
 }
 
+.refresh-icon {
+  margin-right: 4px;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 1200px) {
+  .toolbar-search {
+    width: 220px;
+  }
+}
+
 @media (max-width: 1024px) {
   .toolbar-search {
-    width: 200px;
+    width: 180px;
   }
 
   .toolbar-filter {
-    width: 110px;
+    width: 120px;
   }
 }
 
 @media (max-width: 768px) {
+  .toolbar {
+    padding: 10px 12px;
+  }
+
   .toolbar-search {
     width: 100%;
+    order: 1;
   }
 
   .toolbar-filter {
     width: 100%;
+    order: 2;
+  }
+
+  .toolbar-right {
+    order: 3;
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 </style>

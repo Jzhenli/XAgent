@@ -144,6 +144,8 @@
   --rule-meta-label-color: #7f8c8d;
   --rule-meta-value-color: #2c3e50;
   --rule-loading-color: #7f8c8d;
+  --rule-switch-on-color: rgba(102, 102, 255, 1);
+  --rule-switch-off-color: rgba(0, 0, 0, 0.25);
 
   /* 设置页 */
   --settings-toolbar-bg: #fff;
@@ -419,6 +421,8 @@
   --rule-meta-label-color: #a3a6ad;
   --rule-meta-value-color: #e4e7ed;
   --rule-loading-color: #a3a6ad;
+  --rule-switch-on-color: rgba(102, 102, 255, 1);
+  --rule-switch-off-color: rgba(255, 255, 255, 0.25);
 
   /* 设置页（深色模式） */
   --settings-toolbar-bg: #16213e;

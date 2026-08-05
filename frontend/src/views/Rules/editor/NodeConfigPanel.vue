@@ -20,7 +20,6 @@
             clearable
             value-key="asset"
             style="width: 100%"
-            @change="updateData"
           >
             <el-option
               v-for="device in triggerDevices"
@@ -294,7 +293,6 @@
             clearable
             value-key="asset"
             style="width: 100%"
-            @change="updateData"
           >
             <el-option
               v-for="device in actionDevices"
@@ -331,7 +329,6 @@
               clearable
               :disabled="!selectedActionDevice"
               style="width: 100%"
-              @change="updateData"
             >
               <el-option
                 v-for="point in actionPoints"
@@ -352,7 +349,6 @@
               v-model="actionValue"
               type="text"
               placeholder="e.g. true / 1 / 25.5"
-              @input="updateData"
             >
           </div>
         </template>
@@ -424,7 +420,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { RuleNodeData, NodeType } from '@/types/rule'
 import { OPERATORS, LOGIC_OPERATORS, SCHEDULE_MODES, SCHEDULE_FREQUENCIES, WEEKDAYS, NOTIFICATION_LEVELS } from '@/types/rule'
@@ -454,12 +450,17 @@ const alertStore = useAlertStore()
 /** 本地副本数据（编辑期间暂存，作为唯一数据源） */
 const localData = ref<RuleNodeData>(JSON.parse(JSON.stringify(props.nodeData || {})))
 
-/** 已启用的通知渠道列表 */
+/** 规则引擎支持的通知渠道类型 */
+type SupportedNotificationChannel = 'email' | 'webhook' | 'system'
+
+const SUPPORTED_NOTIFICATION_CHANNELS: SupportedNotificationChannel[] = ['email', 'webhook', 'system']
+
+/** 已启用且受规则引擎支持的通知渠道列表 */
 const availableChannels = computed(() => {
   return alertStore.channels
-    .filter(channel => channel.enabled)
+    .filter(channel => channel.enabled && SUPPORTED_NOTIFICATION_CHANNELS.includes(channel.type as SupportedNotificationChannel))
     .map(channel => ({
-      value: channel.type,
+      value: channel.type as SupportedNotificationChannel,
       label: channel.name,
       disabled: false
     }))
@@ -504,7 +505,7 @@ const ensureNodeData = () => {
   }
   if (props.nodeType === 'notification' && !localData.value.notification) {
     // 先设置结构，渠道默认值在渠道加载完成后异步设置
-    localData.value.notification = { channel_type: '', level: 'warning' }
+    localData.value.notification = { channel_type: 'system', level: 'warning' }
   }
 }
 

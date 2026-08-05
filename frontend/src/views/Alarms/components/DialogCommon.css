@@ -1,21 +1,56 @@
 /**
  * Alarms 模块通用弹框样式
  * 所有通知渠道配置弹框均使用 class="system-config-form" 以统一表单视觉风格。
- * 样式按 "分隔线 → 表单控件 → 辅助文字" 分层组织。
+ * 样式按 "分隔线 → 表单控件 → 辅助文字 → 对话框整体" 分层组织。
  */
 
-/* ========== 分隔线 ========== */
+/* ========== 对话框整体样式 ========== */
+.el-dialog {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.el-dialog__header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.el-dialog__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.el-dialog__body {
+  padding: 20px 24px;
+}
+
+.el-dialog__footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+/* ========== 表单样式 ========== */
+.system-config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 分隔线 */
 .system-config-form .el-divider {
-  margin: 20px 0 16px;
+  margin: 16px 0 12px;
 }
 
 .system-config-form .el-divider__text {
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--el-text-color-secondary);
   font-weight: 500;
+  background: var(--el-bg-color);
+  padding: 0 8px;
 }
 
-/* ========== 表单控件宽度统一 ========== */
+/* 表单控件宽度统一 */
 .system-config-form .el-input-number,
 .system-config-form .el-time-select {
   width: 160px;
@@ -23,14 +58,77 @@
 
 .system-config-form .el-checkbox-group {
   display: flex;
-  gap: 16px;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
-/* ========== 辅助提示文字 ========== */
+/* 表单项 */
+.system-config-form .el-form-item {
+  margin-bottom: 16px;
+}
+
+.system-config-form .el-form-item__label {
+  font-weight: 500;
+  color: var(--el-text-color-regular);
+}
+
+/* 辅助提示文字 */
 .form-item-hint {
   display: block;
   font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.4;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
   margin-top: 4px;
+}
+
+/* ========== 输入框样式 ========== */
+.system-config-form .el-input__wrapper,
+.system-config-form .el-textarea__inner {
+  border-radius: 8px;
+}
+
+/* ========== Select 样式 ========== */
+.system-config-form .el-select {
+  width: 100%;
+}
+
+/* ========== Switch 样式 ========== */
+.system-config-form .el-switch {
+  --el-switch-on-color: rgba(102, 102, 255, 1);
+}
+
+/* ========== Footer 按钮 ========== */
+.el-dialog__footer .el-button {
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 500;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .el-dialog {
+    width: 95% !important;
+    margin: 16px auto !important;
+  }
+
+  .el-dialog__header {
+    padding: 16px 20px 12px;
+  }
+
+  .el-dialog__body {
+    padding: 16px 20px;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 20px 16px;
+  }
+
+  .system-config-form .el-input-number,
+  .system-config-form .el-time-select {
+    width: 100%;
+  }
+
+  .system-config-form .el-checkbox-group {
+    gap: 12px;
+  }
 }

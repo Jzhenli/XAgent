@@ -53,23 +53,13 @@ export function useRuleManagement() {
     }
   }
 
-  /** 复制规则（深拷贝后打开编辑器） */
+  /** 复制规则 */
   const handleCopyRule = async (ruleId: string) => {
     try {
-      const rule = await ruleStore.getRule(ruleId)
-      if (!rule) {
-        ElMessage.warning(t('rules.ruleNotFound'))
-        return
+      const response = await ruleStore.copyRule(ruleId)
+      if (response?.success) {
+        ElMessage.success(t('rules.ruleCopied'))
       }
-
-      // 深拷贝规则数据，清除 ID 以创建新规则
-      const copiedRule = JSON.parse(JSON.stringify(rule))
-      copiedRule.name = `${copiedRule.name} ${t('rules.copySuffix')}`
-      delete copiedRule.id
-
-      await ruleStore.createRule(copiedRule)
-      ElMessage.success(t('rules.ruleCopied'))
-      await ruleStore.fetchRules()
     } catch (e: any) {
       const detail = e.response?.data?.detail
       const msg = detail
@@ -84,11 +74,12 @@ export function useRuleManagement() {
     try {
       await ElMessageBox.confirm(
         t('rules.deleteConfirm', { name: name || '' }),
-        t('rules.deleteTitle'),
+        t('common.confirmDelete'),
         {
           confirmButtonText: t('common.confirm'),
           cancelButtonText: t('common.cancel'),
-          type: 'warning'
+          type: 'warning',
+          customClass: 'x-message-box'
         }
       )
     } catch {

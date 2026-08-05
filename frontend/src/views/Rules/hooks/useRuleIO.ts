@@ -1,8 +1,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { useRuleStore } from '@/stores/rules'
-import type { Rule } from '@/types/rule'
+import { useRuleStore, type RuleViewItem } from '@/stores/rules'
 
 export function useRuleIO() {
   const { t } = useI18n()
@@ -13,7 +12,7 @@ export function useRuleIO() {
   // ==================== 导出 ====================
 
   /** 导出选中的规则为 JSON 文件 */
-  const handleExportRules = async (selectedRules: Rule[]) => {
+  const handleExportRules = async (selectedRules: RuleViewItem[]) => {
     if (selectedRules.length === 0) {
       ElMessage.warning(t('rules.noRulesToExport'))
       return
