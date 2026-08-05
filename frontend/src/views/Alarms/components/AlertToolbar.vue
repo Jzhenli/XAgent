@@ -154,6 +154,18 @@ const { t } = useI18n()
   margin-right: 4px;
 }
 
+.toolbar-right .el-button:hover {
+  background-color: var(--el-button-bg-color) !important;
+  border-color: var(--el-button-border-color) !important;
+  color: var(--el-text-color-regular) !important;
+}
+
+.toolbar-right .el-button--danger:hover {
+  background-color: var(--el-color-danger-light-9) !important;
+  border-color: var(--el-color-danger-light-5) !important;
+  color: var(--el-color-danger) !important;
+}
+
 /* ========== 响应式 ========== */
 @media (max-width: 1200px) {
   .toolbar-search {

@@ -378,23 +378,36 @@
       <template v-if="nodeType === 'notification' && localData.notification">
         <div class="form-group">
           <label>{{ t('nodeConfig.notificationLevel') }}</label>
-          <select v-model="localData.notification.level" @change="updateData">
-            <option v-for="lv in NOTIFICATION_LEVELS" :key="lv.value" :value="lv.value">
-              {{ t(lv.labelKey) }}
-            </option>
-          </select>
+          <el-select
+            v-model="localData.notification.level"
+            :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.notificationLevel') })"
+            style="width: 100%"
+            @change="updateData"
+          >
+            <el-option
+              v-for="lv in NOTIFICATION_LEVELS"
+              :key="lv.value"
+              :label="t(lv.labelKey)"
+              :value="lv.value"
+            />
+          </el-select>
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.notificationChannel') }}</label>
-          <select
+          <el-select
             v-model="localData.notification.channel_type"
-            @change="updateData"
+            :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.notificationChannel') })"
+            style="width: 100%"
             :disabled="notificationChannelTypes.length === 0"
+            @change="updateData"
           >
-            <option v-for="ct in notificationChannelTypes" :key="ct.value" :value="ct.value">
-              {{ ct.label }}
-            </option>
-          </select>
+            <el-option
+              v-for="ct in notificationChannelTypes"
+              :key="ct.value"
+              :label="ct.label"
+              :value="ct.value"
+            />
+          </el-select>
           <div v-if="notificationChannelTypes.length === 0" class="warning-hint">
             💡 {{ t('nodeConfig.noAvailableChannels') }}
           </div>

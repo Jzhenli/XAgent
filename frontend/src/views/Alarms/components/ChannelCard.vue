@@ -250,6 +250,12 @@ const truncateUrl = (url: string) => {
   margin-right: 4px;
 }
 
+.channel-footer .el-button:hover {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: inherit !important;
+}
+
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
   .channel-card {

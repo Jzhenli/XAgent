@@ -1538,7 +1538,8 @@
     "points": "点位",
     "pointsLabel": "点位",
     "to": "至",
-    "deleteNode": "删除节点"
+    "deleteNode": "删除节点",
+    "noAvailableChannels": "暂无可用通知渠道"
   },
   "scadaContextMenu": {
     "copy": "复制",

@@ -147,7 +147,7 @@ const getStatusTag = (status: AlertStatus) =>
   flex: 1;
   overflow: auto;
   border-radius: 12px;
-  background: var(--el-bg-color);
+  background: transparent;
   border: 1px solid var(--el-border-color-light);
 }
 
@@ -196,6 +196,12 @@ const getStatusTag = (status: AlertStatus) =>
 .action-buttons .el-button {
   padding: 4px 8px;
   font-size: 13px;
+}
+
+.action-buttons .el-button:hover {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: inherit !important;
 }
 
 /* ========== 空状态 ========== */

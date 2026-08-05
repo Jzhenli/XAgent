@@ -104,6 +104,18 @@
   font-weight: 500;
 }
 
+.el-dialog__footer .el-button:hover {
+  background-color: var(--el-button-bg-color) !important;
+  border-color: var(--el-button-border-color) !important;
+  color: var(--el-text-color-regular) !important;
+}
+
+.el-dialog__footer .el-button--primary:hover {
+  background-color: var(--el-color-primary) !important;
+  border-color: var(--el-color-primary) !important;
+  color: #fff !important;
+}
+
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
   .el-dialog {

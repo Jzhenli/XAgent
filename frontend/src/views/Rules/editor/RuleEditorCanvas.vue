@@ -16,7 +16,7 @@
       </div>
       <div class="toolbar-right">
         <span class="node-count">{{ t('ruleEditor.nodeCount') }}: {{ nodes.length }} | {{ t('ruleEditor.edgeCount') }}: {{ edges.length }}</span>
-        <el-button @click="handleClear" :disabled="loading || saving">{{ t('ruleEditor.clear') }}</el-button>
+        <el-button class="clear-btn" @click="handleClear" :disabled="loading || saving">{{ t('ruleEditor.clear') }}</el-button>
         <el-button type="primary" :disabled="saving" :loading="saving" @click="handleSave">
           {{ saving ? t('ruleEditor.saving') : t('ruleEditor.save') }}
         </el-button>
@@ -456,6 +456,12 @@ onBeforeUnmount(() => {
 .node-count {
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.clear-btn:hover {
+  background-color: var(--el-button-bg-color) !important;
+  border-color: var(--el-button-border-color) !important;
+  color: var(--el-text-color-regular) !important;
 }
 
 .editor-loading {

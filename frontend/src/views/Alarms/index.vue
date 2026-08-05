@@ -271,7 +271,7 @@ onMounted(async () => {
 }
 
 .tab-item:hover {
-  background: var(--el-fill-color);
+  background: transparent;
 }
 
 .tab-item.active {
