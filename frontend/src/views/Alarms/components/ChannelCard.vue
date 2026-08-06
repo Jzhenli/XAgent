@@ -143,9 +143,9 @@ const truncateUrl = (url: string) => {
 
 <style scoped>
 .channel-card {
-  background: var(--el-bg-color);
+  background: var(--bg-card);
   border-radius: 12px;
-  border: 1px solid var(--el-border-color-light);
+  border: 1px solid var(--border-base);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -154,8 +154,8 @@ const truncateUrl = (url: string) => {
 }
 
 .channel-card:hover {
-  border-color: var(--el-color-primary-light-5);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-hover);
 }
 
 .channel-card.disabled {
@@ -181,15 +181,15 @@ const truncateUrl = (url: string) => {
 }
 
 .channel-icon.email {
-  background: var(--el-color-primary-light-9);
+  background: var(--color-primary-light);
 }
 
 .channel-icon.webhook {
-  background: var(--el-color-success-light-9);
+  background: var(--color-success-light);
 }
 
 .channel-icon.system {
-  background: var(--el-color-warning-light-9);
+  background: var(--color-warning-light);
 }
 
 .channel-info {
@@ -200,13 +200,13 @@ const truncateUrl = (url: string) => {
 .channel-name {
   font-size: 15px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 /* ========== 配置区 ========== */
 .channel-config {
-  background: var(--el-fill-color-light);
+  background: var(--bg-card-s);
   border-radius: 8px;
   padding: 12px;
   display: flex;
@@ -223,18 +223,18 @@ const truncateUrl = (url: string) => {
 }
 
 .config-item .label {
-  color: var(--el-text-color-secondary);
+  color: var(--text-secondary);
   min-width: 80px;
   flex-shrink: 0;
 }
 
 .config-item .value {
-  color: var(--el-text-color-primary);
+  color: var(--text-primary);
   word-break: break-all;
 }
 
 .config-item .value.enabled {
-  color: var(--el-color-success);
+  color: var(--color-success);
 }
 
 /* ========== 底部操作 ========== */
@@ -243,7 +243,7 @@ const truncateUrl = (url: string) => {
   justify-content: flex-end;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid var(--el-border-color-lighter);
+  border-top: 1px solid var(--border-light);
 }
 
 .btn-icon {
