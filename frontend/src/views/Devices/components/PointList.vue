@@ -90,14 +90,10 @@
           </template>
         </el-table-column>
         <!-- 数据类型列 -->
-        <el-table-column :label="t('devices.dataType')">
-          <template #default="{ row }">
-            <el-tag
-              size="small"
-              :type="getDataTypeTagType(row.data_type)"
-            >{{ row.data_type }}</el-tag>
-          </template>
-        </el-table-column>
+        <el-table-column
+          prop="data_type"
+          :label="t('devices.dataType')"
+        />
         <!-- 质量状态列：good(绿) / bad(红) / unknown(黄) -->
         <el-table-column :label="t('devices.quality')">
           <template #default="{ row }">
@@ -265,43 +261,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const userStore = useUserStore();
-
-/**
- * 根据数据类型返回对应的 el-tag 类型（用于彩色显示）
- */
-function getDataTypeTagType(dataType: string): "" | "success" | "warning" | "danger" | "info" {
-  if (!dataType) return "";
-
-  // 整数类型 → 绿色
-  if (/^(u?int(16|32|64)?)$/.test(dataType)) return "success";
-
-  // 物理量 / 模拟量 → 绿色
-  const physicalTypes = [
-    "temperature", "humidity", "voltage", "current", "power", "energy",
-    "co2", "brightness", "dimming", "blinds", "percent",
-    "analogInput", "analogOutput", "analogValue",
-  ];
-  if (physicalTypes.includes(dataType)) return "success";
-
-  // 浮点类型 → 黄色
-  if (/^float/.test(dataType)) return "warning";
-
-  // 多状态类型 → 黄色
-  if (dataType.startsWith("multiState")) return "warning";
-
-  // 布尔 / 二进制 / 开关 → 红色
-  const binaryTypes = [
-    "bool", "binary", "switch",
-    "binaryInput", "binaryOutput", "binaryValue",
-  ];
-  if (binaryTypes.includes(dataType)) return "danger";
-
-  // 字符串 / 场景 / 颜色 → 蓝色
-  const stringLikeTypes = ["string", "scene", "color_rgb"];
-  if (stringLikeTypes.includes(dataType)) return "info";
-
-  return "";
-}
 </script>
 
 <style scoped>
@@ -497,36 +456,32 @@ function getDataTypeTagType(dataType: string): "" | "success" | "warning" | "dan
 }
 
 /* ========== el-tag 样式优化 ========== */
-/* 默认标签（无类型）：中性灰色 */
-.point-list :deep(.el-tag:not(.el-tag--success):not(.el-tag--danger):not(.el-tag--warning):not(.el-tag--info)) {
-  background: var(--bg-hover) !important;
-  border-color: var(--border-light) !important;
-  color: var(--text-regular) !important;
+/* 所有标签：去除边框，字体颜色与其他列保持一致，自动适配深浅色主题 */
+.point-list :deep(.el-tag) {
+  border-color: transparent !important;
+  color: rgba(255, 255, 255, 1) !important;
 }
 
-/* 有类型标签：使用主题变量，自动适配深浅色 */
+/* 默认标签（无类型）：中性背景 */
+.point-list :deep(.el-tag:not(.el-tag--success):not(.el-tag--danger):not(.el-tag--warning):not(.el-tag--info)) {
+  background: var(--bg-hover) !important;
+}
+
+/* 有类型标签：纯色背景，使用主题变量自动适配深浅色 */
 .point-list :deep(.el-tag--success) {
   background: var(--color-success-light) !important;
-  border-color: var(--color-success) !important;
-  color: var(--color-success) !important;
 }
 
 .point-list :deep(.el-tag--danger) {
   background: var(--color-danger-light) !important;
-  border-color: var(--color-danger) !important;
-  color: var(--color-danger) !important;
 }
 
 .point-list :deep(.el-tag--warning) {
   background: var(--color-warning-light) !important;
-  border-color: var(--color-warning) !important;
-  color: var(--color-warning) !important;
 }
 
 .point-list :deep(.el-tag--info) {
   background: var(--color-info-light) !important;
-  border-color: var(--color-info) !important;
-  color: var(--color-info) !important;
 }
 
 /* ========== el-button 样式优化 ========== */
