@@ -31,7 +31,6 @@
               <Icon
                 :name="item.icon"
                 :size="28"
-                type="mono-filled"
                 :color="{ normal: 'white' }"
               />
             
