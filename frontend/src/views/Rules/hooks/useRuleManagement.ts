@@ -16,15 +16,24 @@ export function useRuleManagement() {
   const showEditor = ref(false)
   const currentRuleId = ref<string | null>(null)
 
+  /** 编辑器实例 Key，用于强制重建组件，确保每次打开都是全新状态 */
+  const editorKey = ref(0)
+
   /** 打开编辑器（新建或编辑） */
   const openEditor = (ruleId?: string) => {
     currentRuleId.value = ruleId ?? null
+    editorKey.value++
     showEditor.value = true
   }
 
   /** 关闭编辑器并重置状态 */
   const closeEditor = () => {
     showEditor.value = false
+    currentRuleId.value = null
+  }
+
+  /** 抽屉关闭动画结束后重置状态 */
+  const handleDrawerClosed = () => {
     currentRuleId.value = null
   }
 
@@ -128,8 +137,10 @@ export function useRuleManagement() {
   return {
     showEditor,
     currentRuleId,
+    editorKey,
     openEditor,
     closeEditor,
+    handleDrawerClosed,
     handleToggleRule,
     handleCopyRule,
     handleDeleteRule,

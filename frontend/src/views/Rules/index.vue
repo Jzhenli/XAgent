@@ -39,8 +39,10 @@
       :with-header="true"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
+      @closed="handleDrawerClosed"
     >
       <RuleEditorCanvas
+        :key="editorKey"
         :rule-id="currentRuleId"
         @close="closeEditor"
         @saved="handleEditorSaved"
@@ -103,8 +105,10 @@ const filteredRules = computed(() => {
 const {
   showEditor,
   currentRuleId,
+  editorKey,
   openEditor,
   closeEditor,
+  handleDrawerClosed,
   handleEditorSaved,
   handleToggleRule,
   handleCopyRule,
