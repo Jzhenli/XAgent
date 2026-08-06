@@ -1,122 +1,251 @@
 /**
  * Alarms 模块通用弹框样式
- * 所有通知渠道配置弹框均使用 class="system-config-form" 以统一表单视觉风格。
- * 样式按 "分隔线 → 表单控件 → 辅助文字 → 对话框整体" 分层组织。
+ * 所有通知渠道配置弹框均应添加 class="x-dialog" 以统一视觉风格。
+ * 样式按"容器 → 头部/主体/底部 → 表单控件 → 按钮 → 辅助文字"分层组织。
  */
 
-/* ========== 对话框整体样式 ========== */
-.el-dialog {
-  border-radius: 16px;
+/* ========== 弹框容器 ========== */
+.x-dialog {
+  background-color: var(--bg-modal) !important;
+  border-radius: 16px !important;
   overflow: hidden;
+  border: 1px solid var(--border-base) !important;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.28),
+    0 8px 24px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.08) !important;
 }
 
-.el-dialog__header {
+/* 弹框头部：统一背景与标题样式 */
+.x-dialog .el-dialog__header {
+  background-color: var(--bg-card) !important;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  margin-right: 0;
+  border-bottom: 1px solid var(--border-light);
 }
 
-.el-dialog__title {
+.x-dialog .el-dialog__title {
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
 }
 
-.el-dialog__body {
+/* 弹框主体 */
+.x-dialog .el-dialog__body {
+  background-color: var(--bg-card) !important;
   padding: 20px 24px;
+  color: var(--text-primary);
 }
 
-.el-dialog__footer {
+/* 弹框底部：右对齐按钮组 */
+.x-dialog .el-dialog__footer {
+  background-color: var(--bg-card) !important;
   padding: 16px 24px 20px;
-  border-top: 1px solid var(--el-border-color-lighter);
-}
-
-/* ========== 表单样式 ========== */
-.system-config-form {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid var(--border-light);
 }
 
-/* 分隔线 */
-.system-config-form .el-divider {
-  margin: 16px 0 12px;
-}
-
-.system-config-form .el-divider__text {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
+/* ========== 表单标签 ========== */
+.x-dialog .el-form-item__label {
+  color: var(--text-regular);
+  text-align: left !important;
   font-weight: 500;
-  background: var(--el-bg-color);
-  padding: 0 8px;
 }
 
-/* 表单控件宽度统一 */
-.system-config-form .el-input-number,
-.system-config-form .el-time-select {
-  width: 160px;
+.x-dialog .el-form-item.is-required .el-form-item__label::before {
+  color: var(--color-danger);
 }
 
-.system-config-form .el-checkbox-group {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
+/* ========== 下拉菜单内容 ========== */
+.x-dialog .el-select-dropdown,
+.x-dialog .el-dropdown__popper .el-dropdown-menu,
+.x-dialog .el-dropdown__popper.el-popper.is-light {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-base) !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* 表单项 */
-.system-config-form .el-form-item {
-  margin-bottom: 16px;
+.x-dialog .el-select-dropdown__item,
+.x-dialog .el-dropdown-menu__item {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.07);
 }
 
-.system-config-form .el-form-item__label {
-  font-weight: 500;
-  color: var(--el-text-color-regular);
+.x-dialog .el-select-dropdown__item.hover,
+.x-dialog .el-select-dropdown__item:hover,
+.x-dialog .el-dropdown-menu__item:hover {
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
-/* 辅助提示文字 */
-.form-item-hint {
-  display: block;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.5;
-  margin-top: 4px;
+.x-dialog .el-select-dropdown__item.selected {
+  color: var(--color-primary);
 }
 
-/* ========== 输入框样式 ========== */
-.system-config-form .el-input__wrapper,
-.system-config-form .el-textarea__inner {
-  border-radius: 8px;
+.x-dialog .el-dropdown__popper .el-popper__arrow::before {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-base) !important;
 }
 
-/* ========== Select 样式 ========== */
-.system-config-form .el-select {
-  width: 100%;
+/* ========== 文本输入框 / 下拉框 / 文本域 ========== */
+.x-dialog .el-input__wrapper,
+.x-dialog .el-select__wrapper,
+.x-dialog .el-textarea__wrapper {
+  box-shadow: none !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-base) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  transition: border-color 0.2s;
 }
 
-/* ========== Switch 样式 ========== */
-.system-config-form .el-switch {
-  --el-switch-on-color: rgba(102, 102, 255, 1);
+.x-dialog .el-input__wrapper.is-focus,
+.x-dialog .el-select.is-focused .el-select__wrapper,
+.x-dialog .el-textarea__wrapper.is-focus {
+  border-bottom-color: var(--color-primary) !important;
 }
 
-/* ========== Footer 按钮 ========== */
-.el-dialog__footer .el-button {
+.x-dialog .el-input__inner,
+.x-dialog .el-textarea__inner {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.x-dialog .el-input__inner::placeholder,
+.x-dialog .el-textarea__inner::placeholder {
+  color: var(--text-placeholder);
+}
+
+.x-dialog .el-input__wrapper.is-disabled,
+.x-dialog .el-textarea.is-disabled .el-textarea__wrapper {
+  background: transparent !important;
+}
+
+/* ========== 数字输入框 ========== */
+.x-dialog .el-input-number {
+  border: 1px solid var(--border-base) !important;
+  border-radius: 4px !important;
+  background: var(--bg-card) !important;
+}
+
+.x-dialog .el-input-number .el-input__wrapper {
+  border: none !important;
+  background: transparent !important;
+}
+
+.x-dialog .el-input-number__decrease,
+.x-dialog .el-input-number__increase {
+  background: var(--bg-card) !important;
+  border-color: var(--border-base) !important;
+  color: var(--text-secondary) !important;
+}
+
+.x-dialog .el-input-number__decrease:hover,
+.x-dialog .el-input-number__increase:hover {
+  color: var(--color-primary) !important;
+}
+
+/* ========== 单选框 / 开关 ========== */
+.x-dialog .el-radio__input.is-checked .el-radio__inner {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.x-dialog .el-radio__input.is-checked + .el-radio__label {
+  color: var(--color-primary);
+}
+
+.x-dialog .el-switch.is-checked .el-switch__core {
+  background-color: rgba(102, 102, 255, 1);
+  border-color: rgba(102, 102, 255, 1);
+}
+
+/* ========== 按钮 ========== */
+.x-dialog .el-button {
+  transition: all 0.2s !important;
+}
+
+.x-dialog .el-button:not(.el-button--primary) {
+  background-color: var(--el-button-bg-color) !important;
+  border-color: var(--el-button-border-color) !important;
+  color: var(--text-regular) !important;
   border-radius: 8px;
   padding: 10px 20px;
   font-weight: 500;
 }
 
-.el-dialog__footer .el-button:hover {
-  background-color: var(--el-button-bg-color) !important;
-  border-color: var(--el-button-border-color) !important;
-  color: var(--el-text-color-regular) !important;
+.x-dialog .el-button:not(.el-button--primary):hover {
+  background-color: var(--el-button-hover-bg-color) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
 }
 
-.el-dialog__footer .el-button--primary:hover {
-  background-color: var(--el-color-primary) !important;
-  border-color: var(--el-color-primary) !important;
+.x-dialog .el-button--primary {
+  background-color: rgba(102, 102, 255, 1) !important;
+  border-color: rgba(102, 102, 255, 1) !important;
   color: #fff !important;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 500;
 }
 
-/* ========== MessageBox 弹框（与设备管理模块视觉统一） ========== */
+.x-dialog .el-button--primary:hover {
+  background-color: rgba(102, 102, 255, 0.88) !important;
+  border-color: rgba(102, 102, 255, 0.88) !important;
+}
+
+/* ========== Alarms 表单专用样式 ========== */
+.x-dialog .system-config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.x-dialog .system-config-form .el-divider {
+  margin: 16px 0 12px;
+}
+
+.x-dialog .system-config-form .el-divider__text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  background: var(--bg-card);
+  padding: 0 8px;
+}
+
+.x-dialog .system-config-form .el-input-number,
+.x-dialog .system-config-form .el-time-select {
+  width: 160px;
+}
+
+.x-dialog .system-config-form .el-checkbox-group {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.x-dialog .system-config-form .el-form-item {
+  margin-bottom: 16px;
+}
+
+.x-dialog .system-config-form .el-select {
+  width: 100%;
+}
+
+/* 表单项提示文字 */
+.x-dialog .form-item-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-top: 4px;
+  margin-left: 12px;
+}
+
+/* ========== MessageBox 弹框（与 x-dialog 视觉统一） ========== */
 .x-message-box {
   background-color: var(--bg-modal) !important;
   border-radius: 16px !important;
@@ -183,7 +312,7 @@
 
 .x-message-box .el-message-box__btns .el-button:not(.el-button--primary):hover {
   background-color: var(--el-button-hover-bg-color) !important;
-  border-color: var(--el-color-primary) !important;
+  border-color: var(--color-primary) !important;
   color: var(--color-primary) !important;
 }
 
@@ -197,30 +326,32 @@
   background-color: rgba(102, 102, 255, 0.88) !important;
   border-color: rgba(102, 102, 255, 0.88) !important;
 }
+
+/* ========== 响应式 ========== */
 @media (max-width: 768px) {
-  .el-dialog {
+  .x-dialog {
     width: 95% !important;
     margin: 16px auto !important;
   }
 
-  .el-dialog__header {
+  .x-dialog .el-dialog__header {
     padding: 16px 20px 12px;
   }
 
-  .el-dialog__body {
+  .x-dialog .el-dialog__body {
     padding: 16px 20px;
   }
 
-  .el-dialog__footer {
+  .x-dialog .el-dialog__footer {
     padding: 12px 20px 16px;
   }
 
-  .system-config-form .el-input-number,
-  .system-config-form .el-time-select {
+  .x-dialog .system-config-form .el-input-number,
+  .x-dialog .system-config-form .el-time-select {
     width: 100%;
   }
 
-  .system-config-form .el-checkbox-group {
+  .x-dialog .system-config-form .el-checkbox-group {
     gap: 12px;
   }
 }

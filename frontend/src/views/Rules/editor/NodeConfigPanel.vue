@@ -536,9 +536,8 @@ watch(() => props.nodeData, (newData) => {
 
 /** 挂载时初始化设备数据，并异步设置通知渠道默认值 */
 onMounted(async () => {
-  if (deviceStore.devices.length === 0) {
-    deviceStore.fetchDevices()
-  }
+  // 始终强制获取最新设备数据，确保与设备管理页面同步
+  deviceStore.fetchDevices()
   if (alertStore.channels.length === 0) {
     await alertStore.fetchChannels()
   }
@@ -556,9 +555,9 @@ onMounted(async () => {
 
 const devices = computed<DeviceConfig[]>(() => deviceStore.devices)
 
-/** 触发器可用设备（已启用且有点位） */
+/** 触发器可用设备（已启用） */
 const triggerDevices = computed(() =>
-  devices.value.filter(d => d.enabled && d.points && d.points.length > 0)
+  devices.value.filter(d => d.enabled)
 )
 
 /** 当前选中的触发器设备 */

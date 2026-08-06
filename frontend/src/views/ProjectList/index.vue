@@ -488,7 +488,7 @@ const formatTime = (timestamp: number) => {
 }
 
 .empty-state {
-  background: var(--bg-container);
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 60px 20px;
 }

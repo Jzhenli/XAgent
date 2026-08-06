@@ -3,7 +3,6 @@
     <el-table
       :data="alerts"
       style="width: 100%"
-      stripe
       v-loading="loading"
       class="alert-table"
     >
@@ -147,7 +146,7 @@ const getStatusTag = (status: AlertStatus) =>
   flex: 1;
   overflow: auto;
   border-radius: 12px;
-  background: transparent;
+  background: var(--bg-card);
   border: 1px solid var(--el-border-color-light);
 }
 
@@ -157,37 +156,34 @@ const getStatusTag = (status: AlertStatus) =>
 
 /* ========== 表格样式 ========== */
 .alert-table :deep(.el-table__header-wrapper th) {
-  background: var(--el-fill-color-light) !important;
+  background: var(--bg-card) !important;
   color: var(--el-text-color-regular);
   font-weight: 600;
   font-size: 13px;
 }
 
 .alert-table :deep(.el-table__body-wrapper) {
-  background: var(--el-bg-color);
+  background: var(--bg-card);
 }
 
 .alert-table :deep(.el-table__body td) {
-  background: var(--el-bg-color);
-}
-
-.alert-table :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
-  background: var(--el-fill-color-blank);
+  background: var(--bg-card);
 }
 
 /* 行 hover 效果 */
 .alert-table :deep(.el-table__body tr:hover > td) {
-  background: var(--el-color-primary-light-9) !important;
+  background: var(--el-table-row-hover-bg-color) !important;
 }
 
 /* 加载状态遮罩修复 */
 .alert-table :deep(.el-loading-mask) {
-  background-color: var(--el-mask-color) !important;
+  background-color: var(--bg-card) !important;
+  opacity: 0.6;
 }
 
 /* 空状态背景修复 */
 .alert-table :deep(.el-empty) {
-  background: transparent;
+  background: var(--bg-card);
 }
 
 .alert-table :deep(.el-empty__description p) {

@@ -224,7 +224,7 @@ const formatNumber = (num?: number): string => {
   flex: 1;
   background: var(--bg-card);
   border-radius: 16px;
-  box-shadow: var(--el-box-shadow);
+  box-shadow: var(--shadow-light);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -236,7 +236,7 @@ const formatNumber = (num?: number): string => {
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
   gap: 8px;
 }
@@ -249,7 +249,7 @@ const formatNumber = (num?: number): string => {
 .panel-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  color: var(--text-primary);
 }
 
 .header-info {
@@ -263,18 +263,18 @@ const formatNumber = (num?: number): string => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--el-color-danger);
+  background: var(--color-danger);
   flex-shrink: 0;
 }
 
 .header-info .status-dot.online {
-  background: var(--el-color-success);
+  background: var(--color-success);
 }
 
 .protocol-tag {
   padding: 2px 8px;
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
   border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
@@ -292,7 +292,7 @@ const formatNumber = (num?: number): string => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--el-text-color-secondary);
+  color: var(--text-secondary);
 }
 
 .empty-details p {
@@ -320,8 +320,8 @@ const formatNumber = (num?: number): string => {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color);
+  background: var(--bg-card);
+  border: 1px solid var(--border-base);
   border-radius: 8px;
 }
 
@@ -337,23 +337,23 @@ const formatNumber = (num?: number): string => {
 }
 
 .upload-icon {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
 .success-icon {
-  background: var(--el-color-success-light-9);
-  color: var(--el-color-success);
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 
 .backlog-icon {
-  background: var(--el-color-warning-light-9);
-  color: var(--el-color-warning);
+  background: var(--color-warning-light);
+  color: var(--color-warning);
 }
 
 .total-icon {
-  background: var(--el-fill-color);
-  color: var(--el-text-color-secondary);
+  background: var(--bg-card-s);
+  color: var(--text-secondary);
 }
 
 .stat-content {
@@ -363,20 +363,20 @@ const formatNumber = (num?: number): string => {
 .stat-content .stat-value {
   font-size: 20px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
 .stat-content .stat-label {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
 .config-section {
-  background: var(--el-bg-color);
+  background: var(--bg-card);
   border-radius: 8px;
-  border: 1px solid var(--el-border-color);
+  border: 1px solid var(--border-base);
   overflow: hidden;
 }
 
@@ -384,23 +384,23 @@ const formatNumber = (num?: number): string => {
   padding: 12px 16px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--el-text-color-primary);
-  background: var(--el-fill-color-light);
-  border-bottom: 1px solid var(--el-border-color);
+  color: var(--text-primary);
+  background: var(--bg-card-s);
+  border-bottom: 1px solid var(--border-base);
 }
 
 .config-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1px;
-  background: var(--el-border-color-light);
+  background: var(--border-light);
 }
 
 .config-item {
   display: flex;
   align-items: center;
   padding: 10px 16px;
-  background: var(--el-bg-color);
+  background: var(--bg-card);
   min-height: 40px;
 }
 
@@ -412,68 +412,68 @@ const formatNumber = (num?: number): string => {
   width: 80px;
   flex-shrink: 0;
   font-size: 13px;
-  color: var(--el-text-color-secondary);
+  color: var(--text-secondary);
 }
 
 .config-value {
   flex: 1;
   font-size: 13px;
-  color: var(--el-text-color-primary);
+  color: var(--text-primary);
   word-break: break-all;
 }
 
 .config-value.code {
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 12px;
-  background: var(--el-fill-color-light);
+  background: var(--bg-card-s);
   padding: 2px 6px;
   border-radius: 4px;
 }
 
 .config-value .muted {
-  color: var(--el-text-color-secondary);
+  color: var(--text-secondary);
 }
 
 .adapter-config {
-  border-top: 1px solid var(--el-border-color);
+  border-top: 1px solid var(--border-base);
   padding: 12px 16px;
 }
 
 .adapter-config-title {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
 .json-config {
   margin: 0;
   padding: 12px;
-  background: var(--code-bg, #1e1e1e);
-  color: var(--el-text-color-primary);
+  background: var(--bg-card-s);
+  color: var(--text-primary);
   border-radius: 6px;
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 12px;
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-all;
-  border: 1px solid var(--el-border-color);
+  border: 1px solid var(--border-base);
 }
 
 .detail-collapse {
-  border: 1px solid var(--el-border-color);
+  border: 1px solid var(--border-base);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .detail-collapse :deep(.el-collapse-item__header) {
-  background: var(--el-fill-color-light);
-  border-bottom: 1px solid var(--el-border-color);
+  background: var(--bg-card-s);
+  border-bottom: 1px solid var(--border-base);
   padding: 0 16px;
   height: 42px;
   line-height: 42px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--el-text-color-primary);
+  color: var(--text-primary);
 }
 
 .detail-collapse :deep(.el-collapse-item__wrap) {
@@ -487,7 +487,7 @@ const formatNumber = (num?: number): string => {
 .description-text {
   margin: 0;
   padding: 16px;
-  color: var(--el-text-color-primary);
+  color: var(--text-primary);
   font-size: 13px;
   line-height: 1.6;
 }

@@ -5,6 +5,7 @@
     width="min(520px, 92vw)"
     :close-on-click-modal="false"
     destroy-on-close
+    class="x-dialog"
     @update:model-value="emit('update:modelValue', $event)"
   >
     <el-form
