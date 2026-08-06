@@ -27,20 +27,25 @@
             :key="item.path"
             :index="item.path"
           >
-            
-              <Icon
-                :name="item.icon"
-                :size="28"
-                :color="{ normal: 'white' }"
-              />
-            
+            <Icon
+              :name="item.icon"
+              :size="28"
+              type="mono-line"
+              :color="{ normal: 'white' }"
+            />
+
             <span style="margin-left: 14px">{{ item.title }}</span>
           </el-menu-item>
         </el-menu>
 
         <div class="aside-footer">
           <div class="collapse-btn" @click="toggleCollapse">
-            <Icon name="sidebar" type="color-white" :size="32" :color="{ normal: 'white' }" />
+            <Icon
+              name="sidebar"
+              type="color-white"
+              :size="32"
+              :color="{ normal: 'white' }"
+            />
           </div>
         </div>
       </el-aside>
@@ -71,9 +76,8 @@
             :key="item.path"
             :index="item.path"
           >
-            
-              <Icon :name="item.icon" :size="32" :color="{ normal: 'white' }" />
-           
+            <Icon :name="item.icon" :size="32" :color="{ normal: 'white' }" />
+
             <span style="margin-left: 14px">{{ item.title }}</span>
           </el-menu-item>
         </el-menu>
