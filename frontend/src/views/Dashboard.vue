@@ -71,7 +71,13 @@
         <el-col :span="statCardSpan">
           <el-card class="stat-card alert-card-highlight" shadow="hover">
             <div class="stat-icon alerts">
-              <span>🔔</span>
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none">
+                <path class="icon-path" d="M18 16v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="currentColor"/>
+                <path class="icon-wave wave-1" d="M3 12c0-1 .2-2.1.5-3.1L1.5 8.5C1 9.7.8 11 .8 12c0 1 .2 2.3.7 3.5l2-2.4c-.3-1-.5-2.1-.5-3.1z" fill="currentColor"/>
+                <path class="icon-wave wave-2" d="M21 12c0 1-.2 2.1-.5 3.1l2 2.4c.5-1.2.7-2.5.7-3.5s-.2-2.3-.7-3.5l-2 2.4c.3 1 .5 2.1.5 3.1z" fill="currentColor"/>
+              </svg>
+              <span class="icon-dot dot-1"></span>
+              <span class="icon-dot dot-2"></span>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ alertStore.pendingAlerts }}</div>
@@ -83,9 +89,16 @@
 
         <!-- 设备在线卡片 -->
         <el-col :span="statCardSpan">
-          <el-card class="stat-card" shadow="hover">
+          <el-card class="stat-card device-card" shadow="hover">
             <div class="stat-icon devices">
-              <span>📱</span>
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none">
+                <rect x="2.5" y="3.5" width="19" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                <rect x="4.5" y="5.5" width="15" height="9" rx="1" fill="currentColor" opacity="0.9"/>
+                <path d="M8 20h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M12 16.5V20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <circle class="icon-pulse" cx="12" cy="10" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+                <circle class="icon-pulse-dot" cx="12" cy="10" r="0.8" fill="currentColor"/>
+              </svg>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ deviceStore.onlineDevices }}/{{ deviceStore.totalDevices }}</div>
@@ -97,9 +110,15 @@
 
         <!-- 通道在线卡片 -->
         <el-col :span="statCardSpan">
-          <el-card class="stat-card" shadow="hover">
+          <el-card class="stat-card channel-card" shadow="hover">
             <div class="stat-icon channels">
-              <span>📤</span>
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none">
+                <path class="icon-ring ring-1" d="M12 3c4.97 0 9 4.03 9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path class="icon-ring ring-2" d="M12 6c3.31 0 6 2.69 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <circle cx="12" cy="12" r="3.5" fill="currentColor"/>
+                <path class="icon-wave wave-1" d="M5 12H3m16 0h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path class="icon-wave wave-2" d="M6.5 9.5L5 8m12.5 1.5L19 8m-12.5 5.5L5 16m12.5-2.5L19 16" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              </svg>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ channelStore.onlineChannels }}/{{ channelStore.totalChannels }}</div>
@@ -111,9 +130,14 @@
 
         <!-- 活动规则卡片 -->
         <el-col :span="statCardSpan">
-          <el-card class="stat-card" shadow="hover">
+          <el-card class="stat-card rule-card" shadow="hover">
             <div class="stat-icon rules">
-              <span>📋</span>
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none">
+                <path class="icon-bolt bolt-1" d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" fill="currentColor"/>
+                <path class="icon-bolt bolt-2" d="M18.5 2L10.5 12H16l-1.5 8 8-10H17l1.5-8z" fill="currentColor" opacity="0.5"/>
+                <path class="icon-ring ring-1" d="M4 7c1.5-2 3.5-3.5 6-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.6"/>
+                <path class="icon-ring ring-2" d="M20 17c-1.5 2-3.5 3.5-6 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.6"/>
+              </svg>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ ruleStore.activeRules }}/{{ ruleStore.totalRules }}</div>
@@ -334,6 +358,7 @@ import { useRuleStore } from '@/stores/rules'
 import { useAlertStore } from '@/stores/alerts'
 import { useSystemStore } from '@/stores/system'
 import { useChannelStore } from '@/stores/channels'
+import { useThemeStore } from '@/stores/theme'
 
 // 工具函数
 import { useResponsive } from '@/utils/useResponsive'
@@ -363,6 +388,7 @@ const ruleStore = useRuleStore()
 const alertStore = useAlertStore()
 const systemStore = useSystemStore()
 const channelStore = useChannelStore()
+const themeStore = useThemeStore()
 const { isTablet, isMobile, isSmallTablet, isMediumTablet, isLargeTablet } = useResponsive()
 
 // 数据刷新状态
@@ -462,44 +488,115 @@ const chartSummary = computed(() => {
   return { peak, average }
 })
 
-/** 图表配置对象 */
-const dataChartOption = ref({
-  tooltip: {
-    trigger: 'axis'
-  },
-  grid: {
-    left: '3%',
-    right: '4%',
-    bottom: '3%',
-    containLabel: true
-  },
-  xAxis: {
-    type: 'category',
-    boundaryGap: false,
-    data: [] as string[]
-  },
-  yAxis: {
-    type: 'value'
-  },
-  series: [{
-    name: t('dashboard.dataCollection'),
-    type: 'line',
-    smooth: true,
-    areaStyle: {
-      color: {
-        type: 'linear',
-        x: 0, y: 0, x2: 0, y2: 1,
-        colorStops: [
-          { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
-          { offset: 1, color: 'rgba(59, 130, 246, 0.05)' }
-        ]
-      }
+/** 根据当前主题获取图表配色方案 */
+function getChartColors(isDark: boolean) {
+  if (isDark) {
+    return {
+      lineStart: '#22d3ee',
+      lineEnd: '#a855f7',
+      lineShadow: 'rgba(34, 211, 238, 0.4)',
+      areaStops: [
+        { offset: 0, color: 'rgba(34, 211, 238, 0.4)' },
+        { offset: 0.5, color: 'rgba(168, 85, 247, 0.2)' },
+        { offset: 1, color: 'rgba(168, 85, 247, 0.03)' }
+      ],
+      itemColor: '#22d3ee',
+      axisLine: '#3a3a5e',
+      axisLabel: '#8d9096',
+      splitLine: 'rgba(58, 58, 94, 0.5)',
+      tooltipBg: 'rgba(22, 33, 62, 0.95)',
+      tooltipBorder: '#3a3a5e',
+      tooltipText: '#e4e7ed'
+    }
+  }
+  return {
+    lineStart: '#3498db',
+    lineEnd: '#8b5cf6',
+    lineShadow: 'rgba(52, 152, 219, 0.3)',
+    areaStops: [
+      { offset: 0, color: 'rgba(52, 152, 219, 0.35)' },
+      { offset: 0.5, color: 'rgba(139, 92, 246, 0.15)' },
+      { offset: 1, color: 'rgba(139, 92, 246, 0.02)' }
+    ],
+    itemColor: '#3498db',
+    axisLine: '#e0e0e0',
+    axisLabel: '#95a5a6',
+    splitLine: 'rgba(235, 238, 245, 0.8)',
+    tooltipBg: '#ffffff',
+    tooltipBorder: '#e0e0e0',
+    tooltipText: '#2c3e50'
+  }
+}
+
+/** 构建完整图表配置 */
+function buildChartOption(isDark: boolean) {
+  const c = getChartColors(isDark)
+  return {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: c.tooltipBg,
+      borderColor: c.tooltipBorder,
+      textStyle: { color: c.tooltipText }
     },
-    lineStyle: { color: '#3b82f6', width: 2 },
-    itemStyle: { color: '#3b82f6' },
-    data: [] as number[]
-  }]
-})
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: [] as string[],
+      axisLine: { lineStyle: { color: c.axisLine } },
+      axisLabel: { color: c.axisLabel },
+      axisTick: { show: false }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisLabel: { color: c.axisLabel },
+      splitLine: { lineStyle: { color: c.splitLine, type: 'dashed' } }
+    },
+    series: [{
+      name: t('dashboard.dataCollection'),
+      type: 'line',
+      smooth: true,
+      showSymbol: false,
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: c.areaStops
+        }
+      },
+      lineStyle: {
+        color: {
+          type: 'linear',
+          x: 0, y: 0, x2: 1, y2: 0,
+          colorStops: [
+            { offset: 0, color: c.lineStart },
+            { offset: 1, color: c.lineEnd }
+          ]
+        },
+        width: 3,
+        shadowColor: c.lineShadow,
+        shadowBlur: 10,
+        shadowOffsetY: 5
+      },
+      itemStyle: { color: c.itemColor },
+      emphasis: {
+        focus: 'series',
+        scale: true
+      },
+      data: [] as number[]
+    }]
+  }
+}
+
+/** 图表配置对象（主题感知） */
+const dataChartOption = ref(buildChartOption(themeStore.isDark()))
 
 // ==================== 数据管理 ====================
 
@@ -568,6 +665,15 @@ async function refreshData() {
 /** 时间范围变化时自动更新图表 */
 watch(timeRange, async () => {
   await updateChartData()
+})
+
+/** 主题变化时重建图表配置 */
+watch(() => themeStore.theme, () => {
+  const isDark = themeStore.isDark()
+  const newOption = buildChartOption(isDark)
+  newOption.series[0].data = dataChartOption.value.series[0].data
+  newOption.xAxis.data = dataChartOption.value.xAxis.data
+  dataChartOption.value = newOption
 })
 
 /** 组件挂载时初始化数据 */
@@ -765,58 +871,270 @@ onActivated(async () => {
   font-size: 13px;
 }
 
-/* ==================== 统计卡片样式 ==================== */
-.stat-cards {
+/* ==================== 卡片基础样式（酷炫主题） ==================== */
+.stat-cards,
+.chart-row,
+.info-row {
   margin-bottom: 24px;
 }
 
-.stat-card {
-  display: flex;
-  align-items: center;
-  padding: 20px;
-  margin-bottom: 16px;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+.stat-cards :deep(.el-card),
+.chart-card :deep(.el-card),
+.info-card :deep(.el-card) {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-base) !important;
+  border-radius: 14px !important;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.stat-card:hover {
+.stat-cards :deep(.el-card:hover),
+.chart-card :deep(.el-card:hover),
+.info-card :deep(.el-card:hover) {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(52, 152, 219, 0.15) !important;
   transform: translateY(-2px);
 }
 
-.alert-card-highlight {
-  border-left: 4px solid var(--color-danger);
-  background: var(--color-danger-light);
+/* ==================== 统计卡片样式 ==================== */
+.stat-card {
+  padding: 0;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.alert-card-highlight .stat-icon.alerts {
-  animation: pulse 2s infinite;
+.stat-card :deep(.el-card__body) {
+  display: flex;
+  align-items: center;
+  padding: 20px;
 }
 
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 14px 0 0 14px;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+/* 设备卡片 - 蓝色渐变 */
+.stat-cards :deep(.el-card.device-card)::before {
+  background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
+}
+
+.stat-cards :deep(.el-card.device-card:hover) {
+  box-shadow: 0 8px 30px rgba(52, 152, 219, 0.2), 0 0 20px rgba(52, 152, 219, 0.1) !important;
+}
+
+/* 通道卡片 - 紫色渐变 */
+.stat-cards :deep(.el-card.channel-card)::before {
+  background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
+.stat-cards :deep(.el-card.channel-card:hover) {
+  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.2), 0 0 20px rgba(139, 92, 246, 0.1) !important;
+}
+
+/* 规则卡片 - 绿色渐变 */
+.stat-cards :deep(.el-card.rule-card)::before {
+  background: linear-gradient(180deg, #27ae60 0%, #229954 100%);
+}
+
+.stat-cards :deep(.el-card.rule-card:hover) {
+  box-shadow: 0 8px 30px rgba(39, 174, 96, 0.2), 0 0 20px rgba(39, 174, 96, 0.1) !important;
+}
+
+/* 告警卡片 - 红色渐变 + 发光 */
+.stat-cards :deep(.el-card.alert-card-highlight)::before {
+  background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.stat-cards :deep(.el-card.alert-card-highlight:hover) {
+  box-shadow: 0 8px 30px rgba(231, 76, 60, 0.25), 0 0 25px rgba(231, 76, 60, 0.15) !important;
 }
 
 .stat-icon {
   width: 60px;
   height: 60px;
-  border-radius: 12px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
   margin-right: 16px;
   flex-shrink: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
 }
 
-.stat-icon.devices { background: var(--color-primary); }
-.stat-icon.channels { background: var(--color-info, #8b5cf6); }
-.stat-icon.rules { background: var(--color-success); }
-.stat-icon.alerts { background: var(--color-danger); }
+.stat-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 55%);
+  pointer-events: none;
+}
+
+.stat-icon .icon-svg {
+  width: 32px;
+  height: 32px;
+  color: #ffffff;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-cards :deep(.el-card:hover) .icon-svg {
+  transform: scale(1.08);
+}
+
+/* 告警图标 - 声波扩散动画 */
+.stat-icon.alerts .icon-wave {
+  opacity: 0.85;
+  transform-origin: center;
+  animation: alert-wave 2s ease-in-out infinite;
+}
+.stat-icon.alerts .wave-1 { animation-delay: 0s; }
+.stat-icon.alerts .wave-2 { animation-delay: 0.3s; }
+
+@keyframes alert-wave {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.15); }
+}
+
+/* 设备图标 - 脉冲呼吸动画 */
+.stat-icon.devices .icon-pulse {
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+.stat-icon.devices .icon-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0%, 100% { opacity: 0.9; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* 通道图标 - 信号环扩散动画 */
+.stat-icon.channels .icon-ring {
+  transform-origin: 12px 12px;
+  animation: signal-ring 2.5s ease-out infinite;
+}
+.stat-icon.channels .ring-1 { animation-delay: 0s; }
+.stat-icon.channels .ring-2 { animation-delay: 0.4s; }
+
+@keyframes signal-ring {
+  0% { opacity: 0.9; transform: scale(0.9); }
+  100% { opacity: 0; transform: scale(1.25); }
+}
+
+/* 规则图标 - 闪电闪烁动画 */
+.stat-icon.rules .icon-bolt {
+  transform-origin: center;
+  animation: bolt-flash 2s ease-in-out infinite;
+}
+.stat-icon.rules .bolt-2 {
+  animation: bolt-flash 2s ease-in-out infinite 0.15s;
+  opacity: 0.5;
+}
+.stat-icon.rules .icon-ring {
+  animation: ring-spin 4s linear infinite;
+  transform-origin: 12px 12px;
+}
+
+@keyframes bolt-flash {
+  0%, 90%, 100% { transform: scale(1); opacity: 1; }
+  93% { transform: scale(1.15); opacity: 0.7; }
+  96% { transform: scale(0.95); opacity: 1; }
+}
+
+@keyframes ring-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 告警卡片装饰圆点 */
+.stat-icon .icon-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+}
+.stat-icon .dot-1 {
+  top: 10px;
+  right: 12px;
+  animation: dot-pulse 1.5s ease-in-out infinite;
+}
+.stat-icon .dot-2 {
+  bottom: 12px;
+  left: 10px;
+  animation: dot-pulse 1.5s ease-in-out infinite 0.5s;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+
+/* 告警图标 - 红橙渐变 + 发光扫光 */
+.stat-icon.alerts {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 40%, #c44569 100%);
+  box-shadow: 0 6px 20px rgba(238, 90, 111, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.stat-cards :deep(.el-card:hover) .stat-icon.alerts {
+  box-shadow: 0 8px 28px rgba(238, 90, 111, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* 设备图标 - 青蓝渐变 + 电光感 */
+.stat-icon.devices {
+  background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 55%, #0052d4 100%);
+  box-shadow: 0 6px 20px rgba(58, 123, 213, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.stat-cards :deep(.el-card:hover) .stat-icon.devices {
+  box-shadow: 0 8px 28px rgba(58, 123, 213, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* 通道图标 - 紫粉渐变 + 魔幻感 */
+.stat-icon.channels {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #8b5cf6 100%);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.stat-cards :deep(.el-card:hover) .stat-icon.channels {
+  box-shadow: 0 8px 28px rgba(168, 85, 247, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* 规则图标 - 青绿渐变 + 活力感 */
+.stat-icon.rules {
+  background: linear-gradient(135deg, #11d3bc 0%, #20bf6b 55%, #0fb9b1 100%);
+  box-shadow: 0 6px 20px rgba(32, 191, 107, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.stat-cards :deep(.el-card:hover) .stat-icon.rules {
+  box-shadow: 0 8px 28px rgba(32, 191, 107, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
 
 .stat-content {
   flex: 1;
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .stat-value {
@@ -844,17 +1162,20 @@ onActivated(async () => {
 .stat-trend.info { color: var(--text-secondary); }
 
 /* ==================== 图表区域样式 ==================== */
-.chart-row {
-  margin-bottom: 24px;
-}
-
-.chart-card {
-  border-radius: 12px;
-}
-
 .chart-card :deep(.el-card__header) {
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light) !important;
+  position: relative;
+}
+
+.chart-card :deep(.el-card__header)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 80px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, transparent 100%);
 }
 
 .chart-card :deep(.el-card__body) {
@@ -878,6 +1199,7 @@ onActivated(async () => {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: 0.5px;
 }
 
 .time-range-selector {
@@ -912,18 +1234,15 @@ onActivated(async () => {
 }
 
 /* ==================== 信息面板样式 ==================== */
-.info-row {
-  margin-bottom: 24px;
-}
-
 .info-card {
-  border-radius: 12px;
+  border-radius: 14px;
   height: 100%;
 }
 
 .info-card :deep(.el-card__header) {
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light) !important;
+  position: relative;
 }
 
 .info-card :deep(.el-card__body) {
@@ -979,8 +1298,15 @@ onActivated(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: var(--bg-hover);
-  border-radius: 8px;
+  background: var(--bg-card-s);
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  transition: all 0.25s ease;
+}
+
+.channel-stat-item:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 
 .channel-stat-item .stat-label {
@@ -1010,23 +1336,44 @@ onActivated(async () => {
   align-items: flex-start;
   gap: 12px;
   padding: 12px;
-  border-radius: 8px;
-  background: var(--bg-hover);
-  transition: all 0.2s ease;
+  border-radius: 10px;
+  background: var(--bg-card-s);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
 }
 
 .alert-item:hover {
-  background: var(--border-light);
+  transform: translateX(4px);
 }
 
 .alert-item.critical {
-  background: var(--color-danger-light);
+  background: rgba(231, 76, 60, 0.08);
   border-left: 3px solid var(--color-danger);
 }
 
+.alert-item.critical:hover {
+  border-color: var(--color-danger);
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.15);
+}
+
 .alert-item.warning {
-  background: var(--color-warning-light);
+  background: rgba(243, 156, 18, 0.08);
   border-left: 3px solid var(--color-warning);
+}
+
+.alert-item.warning:hover {
+  border-color: var(--color-warning);
+  box-shadow: 0 4px 15px rgba(243, 156, 18, 0.15);
+}
+
+.alert-item:not(.critical):not(.warning) {
+  border-left: 3px solid var(--color-info);
+}
+
+.alert-item:not(.critical):not(.warning):hover {
+  border-color: var(--color-primary);
 }
 
 .alert-icon {
@@ -1070,8 +1417,15 @@ onActivated(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 10px 16px;
-  background: var(--bg-hover);
-  border-radius: 8px;
+  background: var(--bg-card-s);
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  transition: all 0.25s ease;
+}
+
+.info-item:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 
 .info-label {
@@ -1095,7 +1449,8 @@ onActivated(async () => {
 @media (max-width: 1365px) and (max-height: 700px) {
   .dashboard-toolbar { margin-bottom: 16px; }
   .stat-card { padding: 14px; margin-bottom: 12px; }
-  .stat-icon { width: 48px; height: 48px; font-size: 22px; margin-right: 12px; }
+  .stat-icon { width: 48px; height: 48px; margin-right: 12px; }
+  .stat-icon .icon-svg { width: 26px; height: 26px; }
   .stat-value { font-size: 22px; }
   .stat-label { font-size: 13px; }
   .stat-trend { font-size: 11px; }
@@ -1118,7 +1473,8 @@ onActivated(async () => {
 /* 中等分辨率屏幕 (1366px - 1919px) */
 @media (min-width: 1366px) and (max-width: 1919px) {
   .stat-card { padding: 18px; }
-  .stat-icon { width: 56px; height: 56px; font-size: 26px; }
+  .stat-icon { width: 56px; height: 56px; }
+  .stat-icon .icon-svg { width: 30px; height: 30px; }
   .stat-value { font-size: 26px; }
 }
 
@@ -1126,14 +1482,16 @@ onActivated(async () => {
 @media (min-width: 1920px) {
   .dashboard { max-width: 1800px; }
   .stat-card { padding: 20px; }
-  .stat-icon { width: 60px; height: 60px; font-size: 28px; }
+  .stat-icon { width: 60px; height: 60px; }
+  .stat-icon .icon-svg { width: 34px; height: 34px; }
   .stat-value { font-size: 28px; }
 }
 
 /* 小屏/平板 (1024px以下) */
 @media (max-width: 1023px) {
   .stat-card { padding: 16px; }
-  .stat-icon { width: 50px; height: 50px; font-size: 24px; }
+  .stat-icon { width: 50px; height: 50px; }
+  .stat-icon .icon-svg { width: 28px; height: 28px; }
   .stat-value { font-size: 24px; }
   .resource-gauges { flex-wrap: wrap; }
   .gauge-item { flex: 1; min-width: 80px; }
@@ -1144,7 +1502,8 @@ onActivated(async () => {
   .dashboard-toolbar { padding: 0; }
   .update-time { font-size: 12px; }
   .stat-card { padding: 12px; }
-  .stat-icon { width: 48px; height: 48px; font-size: 22px; margin-right: 12px; }
+  .stat-icon { width: 48px; height: 48px; margin-right: 12px; }
+  .stat-icon .icon-svg { width: 26px; height: 26px; }
   .stat-value { font-size: 22px; }
   .stat-label { font-size: 12px; }
   .card-header { flex-direction: column; align-items: flex-start; gap: 12px; }
