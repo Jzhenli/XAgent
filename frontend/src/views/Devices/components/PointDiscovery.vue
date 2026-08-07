@@ -96,7 +96,7 @@
             <el-button
               type="primary"
               :icon="RefreshRight"
-              @click="handleResearch"
+              @click="handleRediscover"
             >
               {{ t('devices.research') }}
             </el-button>
@@ -126,7 +126,7 @@
           :description="t('devices.discoveryNoPoints')"
           :image-size="80"
         >
-          <el-button type="primary" @click="handleResearch">{{ t('devices.adjustAndResearch') }}</el-button>
+          <el-button type="primary" @click="handleRediscover">{{ t('devices.adjustAndResearch') }}</el-button>
         </el-empty>
 
         <!-- 搜索无结果 -->
@@ -142,6 +142,7 @@
         <el-table
           v-else
           :data="filteredPoints"
+          :row-key="(row: DiscoveredPoint) => `${row.object_type}:${row.object_instance}`"
           @selection-change="handleSelectionChange"
           max-height="360"
         >
@@ -166,7 +167,7 @@
         <div v-if="filteredPoints.length > 0" class="table-footer">
           <el-checkbox
             v-model="selectAll"
-            @change="handleSelectAll"
+            @change="handleToggleSelectAll"
             :indeterminate="selectedCount > 0 && selectedCount < filteredPoints.length"
           >
             {{ t('devices.selectAllCurrent') }}
@@ -267,7 +268,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, RefreshRight, Edit, CircleCheck } from '@element-plus/icons-vue'
@@ -284,11 +285,35 @@ interface Emits {
   (e: 'success'): void
 }
 
+/** 响应式对话框宽度配置项 */
+interface DialogWidthEntry {
+  max: number
+  width: string
+}
+
+/** 批量编辑表单数据结构 */
+interface BatchEditForm {
+  unit: string
+  scale: number | null
+  offset: number | null
+  alarm_high: number | null
+  alarm_low: number | null
+}
+
+/**
+ * 从异常对象中提取后端返回的错误详情
+ * 优先使用后端 response.data.detail，其次使用 message，最后回退到通用错误提示
+ */
+function getErrorDetail(error: unknown, fallback: string): string {
+  const err = error as { response?: { data?: { detail?: string } }; message?: string }
+  return err?.response?.data?.detail || err?.message || fallback
+}
+
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
 
-// 步骤常量
+// ========== 步骤常量 ==========
 const STEP_CONFIG = 0      // 配置参数
 const STEP_SEARCHING = 1   // 搜索中
 const STEP_RESULT = 2      // 搜索结果
@@ -296,24 +321,31 @@ const STEP_RESULT = 2      // 搜索结果
 // 当前步骤
 const currentStep = ref(STEP_CONFIG)
 
-// 响应式对话框宽度映射
-const DIALOG_WIDTH_MAP = [
+// ========== 响应式对话框宽度 ==========
+
+/** 根据屏幕宽度动态调整对话框宽度，适配移动端到 4K 屏 */
+const DIALOG_WIDTH_MAP: DialogWidthEntry[] = [
   { max: 768, width: '550px' },
   { max: 1024, width: '600px' },
   { max: 1440, width: '650px' },
   { max: Infinity, width: '900px' }
 ]
 
-/** 响应式屏幕宽度，用于 dialogWidth 自动响应窗口 resize */
 const screenWidth = ref(window.innerWidth)
 
 const dialogWidth = computed(() => {
   return DIALOG_WIDTH_MAP.find(item => screenWidth.value < item.max)?.width ?? '700px'
 })
 
-/** 窗口 resize 监听：更新 screenWidth 以触发 dialogWidth 重新计算 */
+/** resize 节流，避免频繁触发重渲染 */
+let resizeRafId: number | null = null
+
 function onWindowResize() {
-  screenWidth.value = window.innerWidth
+  if (resizeRafId) return
+  resizeRafId = requestAnimationFrame(() => {
+    screenWidth.value = window.innerWidth
+    resizeRafId = null
+  })
 }
 
 onMounted(() => {
@@ -322,31 +354,39 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', onWindowResize)
+  if (resizeRafId) {
+    cancelAnimationFrame(resizeRafId)
+    resizeRafId = null
+  }
+  if (progressTimer) {
+    clearInterval(progressTimer)
+    progressTimer = null
+  }
 })
 
-// 默选对象类型
-const selectedObjectTypes = ref<string[]>([
-  'analogInput',
-  'analogOutput',
-  'analogValue'
-])
+// ========== 搜索状态 ==========
 
-// 搜索状态
+/** 默认勾选的对象类型，覆盖最常用的 AI/AO/AV */
+const DEFAULT_OBJECT_TYPES = ['analogInput', 'analogOutput', 'analogValue']
+
+const selectedObjectTypes = ref<string[]>([...DEFAULT_OBJECT_TYPES])
 const searching = ref(false)
 const searchProgress = ref(0)
 const discoveredPoints = ref<DiscoveredPoint[]>([])
 
-/** 进度模拟定时器 ID，用于在弹窗关闭或搜索失败时清除，避免内存泄漏 */
+/** 进度模拟定时器，搜索完成或异常时需清理以避免内存泄漏 */
 let progressTimer: ReturnType<typeof setInterval> | null = null
 
-// 点位选择
+// ========== 点位选择 ==========
+
 const selectedPoints = ref<DiscoveredPoint[]>([])
 const selectAll = ref(false)
 
-// 搜索过滤
+// ========== 搜索过滤 ==========
+
 const filterText = ref('')
 
-/** 根据关键字过滤点位，匹配对象名称、描述、类型和实例编号 */
+/** 根据关键字过滤点位，匹配名称、描述、类型和实例编号 */
 const filteredPoints = computed(() => {
   if (!filterText.value) {
     return discoveredPoints.value
@@ -360,25 +400,38 @@ const filteredPoints = computed(() => {
   )
 })
 
-/** 批量编辑对话框显示状态 */
-const showBatchEditDialog = ref(false)
-
-/** 批量编辑表单数据，用于在添加点位时覆盖默认属性 */
-const batchEditForm = ref({
-  unit: '',
-  scale: null as number | null,
-  offset: null as number | null,
-  alarm_high: null as number | null,
-  alarm_low: null as number | null
+/** 过滤结果变化时，同步全选复选框的选中状态和 indeterminate 状态 */
+watch(filteredPoints, (newPoints) => {
+  if (newPoints.length === 0) {
+    selectAll.value = false
+    return
+  }
+  const selectedSet = new Set(selectedPoints.value.map(p => `${p.object_type}:${p.object_instance}`))
+  selectAll.value = newPoints.every(p => selectedSet.has(`${p.object_type}:${p.object_instance}`))
 })
 
-/** 计算已选中的点位数量 */
+// ========== 批量编辑表单 ==========
+
+const showBatchEditDialog = ref(false)
+
+const batchEditForm = ref<BatchEditForm>({
+  unit: '',
+  scale: null,
+  offset: null,
+  alarm_high: null,
+  alarm_low: null
+})
+
+// ========== 计算属性 ==========
+
+/** 已选中的点位数量 */
 const selectedCount = computed(() => selectedPoints.value.length)
 
-/** 全选当前过滤结果中的点位 */
-const handleSelectAll = (val: string | number | boolean) => {
-  const checked = Boolean(val)
-  if (checked) {
+// ========== 事件处理 ==========
+
+/** 全选/取消全选当前过滤结果中的点位 */
+const handleToggleSelectAll = (val: boolean) => {
+  if (val) {
     selectedPoints.value = [...filteredPoints.value]
   } else {
     selectedPoints.value = []
@@ -396,29 +449,33 @@ const handleClearFilter = () => {
   filterText.value = ''
 }
 
+// ========== 点位发现 ==========
+
 /**
  * 执行点位发现
  * 向后端发送发现请求，期间显示进度动画，完成后展示结果列表
  */
 const handleDiscoverPoints = async () => {
+  if (searching.value) return
+
   if (!props.deviceAsset) {
     ElMessage.warning(t('devices.pleaseSelectDevice'))
     return
   }
 
-  // 切换到搜索中步骤
+  // 切换到搜索中步骤，清理上次结果
   currentStep.value = STEP_SEARCHING
   searching.value = true
   searchProgress.value = 0
   discoveredPoints.value = []
   selectedPoints.value = []
 
-  // 记录开始时间
+  // 记录开始时间，用于确保搜索动画最少显示 1.5 秒，避免闪烁
   const startTime = Date.now()
   const minDisplayTime = 1500
 
   try {
-    // 模拟进度更新（实际进度由后端控制）
+    // 启动进度模拟（进度条 90% 后由实际响应完成）
     progressTimer = setInterval(() => {
       if (searchProgress.value < 90) {
         searchProgress.value += 10
@@ -435,7 +492,7 @@ const handleDiscoverPoints = async () => {
     await ensureMinDisplayTime(startTime, minDisplayTime)
 
     if (response.success) {
-      discoveredPoints.value = response.points
+      discoveredPoints.value = response.points ?? []
       currentStep.value = STEP_RESULT
 
       if (response.total === 0) {
@@ -447,15 +504,15 @@ const handleDiscoverPoints = async () => {
       ElMessage.error(t('devices.pointDiscoveryFailed'))
       currentStep.value = STEP_CONFIG
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 确保最少显示时间
     await ensureMinDisplayTime(startTime, minDisplayTime)
 
-    const detail = error?.response?.data?.detail || error?.message || t('common.unknownError')
+    const detail = getErrorDetail(error, t('common.unknownError'))
     ElMessage.error(t('devices.pointDiscoveryFailedWithDetail', { detail }))
     currentStep.value = STEP_CONFIG
   } finally {
-    // 无论成功/失败/关闭，都清除进度定时器
+    // 清理定时器，重置搜索状态
     if (progressTimer) {
       clearInterval(progressTimer)
       progressTimer = null
@@ -465,13 +522,15 @@ const handleDiscoverPoints = async () => {
   }
 }
 
-/** 重置到配置步骤，清空已发现点位和筛选条件 */
-const handleResearch = () => {
+/** 重新搜索：重置到配置步骤，清空已发现点位和筛选条件 */
+const handleRediscover = () => {
   currentStep.value = STEP_CONFIG
   discoveredPoints.value = []
   selectedPoints.value = []
   filterText.value = ''
 }
+
+// ========== 批量操作 ==========
 
 /** 打开批量编辑对话框，对已选点位的公共属性进行批量修改 */
 const handleBatchEdit = () => {
@@ -482,10 +541,9 @@ const handleBatchEdit = () => {
   showBatchEditDialog.value = true
 }
 
-/** 确认批量编辑（当前仅关闭对话框，实际属性在批量添加时应用） */
+/** 确认批量编辑：关闭对话框，编辑值将在批量添加时应用到选中点位 */
 const handleBatchEditConfirm = () => {
   showBatchEditDialog.value = false
-  ElMessage.success(t('devices.batchEditApplied', { count: selectedPoints.value.length }))
 }
 
 /**
@@ -509,8 +567,9 @@ const handleBatchAdd = async () => {
       }
     )
 
-    // 将发现的点位转换为PointConfig格式
+    // 将发现点位转换为 PointConfig 格式，应用批量编辑的属性覆盖
     const pointsToAdd: PointConfig[] = selectedPoints.value.map(point => {
+      // config: OPC UA 点位核心属性
       const config: Record<string, unknown> = {
         object_type: point.object_type,
         object_instance: point.object_instance,
@@ -519,6 +578,7 @@ const handleBatchAdd = async () => {
       if (batchEditForm.value.scale !== null) config.scale = batchEditForm.value.scale
       if (batchEditForm.value.offset !== null) config.offset = batchEditForm.value.offset
 
+      // metadata: 扩展属性（单位、报警阈值等）
       const metadata: Record<string, unknown> = {}
       if (batchEditForm.value.unit) metadata.unit = batchEditForm.value.unit
       if (batchEditForm.value.alarm_high !== null) metadata.alarm_high = batchEditForm.value.alarm_high
@@ -546,13 +606,15 @@ const handleBatchAdd = async () => {
     } else {
       ElMessage.error(t('devices.batchAddFailed'))
     }
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      const detail = error?.response?.data?.detail || error?.message || t('common.unknownError')
+  } catch (error: unknown) {
+    if (error !== 'cancel' && error !== 'close') {
+      const detail = getErrorDetail(error, t('common.unknownError'))
       ElMessage.error(t('devices.batchAddFailedWithDetail', { detail }))
     }
   }
 }
+
+// ========== 工具函数 ==========
 
 /**
  * 确保最少显示时间的通用工具
@@ -566,7 +628,7 @@ async function ensureMinDisplayTime(startTime: number, minDuration: number): Pro
   }
 }
 
-/** 重置批量编辑表单 */
+/** 重置批量编辑表单为初始空值 */
 function resetBatchEditForm(): void {
   batchEditForm.value = {
     unit: '',
@@ -577,9 +639,10 @@ function resetBatchEditForm(): void {
   }
 }
 
-/** 关闭弹窗，重置内部状态，清除进行中的定时器避免内存泄漏 */
+// ========== 生命周期与清理 ==========
+
+/** 关闭弹窗：重置所有内部状态，清除定时器，释放资源 */
 const handleClose = () => {
-  // 清除进度模拟定时器（防止搜索进行中关闭弹窗导致泄漏）
   if (progressTimer) {
     clearInterval(progressTimer)
     progressTimer = null
@@ -604,10 +667,6 @@ const handleClose = () => {
 
 <style scoped>
 /* ========== 通用间距工具类 ========== */
-.w-full {
-  width: 100%;
-}
-
 .mb-4 {
   margin-bottom: 16px;
 }
@@ -618,22 +677,6 @@ const handleClose = () => {
 
 .mb-2 {
   margin-bottom: 8px;
-}
-
-.mt-1 {
-  margin-top: 8px;
-}
-
-.mt-3 {
-  margin-top: 12px;
-}
-
-.mt-4 {
-  margin-top: 16px;
-}
-
-.ml-2 {
-  margin-left: 12px;
 }
 
 /* ========== 卡片容器与头部 ========== */
