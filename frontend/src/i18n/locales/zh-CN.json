@@ -1394,6 +1394,12 @@
       "failed": "写值失败",
       "result": "写值结果:"
     },
+    "contextMenu": {
+      "lock": "锁定",
+      "unlock": "解锁",
+      "bringToFront": "置于顶层",
+      "sendToBack": "置于底层"
+    },
     "undoOperations": {
       "add": "添加组件 {name}",
       "delete": "删除组件 {name}",

@@ -1394,6 +1394,12 @@
       "failed": "Write value failed",
       "result": "Write value result:"
     },
+    "contextMenu": {
+      "lock": "Lock",
+      "unlock": "Unlock",
+      "bringToFront": "Bring to Front",
+      "sendToBack": "Send to Back"
+    },
     "undoOperations": {
       "add": "Add component {name}",
       "delete": "Delete component {name}",

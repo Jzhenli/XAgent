@@ -427,7 +427,7 @@ export function useScadaEditor() {
       const newComponent = cloneComponent(component, {
         x: component.x + 20,
         y: component.y + 20
-      }, t('common.duplicateSuffix'))
+      }, t('common.duplicateSuffix'), t)
 
       undo.pushOperation('duplicate', t('scada.undoOperations.duplicate', { name: component.name }), [newComponent.id])
 
@@ -466,7 +466,7 @@ export function useScadaEditor() {
       const newComponent = cloneComponent(clipComp, {
         x: x !== undefined ? x + offset : clipComp.x + 20,
         y: y !== undefined ? y + offset : clipComp.y + 20
-      }, t('common.duplicateSuffix'))
+      }, t('common.duplicateSuffix'), t)
       newIds.push(newComponent.id)
       panel.components.push(newComponent)
     })

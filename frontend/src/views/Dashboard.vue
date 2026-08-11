@@ -883,7 +883,7 @@ onActivated(async () => {
 .info-card :deep(.el-card) {
   background: var(--bg-card) !important;
   border: 1px solid var(--border-base) !important;
-  border-radius: 14px !important;
+  border-radius: 16px !important;
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -898,7 +898,7 @@ onActivated(async () => {
 .stat-card {
   padding: 0;
   margin-bottom: 16px;
-  border-radius: 14px;
+  border-radius: 16px;
   position: relative;
   overflow: hidden;
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -917,7 +917,7 @@ onActivated(async () => {
   top: 0;
   bottom: 0;
   width: 4px;
-  border-radius: 14px 0 0 14px;
+  border-radius: 16px 0 0 16px;
 }
 
 .stat-card:hover {
@@ -1235,7 +1235,7 @@ onActivated(async () => {
 
 /* ==================== 信息面板样式 ==================== */
 .info-card {
-  border-radius: 14px;
+  border-radius: 16px;
   height: 100%;
 }
 
@@ -1299,7 +1299,7 @@ onActivated(async () => {
   align-items: center;
   padding: 12px 16px;
   background: var(--bg-card-s);
-  border-radius: 10px;
+  border-radius: 16px;
   border: 1px solid var(--border-light);
   transition: all 0.25s ease;
 }
@@ -1336,7 +1336,7 @@ onActivated(async () => {
   align-items: flex-start;
   gap: 12px;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: 16px;
   background: var(--bg-card-s);
   transition: all 0.25s ease;
   position: relative;
@@ -1418,7 +1418,7 @@ onActivated(async () => {
   align-items: center;
   padding: 10px 16px;
   background: var(--bg-card-s);
-  border-radius: 10px;
+  border-radius: 16px;
   border: 1px solid var(--border-light);
   transition: all 0.25s ease;
 }

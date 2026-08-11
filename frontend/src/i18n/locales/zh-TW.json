@@ -1394,6 +1394,12 @@
       "failed": "寫值失敗",
       "result": "寫值結果:"
     },
+    "contextMenu": {
+      "lock": "鎖定",
+      "unlock": "解鎖",
+      "bringToFront": "置於頂層",
+      "sendToBack": "置於底層"
+    },
     "undoOperations": {
       "add": "新增元件 {name}",
       "delete": "刪除元件 {name}",

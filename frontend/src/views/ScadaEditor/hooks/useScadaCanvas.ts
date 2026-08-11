@@ -123,6 +123,11 @@ export function useScadaCanvas() {
   const handleMouseDown = (e: MouseEvent) => {
     if (!isEditing.value) return
 
+    // 左键点击时关闭右键菜单
+    if (e.button === 0 && contextMenu.value.visible) {
+      closeContextMenu()
+    }
+
     const pos = screenToCanvas(e.clientX, e.clientY)
 
     if (e.button === 0) {
@@ -540,9 +545,6 @@ export function useScadaCanvas() {
    */
   const handleMouseLeave = () => {
     isMouseOnCanvas.value = false
-    if (!dragState.value.active) {
-      contextMenu.value.visible = false
-    }
   }
 
   /**
@@ -572,7 +574,7 @@ export function useScadaCanvas() {
     const componentEl = target.closest('[data-component-id]') as HTMLElement
     
     contextMenu.value.position = { x: e.clientX, y: e.clientY }
-    
+
     if (componentEl) {
       const componentId = componentEl.dataset.componentId!
       contextMenu.value.targetId = componentId
@@ -584,6 +586,8 @@ export function useScadaCanvas() {
       contextMenu.value.targetId = null
       contextMenu.value.type = 'canvas'
     }
+
+    contextMenu.value.visible = true
   }
 
   /**

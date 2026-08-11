@@ -18,6 +18,10 @@
   --scada-bg-hover: rgba(52, 152, 219, 0.08);
   --scada-border-glow: 1px solid rgba(52, 152, 219, 0.3);
 
+  /* 右键菜单 */
+  --scada-menu-bg: #ffffff;
+  --scada-menu-border: rgba(52, 152, 219, 0.3);
+
   /* 主色调 */
   --color-primary: #3498db;
   --color-primary-hover: #2980b9;
@@ -298,6 +302,10 @@
   --scada-bg-elevated: rgba(255, 255, 255, 0.03);
   --scada-bg-hover: rgba(34, 211, 238, 0.08);
   --scada-border-glow: 1px solid rgba(34, 211, 238, 0.2);
+
+  /* 右键菜单 */
+  --scada-menu-bg: #1e293b;
+  --scada-menu-border: rgba(34, 211, 238, 0.3);
 
   /* 主色调 */
   --color-primary: #409eff;

@@ -50,7 +50,7 @@
           :editing="isEditing"
           @select="$emit('select', comp.id)"
         />
-        
+
         <div
           v-if="isSelected(comp.id) && isEditing && !comp.locked"
           class="selection-border"
@@ -65,11 +65,64 @@
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="contextMenu.visible"
+        class="scada-context-menu"
+        :style="{ left: contextMenu.position.x + 'px', top: contextMenu.position.y + 'px' }"
+        @pointerdown.stop
+        @click.stop
+        @contextmenu.prevent
+      >
+        <template v-if="contextMenu.type === 'node'">
+          <div class="context-menu-item" @click="handleContextAction('copy')">
+            <span>{{ $t('scada.copy') }}</span>
+          </div>
+          <div class="context-menu-item" @click="handleContextAction('delete')">
+            <span>{{ $t('scada.delete') }}</span>
+          </div>
+          <div
+            v-if="targetComponent?.locked"
+            class="context-menu-item"
+            @click="handleContextAction('unlock')"
+          >
+            <span>{{ $t('scada.contextMenu.unlock') }}</span>
+          </div>
+          <div
+            v-else
+            class="context-menu-item"
+            @click="handleContextAction('lock')"
+          >
+            <span>{{ $t('scada.contextMenu.lock') }}</span>
+          </div>
+          <div class="context-menu-divider" />
+          <div class="context-menu-item" @click="handleContextAction('bringToFront')">
+            <span>{{ $t('scada.contextMenu.bringToFront') }}</span>
+          </div>
+          <div class="context-menu-item" @click="handleContextAction('sendToBack')">
+            <span>{{ $t('scada.contextMenu.sendToBack') }}</span>
+          </div>
+        </template>
+        <template v-else>
+          <div class="context-menu-item" @click="handleContextAction('paste')">
+            <span>{{ $t('scada.paste') }}</span>
+          </div>
+          <div
+            v-if="selectedComponentIds.length > 0"
+            class="context-menu-item"
+            @click="handleContextAction('delete')"
+          >
+            <span>{{ $t('scada.delete') }}</span>
+          </div>
+        </template>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useScadaCanvas } from '../hooks/useScadaCanvas'
 import { getComponent } from '../registry'
 import type { GuideLine, ResizeHandle } from '../types'
@@ -92,17 +145,41 @@ const {
   isEditing,
   zoom,
   showGrid,
+  contextMenu,
   handleMouseDown,
   handleMouseMove,
   handleMouseUp,
   handleMouseLeave,
   handleDoubleClick,
   handleContextMenu,
+  closeContextMenu,
+  handleContextAction,
   handleDragOver,
   handleDragLeave,
   handleDrop,
   startResize
 } = useScadaCanvas()
+
+// 右键菜单目标组件（用于判断锁定状态）
+const targetComponent = computed(() => {
+  if (!contextMenu.value.targetId || !currentPanel.value) return null
+  return currentPanel.value.components.find(c => c.id === contextMenu.value.targetId) || null
+})
+
+// 点击菜单外部关闭右键菜单
+const handleDocumentPointerDown = () => {
+  if (contextMenu.value.visible) {
+    closeContextMenu()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('pointerdown', handleDocumentPointerDown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', handleDocumentPointerDown)
+})
 
 const isSelected = (id: string) => selectedComponentIds.value.includes(id)
 
@@ -283,5 +360,41 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
 @keyframes handle-pulse {
   0%, 100% { box-shadow: 0 0 8px rgba(34, 211, 238, 0.8), 0 0 16px rgba(168, 85, 247, 0.5); }
   50% { box-shadow: 0 0 14px rgba(34, 211, 238, 1), 0 0 28px rgba(168, 85, 247, 0.7); }
+}
+
+.scada-context-menu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 160px;
+  padding: 6px 0;
+  background: var(--scada-menu-bg);
+  border: 1px solid var(--scada-menu-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px var(--bg-mask), 0 0 16px var(--scada-cyan-glow);
+  backdrop-filter: blur(12px);
+  user-select: none;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.context-menu-item:hover {
+  background: var(--scada-bg-hover);
+  color: var(--scada-cyan);
+}
+
+.context-menu-divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: linear-gradient(90deg, transparent, var(--scada-cyan), transparent);
+  opacity: 0.3;
 }
 </style>

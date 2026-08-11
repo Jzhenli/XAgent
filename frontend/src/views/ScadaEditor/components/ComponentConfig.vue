@@ -36,7 +36,7 @@
         </div>
       </div>
 
-      <div class="config-section">
+      <div v-if="showPointBinding" class="config-section">
         <div class="section-title">{{ t('componentConfig.pointBinding') }}</div>
         <div class="form-group">
           <label>{{ t('componentConfig.device') }}</label>
@@ -185,6 +185,13 @@ const displayName = computed(() => {
     return t(component.value.name)
   }
   return component.value.name || component.value.type
+})
+
+const POINT_BINDINGLESS_TYPES = new Set(['text', 'rectangle', 'circle', 'icon'])
+
+const showPointBinding = computed(() => {
+  if (!component.value) return false
+  return !POINT_BINDINGLESS_TYPES.has(component.value.type)
 })
 
 const triggerBgImageUpload = () => {
