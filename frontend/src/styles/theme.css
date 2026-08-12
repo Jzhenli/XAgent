@@ -164,6 +164,9 @@
   --progress-warning: #f59e0b;
   --progress-danger: #ef4444;
 
+  /* 仪表盘轨道背景 */
+  --gauge-track-bg: #e8ecf1;
+
   /* 图表相关 */
   --chart-line-color: #3b82f6;
   --chart-area-start: rgba(59, 130, 246, 0.3);
@@ -448,6 +451,9 @@
   --progress-success: #67c23a;
   --progress-warning: #e6a23c;
   --progress-danger: #f56c6c;
+
+  /* 仪表盘轨道背景（深色模式） */
+  --gauge-track-bg: #2a3050;
 
   /* 图表相关（深色模式） */
   --chart-line-color: #409eff;

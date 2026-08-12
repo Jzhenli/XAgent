@@ -81,7 +81,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/dashboard',
         name: 'Dashboard',
-        component: () => import('@/views/Dashboard.vue'),
+        component: () => import('@/views/home/index.vue'),
         meta: { title: 'route.dashboard', icon: 'Odometer' }
       },
       {
