@@ -18,12 +18,12 @@
 
     <template v-else>
       <div class="panel-header">
-        <div v-if="isCompact" class="panel-header-left">
+        <!-- <div v-if="isCompact" class="panel-header-left">
           <el-button link @click="emit('back')">
             <el-icon><RefreshRight /></el-icon>
             {{ t("channels.backToChannels") }}
           </el-button>
-        </div>
+        </div> -->
         <span class="panel-title">{{ channel.name }}</span>
         <div class="header-info">
           <span
@@ -42,22 +42,20 @@
           </el-tag>
         </div>
         <div class="header-actions">
-          <el-button
+          <div
             v-if="canUpdate"
-            type="primary"
-            plain
+            class="action-btn btn-primary"
             @click="emit('test', channel.id)"
           >
             {{ t("channels.testConnection") }}
-          </el-button>
-          <el-button
+          </div>
+          <div
             v-if="canUpdate"
-            type="warning"
-            plain
+            class="action-btn btn-warning"
             @click="emit('restart', channel.id)"
           >
             {{ t("channels.restart") }}
-          </el-button>
+          </div>
         </div>
       </div>
 
@@ -141,7 +139,7 @@
                 <span class="config-label">{{ t("channels.keepalive") }}</span>
                 <span class="config-value"
                   >{{ channel.connection.keepalive
-                  }}{{ t("channels.seconds") }}</span
+                  }}  {{ t("channels.seconds") }}</span
                 >
               </div>
               <div class="config-item">
@@ -341,6 +339,7 @@ const formatNumber = (num?: number): string => {
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
+  min-height: 0;
 }
 
 .panel-header {
@@ -399,6 +398,48 @@ const formatNumber = (num?: number): string => {
   margin-left: auto;
 }
 
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+
+.action-btn:active {
+  transform: scale(0.96);
+}
+
+.action-btn.btn-primary {
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border: 1px solid var(--el-color-primary-light-7);
+}
+
+.action-btn.btn-primary:hover {
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
+.action-btn.btn-warning {
+  color: var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
+  border: 1px solid var(--el-color-warning-light-7);
+}
+
+.action-btn.btn-warning:hover {
+  color: var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
+}
+
 .empty-details {
   flex: 1;
   display: flex;
@@ -417,9 +458,12 @@ const formatNumber = (num?: number): string => {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  min-height: 0;
+}
+
+/* 替代 gap: 16px，避免自身 flex 容器导致滚动失效 */
+.channel-details-content > * + * {
+  margin-top: 16px;
 }
 
 .stats-dashboard {
@@ -455,8 +499,9 @@ const formatNumber = (num?: number): string => {
 }
 
 .success-icon {
-  background: var(--color-success-light);
-  color: var(--color-success);
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
 }
 
 .backlog-icon {
