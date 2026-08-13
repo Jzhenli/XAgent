@@ -1285,7 +1285,9 @@
     "importConfirmTitle": "確認匯入",
     "importPartialSuccess": "部分匯入成功",
     "importSuccess": "匯入成功",
-    "importFailed": "匯入失敗"
+    "importFailed": "匯入失敗",
+    "refreshSuccess": "刷新成功",
+    "refreshFailed": "刷新失敗"
   },
   "scada": {
     "title": "專案管理",

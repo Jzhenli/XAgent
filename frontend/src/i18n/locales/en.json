@@ -1285,7 +1285,9 @@
     "importConfirmTitle": "Confirm Import",
     "importPartialSuccess": "Partial Import Success",
     "importSuccess": "Import Success",
-    "importFailed": "Import Failed"
+    "importFailed": "Import Failed",
+    "refreshSuccess": "Refresh succeeded",
+    "refreshFailed": "Refresh failed"
   },
   "scada": {
     "title": "Project Management",

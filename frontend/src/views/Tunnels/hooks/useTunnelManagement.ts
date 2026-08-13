@@ -398,6 +398,11 @@ export function useTunnelManagement() {
    */
   const handleRefresh = async () => {
     await channelStore.fetchChannels()
+    if (channelStore.error) {
+      ElMessage.error(t('channels.refreshFailed'))
+    } else {
+      ElMessage.success(t('channels.refreshSuccess'))
+    }
   }
 
   return {
