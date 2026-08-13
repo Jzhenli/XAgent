@@ -529,6 +529,8 @@
     "dataTypeRequired": "請輸入資料類型",
     "deviceReloaded": "設備已熱重載",
     "reloadFailed": "熱重載失敗",
+    "refreshSuccess": "刷新成功",
+    "refreshFailed": "刷新失敗",
     "pointUpdated": "點位已更新",
     "pointAdded": "點位已新增",
     "updatePointFailed": "更新點位失敗",

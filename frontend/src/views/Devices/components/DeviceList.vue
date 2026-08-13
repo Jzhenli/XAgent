@@ -162,40 +162,50 @@
         <!-- <span class="device-count">{{ devices.length }} {{ t("devices.deviceCount") }}</span> -->
       </div>
       <div class="panel-actions" @click.stop>
-        <Icon
-          type="mono-line"
-          name="download"
-          :size="24"
-          :title="t('common.export')"
-          :color="{ normal: 'var(--el-text-color-primary)' }"
-          @click="emit('export')"
-        />
-        <Icon
-          type="mono-line"
+        <el-tooltip :content="t('common.export')" placement="top">
+          <Icon
+            type="mono-line"
+            name="download"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
+            @click="emit('export')"
+          />
+        </el-tooltip>
+        <el-tooltip
           v-if="canCreate"
-          name="import"
-          :size="24"
-          :title="t('common.import')"
-          :color="{ normal: 'var(--el-text-color-primary)' }"
-          @click="emit('import')"
-        />
-        <Icon
-          type="mono-line"
-          name="refresh"
-          :size="24"
-          :title="t('common.refresh')"
-          :color="{ normal: 'var(--el-text-color-primary)' }"
-          @click="emit('refresh')"
-        />
-        <Icon
-          type="mono-line"
+          :content="t('common.import')"
+          placement="top"
+        >
+          <Icon
+            type="mono-line"
+            name="import"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
+            @click="emit('import')"
+          />
+        </el-tooltip>
+        <el-tooltip :content="t('common.refresh')" placement="top">
+          <Icon
+            type="mono-line"
+            name="refresh"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
+            @click="emit('refresh')"
+          />
+        </el-tooltip>
+        <el-tooltip
           v-if="canCreate"
-          name="add"
-          :size="24"
-          :color="{ normal: 'rgba(102, 102, 255, 1)' }"
-          :title="t('devices.addDevice')"
-          @click="emit('add')"
-        />
+          :content="t('devices.addDevice')"
+          placement="top"
+        >
+          <Icon
+            type="mono-line"
+            name="add"
+            :size="24"
+            :color="{ normal: 'rgba(102, 102, 255, 1)' }"
+            @click="emit('add')"
+          />
+        </el-tooltip>
       </div>
     </div>
 
@@ -254,27 +264,34 @@
             @command="(cmd: string) => handleDropdownCommand(cmd, device)"
           >
             <el-button type="info" link :size="actionSize" class="more-btn">
-              <el-icon><MoreFilled /></el-icon>
+              <el-icon :size="18"><MoreFilled /></el-icon>
             </el-button>
             <template #dropdown>
               <el-dropdown-menu class="device-more-menu">
-                <el-dropdown-item v-if="canUpdate" command="edit" :icon="Edit">
-                  {{ t("common.edit") }}
+                <el-dropdown-item
+                  v-if="canUpdate"
+                  command="edit"
+                  class="dropdown-item-edit"
+                >
+                  <el-icon :size="18"><Edit /></el-icon>
+                  <span>{{ t("common.edit") }}</span>
                 </el-dropdown-item>
                 <el-dropdown-item
                   v-if="canUpdate"
                   command="reload"
-                  :icon="RefreshRight"
+                  class="dropdown-item-reload"
                 >
-                  {{ t("devices.hotReload") }}
+                  <el-icon :size="18"><RefreshRight /></el-icon>
+                  <span>{{ t("devices.hotReload") }}</span>
                 </el-dropdown-item>
                 <el-dropdown-item
                   v-if="canDelete"
                   command="delete"
-                  :icon="Delete"
                   divided
+                  class="dropdown-item-delete"
                 >
-                  <span class="delete-text">{{ t("common.delete") }}</span>
+                  <el-icon :size="18"><Delete /></el-icon>
+                  <span>{{ t("common.delete") }}</span>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -368,7 +385,7 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
 @import "./DialogCommon.css";
 /* ========== 桌面端：设备列表面板 ========== */
 .device-list-panel {
-  width: 320px;
+  width: 360px;
   min-width: 260px;
   flex-shrink: 0;
   background: var(--bg-card);
@@ -383,7 +400,8 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  height: 60px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--el-border-color-light);
   flex-shrink: 0;
   gap: 8px;
@@ -415,7 +433,7 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
 .panel-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex-shrink: 0;
 }
 
@@ -500,16 +518,20 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
 }
 
 .more-btn {
-  padding: 4px;
-  border-radius: 4px;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .more-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(102, 102, 255, 0.12);
+  color: rgba(102, 102, 255, 1);
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(102, 102, 255, 0.2);
 }
 
-.delete-text {
-  color: var(--el-color-danger);
+.more-btn:active {
+  transform: scale(0.95);
 }
 
 /* ========== 下拉菜单样式 ========== */
@@ -521,38 +543,72 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
 }
 
 :deep(.device-more-menu) {
-  padding: 6px;
-  border-radius: 8px;
-  min-width: 140px;
-  background: var(--bg-modal) !important;
-  border: 1px solid var(--border-light);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  border-radius: 12px;
+  min-width: 120px;
+  background: var(--bg-modal, #fff) !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(12px);
+  animation: deviceDropdownFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes deviceDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 :deep(.device-more-menu .el-dropdown-menu__item) {
-  padding: 8px 12px;
+  padding: 5px 7px;
   border-radius: 6px;
   font-size: 14px;
-  background: var(--bg-modal) !important;
-  color: var(--text-primary) !important;
+  font-weight: 500;
+  background: transparent !important;
+  color: var(--el-text-color-primary) !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+:deep(.device-more-menu .el-dropdown-menu__item .el-icon) {
+  transition: transform 0.2s ease;
 }
 
 :deep(.device-more-menu .el-dropdown-menu__item:hover),
 :deep(.device-more-menu .el-dropdown-menu__item:focus),
 :deep(.device-more-menu .el-dropdown-menu__item:active) {
-  background: var(--color-primary-light) !important;
-  color: var(--color-primary) !important;
+  background: rgba(102, 102, 255, 0.1) !important;
+  color: rgba(102, 102, 255, 1) !important;
+  transform: translateX(2px);
 }
 
-:deep(.device-more-menu .el-dropdown-menu__item.command-delete:hover),
-:deep(.device-more-menu .el-dropdown-menu__item.command-delete:focus),
-:deep(.device-more-menu .el-dropdown-menu__item.command-delete:active) {
-  background: var(--color-danger-light) !important;
-  color: var(--color-danger) !important;
+:deep(.device-more-menu .dropdown-item-delete) {
+  color: var(--el-color-danger) !important;
+}
+
+:deep(.device-more-menu .dropdown-item-delete:hover),
+:deep(.device-more-menu .dropdown-item-delete:focus),
+:deep(.device-more-menu .dropdown-item-delete:active) {
+  color: var(--el-color-danger) !important;
+  transform: translateX(2px);
+}
+
+:deep(.device-more-menu .dropdown-item-delete:hover .el-icon) {
+  color: var(--el-color-danger);
 }
 
 :deep(.device-more-menu .el-dropdown-menu__item.is-divider) {
-  margin: 4px 0;
+  margin: 6px 4px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 /* ========== 紧凑模式：网格卡片 ========== */

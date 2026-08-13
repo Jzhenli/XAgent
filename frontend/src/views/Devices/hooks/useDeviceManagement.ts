@@ -62,8 +62,13 @@ export function useDeviceManagement() {
 
   const handleRefresh = async () => {
     await deviceStore.fetchDevices()
-    await deviceStore.fetchConnectionStatus()
-    await pointStore.fetchDevicesWithPoints()
+    if (deviceStore.error) {
+      ElMessage.error(t('devices.refreshFailed'))
+    } else {
+      await deviceStore.fetchConnectionStatus()
+      await pointStore.fetchDevicesWithPoints()
+      ElMessage.success(t('devices.refreshSuccess'))
+    }
   }
 
   const handleEditDevice = (device: DeviceListItem, form: DeviceFormData) => {

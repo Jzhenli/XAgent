@@ -529,6 +529,8 @@
     "dataTypeRequired": "Please enter data type",
     "deviceReloaded": "Device reloaded",
     "reloadFailed": "Reload failed",
+    "refreshSuccess": "Refresh succeeded",
+    "refreshFailed": "Refresh failed",
     "pointUpdated": "Point updated",
     "pointAdded": "Point added",
     "updatePointFailed": "Failed to update point",
