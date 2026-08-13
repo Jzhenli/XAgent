@@ -47,16 +47,16 @@ const { t } = useI18n();
 
 // 组件入参
 const props = defineProps<{
-  config: ScadaComponent;
+  component: ScadaComponent;
   /** 编辑器编辑态，编辑态禁止操作 */
   editing?: boolean;
 }>();
 
 // 组件配置 & 绑定变量
-const acConfig = computed(() => props.config.config as AcModeComponentConfig);
-const bindingInfo = computed(() => props.config.binding);
+const acConfig = computed(() => props.component.config as AcModeComponentConfig);
+const bindingInfo = computed(() => props.component.binding);
 const defaultVal = computed(
-  () => acConfig.value.currentValue ?? props.config.config.value,
+  () => acConfig.value.currentValue ?? props.component.config.value,
 );
 
 // SCADA 读写钩子

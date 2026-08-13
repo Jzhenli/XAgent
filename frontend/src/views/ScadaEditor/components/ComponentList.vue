@@ -61,36 +61,58 @@ const handleDeleteComponent = (component: ScadaComponent, event: Event) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bg-container);
+  background: transparent;
 }
 
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  border-bottom: 1px solid var(--border-base);
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.15);
   flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%);
 }
 
 .header-title {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
 }
 
 .header-count {
   font-size: 12px;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  padding: 2px 8px;
-  border-radius: 10px;
+  color: var(--scada-cyan);
+  background: rgba(34, 211, 238, 0.15);
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  font-weight: 500;
 }
 
 .list-content {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  padding: 12px;
+}
+
+.list-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.list-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.list-content::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.3);
+  border-radius: 3px;
+}
+
+.list-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.5);
 }
 
 .empty-list {
@@ -98,52 +120,68 @@ const handleDeleteComponent = (component: ScadaComponent, event: Event) => {
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   font-size: 13px;
   text-align: center;
   padding: 20px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-list::before {
+  content: '📡';
+  font-size: 32px;
+  opacity: 0.5;
 }
 
 .list-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 4px;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 4px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
 }
 
 .list-item:hover {
-  background: var(--bg-hover);
+  background: var(--scada-bg-hover);
+  border-color: rgba(34, 211, 238, 0.2);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .list-item.active {
-  background: var(--color-primary-light-9, rgba(64, 158, 255, 0.1));
-  border: 1px solid var(--color-primary, #409eff);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.3), inset 0 0 20px rgba(34, 211, 238, 0.05);
 }
 
 .list-item.active .item-icon {
-  background: var(--color-primary, #409eff);
+  background: linear-gradient(135deg, var(--scada-cyan) 0%, var(--scada-purple) 100%);
   color: #fff;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
 }
 
 .list-item.active .item-name {
-  color: var(--color-primary, #409eff);
-  font-weight: 500;
+  color: var(--scada-cyan);
+  font-weight: 600;
 }
 
 .item-icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-secondary);
-  border-radius: 4px;
-  font-size: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 16px;
   flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .item-info {
@@ -161,14 +199,18 @@ const handleDeleteComponent = (component: ScadaComponent, event: Event) => {
 
 .item-position {
   font-size: 11px;
-  color: var(--text-secondary);
-  margin-top: 2px;
+  color: var(--text-tertiary);
+  margin-top: 3px;
+  font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .delete-btn {
   opacity: 0;
-  transition: opacity 0.2s;
-  color: var(--text-secondary);
+  transition: all 0.2s;
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 4px;
 }
 
 .list-item:hover .delete-btn {
@@ -176,6 +218,7 @@ const handleDeleteComponent = (component: ScadaComponent, event: Event) => {
 }
 
 .delete-btn:hover {
-  color: var(--color-danger);
+  color: #f56c6c;
+  background: rgba(245, 108, 108, 0.15);
 }
 </style>

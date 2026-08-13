@@ -16,11 +16,11 @@ import XIcon from '@/icon/index.vue'
 import type { ScadaComponent } from '@/types/scada'
 
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
-const iconConfig = computed(() => (props.config as ScadaComponent<'icon'>).config)
+const iconConfig = computed(() => (props.component as ScadaComponent<'icon'>).config)
 
 const iconSize = computed(() => Math.min(iconConfig.value.width, iconConfig.value.height))
 

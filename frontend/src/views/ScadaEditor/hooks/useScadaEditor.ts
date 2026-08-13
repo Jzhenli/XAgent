@@ -1,9 +1,7 @@
-import { ref, computed, watch, inject } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { projectApi } from '@/api/projects'
 import { usePointStore } from '@/stores/points'
-import { ScadaPointReaderKey } from '@/utils/scadaPointReader'
-import { usePolling } from '@/hooks/usePolling'
 
 import type { Ref } from 'vue'
 import type { Project } from '@/types/project'
@@ -12,7 +10,6 @@ import type {
   ScadaPanel,
   ScadaComponent,
   PointBinding,
-  PanelPreset,
   ComponentConfig
 } from '../types'
 import type { ComponentType } from '../registry'
@@ -93,7 +90,7 @@ function restorePanelState(state: string): void {
   }
 }
 
-setupUndoSystem(serializePanelState, restorePanelState)
+let undoSystemInitialized = false
 
 /** 当前生效的面板：优先取草稿，其次取原始数据 */
 const currentPanel = computed<ScadaPanel | null>(() => {
@@ -171,6 +168,11 @@ function getEditablePanel(): ScadaPanel | null {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function useScadaEditor() {
+  if (!undoSystemInitialized) {
+    setupUndoSystem(serializePanelState, restorePanelState)
+    undoSystemInitialized = true
+  }
+
   const { t } = useI18n()
   const undo = useScadaUndo()
 
@@ -425,7 +427,7 @@ export function useScadaEditor() {
       const newComponent = cloneComponent(component, {
         x: component.x + 20,
         y: component.y + 20
-      }, t('common.duplicateSuffix'))
+      }, t('common.duplicateSuffix'), t)
 
       undo.pushOperation('duplicate', t('scada.undoOperations.duplicate', { name: component.name }), [newComponent.id])
 
@@ -458,13 +460,15 @@ export function useScadaEditor() {
     if (!panel || clipboard.value.length === 0) return
 
     const newIds: string[] = []
+
     clipboard.value.forEach((clipComp, index) => {
       const offset = index * 20
       const newComponent = cloneComponent(clipComp, {
         x: x !== undefined ? x + offset : clipComp.x + 20,
         y: y !== undefined ? y + offset : clipComp.y + 20
-      }, t('common.duplicateSuffix'))
+      }, t('common.duplicateSuffix'), t)
       newIds.push(newComponent.id)
+      panel.components.push(newComponent)
     })
 
     undo.pushOperation(
@@ -472,15 +476,6 @@ export function useScadaEditor() {
       t('scada.undoOperations.paste', { count: newIds.length }),
       newIds
     )
-
-    clipboard.value.forEach((clipComp, index) => {
-      const offset = index * 20
-      const newComponent = cloneComponent(clipComp, {
-        x: x !== undefined ? x + offset : clipComp.x + 20,
-        y: y !== undefined ? y + offset : clipComp.y + 20
-      }, t('common.duplicateSuffix'))
-      panel.components.push(newComponent)
-    })
 
     panel.updatedAt = Date.now()
 
@@ -822,196 +817,4 @@ export function useScadaConfig<T extends ComponentType = ComponentType>(componen
   return { config, updateConfig, updateConfigs, updateValue }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 属性面板 Hook
-// ═══════════════════════════════════════════════════════════════════════════════
 
-/** 预设面板尺寸 */
-const PRESET_SIZES: PanelPreset[] = [
-  { key: 'small', name: 'Small', width: 800, height: 600 },
-  { key: 'medium', name: 'Medium', width: 1200, height: 800 },
-  { key: 'large', name: 'Large', width: 1920, height: 1080 },
-  { key: 'extraWide', name: 'Extra Wide', width: 2560, height: 1440 }
-]
-
-/**
- * 右侧面板配置与点位绑定表单状态管理
- */
-export function useScadaProps() {
-  const scada = useScadaEditor()
-  const pointStore = usePointStore()
-
-  const selectedDevice = ref('')
-  const selectedPoint = ref('')
-
-  const component = computed(() => scada.selectedComponent.value)
-  const currentPanel = computed(() => scada.currentPanel.value)
-
-  const panelWidth = ref(1920)
-  const panelHeight = ref(1080)
-  const panelBgColor = ref('#f0f2f5')
-  const panelGrid = ref(20)
-  const panelBgImage = ref('')
-  const panelBgType = ref<'color' | 'image'>('color')
-
-  /** 同步面板元数据到表单 */
-  watch(currentPanel, (panel) => {
-    if (panel) {
-      panelWidth.value = panel.width
-      panelHeight.value = panel.height
-      panelBgColor.value = panel.backgroundColor
-      panelGrid.value = panel.grid
-      panelBgImage.value = panel.backgroundImage || ''
-      panelBgType.value = panel.backgroundImage ? 'image' : 'color'
-    }
-  }, { immediate: true })
-
-  /** 当前选中设备下的可用点位 */
-  const availablePoints = computed(() => {
-    if (!selectedDevice.value) return []
-    const device = pointStore.devices.find(
-      d => d.asset === selectedDevice.value || d.name === selectedDevice.value
-    )
-    return device?.points || []
-  })
-
-  /** 同步组件绑定信息到表单 */
-  watch(component, (comp) => {
-    if (comp?.binding) {
-      selectedDevice.value = comp.binding.deviceId
-      selectedPoint.value = comp.binding.pointName
-    } else {
-      selectedDevice.value = ''
-      selectedPoint.value = ''
-    }
-  }, { immediate: true })
-
-  /** 处理设备选择变化 */
-  const handleDeviceChange = (deviceId: string) => {
-    selectedDevice.value = deviceId
-    selectedPoint.value = ''
-    if (component.value) {
-      const binding = component.value.binding || { deviceId: '', pointName: '' }
-      scada.updateComponent(component.value.id, {
-        binding: { ...binding, deviceId }
-      })
-    }
-  }
-
-  /** 处理点位选择变化 */
-  const handlePointChange = (pointName: string) => {
-    selectedPoint.value = pointName
-    if (component.value) {
-      const binding = component.value.binding || { deviceId: selectedDevice.value, pointName: '' }
-      const point = availablePoints.value.find(p => p.name === pointName)
-      scada.updateComponent(component.value.id, {
-        binding: {
-          ...binding,
-          pointName,
-          pointDescription: point?.description,
-          unit: point?.unit
-        }
-      })
-    }
-  }
-
-  const updateName = (e: Event) => {
-    const value = (e.target as HTMLInputElement).value
-    if (component.value) {
-      scada.updateComponent(component.value.id, { name: value })
-    }
-  }
-
-  const updatePosition = (axis: 'x' | 'y', e: Event) => {
-    const value = parseFloat((e.target as HTMLInputElement).value)
-    if (!isNaN(value) && component.value) {
-      scada.updateComponent(component.value.id, {
-        x: axis === 'x' ? value : component.value.x,
-        y: axis === 'y' ? value : component.value.y
-      })
-    }
-  }
-
-  const updateDimension = (dim: 'width' | 'height', e: Event) => {
-    const value = parseFloat((e.target as HTMLInputElement).value)
-    if (!isNaN(value) && component.value) {
-      scada.updateComponent(component.value.id, {
-        config: {
-          ...component.value.config,
-          width: dim === 'width' ? value : component.value.config.width,
-          height: dim === 'height' ? value : component.value.config.height
-        }
-      })
-    }
-  }
-
-  /** 将表单数据写回面板 */
-  const updatePanelSize = () => {
-    scada.updatePanel({
-      width: panelWidth.value,
-      height: panelHeight.value,
-      backgroundColor: panelBgColor.value,
-      grid: panelGrid.value,
-      backgroundImage: panelBgType.value === 'image' ? panelBgImage.value : undefined
-    })
-  }
-
-  const onBgTypeChange = (type: 'color' | 'image') => {
-    panelBgType.value = type
-    if (type === 'color') {
-      panelBgImage.value = ''
-      updatePanelSize()
-    }
-  }
-
-  const handleBgImageUpload = (e: Event) => {
-    const input = e.target as HTMLInputElement
-    const file = input.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        panelBgImage.value = event.target?.result as string
-        panelBgType.value = 'image'
-        updatePanelSize()
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const removeBgImage = () => {
-    panelBgImage.value = ''
-    panelBgType.value = 'color'
-    updatePanelSize()
-  }
-
-  const applyPreset = (preset: PanelPreset) => {
-    panelWidth.value = preset.width
-    panelHeight.value = preset.height
-    updatePanelSize()
-  }
-
-  return {
-    selectedDevice,
-    selectedPoint,
-    component,
-    currentPanel,
-    panelWidth,
-    panelHeight,
-    panelBgColor,
-    panelGrid,
-    panelBgImage,
-    panelBgType,
-    availablePoints,
-    presetSizes: PRESET_SIZES,
-    handleDeviceChange,
-    handlePointChange,
-    updateName,
-    updatePosition,
-    updateDimension,
-    updatePanelSize,
-    onBgTypeChange,
-    handleBgImageUpload,
-    removeBgImage,
-    applyPreset
-  }
-}

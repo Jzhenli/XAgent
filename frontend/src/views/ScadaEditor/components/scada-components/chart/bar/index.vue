@@ -11,14 +11,14 @@ import { useScadaBarChart } from '../../../../hooks/useScadaBarChart'
 
 export interface BarChartProps {
   /** 组件完整配置对象 */
-  config: ScadaComponent
+  component: ScadaComponent
   /** 是否处于编辑模式 */
   editing?: boolean
 }
 
 const props = defineProps<BarChartProps>()
 
-const configRef = computed(() => props.config)
+const configRef = computed(() => props.component)
 const { containerRef, containerStyle } = useScadaBarChart(configRef)
 </script>
 

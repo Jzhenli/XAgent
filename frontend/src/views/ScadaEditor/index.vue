@@ -1,11 +1,9 @@
 <template>
-  <div v-if="!isReady" class="loading-state" v-loading="true" :element-loading-text="$t('common.loading')">
-  </div>
-  <div v-else class="scada-page" :class="{ 'preview-mode': isPreviewMode }">
+  <div class="scada-page" :class="{ 'preview-mode': isPreviewMode }">
     <div v-if="!isPreviewMode" class="page-header">
       <div class="header-left">
         <el-button :icon="ArrowLeft" @click="handleGoBack">{{ $t('scada.backToList') }}</el-button>
-        <span class="project-name">{{ currentPanel?.name }}</span>
+        <span class="project-name">{{ currentPanel?.name || 'Loading...' }}</span>
       </div>
       <div class="header-actions">
         <el-button :icon="View" @click="handlePreview">{{ $t('scada.preview') }}</el-button>
@@ -105,12 +103,20 @@
             </el-popover>
           </div>
           <div class="toolbar-right">
-            <span class="component-count">{{ $t('scada.componentCount', { count: currentPanel!.components.length }) }}</span>
+            <span class="component-count">{{ $t('scada.componentCount', { count: currentPanel?.components.length ?? 0 }) }}</span>
           </div>
         </div>
 
         <div class="canvas-wrapper">
-          <ScadaCanvas />
+          <ScadaCanvas v-if="!isLoading" />
+          <div v-else class="canvas-loading">
+            <div class="loading-spinner">
+              <div class="spinner-ring"></div>
+              <div class="spinner-ring"></div>
+              <div class="spinner-ring"></div>
+            </div>
+            <span class="loading-text">{{ $t('common.loading') }}</span>
+          </div>
         </div>
       </div>
 
@@ -166,7 +172,7 @@ const { currentPanel, exportPanel, importPanel } = useScadaData()
 
 const isPreviewMode = ref(false)
 const showComponentList = ref(false)
-const isReady = ref(false)
+const isLoading = ref(true)
 const importInputRef = ref<HTMLInputElement | null>(null)
 
 const {
@@ -179,9 +185,14 @@ const {
   isDirty: scada.isDirty,
   routeName: 'ScadaEditor',
   onSave: async () => {
-    await scada.savePanel()
-    ElMessage.success(t('scada.savePanelSuccess'))
-    router.push({ name: 'ScadaList' })
+    try {
+      await scada.savePanel()
+      ElMessage.success(t('scada.savePanelSuccess'))
+      router.push({ name: 'ScadaList' })
+    } catch (e) {
+      console.error('Failed to save panel:', e)
+      ElMessage.error(t('common.operationFailed'))
+    }
   },
   onDiscard: () => {
     scada.discardDraft()
@@ -191,9 +202,26 @@ const {
 
 onMounted(async () => {
   document.addEventListener('fullscreenchange', handleFullscreenChange)
-  await scada.loadPanel(route.params.id as string)
-  await pointStore.fetchDevicesWithPoints()
-  isReady.value = true
+
+  const panelId = route.params.id as string
+  const results = await Promise.allSettled([
+    scada.loadPanel(panelId),
+    pointStore.fetchDevicesWithPoints()
+  ])
+
+  if (results[0].status === 'rejected') {
+    console.error('Failed to load panel:', results[0].reason)
+    ElMessage.error(t('scada.loadPanelFailed'))
+  } else if (results[0].value === null) {
+    console.error('Panel not found or failed to parse:', panelId)
+    ElMessage.error(t('scada.loadPanelFailed'))
+  }
+  if (results[1].status === 'rejected') {
+    console.error('Failed to load devices:', results[1].reason)
+    ElMessage.error(t('scada.loadDevicesFailed'))
+  }
+
+  isLoading.value = false
 })
 
 onUnmounted(() => {
@@ -233,8 +261,13 @@ const handleZoomReset = () => {
 }
 
 const handleSave = async () => {
-  await scada.savePanel()
-  ElMessage.success(t('scada.savePanelSuccess'))
+  try {
+    await scada.savePanel()
+    ElMessage.success(t('scada.savePanelSuccess'))
+  } catch (e) {
+    console.error('Failed to save panel:', e)
+    ElMessage.error(t('common.operationFailed'))
+  }
 }
 
 const handlePreview = () => {
@@ -278,7 +311,8 @@ const handleImportFileChange = async (event: Event) => {
     } else {
       ElMessage.error(t('scada.invalidPanelFile'))
     }
-  } catch {
+  } catch (e) {
+    console.error('Failed to import panel:', e)
     ElMessage.error(t('scada.importFailed'))
   } finally {
     input.value = ''
@@ -290,60 +324,70 @@ const handleImportFileChange = async (event: Event) => {
 .scada-page {
   display: flex;
   flex-direction: column;
-  background: var(--bg-secondary);
+  background: var(--bg-card);
   position: relative;
   z-index: 1;
   height: 100%;
+  
 }
 
 .scada-page.preview-mode {
-  background: #1a1a2e;
+  background: radial-gradient(ellipse at center, #0f172a 0%, #020617 100%);
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
-  background: var(--bg-container);
-  border-bottom: 1px solid var(--border-base);
+  padding: 14px 24px;
+  background: var(--scada-bg-elevated);
+  backdrop-filter: blur(10px);
+  border-bottom: var(--scada-border-glow);
   flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .project-name {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: 1px;
+  text-shadow: 0 0 12px var(--scada-cyan-glow);
 }
 
 .header-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .preview-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 20px;
-  background: rgba(0, 0, 0, 0.8);
+  padding: 10px 24px;
+  background: rgba(15, 23, 42, 0.85);
   color: #fff;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.3);
 }
 
 .preview-title {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--scada-cyan);
+  text-shadow: 0 0 12px var(--scada-cyan-glow);
 }
 
 .preview-actions {
@@ -355,30 +399,34 @@ const handleImportFileChange = async (event: Event) => {
   flex: 1;
   display: flex;
   min-height: 0;
-  background: var(--bg-secondary);
+  background: radial-gradient(ellipse at center bottom, rgba(34, 211, 238, 0.03) 0%, var(--bg-card) 70%);
   position: relative;
 }
 
 .preview-mode .scada-editor {
-  background: #1a1a2e;
+  background: radial-gradient(ellipse at center, #0f172a 0%, #020617 100%);
 }
 
 .editor-left {
   width: 280px;
   flex-shrink: 0;
-  background: var(--bg-container);
-  border-right: 1px solid var(--border-base);
+  background: var(--scada-bg-elevated);
+  backdrop-filter: blur(10px);
+  border-right: var(--scada-border-glow);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
 }
 
 .editor-list {
   width: 220px;
   flex-shrink: 0;
-  background: var(--bg-container);
-  border-right: 1px solid var(--border-base);
-  transition: width 0.2s ease;
+  background: var(--scada-bg-elevated);
+  backdrop-filter: blur(10px);
+  border-right: var(--scada-border-glow);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   display: flex;
   flex-direction: column;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
 }
 
 .editor-list.collapsed {
@@ -401,27 +449,40 @@ const handleImportFileChange = async (event: Event) => {
 }
 
 .editor-toolbar {
-  height: 44px;
+  height: 48px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 12px;
-  background: var(--bg-container);
-  border-bottom: 1px solid var(--border-base);
+  padding: 0 16px;
+  background: var(--scada-bg-elevated);
+  backdrop-filter: blur(10px);
+  border-bottom: var(--scada-border-glow);
   flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .shortcut-btn {
   font-size: 12px;
-  padding: 0 8px;
+  padding: 4px 12px;
   color: var(--text-secondary);
   cursor: pointer;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 4px;
+  background: rgba(34, 211, 238, 0.05);
+  transition: all 0.2s;
+}
+
+.shortcut-btn:hover {
+  color: var(--scada-cyan);
+  border-color: var(--scada-cyan);
+  background: rgba(34, 211, 238, 0.1);
+  box-shadow: 0 0 10px var(--scada-cyan-glow);
 }
 
 .shortcut-list {
@@ -450,16 +511,16 @@ kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 6px;
+  padding: 2px 8px;
   font-size: 12px;
   font-family: inherit;
   color: var(--text-primary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-base);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.3);
   border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  min-width: 20px;
-  height: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+  min-width: 24px;
+  height: 22px;
 }
 
 .desc {
@@ -473,35 +534,99 @@ kbd {
 }
 
 .component-count {
-  font-size: 12px;
-  color: var(--text-secondary);
+  font-size: 13px;
+  color: var(--scada-cyan);
+  font-weight: 500;
+  padding: 4px 12px;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 12px;
 }
 
 .canvas-wrapper {
   flex: 1;
   overflow: auto;
-  padding: 20px;
+  padding: 30px;
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  background-color: var(--bg-card);
+  position: relative;
+}
+
+.canvas-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background-color: rgba(2, 6, 23, 0.9);
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+.loading-spinner {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.spinner-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--scada-cyan);
+  box-shadow: 0 0 20px var(--scada-cyan-glow);
+  animation: spin-ring 1.4s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.spinner-ring:nth-child(2) {
+  inset: 8px;
+  border-top-color: var(--scada-purple);
+  box-shadow: 0 0 20px var(--scada-purple-glow);
+  animation-duration: 1.6s;
+  animation-direction: reverse;
+}
+
+.spinner-ring:nth-child(3) {
+  inset: 16px;
+  border-top-color: #818cf8;
+  box-shadow: 0 0 15px rgba(129, 140, 248, 0.4);
+  animation-duration: 1.2s;
+}
+
+@keyframes spin-ring {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 15px;
+  color: var(--scada-cyan);
+  letter-spacing: 2px;
+  font-weight: 500;
+  text-shadow: 0 0 10px var(--scada-cyan-glow);
+  animation: pulse-text 2s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 .editor-right {
-  width: 280px;
+  width: 300px;
   flex-shrink: 0;
-  background: var(--bg-container);
-  border-left: 1px solid var(--border-base);
+  background: var(--scada-bg-elevated);
+  backdrop-filter: blur(10px);
+  border-left: var(--scada-border-glow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.loading-state {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-secondary);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
 }
 
 .empty-state {
@@ -511,12 +636,13 @@ kbd {
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
-  background: var(--bg-secondary);
+  background: transparent;
 }
 
 .empty-icon {
-  font-size: 64px;
+  font-size: 72px;
   margin-bottom: 16px;
+  filter: drop-shadow(0 0 20px var(--scada-cyan-glow));
 }
 
 .empty-state p {

@@ -96,11 +96,15 @@ export function useScadaBarChart(
   const loadHistoryData = async () => {
     if (scada.isEditing.value || !binding.value) return
 
-    const deviceId = binding.value.deviceId
-    const hours = hoursMap[chartConfig.value?.timeRange || '24h'] || 24
+    try {
+      const deviceId = binding.value.deviceId
+      const hours = hoursMap[chartConfig.value?.timeRange || '24h'] || 24
 
-    await fetchHistoryReadings(deviceId, hours)
-    updateChartOption()
+      await fetchHistoryReadings(deviceId, hours)
+      updateChartOption()
+    } catch (e) {
+      console.error('[useScadaBarChart] Failed to load history data:', e)
+    }
   }
 
   const { start: startHistoryPolling, stop: stopHistoryPolling } = usePolling(loadHistoryData, {
@@ -232,7 +236,7 @@ export function useScadaBarChart(
           currentValue: fallbackValue.value,
           type: 'analog',
           standard_data_type: 'float',
-        } as any,
+        },
         hours,
       )
     }

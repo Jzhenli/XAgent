@@ -7,7 +7,7 @@
     <div v-else class="image-content-wrapper">
       <img
         :src="imageUrl"
-        :alt="config.name"
+        :alt="component.name"
         class="image-content"
         :style="imageStyle"
         draggable="false"
@@ -25,15 +25,15 @@ import type { ScadaComponent, ImageComponentConfig } from '@/types/scada'
 const { t } = useI18n()
 
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
-const imageConfig = computed(() => props.config.config as ImageComponentConfig)
+const imageConfig = computed(() => props.component.config as ImageComponentConfig)
 const imageUrl = computed(() => imageConfig.value?.url || '')
 const objectFit = computed(() => imageConfig.value?.fit || 'contain')
 const imageStyle = computed(() => `object-fit: ${objectFit.value};`)
-const currentValue = computed(() => props.config.config.value)
+const currentValue = computed(() => props.component.config.value)
 
 const containerStyle = computed(() => ({
   backgroundColor: imageConfig.value?.backgroundColor || undefined,

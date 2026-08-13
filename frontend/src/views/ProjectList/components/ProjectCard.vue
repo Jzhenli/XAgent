@@ -2,74 +2,92 @@
   <el-card class="project-card" shadow="hover">
     <div class="project-info">
       <div class="project-title-row">
-        <h3 class="project-name">{{ project.name }}</h3>
-        <el-tag :type="project.type === 'Dashboard' ? 'info' : 'warning'" size="small" class="type-tag">
-          {{ project.type === 'Dashboard' ? $t('scada.dashboardType') : $t('scada.graphicType') }}
-        </el-tag>
-        <el-button
-          type="success"
-          :icon="View"
+        <span class="project-name">{{ project.name }}</span>
+        <el-tag
+          :type="project.type === 'Dashboard' ? 'info' : 'warning'"
           size="small"
-          circle
+          class="type-tag"
+        >
+          {{
+            project.type === "Dashboard"
+              ? $t("scada.dashboardType")
+              : $t("scada.graphicType")
+          }}
+        </el-tag>
+        <Icon
+          name="show"
+          type="mono-line"
+          :size="24"
+          :color="{ normal: themeStore.isDark() ? 'white' : 'black' }"
           @click="$emit('preview', project)"
           class="preview-btn"
         />
       </div>
-      <p class="project-desc">{{ project.description || $t('scada.noDescription') }}</p>
+      <p class="project-desc">
+        {{ project.description || $t("scada.noDescription") }}
+      </p>
       <div class="project-meta">
-        <span>{{ $t('scada.createTime') }}: {{ formatTime(project.createdAt) }}</span>
-        <span>{{ $t('scada.updateTime') }}: {{ formatTime(project.updatedAt) }}</span>
+        <span
+          >{{ $t("scada.createTime") }}:
+          {{ formatTime(project.createdAt) }}</span
+        >
+        <span
+          >{{ $t("scada.updateTime") }}:
+          {{ formatTime(project.updatedAt) }}</span
+        >
       </div>
     </div>
     <div class="project-actions">
-      <el-button
-        type="primary"
-        :icon="Edit"
-        size="small"
+      <Icon
+        name="edit"
+        type="mono-line"
+        :size="24"
+        :color="{ normal: themeStore.isDark() ? 'white' : 'black' }"
         @click="$emit('edit', project)"
-      >
-        {{ $t('scada.edit') }}
-      </el-button>
-      <el-button
-        type="warning"
-        :icon="Setting"
-        size="small"
+      />
+      <Icon
+        name="setting"
+        type="mono-line"
+        :size="24"
+        :color="{ normal: themeStore.isDark() ? 'white' : 'black' }"
         @click="$emit('settings', project)"
-      >
-        {{ $t('scada.settings') }}
-      </el-button>
-      <el-button
-        type="danger"
-        :icon="Delete"
-        size="small"
+      />
+      <Icon
+        name="delete"
+        type="mono-line"
+        :size="24"
+        :color="{ normal: 'rgba(247, 111, 131, 1)' }"
         @click="$emit('delete', project.id)"
-      >
-        {{ $t('scada.delete') }}
-      </el-button>
+      />
     </div>
   </el-card>
 </template>
 
 <script setup lang="ts">
-import { Edit, Delete, Setting, View } from '@element-plus/icons-vue'
-import type { Project } from '@/types/project'
+import { Icon } from "@/icon/index";
+import type { Project } from "@/types/project";
+import { useThemeStore } from "@/stores/theme";
+
+const themeStore = useThemeStore();
 
 defineProps<{
-  project: Project
-  formatTime: (timestamp: number) => string
-}>()
+  project: Project;
+  formatTime: (timestamp: number) => string;
+}>();
 
 defineEmits<{
-  (e: 'preview', project: Project): void
-  (e: 'edit', project: Project): void
-  (e: 'settings', project: Project): void
-  (e: 'delete', id: string): void
-}>()
+  (e: "preview", project: Project): void;
+  (e: "edit", project: Project): void;
+  (e: "settings", project: Project): void;
+  (e: "delete", id: string): void;
+}>();
 </script>
 
 <style scoped>
 .project-card {
   transition: all 0.3s;
+  background: var(--bg-card-s);
+  border-radius: 10px;
 }
 
 .project-info {
@@ -123,8 +141,8 @@ defineEmits<{
 .project-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  align-items: center;
+  gap: 16px;
   padding-top: 12px;
-  border-top: 1px solid var(--border-light);
 }
 </style>

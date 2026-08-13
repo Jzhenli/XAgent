@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="config-section">
     <div class="section-title">{{ t("componentConfig.iconConfig") }}</div>
 
@@ -131,6 +131,13 @@ const iconOptions = computed(() => {
 .form-group select,
 .form-group :deep(.el-select) {
   width: 100%;
+  background-color: var(--scada-bg-elevated);
+  color: var(--text-primary);
+}
+
+.form-group input::placeholder,
+.form-group select::placeholder {
+  color: var(--text-placeholder);
 }
 
 .form-group input:focus,

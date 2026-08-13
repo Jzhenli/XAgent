@@ -6,7 +6,7 @@ import { getComponentTemplate, componentMetaRegistry } from '../component-regist
  * 生成唯一组件ID
  */
 export function generateComponentId(): string {
-  return `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  return `comp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
 
 /**
@@ -14,16 +14,22 @@ export function generateComponentId(): string {
  * @param source - 源组件
  * @param overrides - 覆盖属性
  * @param nameSuffix - 复制名称后缀（应传入当前语言的翻译文本）
+ * @param t - 国际化函数，用于解析 i18n key 为显示名称
  */
 export function cloneComponent(
   source: ScadaComponent,
   overrides: Partial<ScadaComponent> = {},
-  nameSuffix = ' (copy)'
+  nameSuffix = ' (copy)',
+  t?: (key: string) => string
 ): ScadaComponent {
+  let displayName = source.name
+  if (t && source.name?.startsWith('scadaComponentNames.')) {
+    displayName = t(source.name)
+  }
   return {
     ...JSON.parse(JSON.stringify(source)),
     id: generateComponentId(),
-    name: `${source.name}${nameSuffix}`,
+    name: `${displayName}${nameSuffix}`,
     ...overrides
   }
 }

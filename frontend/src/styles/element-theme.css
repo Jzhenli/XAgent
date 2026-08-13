@@ -199,7 +199,7 @@
   --el-color-info-light-9: #f2f3f4 !important;
 
   /* 输入框 */
-  --el-input-bg-color: #0f3460 !important;
+  --el-input-bg-color: #1a2744 !important;
   --el-input-border-color: #3a3a5e !important;
   --el-input-hover-border-color: #409eff !important;
   --el-input-focus-border-color: #409eff !important;
@@ -244,4 +244,7 @@
 
   /* 标签页 */
   --el-tabs-header-bg-color: #16213e !important;
+
+  /* 遮罩层 */
+  --el-mask-color: rgba(0, 0, 0, 0.5) !important;
 }

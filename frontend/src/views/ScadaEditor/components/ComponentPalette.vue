@@ -96,14 +96,14 @@ const selectCategory = (key: string) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bg-container);
+  background: transparent;
 }
 
 .palette-header {
-  height: 44px;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--border-base);
-  background: var(--bg-hover);
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.15);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%);
   flex-shrink: 0;
 }
 
@@ -116,36 +116,41 @@ const selectCategory = (key: string) => {
 }
 
 .header-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
 }
 
 .palette-hint {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   padding: 6px 12px;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.1);
 }
 
 .header-toggle {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border-base);
-  border-radius: 4px;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 6px;
   cursor: pointer;
-  color: var(--text-secondary);
-  transition: all 0.2s;
+  color: var(--text-tertiary);
+  transition: all 0.25s ease;
   flex-shrink: 0;
+  background: var(--scada-bg-elevated);
 }
 
 .header-toggle:hover {
-  background: var(--bg-hover);
-  color: var(--color-primary);
-  border-color: var(--color-primary);
+  background: rgba(34, 211, 238, 0.1);
+  color: var(--scada-cyan);
+  border-color: var(--scada-cyan);
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.3);
 }
 
 .palette-body {
@@ -157,56 +162,91 @@ const selectCategory = (key: string) => {
 
 /* Category menu sidebar */
 .category-menu {
-  width: 70px;
+  width: 72px;
   flex-shrink: 0;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-base);
+  background: rgba(255, 255, 255, 0.02);
+  border-right: 1px solid rgba(34, 211, 238, 0.1);
   overflow-y: auto;
-  padding: 8px 0;
+  padding: 10px 0;
+}
+
+.category-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.category-menu::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.2);
+  border-radius: 2px;
 }
 
 .menu-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 8px;
+  gap: 6px;
+  padding: 12px 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 3px solid transparent;
+  margin: 2px 0;
 }
 
 .menu-item:hover {
-  background: var(--bg-hover);
+  background: var(--scada-bg-hover);
+  border-left-color: var(--scada-cyan-glow);
 }
 
 .menu-item.active {
-  background: var(--color-primary-light-9, rgba(64, 158, 255, 0.1));
-  border-left-color: var(--color-primary);
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.15) 0%, rgba(168, 85, 247, 0.08) 100%);
+  border-left-color: var(--scada-cyan);
+  box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.05);
+}
+
+.menu-item.active .menu-icon {
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.5));
 }
 
 .menu-icon {
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
+  transition: all 0.2s ease;
 }
 
 .menu-label {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   text-align: center;
   line-height: 1.2;
+  letter-spacing: 0.5px;
 }
 
 .menu-item.active .menu-label {
-  color: var(--color-primary);
-  font-weight: 500;
+  color: var(--scada-cyan);
+  font-weight: 600;
 }
 
 /* Component panel */
 .component-panel {
   flex: 1;
-  padding: 10px;
+  padding: 12px;
   overflow-y: auto;
+}
+
+.component-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.component-panel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.component-panel::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.3);
+  border-radius: 3px;
+}
+
+.component-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.5);
 }
 
 .empty-category {
@@ -214,7 +254,7 @@ const selectCategory = (key: string) => {
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   font-size: 13px;
   text-align: center;
   padding: 20px;
@@ -223,7 +263,7 @@ const selectCategory = (key: string) => {
 .component-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 
 .component-item {
@@ -232,40 +272,67 @@ const selectCategory = (key: string) => {
   align-items: center;
   justify-content: center;
   aspect-ratio: 1 / 1;
-  padding: 8px;
-  background: var(--bg-hover);
-  border: 1px solid var(--border-base);
-  border-radius: 6px;
+  padding: 10px;
+  background: var(--scada-bg-elevated);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  border-radius: 8px;
   cursor: grab;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.component-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .component-item:hover {
-  background: var(--color-primary-light);
-  border-color: var(--color-primary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-light);
+  background: rgba(34, 211, 238, 0.1);
+  border-color: var(--scada-cyan);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(34, 211, 238, 0.2);
+}
+
+.component-item:hover::before {
+  opacity: 1;
+}
+
+.component-item:hover .component-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.5));
 }
 
 .component-item:active {
   cursor: grabbing;
-  transform: scale(0.95);
+  transform: scale(0.92);
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.3);
 }
 
 .component-icon {
   font-size: 28px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   line-height: 1;
+  transition: all 0.25s ease;
 }
 
 .component-name {
   font-size: 11px;
-  color: var(--text-primary);
+  color: var(--text-regular);
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.3;
   word-break: keep-all;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  letter-spacing: 0.3px;
+}
+
+.component-item:hover .component-name {
+  color: var(--scada-cyan);
 }
 </style>

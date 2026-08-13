@@ -45,6 +45,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import { useScadaEditor } from "@/views/ScadaEditor/hooks/useScadaEditor";
 import { useScadaPolling } from "@/views/ScadaEditor/hooks/useScadaBinding";
 import { projectApi } from "@/api/projects";
@@ -59,12 +60,15 @@ import { useKeyboardShortcuts } from "./composables/useKeyboardShortcuts";
 const router = useRouter();
 const scada = useScadaEditor();
 
-/** 启动当前面板绑定设备的周期性数据刷新 */
-useScadaPolling({ interval: 5000 });
+/** 启动当前面板绑定设备的周期性数据刷新，返回 stop 用于组件卸载时清理 */
+const { stop: stopPolling } = useScadaPolling({ interval: 5000 });
 
 const activeTab = ref(0);
 const panels = ref<Project[]>([]);
 const scale = ref(1);
+
+/** 面板切换版本号，防止竞态条件 */
+let tabSwitchVersion = 0;
 
 const tabs = computed(() =>
   panels.value.map((panel) => ({
@@ -80,8 +84,12 @@ const calcScale = () => {
 };
 
 const fetchPanels = async () => {
-  const res = await projectApi.list();
-  panels.value = (res.items ?? []).sort((a, b) => a.createdAt - b.createdAt);
+  try {
+    const res = await projectApi.list();
+    panels.value = (res.items ?? []).sort((a, b) => a.createdAt - b.createdAt);
+  } catch {
+    ElMessage.error("加载面板列表失败");
+  }
 };
 
 const loadCurrentPanel = async () => {
@@ -140,11 +148,16 @@ onUnmounted(() => {
   document.body.classList.remove("vant-fullscreen");
 
   resizeCleanup?.();
+  stopPolling();
 });
 
 watch(activeTab, async () => {
+  const version = ++tabSwitchVersion;
   await loadCurrentPanel();
-  nextTick(calcScale);
+  // 竞态防护：仅当请求版本号仍为最新时才应用结果
+  if (version === tabSwitchVersion) {
+    nextTick(calcScale);
+  }
 });
 </script>
 

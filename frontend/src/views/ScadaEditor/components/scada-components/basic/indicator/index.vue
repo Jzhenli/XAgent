@@ -13,13 +13,13 @@ import type { ScadaComponent, IndicatorComponentConfig } from '@/types/scada'
 import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
-const indicatorConfig = computed(() => props.config.config as IndicatorComponentConfig)
-const binding = computed(() => props.config.binding)
-const fallbackValue = computed(() => props.config.config.value)
+const indicatorConfig = computed(() => props.component.config as IndicatorComponentConfig)
+const binding = computed(() => props.component.binding)
+const fallbackValue = computed(() => props.component.config.value)
 
 const onValue = computed(() => indicatorConfig.value?.onValue ?? 1)
 const offValue = computed(() => indicatorConfig.value?.offValue ?? 0)

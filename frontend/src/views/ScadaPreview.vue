@@ -48,8 +48,8 @@ const systemStore = useSystemStore()
 
 provide(ScadaPointReaderKey, pointReader)
 
-/** 启动当前面板绑定设备的周期性数据刷新 */
-const { refreshBoundDevices } = useScadaPolling({ 
+/** 启动当前面板绑定设备的周期性数据刷新，返回 stop 用于组件卸载时清理 */
+const { refreshBoundDevices, stop: stopPolling } = useScadaPolling({ 
   interval: systemStore.visualizationConfig.pollingInterval,
   reader: pointReader
 })
@@ -72,6 +72,7 @@ onUnmounted(() => {
   scada.isEditing.value = true
   scada.isFullscreenPreview.value = false
   pointReader.clearDevices()
+  stopPolling()
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
 })
 
@@ -84,10 +85,14 @@ const handleGoBack = () => {
 }
 
 const handleToggleFullscreen = async () => {
-  if (!document.fullscreenElement) {
-    await document.documentElement.requestFullscreen()
-  } else {
-    await document.exitFullscreen()
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen()
+    } else {
+      await document.exitFullscreen()
+    }
+  } catch {
+    // 全屏 API 不被支持或权限不足，静默降级
   }
 }
 </script>

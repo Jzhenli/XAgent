@@ -1,40 +1,52 @@
 <template>
   <el-container class="app-layout">
     <template v-if="showSidebar">
-      <el-aside 
-        :width="(isCollapsed || shouldCollapseSidebar) ? '64px' : '188px'" 
+      <el-aside
+        :width="isCollapsed || shouldCollapseSidebar ? '64px' : '188px'"
         class="app-aside"
-        :class="{ collapsed: isCollapsed || shouldCollapseSidebar, 'fullscreen-hidden': isFullscreenMode }"
+        :class="{
+          collapsed: isCollapsed || shouldCollapseSidebar,
+          'fullscreen-hidden': isFullscreenMode,
+        }"
       >
         <div class="logo">
           <img class="logo-image" src="@/assets/login/logo.svg" alt="logo" />
-          <span v-if="!isCollapsed && !shouldCollapseSidebar" class="logo-text">XPlay</span>
+          <span v-if="!isCollapsed && !shouldCollapseSidebar" class="logo-text">
+            XPlay
+          </span>
         </div>
-        
+
         <el-menu
           :default-active="activeMenu"
           class="app-menu"
           :collapse="isCollapsed || shouldCollapseSidebar"
           @select="handleMenuSelect"
         >
-          <el-menu-item 
-            v-for="item in menuItems" 
-            :key="item.path" 
+          <el-menu-item
+            v-for="item in menuItems"
+            :key="item.path"
             :index="item.path"
           >
-            <el-icon><component :is="item.icon" /></el-icon>
-            <span>{{ item.title }}</span>
+            <Icon
+              :name="item.icon"
+              :size="28"
+              type="mono-line"
+              :color="{ normal: 'white' }"
+            />
+
+            <span style="margin-left: 14px">{{ item.title }}</span>
           </el-menu-item>
         </el-menu>
-        
+
         <div class="aside-footer">
-          <el-button 
-            class="collapse-btn"
-            :icon="(isCollapsed || shouldCollapseSidebar) ? Expand : Fold"
-            @click="toggleCollapse"
-            text
-          />
-          <div v-if="!isCollapsed && !shouldCollapseSidebar" class="version">{{ $t('layout.version') }}</div>
+          <div class="collapse-btn" @click="toggleCollapse">
+            <Icon
+              name="sidebar"
+              type="color-white"
+              :size="32"
+              :color="{ normal: 'white' }"
+            />
+          </div>
         </div>
       </el-aside>
     </template>
@@ -53,32 +65,33 @@
           <img class="logo-image" src="@/assets/login/logo.svg" alt="logo" />
           <span class="logo-text">XPlay</span>
         </div>
-        
+
         <el-menu
           :default-active="activeMenu"
           class="app-menu mobile-menu"
           @select="handleMenuSelect"
         >
-          <el-menu-item 
-            v-for="item in menuItems" 
-            :key="item.path" 
+          <el-menu-item
+            v-for="item in menuItems"
+            :key="item.path"
             :index="item.path"
           >
-            <el-icon><component :is="item.icon" /></el-icon>
-            <span>{{ item.title }}</span>
+            <Icon :name="item.icon" :size="32" :color="{ normal: 'white' }" />
+
+            <span style="margin-left: 14px">{{ item.title }}</span>
           </el-menu-item>
         </el-menu>
-        
-        <div class="drawer-footer">
-          <div class="version">{{ $t('layout.version') }}</div>
-        </div>
       </div>
     </el-drawer>
 
     <el-container :class="{ 'fullscreen-mode': isFullscreenMode }">
-      <el-header v-if="!isFullscreenMode && !isLoginPage" class="app-header" :class="{ 'mobile-header': isMobile || isTablet }">
+      <el-header
+        v-if="!isFullscreenMode && !isLoginPage"
+        class="app-header"
+        :class="{ 'mobile-header': isMobile || isTablet }"
+      >
         <div class="header-left">
-          <el-button 
+          <el-button
             v-if="showDrawer"
             :icon="Menu"
             class="menu-toggle-btn"
@@ -87,19 +100,28 @@
           <span class="page-title">{{ pageTitle }}</span>
         </div>
         <div class="header-right">
-          <el-badge :value="alertStore.pendingAlerts" :hidden="alertStore.pendingAlerts === 0">
-            <el-button :icon="Bell" circle @click="router.push('/alerts')" />
+          <el-badge
+            :value="alertStore.pendingAlerts"
+            :hidden="alertStore.pendingAlerts === 0"
+          >
+            <Icon
+              name="alarm"
+              type="mono-line"
+              :size="24"
+              :color="{ normal: 'rgba(247, 111, 131, 1)' }"
+              @click="router.push('/alerts')"
+            />
           </el-badge>
           <ThemeSwitcher />
           <el-dropdown @command="handleLanguageChange">
-            <el-button size="small">
+            <div class="language-selector">
               {{ currentLanguageLabel }}
-            </el-button>
+            </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item 
-                  v-for="lang in languageOptions" 
-                  :key="lang.value" 
+                <el-dropdown-item
+                  v-for="lang in languageOptions"
+                  :key="lang.value"
                   :command="lang.value"
                 >
                   {{ lang.label }}
@@ -113,25 +135,49 @@
                 <el-icon><User /></el-icon>
               </el-avatar>
               <span v-if="!isMobile && !isTablet" class="user-name">
-                {{ userStore.currentUser?.display_name || userStore.currentUser?.username || $t('common.notLoggedIn') }}
+                {{
+                  userStore.currentUser?.display_name ||
+                  userStore.currentUser?.username ||
+                  $t("common.notLoggedIn")
+                }}
               </span>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item v-if="userStore.isLoggedIn" disabled>
-                  <el-tag size="small" :type="userStore.currentUser?.role_name === 'admin' ? 'danger' : 'primary'">
-                    {{ userStore.currentUser?.role_display_name || userStore.currentUser?.role_name }}
+                  <el-tag
+                    size="small"
+                    :type="
+                      userStore.currentUser?.role_name === 'admin'
+                        ? 'danger'
+                        : 'primary'
+                    "
+                  >
+                    {{
+                      userStore.currentUser?.role_display_name ||
+                      userStore.currentUser?.role_name
+                    }}
                   </el-tag>
                 </el-dropdown-item>
-                <el-dropdown-item @click="router.push('/settings')">{{ $t('layout.personalSettings') }}</el-dropdown-item>
-                <el-dropdown-item divided @click="handleLogout">{{ $t('layout.logout') }}</el-dropdown-item>
+                <el-dropdown-item @click="router.push('/settings')">{{
+                  $t("layout.personalSettings")
+                }}</el-dropdown-item>
+                <el-dropdown-item divided @click="handleLogout">{{
+                  $t("layout.logout")
+                }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
         </div>
       </el-header>
-      
-      <el-main class="app-main" :class="{ 'fullscreen-main': isFullscreenMode, 'login-main': isLoginPage }">
+
+      <el-main
+        class="app-main"
+        :class="{
+          'fullscreen-main': isFullscreenMode,
+          'login-main': isLoginPage,
+        }"
+      >
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <keep-alive :include="['Dashboard']">
@@ -140,174 +186,220 @@
           </transition>
         </router-view>
       </el-main>
-      
-      <el-footer v-if="!isFullscreenMode && !isMobile && !isLoginPage && height > 700" class="app-footer" height="32px">
-        <span class="copyright">{{ $t('layout.copyright') }}</span>
-        <span class="divider">|</span>
-        <span class="icp">{{ $t('layout.icp') }}</span>
-        <span class="divider">|</span>
-        <span class="current-time">{{ currentTime }}</span>
-      </el-footer>
     </el-container>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { 
-  Odometer, 
-  Monitor, 
-  Connection, 
-  Bell, 
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import {
+  Odometer,
+  Monitor,
+  Connection,
+  Bell,
   Setting,
   User,
   PictureFilled,
-  Expand,
-  Fold,
-  Menu
-} from '@element-plus/icons-vue'
-import { useAlertStore } from '@/stores/alerts'
-import { useUserStore } from '@/stores/users'
-import { useResponsive } from '@/utils/useResponsive'
-import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
-import { ElMessage } from 'element-plus'
-import '@x-plateform/graphic-editor/dist/index.css'
-import '@x-plateform-mono/common/dist/index.css'
+  Menu,
+} from "@element-plus/icons-vue";
+import { useAlertStore } from "@/stores/alerts";
+import { useUserStore } from "@/stores/users";
+import { useResponsive } from "@/utils/useResponsive";
+import ThemeSwitcher from "@/components/ThemeSwitcher.vue";
+import { ElMessage } from "element-plus";
+import "@x-plateform/graphic-editor/dist/index.css";
+import "@x-plateform-mono/common/dist/index.css";
+import { Icon } from "@/icon/index";
 
-const { t, locale } = useI18n()
+const { t, locale } = useI18n();
 
-const route = useRoute()
-const router = useRouter()
-const alertStore = useAlertStore()
-const userStore = useUserStore()
-const { isTablet, isMobile, width, height } = useResponsive()
+const route = useRoute();
+const router = useRouter();
+const alertStore = useAlertStore();
+const userStore = useUserStore();
+const { isTablet, isMobile, width, height } = useResponsive();
 
-const isCollapsed = ref(false)
-const isDrawerVisible = ref(false)
-const forceExpanded = ref(false)
+const isCollapsed = ref(false);
+const isDrawerVisible = ref(false);
+const forceExpanded = ref(false);
 
 const languageOptions = [
-  { value: 'zh-CN', label: '简体中文' },
-  { value: 'en', label: 'English' },
-  { value: 'zh-TW', label: '繁體中文' }
-]
+  { value: "zh-CN", label: "简体中文" },
+  { value: "en", label: "English" },
+  { value: "zh-TW", label: "繁體中文" },
+];
 
 const currentLanguageLabel = computed(() => {
-  const opt = languageOptions.find(o => o.value === locale.value)
-  return opt ? opt.label : locale.value
-})
+  const opt = languageOptions.find((o) => o.value === locale.value);
+  return opt ? opt.label : locale.value;
+});
 
 function handleLanguageChange(lang: string) {
-  locale.value = lang as 'zh-CN' | 'en' | 'zh-TW'
-  localStorage.setItem('locale', lang)
-  ElMessage.success(t('common.languageChanged'))
+  locale.value = lang as "zh-CN" | "en" | "zh-TW";
+  localStorage.setItem("locale", lang);
+  ElMessage.success(t("common.languageChanged"));
 }
 
-const currentTime = ref(new Date().toLocaleString(locale.value, {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit'
-}))
-let timeTimer: ReturnType<typeof setInterval>
+const currentTime = ref(
+  new Date().toLocaleString(locale.value, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }),
+);
+let timeTimer: ReturnType<typeof setInterval>;
 
 watch(locale, () => {
   currentTime.value = new Date().toLocaleString(locale.value, {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-})
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+});
 
 const shouldCollapseSidebar = computed(() => {
-  if (forceExpanded.value) return false
-  return width.value <= 1280 || height.value <= 700
-})
+  if (forceExpanded.value) return false;
+  return width.value <= 1280 || height.value <= 700;
+});
 
 const allMenuItems = computed(() => [
-  { path: '/dashboard', title: t('layout.dashboard'), icon: Odometer, resource: 'dashboard' },
-  { path: '/channels', title: t('layout.channels'), icon: Connection, resource: 'channels' },
-  { path: '/devices', title: t('layout.devices'), icon: Monitor, resource: 'devices' },
-  { path: '/scada', title: t('layout.scada'), icon: PictureFilled, resource: 'scada' },
-  { path: '/alerts', title: t('layout.alerts'), icon: Bell, resource: 'alerts' },
-  { path: '/rules', title: t('layout.rules'), icon: Connection, resource: 'rules' },
-  { path: '/settings', title: t('layout.settings'), icon: Setting, resource: 'settings' }
-])
+  {
+    path: "/dashboard",
+    title: t("layout.dashboard"),
+    icon: "dashboard",
+    resource: "dashboard",
+  },
+  {
+    path: "/channels",
+    title: t("layout.channels"),
+    icon: "display",
+    resource: "channels",
+  },
+  {
+    path: "/devices",
+    title: t("layout.devices"),
+    icon: "layer",
+    resource: "devices",
+  },
+  {
+    path: "/scada",
+    title: t("layout.scada"),
+    icon: "logicDeployNode",
+    resource: "scada",
+  },
+  {
+    path: "/rules",
+    title: t("layout.rules"),
+    icon: "graphic",
+    resource: "rules",
+  },
+  {
+    path: "/alerts",
+    title: t("layout.alerts"),
+    icon: "alarm",
+    resource: "alerts",
+  },
+  {
+    path: "/settings",
+    title: t("layout.settings"),
+    icon: "setting",
+    resource: "settings",
+  },
+]);
 
 const menuItems = computed(() =>
-  allMenuItems.value.filter(item => userStore.hasPermission(item.resource, 'view'))
-)
+  allMenuItems.value.filter((item) =>
+    userStore.hasPermission(item.resource, "view"),
+  ),
+);
 
-const activeMenu = computed(() => route.path)
+const activeMenu = computed(() => route.path);
 
 const pageTitle = computed(() => {
-  const title = route.meta.title
-  return title ? t(title as string) : ''
-})
+  const title = route.meta.title;
+  return title ? t(title as string) : "";
+});
 
 const handleMenuSelect = (path: string) => {
   if (route.path !== path) {
-    router.push(path).catch(() => {})
+    router.push(path).catch(() => {});
   }
   if (isTablet.value || isMobile.value) {
-    isDrawerVisible.value = false
+    isDrawerVisible.value = false;
   }
-}
+};
 
 const toggleCollapse = () => {
-  if (shouldCollapseSidebar.value || (width.value <= 1280 || height.value <= 700)) {
-    forceExpanded.value = !forceExpanded.value
+  if (
+    shouldCollapseSidebar.value ||
+    width.value <= 1280 ||
+    height.value <= 700
+  ) {
+    forceExpanded.value = !forceExpanded.value;
   } else {
-    isCollapsed.value = !isCollapsed.value
+    isCollapsed.value = !isCollapsed.value;
   }
-}
+};
 
 const toggleDrawer = () => {
-  isDrawerVisible.value = !isDrawerVisible.value
-}
+  isDrawerVisible.value = !isDrawerVisible.value;
+};
 
-const isFullscreenMode = ref(false)
+const isFullscreenMode = ref(false);
 
-const showSidebar = computed(() => !isTablet.value && !isMobile.value && route.path !== '/login' && !isFullscreenMode.value)
-const showDrawer = computed(() => (isTablet.value || isMobile.value) && route.path !== '/login' && !isFullscreenMode.value)
-const isLoginPage = computed(() => route.path === '/login')
+const showSidebar = computed(
+  () =>
+    !isTablet.value &&
+    !isMobile.value &&
+    route.path !== "/login" &&
+    !isFullscreenMode.value,
+);
+const showDrawer = computed(
+  () =>
+    (isTablet.value || isMobile.value) &&
+    route.path !== "/login" &&
+    !isFullscreenMode.value,
+);
+const isLoginPage = computed(() => route.path === "/login");
 
 function handleLogout() {
-  userStore.logout()
-  router.push('/login')
+  userStore.logout();
+  router.push("/login");
 }
 
 onMounted(() => {
   timeTimer = setInterval(() => {
     currentTime.value = new Date().toLocaleString(locale.value, {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    })
-  }, 1000)
-})
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  }, 1000);
+});
 
 onUnmounted(() => {
   if (timeTimer) {
-    clearInterval(timeTimer)
+    clearInterval(timeTimer);
   }
-})
+});
 </script>
 
 <style scoped>
 .app-layout {
   height: 100vh;
   overflow: hidden;
+  background: var(--bg-base);
 }
 
 .app-aside {
@@ -323,15 +415,33 @@ onUnmounted(() => {
 }
 
 .app-aside.collapsed .app-menu .el-menu-item {
-  padding: 0 !important;
-  margin: 4px 0;
+  margin: 4px 8px;
   display: flex;
   justify-content: center;
   align-items: center;
+  box-sizing: border-box;
 }
 
 .app-aside.collapsed .app-menu .el-menu-item .el-icon {
   margin: 0;
+}
+
+.app-aside.collapsed .app-menu .el-menu-item span {
+  display: none !important;
+}
+
+.app-aside.collapsed .app-menu .el-menu-item.is-active {
+  background: var(--bg-sidebar-active) !important;
+}
+
+.app-aside.collapsed .aside-footer {
+  padding-left: 0;
+  padding-right: 0;
+  align-items: center;
+}
+
+.app-aside.collapsed .aside-footer .collapse-btn {
+  width: 100%;
 }
 
 .app-aside.fullscreen-hidden {
@@ -375,6 +485,8 @@ onUnmounted(() => {
   line-height: 50px;
   margin: 4px 8px;
   border-radius: 8px;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
 }
 
 .app-menu .el-menu-item:hover {
@@ -398,12 +510,16 @@ onUnmounted(() => {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
 }
 
 .collapse-btn {
   color: var(--text-sidebar);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .collapse-btn:hover {
@@ -478,6 +594,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  outline: none;
 }
 
 .user-name {
@@ -490,8 +607,45 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
+.language-selector {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  outline: none;
+}
+
+.language-selector:hover {
+  background: var(--bg-hover);
+}
+
+.language-selector:focus {
+  outline: none;
+}
+
+.user-info:focus {
+  outline: none;
+}
+
+.header-right :deep(.el-dropdown) {
+  outline: none;
+}
+
+.header-right :deep(.el-dropdown:focus) {
+  outline: none;
+}
+
+.header-right :deep(.el-dropdown__trigger) {
+  outline: none;
+}
+
+.header-right :deep(.el-dropdown__trigger:focus) {
+  outline: none;
+}
+
 .app-main {
-  background: var(--bg-base);
   padding: 20px;
   overflow-y: auto;
 }
@@ -530,7 +684,7 @@ onUnmounted(() => {
 
 .current-time {
   color: var(--text-secondary);
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 .divider {
@@ -551,11 +705,11 @@ onUnmounted(() => {
   .app-main {
     padding: 12px;
   }
-  
+
   .page-title {
     font-size: 16px;
   }
-  
+
   .header-right {
     gap: 8px;
   }
@@ -565,7 +719,7 @@ onUnmounted(() => {
   .app-main {
     padding: 8px;
   }
-  
+
   .page-title {
     font-size: 14px;
   }

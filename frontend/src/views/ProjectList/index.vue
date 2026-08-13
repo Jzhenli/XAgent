@@ -1,19 +1,21 @@
 <template>
   <div class="project-list-container">
     <div class="header">
-      <h2>{{ $t("scada.title") }}</h2>
+      <span class="header-title">{{ $t("scada.title") }}</span>
       <div class="header-actions">
-        <el-button
-          type="success"
-          :icon="VideoPlay"
-          @click="handleStartSlideshow"
-        >
+        <div class="btn btn-preview" @click="handleStartSlideshow">
           {{ $t("scada.previewAll") }}
-        </el-button>
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">
-          {{ $t("scada.newProject") }}
-        </el-button>
-        <el-dropdown trigger="hover" placement="bottom-end" @command="handleMoreCommand">
+        </div>
+        <div class="btn btn-create" @click="openCreateDialog">
+          <el-icon :size="16"><Plus /></el-icon>
+          <span>{{ $t("scada.newProject") }}</span>
+        </div>
+        <el-dropdown
+          trigger="hover"
+          placement="bottom-end"
+          popper-class="project-dropdown-popper"
+          @command="handleMoreCommand"
+        >
           <el-icon class="more-icon" :size="32">
             <svg viewBox="0 0 24 24" width="1em" height="1em">
               <circle cx="12" cy="5" r="2" fill="currentColor" />
@@ -161,7 +163,9 @@ const loadProjects = async (): Promise<boolean> => {
 
   try {
     const res = await projectApi.list();
-    projects.value = (res?.items ?? []).sort((a, b) => a.createdAt - b.createdAt);
+    projects.value = (res?.items ?? []).sort(
+      (a, b) => a.createdAt - b.createdAt,
+    );
 
     return true;
   } catch (error) {
@@ -451,25 +455,30 @@ const formatTime = (timestamp: number) => {
 
 <style scoped>
 .project-list-container {
-  height: calc(100vh - 100px - 32px);
-  background-color: var(--bg-secondary);
+  height: calc(100vh - 100px);
+  background-color: var(--bg-card);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-radius: 16px;
+  backdrop-filter: blur(48px);
 }
 
 .header {
+  height: 60px;
+  padding: 0 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
   flex-shrink: 0;
 }
 
-.header h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
+.header-title {
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: left;
+  font-style: normal;
   color: var(--text-primary);
 }
 
@@ -479,7 +488,7 @@ const formatTime = (timestamp: number) => {
 }
 
 .empty-state {
-  background: var(--bg-container);
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 60px 20px;
 }
@@ -487,7 +496,7 @@ const formatTime = (timestamp: number) => {
 .scrollable-content {
   flex: 1;
   overflow-y: auto;
-  padding-right: 8px;
+  padding: 12px 18px;
 }
 
 .project-grid {
@@ -520,7 +529,7 @@ const formatTime = (timestamp: number) => {
   cursor: pointer;
   color: var(--text-secondary);
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 8px;
   transition:
     color 0.2s,
     background-color 0.2s;
@@ -533,14 +542,92 @@ const formatTime = (timestamp: number) => {
 }
 
 :deep(.project-more-menu) {
-  padding: 4px;
-  border-radius: 8px;
-  min-width: 120px;
+  padding: 6px;
+  border-radius: 12px;
+  min-width: 140px;
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-light);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.16),
+    0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 :deep(.project-more-menu .el-dropdown__item) {
   padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+:deep(.project-more-menu .el-dropdown__item:hover) {
+  background-color: var(--el-fill-color-light) !important;
+  color: var(--el-color-primary) !important;
+}
+
+:deep(.project-more-menu .el-dropdown__item .el-icon) {
+  color: var(--text-secondary);
+}
+
+:deep(.project-more-menu .el-dropdown__item:hover .el-icon) {
+  color: var(--el-color-primary);
+}
+
+:deep(.project-more-menu .el-dropdown-menu__item.is-disabled) {
+  color: var(--text-disabled);
+}
+
+:deep(.project-more-menu .el-dropdown-menu__item.is-divider) {
+  height: 1px;
+  margin: 4px 0;
+  padding: 0;
+  background-color: var(--border-light);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 16px;
   border-radius: 6px;
   font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-preview {
+  background-color: rgba(0, 206, 209, 1);
+  color: white;
+}
+
+.btn-preview:hover {
+  background-color: rgba(0, 206, 209, 1);
+}
+
+.btn-create {
+  background-color: rgba(102, 102, 255, 1);
+  color: white;
+}
+
+.btn-create:hover {
+  background-color: rgba(102, 102, 255, 0.9);
+}
+</style>
+
+<style>
+.project-dropdown-popper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.project-dropdown-popper .el-popper__arrow {
+  display: none !important;
 }
 </style>

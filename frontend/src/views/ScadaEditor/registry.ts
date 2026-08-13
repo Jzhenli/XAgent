@@ -59,7 +59,7 @@ export const getComponent = (type: ComponentType): Component | undefined =>
   componentMetaRegistry[type]?.component
 
 /** 获取组件配置面板（无则返回 null） */
-export const getConfigPanel = (type: string): Component | null =>
+export const getConfigPanel = (type: ComponentType): Component | null =>
   (componentMetaRegistry as Registry)[type]?.configPanel ?? null
 
 /** 获取组件模板（用于拖拽创建），type 非法时返回 undefined */

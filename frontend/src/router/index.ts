@@ -1,5 +1,13 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/users'
+import NProgress from 'nprogress'
+import 'nprogress/nprogress.css'
+
+NProgress.configure({
+  showSpinner: false,
+  trickleSpeed: 200,
+  minimum: 0.3,
+})
 
 const ROUTE_PERMISSION_MAP: Record<string, string> = {
   '/dashboard': 'dashboard',
@@ -73,31 +81,31 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/dashboard',
         name: 'Dashboard',
-        component: () => import('@/views/Dashboard.vue'),
+        component: () => import('@/views/home/index.vue'),
         meta: { title: 'route.dashboard', icon: 'Odometer' }
       },
       {
         path: '/devices',
         name: 'Devices',
-        component: () => import('@/views/Devices.vue'),
+        component: () => import('@/views/Devices/index.vue'),
         meta: { title: 'route.devices', icon: 'Monitor' }
       },
       {
         path: '/channels',
         name: 'NorthChannels',
-        component: () => import('@/views/NorthChannels.vue'),
+        component: () => import('@/views/Tunnels/index.vue'),
         meta: { title: 'route.channels', icon: 'Connection' }
       },
       {
         path: '/rules',
         name: 'Rules',
-        component: () => import('@/views/Rules.vue'),
+        component: () => import('@/views/Rules/index.vue'),
         meta: { title: 'route.rules', icon: 'Connection' }
       },
       {
         path: '/alerts',
         name: 'Alerts',
-        component: () => import('@/views/Alerts.vue'),
+        component: () => import('@/views/Alarms/index.vue'),
         meta: { title: 'route.alerts', icon: 'Bell' }
       },
       {
@@ -121,7 +129,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/settings',
         name: 'Settings',
-        component: () => import('@/views/Settings.vue'),
+        component: () => import('@/views/Settings/index.vue'),
         meta: { title: 'route.settings', icon: 'Setting' }
       }
     ]
@@ -145,6 +153,7 @@ function findFirstAllowedPath(userStore: ReturnType<typeof useUserStore>): strin
 }
 
 router.beforeEach(async (to, _from, next) => {
+  NProgress.start()
   document.title = 'XPlay'
 
   if (to.meta.public) {
@@ -186,6 +195,14 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   next()
+})
+
+router.afterEach(() => {
+  NProgress.done()
+})
+
+router.onError(() => {
+  NProgress.done()
 })
 
 export default router

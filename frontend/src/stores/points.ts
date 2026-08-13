@@ -35,6 +35,7 @@ export interface PointDisplay {
 export interface DeviceWithPoints {
   asset: string
   name: string
+  description?: string
   enabled: boolean
   status: string
   pluginName: string

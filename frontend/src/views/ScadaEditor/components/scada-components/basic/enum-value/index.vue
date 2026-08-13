@@ -10,12 +10,12 @@ import type { ScadaComponent, EnumValueComponentConfig } from '@/types/scada'
 import { useScadaBinding } from '@/views/ScadaEditor/hooks'
 
 const props = defineProps<{
-  config: ScadaComponent
+  component: ScadaComponent
   editing?: boolean
 }>()
 
-const enumConfig = computed(() => props.config.config as EnumValueComponentConfig)
-const binding = computed(() => props.config.binding)
+const enumConfig = computed(() => props.component.config as EnumValueComponentConfig)
+const binding = computed(() => props.component.binding)
 const fallbackValue = computed(() => enumConfig.value?.value ?? 1)
 
 const { currentValue } = useScadaBinding(binding, {}, fallbackValue)
