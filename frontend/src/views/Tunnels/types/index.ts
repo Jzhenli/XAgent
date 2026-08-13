@@ -77,7 +77,7 @@ export const createInitialChannelForm = (): ChannelFormData => ({
   qos: 1,
   keepalive: 60,
   clean_session: true,
-  adapter: 'standard',
+  adapter: '',
   adapter_config: '{}',
   command_topic: '',
   publish_mode: 'single',

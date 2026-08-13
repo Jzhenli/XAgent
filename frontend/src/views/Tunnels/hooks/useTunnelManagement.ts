@@ -61,15 +61,15 @@ export function useTunnelManagement() {
         reconnect_interval: 5
       }
     },
-    {
-      label: 'HTTP',
-      value: 'http',
-      defaultPort: 80,
-      defaultConfig: {
-        method: 'POST',
-        timeout: 30
-      }
-    }
+    // {
+    //   label: 'HTTP',
+    //   value: 'http',
+    //   defaultPort: 80,
+    //   defaultConfig: {
+    //     method: 'POST',
+    //     timeout: 30
+    //   }
+    // }
   ]
 
   const adapterDefaultsCache = ref<Record<string, unknown>>({})
@@ -78,7 +78,7 @@ export function useTunnelManagement() {
   let adapterRequestVersion = 0
 
   const mqttAdapterOptions = [
-    { label: t('channels.adapterStandard'), value: 'standard', description: t('channels.adapterStandardDesc') },
+    // { label: t('channels.adapterStandard'), value: 'standard', description: t('channels.adapterStandardDesc') },
     { label: t('channels.adapterC001'), value: 'C001', description: t('channels.adapterC001Desc') }
   ]
 
