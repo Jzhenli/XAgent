@@ -14,38 +14,44 @@
           :content="t('channels.addChannel')"
           placement="top"
         >
-          <el-button
-            type="primary"
-            link
-            :size="actionSize"
+          <Icon
+            type="mono-line"
+            name="add"
+            :size="24"
+            :color="{ normal: 'rgba(102, 102, 255, 1)' }"
             @click="emit('add')"
-          >
-            <el-icon><Plus /></el-icon>
-          </el-button>
+          />
         </el-tooltip>
         <el-tooltip :content="t('common.export')" placement="top">
-          <el-button link :size="actionSize" @click="emit('export')">
-            <el-icon><Download /></el-icon>
-          </el-button>
+          <Icon
+            type="mono-line"
+            name="download"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
+            @click="emit('export')"
+          />
         </el-tooltip>
         <el-tooltip
           v-if="canCreate"
           :content="t('common.import')"
           placement="top"
         >
-          <el-button link :size="actionSize" @click="emit('import')">
-            <el-icon><Upload /></el-icon>
-          </el-button>
+          <Icon
+            type="mono-line"
+            name="import"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
+            @click="emit('import')"
+          />
         </el-tooltip>
         <el-tooltip :content="t('common.refresh')" placement="top">
-          <el-button
-            link
-            :size="actionSize"
-            :loading="loading"
+          <Icon
+            type="mono-line"
+            name="refresh"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
             @click="emit('refresh')"
-          >
-            <el-icon><Refresh /></el-icon>
-          </el-button>
+          />
         </el-tooltip>
       </div>
     </div>
@@ -75,18 +81,18 @@
             class="channel-status-icon"
             :class="{ online: channel.connectionStatus === 'online' }"
           >
-            <el-icon v-if="channel.connectionStatus === 'online'"
-              ><CircleCheck
-            /></el-icon>
+            <el-icon v-if="channel.connectionStatus === 'online'">
+              <CircleCheck />
+            </el-icon>
             <el-icon v-else><CircleClose /></el-icon>
           </div>
           <div class="channel-card-info">
             <div class="channel-card-name">{{ channel.name }}</div>
             <div class="channel-card-meta">
               <span>{{ channel.protocol.toUpperCase() }}</span>
-              <span
-                >{{ channel.uploadRate }} {{ t("channels.itemsPerMin") }}</span
-              >
+              <span>
+                {{ channel.uploadRate }} {{ t("channels.itemsPerMin") }}
+              </span>
             </div>
           </div>
         </div>
@@ -127,26 +133,30 @@
               @command="(cmd: string) => handleDropdownCommand(cmd, channel)"
             >
               <el-button type="info" link :size="actionSize" class="more-btn">
-                <el-icon><MoreFilled /></el-icon>
+                <el-icon :size="18"><MoreFilled /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu class="channel-more-menu">
-                  <el-dropdown-item command="test" :icon="Connection">{{
-                    t("channels.testConnection")
-                  }}</el-dropdown-item>
+                  <el-dropdown-item command="test" class="dropdown-item-test">
+                    <el-icon :size="18"><Connection /></el-icon>
+                    <span>{{ t("channels.testConnection") }}</span>
+                  </el-dropdown-item>
                   <el-dropdown-item
                     v-if="canUpdate"
                     command="restart"
-                    :icon="RefreshRight"
-                    >{{ t("channels.restart") }}</el-dropdown-item
+                    class="dropdown-item-restart"
                   >
+                    <el-icon :size="18"><RefreshRight /></el-icon>
+                    <span>{{ t("channels.restart") }}</span>
+                  </el-dropdown-item>
                   <el-dropdown-item
                     v-if="canDelete"
                     command="delete"
-                    :icon="Delete"
                     divided
+                    class="dropdown-item-delete"
                   >
-                    <span class="delete-text">{{ t("common.delete") }}</span>
+                    <el-icon :size="18"><Delete /></el-icon>
+                    <span>{{ t("common.delete") }}</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -390,7 +400,8 @@ const handleDropdownCommand = (cmd: string, channel: ChannelListItem) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 0 16px;
+  height: 60px;
   border-bottom: 1px solid var(--el-border-color-light);
   flex-shrink: 0;
   gap: 8px;
@@ -430,7 +441,8 @@ const handleDropdownCommand = (cmd: string, channel: ChannelListItem) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
+  height: 60px;
+  padding: 0 12px;
   gap: 8px;
   border-bottom: 1px solid var(--el-border-color-light);
   flex-shrink: 0;
@@ -738,7 +750,6 @@ const handleDropdownCommand = (cmd: string, channel: ChannelListItem) => {
 :deep(.channel-more-menu .dropdown-item-delete:hover),
 :deep(.channel-more-menu .dropdown-item-delete:focus),
 :deep(.channel-more-menu .dropdown-item-delete:active) {
-  
   color: var(--el-color-danger) !important;
   transform: translateX(2px);
 }
