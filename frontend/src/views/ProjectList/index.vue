@@ -278,6 +278,7 @@ const handleDelete = async (id: string) => {
       confirmButtonText: t("common.confirm"),
       cancelButtonText: t("common.cancel"),
       type: "warning",
+      customClass: "x-message-box",
     });
   } catch {
     return;
@@ -393,6 +394,7 @@ const handleImportFileChange = async (event: Event) => {
           confirmButtonText: t("common.confirm"),
           cancelButtonText: t("common.cancel"),
           type: "warning",
+          customClass: "x-message-box",
         },
       );
     } catch {
@@ -620,6 +622,8 @@ const formatTime = (timestamp: number) => {
 </style>
 
 <style>
+@import './DialogCommon.css';
+
 .project-dropdown-popper {
   background: transparent !important;
   border: none !important;
