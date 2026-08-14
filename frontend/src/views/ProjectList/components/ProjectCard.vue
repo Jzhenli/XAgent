@@ -88,6 +88,7 @@ defineEmits<{
   transition: all 0.3s;
   background: var(--bg-card-s);
   border-radius: 10px;
+  padding: 16px;
 }
 
 .project-info {
@@ -144,5 +145,9 @@ defineEmits<{
   align-items: center;
   gap: 16px;
   padding-top: 12px;
+}
+
+.project-card :deep(.el-card__body) {
+  padding: 0 !important;
 }
 </style>
