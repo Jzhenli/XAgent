@@ -39,15 +39,15 @@
           <el-form-item :label="t('devices.objectType')">
             <div class="object-type-wrapper">
               <el-checkbox-group v-model="selectedObjectTypes" class="compact-checkbox-group">
-                <el-checkbox label="analogInput">AI</el-checkbox>
-                <el-checkbox label="analogOutput">AO</el-checkbox>
-                <el-checkbox label="analogValue">AV</el-checkbox>
-                <el-checkbox label="binaryInput">BI</el-checkbox>
-                <el-checkbox label="binaryOutput">BO</el-checkbox>
-                <el-checkbox label="binaryValue">BV</el-checkbox>
-                <el-checkbox label="multiStateInput">MI</el-checkbox>
-                <el-checkbox label="multiStateOutput">MO</el-checkbox>
-                <el-checkbox label="multiStateValue">MV</el-checkbox>
+                <el-checkbox value="analogInput">AI</el-checkbox>
+                <el-checkbox value="analogOutput">AO</el-checkbox>
+                <el-checkbox value="analogValue">AV</el-checkbox>
+                <el-checkbox value="binaryInput">BI</el-checkbox>
+                <el-checkbox value="binaryOutput">BO</el-checkbox>
+                <el-checkbox value="binaryValue">BV</el-checkbox>
+                <el-checkbox value="multiStateInput">MI</el-checkbox>
+                <el-checkbox value="multiStateOutput">MO</el-checkbox>
+                <el-checkbox value="multiStateValue">MV</el-checkbox>
               </el-checkbox-group>
               <span class="object-type-hint">
                 {{ t('devices.objectTypeHint') }}

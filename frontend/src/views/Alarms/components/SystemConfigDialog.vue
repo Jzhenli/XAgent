@@ -40,9 +40,9 @@
 
       <el-form-item :label="t('alerts.notificationLevelsLabel')" prop="notifyLevels">
         <el-checkbox-group v-model="form.notifyLevels">
-          <el-checkbox label="critical">{{ t('alerts.levelCritical') }}</el-checkbox>
-          <el-checkbox label="warning">{{ t('alerts.levelWarning') }}</el-checkbox>
-          <el-checkbox label="info">{{ t('alerts.levelInfo') }}</el-checkbox>
+          <el-checkbox value="critical">{{ t('alerts.levelCritical') }}</el-checkbox>
+          <el-checkbox value="warning">{{ t('alerts.levelWarning') }}</el-checkbox>
+          <el-checkbox value="info">{{ t('alerts.levelInfo') }}</el-checkbox>
         </el-checkbox-group>
       </el-form-item>
 
