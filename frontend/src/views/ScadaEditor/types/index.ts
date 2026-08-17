@@ -336,6 +336,24 @@ export interface AcModeComponentConfig extends BaseComponentConfig {
   fanValue: number | string
 }
 
+/** 图片切换项（值对应图片） */
+export interface ValueImageItem {
+  /** 绑定的数值 */
+  value: number | string
+  /** 对应的图片地址（base64 或 URL） */
+  url: string
+}
+
+/** 图片切换组件配置 */
+export interface ValueImageSwitchComponentConfig extends BaseComponentConfig {
+  /** 值对应图片列表 */
+  items: ValueImageItem[]
+  /** 默认图片（无匹配值时显示） */
+  defaultUrl?: string
+  /** 图片填充方式 */
+  fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
+}
+
 /** 空调风速组件配置 */
 export interface AcFanSpeedComponentConfig extends BaseComponentConfig {
   fontSize: number
@@ -374,6 +392,7 @@ export interface ComponentConfigMap {
   button: ButtonComponentConfig
   acMode: AcModeComponentConfig
   acFanSpeed: AcFanSpeedComponentConfig
+  'value-image-switch': ValueImageSwitchComponentConfig
 }
 
 /** 组件统一配置类型 */
