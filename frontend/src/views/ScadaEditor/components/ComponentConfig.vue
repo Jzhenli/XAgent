@@ -303,6 +303,7 @@ const POINT_BINDINGLESS_TYPES = new Set([
   "circle",
   "icon",
   "slider-bar",
+  "image",
 ]);
 
 const showPointBinding = computed(() => {
