@@ -27,6 +27,8 @@ export type {
   SwitchComponentConfig,
   SliderComponentConfig,
   SliderSwitchComponentConfig,
+  SliderBarItemConfig,
+  SliderBarComponentConfig,
   ImageComponentConfig,
   ButtonComponentConfig,
   AcModeComponentConfig,

@@ -9,6 +9,7 @@ import { writeValueMeta } from './components/scada-components/basic/write-value/
 import { chartLineMeta } from './components/scada-components/chart/line/metadata'
 import { chartBarMeta } from './components/scada-components/chart/bar/metadata'
 import { sliderSwitchMeta } from './components/scada-components/chart/slider-switch/metadata'
+import { sliderBarMeta } from './components/scada-components/chart/slider-bar/metadata'
 import { indicatorMeta } from './components/scada-components/basic/indicator/metadata'
 import { switchMeta } from './components/scada-components/basic/switch/metadata'
 import { sliderMeta } from './components/scada-components/basic/slider/metadata'
@@ -31,6 +32,7 @@ export const componentMetaRegistry = {
   'chart-line': chartLineMeta,
   'chart-bar': chartBarMeta,
   'slider-switch': sliderSwitchMeta,
+  'slider-bar': sliderBarMeta,
   indicator: indicatorMeta,
   switch: switchMeta,
   slider: sliderMeta,

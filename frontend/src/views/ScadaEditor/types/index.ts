@@ -262,6 +262,36 @@ export interface SliderSwitchComponentConfig extends BaseComponentConfig {
   axisColor: string
 }
 
+/** 滑块式柱状图单项（柱体）配置 */
+export interface SliderBarItemConfig {
+  /** x 轴标签 */
+  label: string
+  /** 当前值：编辑态/未绑定点位时的模拟值 */
+  value: number
+  /** 点位绑定 */
+  binding: PointBinding | null
+}
+
+/** 滑块式柱状图组件配置 */
+export interface SliderBarComponentConfig extends BaseComponentConfig {
+  min: number
+  max: number
+  /** 柱体颜色（激活轨道） */
+  barColor: string
+  /** 柱体宽度（px） */
+  barWidth: number
+  /** 顶部当前值字体大小 */
+  valueFontSize: number
+  /** 顶部当前值颜色 */
+  valueColor: string
+  /** x/y 轴标签字体大小 */
+  axisFontSize: number
+  /** x/y 轴标签颜色 */
+  axisColor: string
+  /** 柱体列表 */
+  items: SliderBarItemConfig[]
+}
+
 /** 图片组件配置 */
 export interface ImageComponentConfig extends BaseComponentConfig {
   url?: string
@@ -331,6 +361,7 @@ export interface ComponentConfigMap {
   switch: SwitchComponentConfig
   slider: SliderComponentConfig
   'slider-switch': SliderSwitchComponentConfig
+  'slider-bar': SliderBarComponentConfig
   image: ImageComponentConfig
   button: ButtonComponentConfig
   acMode: AcModeComponentConfig
