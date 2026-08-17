@@ -62,10 +62,11 @@
           <label>{{ t("componentConfig.device") }}</label>
           <el-select
             v-model="selectedDevice"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
             @change="handleDeviceChange"
             clearable
             :placeholder="t('componentConfig.selectDevice')"
-            style="width: 100%"
           >
             <el-option
               v-for="device in pointStore.devices"
@@ -79,10 +80,11 @@
           <label>{{ t("componentConfig.point") }}</label>
           <el-select
             v-model="selectedPoint"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
             @change="handlePointChange"
             clearable
             :placeholder="t('componentConfig.selectPoint')"
-            style="width: 100%"
             :disabled="!selectedDevice"
           >
             <el-option
@@ -619,40 +621,6 @@ const triggerBgImageUpload = () => {
   font-size: 14px;
   text-align: center;
   line-height: 1.6;
-}
-
-:deep(.el-select),
-:deep(.el-input__wrapper) {
-  background: var(--scada-bg-elevated) !important;
-  border-radius: 6px !important;
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.2) inset !important;
-  transition: all 0.2s ease !important;
-}
-
-:deep(.el-select:hover .el-input__wrapper),
-:deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--scada-cyan-glow) inset !important;
-}
-
-:deep(.el-select.is-focus .el-input__wrapper),
-:deep(.el-input__wrapper.is-focus) {
-  box-shadow:
-    0 0 0 1px var(--scada-cyan) inset,
-    0 0 12px rgba(34, 211, 238, 0.2) !important;
-}
-
-:deep(.el-select__placeholder),
-:deep(.el-input__inner::placeholder) {
-  color: var(--text-tertiary) !important;
-}
-
-:deep(.el-select__selected-item),
-:deep(.el-input__inner) {
-  color: var(--text-primary) !important;
-}
-
-:deep(.el-select__caret) {
-  color: var(--scada-cyan) !important;
 }
 
 :deep(.el-radio) {

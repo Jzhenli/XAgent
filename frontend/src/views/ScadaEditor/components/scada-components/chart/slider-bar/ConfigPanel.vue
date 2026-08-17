@@ -52,8 +52,8 @@
         <label>{{ t('componentConfig.device') }}</label>
         <el-select
           :model-value="item.binding?.deviceId ?? ''"
-          class="plain-select"
-          popper-class="plain-select-dropdown"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
           @update:model-value="handleItemDeviceChange(index, $event as string)"
         >
           <el-option :value="''" :label="t('componentConfig.selectDevice')" />
@@ -69,8 +69,8 @@
         <label>{{ t('componentConfig.point') }}</label>
         <el-select
           :model-value="item.binding?.pointName ?? ''"
-          class="plain-select"
-          popper-class="plain-select-dropdown"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
           :disabled="!item.binding?.deviceId"
           @update:model-value="handleItemPointChange(index, $event as string)"
         >
@@ -255,8 +255,7 @@ const handleItemPointChange = (index: number, pointName: string) => {
   margin-bottom: 4px;
 }
 
-.form-group input,
-.form-group .plain-select .el-select__wrapper {
+.form-group input {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(34, 211, 238, 0.2);
@@ -272,31 +271,10 @@ const handleItemPointChange = (index: number, pointName: string) => {
   color: var(--text-placeholder);
 }
 
-.form-group input:focus,
-.form-group .plain-select.is-focused .el-select__wrapper {
+.form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 1px var(--color-primary) !important;
-}
-
-.form-group .plain-select .el-select__placeholder {
-  color: var(--text-placeholder) !important;
-}
-
-.form-group .plain-select .el-select__selected-item {
-  color: var(--text-primary);
-  line-height: 1.5;
-}
-
-.form-group .plain-select .el-select__suffix,
-.form-group .plain-select .el-input__suffix {
-  color: var(--text-tertiary);
-}
-
-.form-group .plain-select.is-disabled .el-select__wrapper {
-  background-color: var(--scada-bg-hover) !important;
-  color: var(--text-tertiary);
-  cursor: not-allowed;
 }
 
 .form-group :deep(.el-color-picker__trigger) {

@@ -181,6 +181,7 @@ import ComponentList from './components/ComponentList.vue'
 import ScadaCanvas from './components/ScadaCanvas.vue'
 import ComponentConfig from './components/ComponentConfig.vue'
 import SaveConfirmModal from './modal/SaveConfirmModal.vue'
+import './style/scada-select.css'
 
 const { t } = useI18n()
 

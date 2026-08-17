@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="config-section">
     <div class="section-title">{{ t("componentConfig.iconConfig") }}</div>
 
@@ -7,6 +7,8 @@
         <label>{{ t("componentConfig.iconName") }}</label>
         <el-select
           :model-value="config.iconName"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
           filterable
           @change="updateConfig('iconName', $event)"
         >
@@ -128,8 +130,7 @@ const iconOptions = computed(() => {
 }
 
 .form-group input,
-.form-group select,
-.form-group :deep(.el-select) {
+.form-group select {
   width: 100%;
   background-color: var(--scada-bg-elevated);
   color: var(--text-primary);
