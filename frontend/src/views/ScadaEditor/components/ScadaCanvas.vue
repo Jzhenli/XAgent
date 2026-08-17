@@ -319,47 +319,53 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
 
 .resize-handle {
   position: absolute;
-  width: 12px;
-  height: 12px;
-  background: radial-gradient(circle at 35% 35%, var(--scada-cyan) 0%, var(--scada-purple) 100%);
-  border: 2px solid rgba(255, 255, 255, 0.6);
+  width: 14px;
+  height: 14px;
+  background: var(--scada-cyan);
+  border: 2px solid #ffffff;
   border-radius: 50%;
   cursor: pointer;
   pointer-events: auto;
-  box-shadow: 0 0 8px rgba(34, 211, 238, 0.8), 0 0 16px rgba(168, 85, 247, 0.5);
-  transition: all 0.2s ease;
-  animation: handle-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--scada-cyan-glow), 0 0 12px rgba(34, 211, 238, 0.4);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .resize-handle:hover {
-  border-color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 12px rgba(34, 211, 238, 1), 0 0 24px rgba(168, 85, 247, 0.7);
-  animation-play-state: paused;
+  background: var(--scada-cyan-glow);
+  border-color: #ffffff;
+  box-shadow: 0 0 10px var(--scada-cyan-glow), 0 0 20px rgba(34, 211, 238, 0.6);
+  z-index: 10;
 }
 
-.resize-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
-.resize-handle.n { top: -7px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
-.resize-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
-.resize-handle.e { top: 50%; right: -7px; transform: translateY(-50%); cursor: e-resize; }
-.resize-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
-.resize-handle.s { bottom: -7px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
-.resize-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
-.resize-handle.w { top: 50%; left: -7px; transform: translateY(-50%); cursor: w-resize; }
+.resize-handle.nw { top: -7px; left: -7px; cursor: nw-resize; }
+.resize-handle.n { top: -8px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+.resize-handle.ne { top: -7px; right: -7px; cursor: ne-resize; }
+.resize-handle.e { top: 50%; right: -8px; transform: translateY(-50%); cursor: e-resize; }
+.resize-handle.se { bottom: -7px; right: -7px; cursor: se-resize; }
+.resize-handle.s { bottom: -8px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+.resize-handle.sw { bottom: -7px; left: -7px; cursor: sw-resize; }
+.resize-handle.w { top: 50%; left: -8px; transform: translateY(-50%); cursor: w-resize; }
 
-.resize-handle.n:hover { transform: translateX(-50%) scale(1.3); }
-.resize-handle.s:hover { transform: translateX(-50%) scale(1.3); }
-.resize-handle.e:hover { transform: translateY(-50%) scale(1.3); }
-.resize-handle.w:hover { transform: translateY(-50%) scale(1.3); }
+.resize-handle.n:hover { transform: translateX(-50%) scale(1.25); }
+.resize-handle.s:hover { transform: translateX(-50%) scale(1.25); }
+.resize-handle.e:hover { transform: translateY(-50%) scale(1.25); }
+.resize-handle.w:hover { transform: translateY(-50%) scale(1.25); }
 .resize-handle.nw:hover,
 .resize-handle.ne:hover,
 .resize-handle.se:hover,
 .resize-handle.sw:hover {
-  transform: scale(1.3);
-}
-
-@keyframes handle-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(34, 211, 238, 0.8), 0 0 16px rgba(168, 85, 247, 0.5); }
-  50% { box-shadow: 0 0 14px rgba(34, 211, 238, 1), 0 0 28px rgba(168, 85, 247, 0.7); }
+  transform: scale(1.25);
 }
 
 .scada-context-menu {
