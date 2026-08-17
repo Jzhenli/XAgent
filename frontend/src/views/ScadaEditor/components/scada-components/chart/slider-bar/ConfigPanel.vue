@@ -54,9 +54,10 @@
           :model-value="item.binding?.deviceId ?? ''"
           class="scada-select"
           popper-class="scada-select-dropdown"
+          clearable
+          :placeholder="t('componentConfig.selectDevice')"
           @update:model-value="handleItemDeviceChange(index, $event as string)"
         >
-          <el-option :value="''" :label="t('componentConfig.selectDevice')" />
           <el-option
             v-for="device in pointStore.devices"
             :key="device.asset"
@@ -71,10 +72,11 @@
           :model-value="item.binding?.pointName ?? ''"
           class="scada-select"
           popper-class="scada-select-dropdown"
+          clearable
+          :placeholder="t('componentConfig.selectPoint')"
           :disabled="!item.binding?.deviceId"
           @update:model-value="handleItemPointChange(index, $event as string)"
         >
-          <el-option :value="''" :label="t('componentConfig.selectPoint')" />
           <el-option
             v-for="point in getItemPoints(item)"
             :key="point.name"

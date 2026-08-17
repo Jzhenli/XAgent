@@ -20,7 +20,7 @@
   padding: 4px 10px;
   border-radius: 6px;
   font-size: 13px;
-  background-color: var(--scada-select-bg);
+  background-color: var(--scada-bg-elevated);
   box-shadow: 0 0 0 1px var(--scada-select-border) inset;
   transition:
     background-color 0.2s ease,
