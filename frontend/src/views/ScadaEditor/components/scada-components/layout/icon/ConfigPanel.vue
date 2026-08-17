@@ -23,7 +23,7 @@
                 :name="name"
                 type="mono-line"
                 :size="16"
-                :color="{ normal: 'var(--color-font-default)' }"
+                :color="{ normal: 'var(--text-regular)' }"
               />
             </span>
             <span>{{ name }}</span>

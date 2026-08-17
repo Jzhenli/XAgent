@@ -1,5 +1,5 @@
 <template>
-  <div class="gauge-container" :style="containerStyle">
+  <div ref="containerRef" class="gauge-container" :style="containerStyle">
     <svg v-if="hasGradient" width="0" height="0" aria-hidden="true" class="gauge-gradient-defs">
       <defs>
         <linearGradient :id="gradientId" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -164,11 +164,43 @@ const progressColor = computed(() =>
   buildProgressColors(gaugeConfig.value?.thresholds ?? [], min.value, max.value, fillColor.value),
 )
 
-/** 仪表盘尺寸：取组件宽高短边，保证完整显示 */
-const gaugeSize = computed(() => {
-  const size = Math.min(gaugeConfig.value?.width ?? 180, gaugeConfig.value?.height ?? 180)
-  return Math.max(60, size)
+// ═══════════════════════════════════════════════════════════════════════════════
+// 容器实际尺寸监听（随画布 zoom 与选中框 resize 实时变化）
+// ═══════════════════════════════════════════════════════════════════════════════
+const containerRef = ref<HTMLElement | null>(null)
+const containerSize = ref({ width: 0, height: 0 })
+
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+  if (!containerRef.value) return
+  resizeObserver = new ResizeObserver((entries) => {
+    const entry = entries[0]
+    if (!entry) return
+    containerSize.value = { width: entry.contentRect.width, height: entry.contentRect.height }
+  })
+  resizeObserver.observe(containerRef.value)
 })
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+})
+
+/** 配置短边：作为未测量到容器尺寸时的回退值 */
+const configMinSize = computed(() =>
+  Math.max(1, Math.min(gaugeConfig.value?.width ?? 180, gaugeConfig.value?.height ?? 180)),
+)
+
+/** 仪表盘尺寸：优先取容器实际短边，保证完整显示且不超出选中框 */
+const gaugeSize = computed(() => {
+  const { width, height } = containerSize.value
+  if (width > 0 && height > 0) return Math.max(1, Math.min(width, height))
+  return configMinSize.value
+})
+
+/** 缩放比例：容器实际尺寸 / 配置尺寸，画布缩放时保持文本与圆环等比 */
+const sizeScale = computed(() => gaugeSize.value / configMinSize.value)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 文本显示
@@ -194,19 +226,19 @@ const progressStyle = computed(() => ({
 
 const valueTextStyle = computed(() => ({
   color: fontColor.value,
-  fontSize: `${fontSize.value}px`,
+  fontSize: `${fontSize.value * sizeScale.value}px`,
   fontWeight: fontWeight.value,
 }))
 
 const unitTextStyle = computed(() => ({
   color: unitFontColor.value,
-  fontSize: `${unitFontSize.value}px`,
+  fontSize: `${unitFontSize.value * sizeScale.value}px`,
   fontWeight: unitFontWeight.value,
 }))
 
 const controlButtonStyle = computed(() => ({
   color: stepFontColor.value,
-  fontSize: `${Math.max(12, stepFontSize.value)}px`,
+  fontSize: `${Math.max(12, stepFontSize.value) * sizeScale.value}px`,
 }))
 
 // ═══════════════════════════════════════════════════════════════════════════════
