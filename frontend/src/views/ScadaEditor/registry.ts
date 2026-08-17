@@ -16,6 +16,8 @@ import { sliderMeta } from './components/scada-components/basic/slider/metadata'
 import { textMeta } from './components/scada-components/layout/text/metadata'
 import { rectangleMeta } from './components/scada-components/layout/rectangle/metadata'
 import { circleMeta } from './components/scada-components/layout/circle/metadata'
+import { lineMeta } from './components/scada-components/layout/line/metadata'
+import { arcMeta } from './components/scada-components/layout/arc/metadata'
 import { iconMeta } from './components/scada-components/layout/icon/metadata'
 import { imageMeta } from './components/scada-components/layout/image/metadata'
 import { buttonMeta } from './components/scada-components/basic/button/metadata'
@@ -40,6 +42,8 @@ export const componentMetaRegistry = {
   text: textMeta,
   rectangle: rectangleMeta,
   circle: circleMeta,
+  line: lineMeta,
+  arc: arcMeta,
   icon: iconMeta,
   image: imageMeta,
   button: buttonMeta,

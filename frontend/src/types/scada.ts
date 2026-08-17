@@ -18,6 +18,8 @@ export type {
   WriteValueComponentConfig,
   EnumValueComponentConfig,
   EnumValueItem,
+  LineComponentConfig,
+  ArcComponentConfig,
   IconComponentConfig,
   GaugeComponentConfig,
   ChartComponentConfig,

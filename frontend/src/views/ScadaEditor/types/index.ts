@@ -96,6 +96,32 @@ export interface CircleComponentConfig extends Omit<BaseComponentConfig, 'border
   blur?: number
 }
 
+/** 直线组件配置 */
+export interface LineComponentConfig extends Omit<BaseComponentConfig, 'backgroundColor' | 'borderColor' | 'borderWidth' | 'borderRadius' | 'fontSize' | 'fontColor' | 'opacity'> {
+  /** 线条颜色 */
+  strokeColor: string
+  /** 线条宽度（px） */
+  strokeWidth: number
+  /** 线条角度（度），0=水平向右，90=垂直向下 */
+  angle: number
+  /** 箭头样式 */
+  arrow?: 'none' | 'start' | 'end' | 'both'
+}
+
+/** 弧线组件配置 */
+export interface ArcComponentConfig extends Omit<BaseComponentConfig, 'backgroundColor' | 'borderColor' | 'borderWidth' | 'borderRadius' | 'fontSize' | 'fontColor' | 'opacity'> {
+  /** 线条颜色 */
+  strokeColor: string
+  /** 线条宽度（px） */
+  strokeWidth: number
+  /** 起始角度（度） */
+  startAngle: number
+  /** 结束角度（度） */
+  endAngle: number
+  /** 箭头样式 */
+  arrow?: 'none' | 'start' | 'end' | 'both'
+}
+
 /** 图标组件配置 */
 export interface IconComponentConfig extends Omit<BaseComponentConfig, 'borderRadius' | 'backgroundColor' | 'borderColor' | 'borderWidth' | 'fontSize' | 'fontColor' | 'opacity'> {
   /** 图标名称（对应 xicon_<name> 的基名） */
@@ -379,6 +405,8 @@ export interface ComponentConfigMap {
   'write-value': WriteValueComponentConfig
   rectangle: RectangleComponentConfig
   circle: CircleComponentConfig
+  line: LineComponentConfig
+  arc: ArcComponentConfig
   icon: IconComponentConfig
   gauge: GaugeComponentConfig
   'chart-line': LineChartComponentConfig
