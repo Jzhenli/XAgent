@@ -172,7 +172,8 @@ const updateFromEvent = (event: PointerEvent) => {
   let ratio = (event.clientX - rect.left) / rect.width
   ratio = Math.max(0, Math.min(1, ratio))
   const rawValue = min.value + ratio * (max.value - min.value)
-  currentValue.value = Math.round(rawValue * 100) / 100
+  // 只取整数值，不写小数
+  currentValue.value = Math.round(rawValue)
 }
 </script>
 
