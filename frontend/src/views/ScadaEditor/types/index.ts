@@ -288,6 +288,14 @@ export interface SliderBarComponentConfig extends BaseComponentConfig {
   axisFontSize: number
   /** x/y 轴标签颜色 */
   axisColor: string
+  /** 是否显示 Y 轴标签（刻度） */
+  showYAxisLabel?: boolean
+  /** 是否显示 X 轴（底部标签与基线） */
+  showXAxis?: boolean
+  /** 柱体顶部圆角（px） */
+  barRadius?: number
+  /** 是否显示当前值 */
+  showCurrentValue?: boolean
   /** 柱体列表 */
   items: SliderBarItemConfig[]
 }

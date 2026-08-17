@@ -13,6 +13,10 @@ const defaultConfig: SliderBarComponentConfig = {
   valueColor: '#8A93A6',
   axisFontSize: 11,
   axisColor: '#8A93A6',
+  showYAxisLabel: true,
+  showXAxis: true,
+  barRadius: 0,
+  showCurrentValue: true,
   items: [
     { label: '1#', value: 40, binding: null },
     { label: '2#', value: 65, binding: null },

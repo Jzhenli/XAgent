@@ -2,10 +2,10 @@
   <div class="slider-bar-chart" :style="containerStyle">
     <!-- 主体：y 轴刻度 + 绘图区（每根柱体为竖向滑块） -->
     <div class="sbc-main">
-      <div class="sbc-yaxis" :style="axisStyle">
+      <div v-if="showYAxisLabel" class="sbc-yaxis" :style="axisStyle">
         <span v-for="tick in yTicks" :key="tick" class="sbc-ytick">{{ tick }}</span>
       </div>
-      <div class="sbc-plot">
+      <div class="sbc-plot" :class="{ 'sbc-plot--no-baseline': !showXAxis }">
         <div v-for="(item, index) in items" :key="index" class="sbc-col">
           <div
             class="sbc-track"
@@ -17,7 +17,7 @@
             <!-- 激活轨道（柱体） -->
             <div class="sbc-fill" :style="fillStyle(item, index)" />
             <!-- 当前值：跟随柱体顶部 -->
-            <span class="sbc-value" :style="valueLabelStyle(item, index)">
+            <span v-if="showCurrentValue" class="sbc-value" :style="valueLabelStyle(item, index)">
               {{ formatTick(displayValue(item, index)) }}
             </span>
           </div>
@@ -26,8 +26,8 @@
     </div>
 
     <!-- x 轴标签：与柱体一一对应 -->
-    <div class="sbc-xaxis-row">
-      <div class="sbc-yaxis-spacer" />
+    <div v-if="showXAxis" class="sbc-xaxis-row">
+      <div v-if="showYAxisLabel" class="sbc-yaxis-spacer" />
       <div class="sbc-xaxis" :style="axisStyle">
         <span v-for="(item, index) in items" :key="index" class="sbc-xtick">{{ item.label }}</span>
       </div>
@@ -65,6 +65,10 @@ const valueFontSize = computed(() => barConfig.value.valueFontSize ?? 12)
 const valueColor = computed(() => barConfig.value.valueColor ?? '#E6F7FF')
 const axisFontSize = computed(() => barConfig.value.axisFontSize ?? 11)
 const axisColor = computed(() => barConfig.value.axisColor ?? '#8A93A6')
+const showYAxisLabel = computed(() => barConfig.value.showYAxisLabel ?? true)
+const showXAxis = computed(() => barConfig.value.showXAxis ?? true)
+const barRadius = computed(() => barConfig.value.barRadius ?? 0)
+const showCurrentValue = computed(() => barConfig.value.showCurrentValue ?? true)
 
 const containerStyle = computed(() => ({
   backgroundColor: barConfig.value.backgroundColor,
@@ -142,6 +146,8 @@ const percentOf = (item: SliderBarItemConfig, index: number): number => {
 const fillStyle = (item: SliderBarItemConfig, index: number) => ({
   height: `${percentOf(item, index)}%`,
   backgroundColor: barColor.value,
+  borderTopLeftRadius: `${barRadius.value}px`,
+  borderTopRightRadius: `${barRadius.value}px`,
 })
 
 const valueLabelStyle = (item: SliderBarItemConfig, index: number) => ({
@@ -258,6 +264,10 @@ const updateFromEvent = (index: number, event: PointerEvent) => {
   min-width: 0;
   display: flex;
   border-bottom: 1px solid v-bind(axisColor);
+}
+
+.sbc-plot--no-baseline {
+  border-bottom: none;
 }
 
 .sbc-col {
