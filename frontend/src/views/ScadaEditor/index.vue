@@ -404,16 +404,29 @@ const handleImportFileChange = async (event: Event) => {
   border-radius: 6px;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition: all 0.2s ease;
 }
 
-.action-btn:hover,
-.action-btn:focus,
+.action-btn:hover {
+  color: var(--scada-cyan);
+  background: var(--scada-bg-hover);
+  border-color: var(--scada-cyan);
+  box-shadow: 0 0 8px var(--scada-cyan-glow);
+  transform: translateY(-1px);
+}
+
 .action-btn:active {
-  color: var(--text-primary);
-  background: var(--bg-color);
-  border-color: var(--border-base);
+  color: var(--color-primary-active, var(--scada-cyan));
+  background: var(--color-primary-light, var(--scada-bg-hover));
+  border-color: var(--color-primary-active, var(--scada-cyan));
+  transform: translateY(0);
+  box-shadow: none;
+  transition-duration: 0.05s;
+}
+
+.action-btn:focus {
   outline: none;
+  box-shadow: 0 0 0 2px var(--scada-cyan-glow);
 }
 
 .preview-header {
