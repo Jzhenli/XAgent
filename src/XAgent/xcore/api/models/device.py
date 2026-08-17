@@ -76,8 +76,8 @@ class PointConfig(BaseModel):
         """验证点位名称"""
         if not v or not v.strip():
             raise ValueError('Point name cannot be empty')
-        if not re.match(r'^[a-zA-Z0-9_\-\u4e00-\u9fa5]+$', v):
-            raise ValueError('Point name can only contain letters, numbers, underscores, hyphens, and Chinese characters')
+        if not re.match(r'^[a-zA-Z0-9_\-\u4e00-\u9fa5\s]+$', v):
+            raise ValueError('Point name can only contain letters, numbers, underscores, hyphens, Chinese characters and spaces')
         return v.strip()
     
     model_config = ConfigDict(extra="allow")
