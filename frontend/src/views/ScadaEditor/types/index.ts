@@ -240,6 +240,24 @@ export interface SliderComponentConfig extends BaseComponentConfig {
   thumbColor?: string
 }
 
+/** 滑块式开关组件配置 */
+export interface SliderSwitchComponentConfig extends BaseComponentConfig {
+  min: number
+  max: number
+  /** 激活轨道颜色（滑块左侧） */
+  activeTrackColor: string
+  /** 未激活轨道颜色（滑块右侧） */
+  inactiveTrackColor: string
+  /** 滑块颜色 */
+  thumbColor: string
+  /** 是否显示数字轴 */
+  showAxis: boolean
+  /** 数字轴字体大小 */
+  axisFontSize: number
+  /** 数字轴字体颜色 */
+  axisColor: string
+}
+
 /** 图片组件配置 */
 export interface ImageComponentConfig extends BaseComponentConfig {
   url?: string
@@ -308,6 +326,7 @@ export interface ComponentConfigMap {
   indicator: IndicatorComponentConfig
   switch: SwitchComponentConfig
   slider: SliderComponentConfig
+  'slider-switch': SliderSwitchComponentConfig
   image: ImageComponentConfig
   button: ButtonComponentConfig
   acMode: AcModeComponentConfig

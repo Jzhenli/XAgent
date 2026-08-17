@@ -26,6 +26,7 @@ export type {
   IndicatorComponentConfig,
   SwitchComponentConfig,
   SliderComponentConfig,
+  SliderSwitchComponentConfig,
   ImageComponentConfig,
   ButtonComponentConfig,
   AcModeComponentConfig,

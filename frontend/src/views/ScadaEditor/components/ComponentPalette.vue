@@ -68,7 +68,7 @@ const props = defineProps<{
 }>()
 
 // Active category state
-const activeCategory = ref<string>('layout')
+const activeCategory = ref<string>('basic')
 
 // Get all categories sorted by order
 const categories = computed(() => getSortedCategories())
