@@ -248,10 +248,14 @@ export interface SliderSwitchComponentConfig extends BaseComponentConfig {
   activeTrackColor: string
   /** 未激活轨道颜色（滑块右侧） */
   inactiveTrackColor: string
+  /** 轨道高度（激活/未激活） */
+  trackHeight: number
   /** 滑块颜色 */
   thumbColor: string
   /** 是否显示数字轴 */
   showAxis: boolean
+  /** 是否显示当前值（轨道最右侧） */
+  showValue: boolean
   /** 数字轴字体大小 */
   axisFontSize: number
   /** 数字轴字体颜色 */

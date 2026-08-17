@@ -10,9 +10,11 @@ const defaultConfig: SliderSwitchComponentConfig = {
   max: 100,
   activeTrackColor: '#22D3EE',
   inactiveTrackColor: 'rgba(120, 130, 150, 0.35)',
+  trackHeight: 22,
   thumbColor: '#FFFFFF',
   borderRadius: 12,
   showAxis: true,
+  showValue: true,
   axisFontSize: 11,
   axisColor: '#8A93A6',
 }

@@ -72,6 +72,17 @@
         />
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.trackHeight') }}</label>
+        <input
+          type="number"
+          min="1"
+          :value="config.trackHeight"
+          @change="updateConfig('trackHeight', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+    </div>
 
     <!-- 数字轴 -->
     <div class="subsection-title">{{ t('componentConfig.axisSection') }}</div>
@@ -81,6 +92,13 @@
         <el-switch
           :model-value="config.showAxis"
           @change="updateConfig('showAxis', $event as boolean)"
+        />
+      </div>
+      <div class="form-group form-group--switch">
+        <label>{{ t('componentConfig.showCurrentValue') }}</label>
+        <el-switch
+          :model-value="config.showValue"
+          @change="updateConfig('showValue', $event as boolean)"
         />
       </div>
     </div>

@@ -1,14 +1,17 @@
 <template>
   <div class="slider-switch" :style="containerStyle">
-    <!-- 轨道：激活（滑块左侧）+ 未激活（滑块右侧）+ 滑块 -->
-    <div
-      ref="trackRef"
-      class="ss-track"
-      @pointerdown="handlePointerDown"
-    >
-      <div class="ss-rail ss-rail-inactive" :style="inactiveRailStyle" />
-      <div class="ss-rail ss-rail-active" :style="activeRailStyle" />
-      <div class="ss-thumb" :style="thumbStyle" />
+    <!-- 轨道行：激活/未激活轨道 + 滑块 + 当前值（最右侧） -->
+    <div class="ss-track-row">
+      <div
+        ref="trackRef"
+        class="ss-track"
+        @pointerdown="handlePointerDown"
+      >
+        <div class="ss-rail ss-rail-inactive" :style="inactiveRailStyle" />
+        <div class="ss-rail ss-rail-active" :style="activeRailStyle" />
+        <div class="ss-thumb" :style="thumbStyle" />
+      </div>
+      <span v-if="showValue" class="ss-value" :style="valueStyle">{{ displayValue }}</span>
     </div>
 
     <!-- 数字轴：按最小值到最大值均分刻度 -->
@@ -51,9 +54,11 @@ const min = computed(() => switchConfig.value.min ?? 0)
 const max = computed(() => switchConfig.value.max ?? 100)
 const activeTrackColor = computed(() => switchConfig.value.activeTrackColor ?? '#22D3EE')
 const inactiveTrackColor = computed(() => switchConfig.value.inactiveTrackColor ?? 'rgba(120, 130, 150, 0.35)')
+const trackHeight = computed(() => switchConfig.value.trackHeight ?? 22)
 const thumbColor = computed(() => switchConfig.value.thumbColor ?? '#FFFFFF')
 const borderRadius = computed(() => switchConfig.value.borderRadius ?? 12)
 const showAxis = computed(() => switchConfig.value.showAxis ?? true)
+const showValue = computed(() => switchConfig.value.showValue ?? true)
 const axisFontSize = computed(() => switchConfig.value.axisFontSize ?? 11)
 const axisColor = computed(() => switchConfig.value.axisColor ?? '#8A93A6')
 
@@ -73,18 +78,22 @@ const containerStyle = computed(() => ({
 
 const activeRailStyle = computed(() => ({
   width: `${percentage.value * 100}%`,
+  height: `${trackHeight.value}px`,
   backgroundColor: activeTrackColor.value,
   borderRadius: `${borderRadius.value}px 0 0 ${borderRadius.value}px`,
 }))
 
 const inactiveRailStyle = computed(() => ({
   width: `${(1 - percentage.value) * 100}%`,
+  height: `${trackHeight.value}px`,
   backgroundColor: inactiveTrackColor.value,
   borderRadius: `0 ${borderRadius.value}px ${borderRadius.value}px 0`,
 }))
 
+// 滑块高度随轨道高度联动：轨道高度 + 2px
 const thumbStyle = computed(() => ({
   left: `${percentage.value * 100}%`,
+  height: `${trackHeight.value + 2}px`,
   backgroundColor: thumbColor.value,
   borderRadius: `${borderRadius.value}px`,
 }))
@@ -106,6 +115,16 @@ const axisTicks = computed(() => {
     formatTick(min.value + ((max.value - min.value) * i) / segments),
   )
 })
+
+// ─── 当前值显示：与数字轴共用字体大小/颜色 ──────────────────
+const displayValue = computed(() =>
+  formatTick(typeof currentValue.value === 'number' ? currentValue.value : min.value),
+)
+
+const valueStyle = computed(() => ({
+  fontSize: `${axisFontSize.value}px`,
+  color: axisColor.value,
+}))
 
 // ─── 拖拽交互：拖动滑块修改值，松开后写入点位 ────────────────
 const trackRef = ref<HTMLDivElement | null>(null)
@@ -169,19 +188,33 @@ const updateFromEvent = (event: PointerEvent) => {
   overflow: hidden;
 }
 
+.ss-track-row {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .ss-track {
   position: relative;
   flex: 1;
-  min-height: 0;
+  align-self: stretch;
   cursor: pointer;
   touch-action: none;
+}
+
+.ss-value {
+  flex-shrink: 0;
+  white-space: nowrap;
+  user-select: none;
+  line-height: 1.2;
 }
 
 .ss-rail {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  height: min(22px, 60%);
   overflow: hidden;
 }
 
@@ -198,7 +231,6 @@ const updateFromEvent = (event: PointerEvent) => {
   top: 50%;
   transform: translate(-50%, -50%);
   width: 14px;
-  height: min(40px, 95%);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   pointer-events: none;
 }
