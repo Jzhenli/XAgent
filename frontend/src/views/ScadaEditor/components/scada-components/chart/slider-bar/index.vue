@@ -220,7 +220,7 @@ const updateFromEvent = (index: number, event: PointerEvent) => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 10px 12px;
+  padding: 20px 12px 10px 12px;
   box-sizing: border-box;
   overflow: hidden;
 }

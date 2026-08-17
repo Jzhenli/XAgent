@@ -10,7 +10,7 @@ const defaultConfig: SliderBarComponentConfig = {
   barColor: '#22D3EE',
   barWidth: 36,
   valueFontSize: 12,
-  valueColor: '#E6F7FF',
+  valueColor: '#8A93A6',
   axisFontSize: 11,
   axisColor: '#8A93A6',
   items: [
