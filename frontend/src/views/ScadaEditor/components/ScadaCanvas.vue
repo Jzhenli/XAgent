@@ -31,6 +31,14 @@
       :style="boxSelectStyle"
     />
 
+    <div
+      v-if="groupBBox"
+      class="group-bounding-box"
+      :style="groupBBox"
+    >
+      <span class="group-label">{{ $t('scada.groupTag') }}</span>
+    </div>
+
     <div class="components-layer">
       <div
         v-for="comp in currentPanel?.components"
@@ -96,6 +104,23 @@
           >
             <span>{{ $t('scada.contextMenu.lock') }}</span>
           </div>
+          <div v-if="canGroup || hasSelectedGroup" class="context-menu-divider" />
+          <div
+            v-if="canGroup"
+            class="context-menu-item"
+            @click="handleContextAction('group')"
+          >
+            <span>{{ $t('scada.contextMenu.group') }}</span>
+            <span class="context-menu-shortcut">Ctrl+G</span>
+          </div>
+          <div
+            v-if="hasSelectedGroup"
+            class="context-menu-item"
+            @click="handleContextAction('ungroup')"
+          >
+            <span>{{ $t('scada.contextMenu.ungroup') }}</span>
+            <span class="context-menu-shortcut">Ctrl+Shift+G</span>
+          </div>
           <div class="context-menu-divider" />
           <div class="context-menu-item" @click="handleContextAction('bringToFront')">
             <span>{{ $t('scada.contextMenu.bringToFront') }}</span>
@@ -114,6 +139,22 @@
             @click="handleContextAction('delete')"
           >
             <span>{{ $t('scada.delete') }}</span>
+          </div>
+          <div
+            v-if="canGroup"
+            class="context-menu-item"
+            @click="handleContextAction('group')"
+          >
+            <span>{{ $t('scada.contextMenu.group') }}</span>
+            <span class="context-menu-shortcut">Ctrl+G</span>
+          </div>
+          <div
+            v-if="hasSelectedGroup"
+            class="context-menu-item"
+            @click="handleContextAction('ungroup')"
+          >
+            <span>{{ $t('scada.contextMenu.ungroup') }}</span>
+            <span class="context-menu-shortcut">Ctrl+Shift+G</span>
           </div>
         </template>
       </div>
@@ -166,6 +207,37 @@ const targetComponent = computed(() => {
   return currentPanel.value.components.find(c => c.id === contextMenu.value.targetId) || null
 })
 
+// 判断选中组件是否有分组
+const hasSelectedGroup = computed(() => {
+  if (selectedComponentIds.value.length === 0) return false
+  if (!currentPanel.value) return false
+  return selectedComponentIds.value.some(id => {
+    const comp = currentPanel.value?.components.find(c => c.id === id)
+    return !!comp?.groupId
+  })
+})
+
+// 判断是否可创建分组（至少选中2个，且不全在同一组中）
+const canGroup = computed(() => {
+  if (selectedComponentIds.value.length < 2) return false
+  if (!currentPanel.value) return false
+  // 检查选中的组件是否已经全部在同一个组
+  const groupIds = new Set<string>()
+  selectedComponentIds.value.forEach(id => {
+    const comp = currentPanel.value?.components.find(c => c.id === id)
+    if (comp?.groupId) groupIds.add(comp.groupId)
+  })
+  // 如果全部已在同一组，不应显示 group 选项
+  if (groupIds.size === 1 && selectedComponentIds.value.length > 1) {
+    const allInSameGroup = selectedComponentIds.value.every(id => {
+      const comp = currentPanel.value?.components.find(c => c.id === id)
+      return comp?.groupId === Array.from(groupIds)[0]
+    })
+    if (allInSameGroup) return false
+  }
+  return true
+})
+
 // 点击菜单外部关闭右键菜单
 const handleDocumentPointerDown = () => {
   if (contextMenu.value.visible) {
@@ -213,6 +285,48 @@ const boxSelectStyle = computed(() => {
     top: `${Math.min(start.y, end.y) * zoom.value}px`,
     width: `${Math.abs(end.x - start.x) * zoom.value}px`,
     height: `${Math.abs(end.y - start.y) * zoom.value}px`
+  }
+})
+
+/** 选中组件所属组的包围盒（用于显示组的整体范围） */
+const groupBBox = computed(() => {
+  if (!currentPanel.value || selectedComponentIds.value.length === 0) return null
+
+  const panel = currentPanel.value
+  const selectedComps = panel.components.filter(c =>
+    selectedComponentIds.value.includes(c.id)
+  )
+  if (selectedComps.length === 0) return null
+
+  // 检查是否有分组组件
+  const hasGrouped = selectedComps.some(c => c.groupId)
+  if (!hasGrouped) return null
+
+  // 获取所有涉及的 groupId
+  const groupIds = new Set<string>()
+  selectedComps.forEach(c => {
+    if (c.groupId) groupIds.add(c.groupId)
+  })
+
+  // 找到所有同组的组件
+  const allGroupComps = panel.components.filter(c =>
+    c.groupId && groupIds.has(c.groupId)
+  )
+  if (allGroupComps.length === 0) return null
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+  allGroupComps.forEach(comp => {
+    minX = Math.min(minX, comp.x)
+    maxX = Math.max(maxX, comp.x + comp.config.width)
+    minY = Math.min(minY, comp.y)
+    maxY = Math.max(maxY, comp.y + comp.config.height)
+  })
+
+  return {
+    left: `${(minX - 4) * zoom.value}px`,
+    top: `${(minY - 4) * zoom.value}px`,
+    width: `${(maxX - minX + 8) * zoom.value}px`,
+    height: `${(maxY - minY + 8) * zoom.value}px`
   }
 })
 
@@ -402,5 +516,37 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
   margin: 4px 8px;
   background: linear-gradient(90deg, transparent, var(--scada-cyan), transparent);
   opacity: 0.3;
+}
+
+.context-menu-shortcut {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+.group-bounding-box {
+  position: absolute;
+  border: 2px dashed var(--scada-purple);
+  border-radius: 8px;
+  background: rgba(168, 85, 247, 0.05);
+  pointer-events: none;
+  z-index: 5;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.15);
+  transition: box-shadow 0.2s ease;
+}
+
+.group-label {
+  position: absolute;
+  top: -22px;
+  left: -2px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--scada-purple);
+  border-radius: 4px 4px 0 0;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 </style>

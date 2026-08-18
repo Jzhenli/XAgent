@@ -1404,7 +1404,9 @@
       "lock": "锁定",
       "unlock": "解锁",
       "bringToFront": "置于顶层",
-      "sendToBack": "置于底层"
+      "sendToBack": "置于底层",
+      "group": "组合",
+      "ungroup": "取消分组"
     },
     "undoOperations": {
       "add": "添加组件 {name}",
@@ -1420,8 +1422,11 @@
       "unlock": "解锁组件",
       "reorder": "调整图层顺序",
       "bringToFront": "置于顶层",
-      "sendToBack": "置于底层"
-    }
+      "sendToBack": "置于底层",
+      "group": "组合 {count} 个组件",
+      "ungroup": "取消分组 {count} 个组件"
+    },
+    "groupTag": "已分组"
   },
   "ruleEditor": {
     "defaultRuleName": "新规则",

@@ -1404,7 +1404,9 @@
       "lock": "Lock",
       "unlock": "Unlock",
       "bringToFront": "Bring to Front",
-      "sendToBack": "Send to Back"
+      "sendToBack": "Send to Back",
+      "group": "Group",
+      "ungroup": "Ungroup"
     },
     "undoOperations": {
       "add": "Add component {name}",
@@ -1420,8 +1422,11 @@
       "unlock": "Unlock component",
       "reorder": "Reorder layers",
       "bringToFront": "Bring to front",
-      "sendToBack": "Send to back"
-    }
+      "sendToBack": "Send to back",
+      "group": "Group {count} components",
+      "ungroup": "Ungroup {count} components"
+    },
+    "groupTag": "Grouped"
   },
   "ruleEditor": {
     "defaultRuleName": "New Rule",

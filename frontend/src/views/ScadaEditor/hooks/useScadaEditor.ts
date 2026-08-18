@@ -417,23 +417,47 @@ export function useScadaEditor() {
     updateComponent(componentId, { binding })
   }
 
-  /** 复制指定组件（在原地生成一份带偏移的副本） */
+  /** 复制指定组件（在原地生成一份带偏移的副本）；分组组件复制整组并保持成组 */
   function duplicateComponent(id: string): void {
     const panel = getEditablePanel()
     if (!panel) return
 
     const component = panel.components.find(c => c.id === id)
-    if (component) {
-      const newComponent = cloneComponent(component, {
-        x: component.x + 20,
-        y: component.y + 20
-      }, t('common.duplicateSuffix'), t)
+    if (!component) return
 
-      undo.pushOperation('duplicate', t('scada.undoOperations.duplicate', { name: component.name }), [newComponent.id])
+    // 分组组件：复制整组，副本共享一个全新 groupId（与原组相互独立）
+    if (component.groupId) {
+      const members = panel.components.filter(c => c.groupId === component.groupId)
+      const newGroupId = `group-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      const newIds: string[] = []
 
-      panel.components.push(newComponent)
+      members.forEach(m => {
+        const copy = cloneComponent(m, { x: m.x + 20, y: m.y + 20 }, t('common.duplicateSuffix'), t)
+        copy.groupId = newGroupId
+        newIds.push(copy.id)
+        panel.components.push(copy)
+      })
+
+      undo.pushOperation(
+        'duplicate',
+        t('scada.undoOperations.duplicate', { name: component.name }),
+        newIds
+      )
       panel.updatedAt = Date.now()
+      return
     }
+
+    const newComponent = cloneComponent(component, {
+      x: component.x + 20,
+      y: component.y + 20
+    }, t('common.duplicateSuffix'), t)
+    // 单组件副本不保留分组关系
+    newComponent.groupId = null
+
+    undo.pushOperation('duplicate', t('scada.undoOperations.duplicate', { name: component.name }), [newComponent.id])
+
+    panel.components.push(newComponent)
+    panel.updatedAt = Date.now()
   }
 
   /** 复制单个组件到剪贴板 */
@@ -460,6 +484,8 @@ export function useScadaEditor() {
     if (!panel || clipboard.value.length === 0) return
 
     const newIds: string[] = []
+    // 剪贴板内同组组件映射到同一个全新 groupId：副本之间保持成组、与原组相互独立
+    const groupIdRemap = new Map<string, string>()
 
     clipboard.value.forEach((clipComp, index) => {
       const offset = index * 20
@@ -467,6 +493,18 @@ export function useScadaEditor() {
         x: x !== undefined ? x + offset : clipComp.x + 20,
         y: y !== undefined ? y + offset : clipComp.y + 20
       }, t('common.duplicateSuffix'), t)
+
+      if (clipComp.groupId) {
+        let newGroupId = groupIdRemap.get(clipComp.groupId)
+        if (!newGroupId) {
+          newGroupId = `group-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+          groupIdRemap.set(clipComp.groupId, newGroupId)
+        }
+        newComponent.groupId = newGroupId
+      } else {
+        newComponent.groupId = null
+      }
+
       newIds.push(newComponent.id)
       panel.components.push(newComponent)
     })
@@ -527,6 +565,106 @@ export function useScadaEditor() {
     reorderComponent(id, false)
   }
 
+  /** 将选中的多个组件组合为一组 */
+  function groupComponents(): void {
+    const panel = getEditablePanel()
+    if (!panel || selectedComponentIds.value.length < 2) return
+
+    // 部分选中的组扩展为整组，避免重组后残留只有零星成员的"孤儿组"
+    const expandedIds = new Set<string>()
+    selectedComponentIds.value.forEach(id => {
+      const comp = panel.components.find(c => c.id === id)
+      if (!comp) return
+      if (comp.groupId) {
+        panel.components.forEach(c => {
+          if (c.groupId === comp.groupId) expandedIds.add(c.id)
+        })
+      } else {
+        expandedIds.add(id)
+      }
+    })
+
+    if (expandedIds.size < 2) return
+
+    const groupId = `group-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+    undo.pushOperation(
+      'group',
+      t('scada.undoOperations.group', { count: expandedIds.size }),
+      Array.from(expandedIds)
+    )
+
+    expandedIds.forEach(id => {
+      const comp = panel.components.find(c => c.id === id)
+      if (comp) {
+        comp.groupId = groupId
+      }
+    })
+    panel.updatedAt = Date.now()
+
+    // 选中集同步为扩展后的整组成员
+    selectedComponentIds.value = Array.from(expandedIds)
+    selectedComponentId.value = selectedComponentIds.value[0] ?? null
+  }
+
+  /** 将选中组件所在的组解散 */
+  function ungroupComponents(): void {
+    const panel = getEditablePanel()
+    if (!panel || selectedComponentIds.value.length === 0) return
+
+    const groupIds = new Set<string>()
+    selectedComponentIds.value.forEach(id => {
+      const comp = panel.components.find(c => c.id === id)
+      if (comp?.groupId) {
+        groupIds.add(comp.groupId)
+      }
+    })
+
+    if (groupIds.size === 0) return
+
+    const affectedIds = panel.components
+      .filter(c => c.groupId && groupIds.has(c.groupId))
+      .map(c => c.id)
+
+    undo.pushOperation(
+      'ungroup',
+      t('scada.undoOperations.ungroup', { count: affectedIds.length }),
+      affectedIds
+    )
+
+    panel.components.forEach(c => {
+      if (c.groupId && groupIds.has(c.groupId)) {
+        c.groupId = null
+      }
+    })
+    panel.updatedAt = Date.now()
+  }
+
+  /** 获取指定组件所属组的所有组件 ID */
+  function getGroupMemberIds(componentId: string): string[] {
+    const panel = currentPanel.value
+    if (!panel) return []
+
+    const comp = panel.components.find(c => c.id === componentId)
+    if (!comp?.groupId) return []
+
+    return panel.components
+      .filter(c => c.groupId === comp.groupId)
+      .map(c => c.id)
+  }
+
+  /** 判断选中组件是否处于分组状态 */
+  function hasSelectedGroup(): boolean {
+    if (selectedComponentIds.value.length === 0) return false
+    const panel = currentPanel.value
+    if (!panel) return false
+
+    return selectedComponentIds.value.some(id => {
+      const comp = panel.components.find(c => c.id === id)
+      return !!comp?.groupId
+    })
+  }
+
   /** 标记需要滚动定位的组件 */
   function scrollToComponent(id: string): void {
     scrollToComponentId.value = id
@@ -577,6 +715,10 @@ export function useScadaEditor() {
     toggleLock,
     bringToFront,
     sendToBack,
+    groupComponents,
+    ungroupComponents,
+    getGroupMemberIds,
+    hasSelectedGroup,
     // 辅助
     scrollToComponent,
     clearScrollTarget,

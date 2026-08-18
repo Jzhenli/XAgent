@@ -522,6 +522,7 @@ export interface ScadaComponent<T extends ComponentType = ComponentType> {
   binding: PointBinding | null
   locked: boolean
   visible: boolean
+  groupId?: string | null
 }
 
 export interface ScadaPanel {
@@ -604,6 +605,8 @@ export type ContextAction =
   | 'delete'
   | 'bringToFront'
   | 'sendToBack'
+  | 'group'
+  | 'ungroup'
 
 export interface PanelPreset {
   key: string
