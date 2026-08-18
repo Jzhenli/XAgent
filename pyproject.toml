@@ -34,7 +34,7 @@ min_sdk = 24
 target_sdk = 34
 permissions = [
     "INTERNET",
-    "FOREGROUND_SERVICE",
+    "ACCESS_NETWORK_STATE",
 ]
 dependencies = [
     "pydantic_core==2.46.3",
