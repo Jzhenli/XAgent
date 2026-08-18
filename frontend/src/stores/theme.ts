@@ -4,7 +4,7 @@ import { ref } from 'vue'
 export type ThemeMode = 'light' | 'dark'
 
 export const useThemeStore = defineStore('theme', () => {
-  const theme = ref<ThemeMode>((localStorage.getItem('theme') as ThemeMode) || 'light')
+  const theme = ref<ThemeMode>((localStorage.getItem('theme') as ThemeMode) || 'dark')
 
   function setTheme(newTheme: ThemeMode) {
     theme.value = newTheme
