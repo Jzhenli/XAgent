@@ -38,6 +38,7 @@ export type {
   ValueImageItem,
   ValueImageSwitchComponentConfig,
   NavButtonComponentConfig,
+  PopupComponentConfig,
   ScadaComponent,
   PanelType,
   ScadaPanel

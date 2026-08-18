@@ -399,6 +399,32 @@ export interface ValueImageSwitchComponentConfig extends BaseComponentConfig {
   fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
 }
 
+/** 弹框组件配置 */
+export interface PopupComponentConfig extends BaseComponentConfig {
+  /** 触发按钮文字 */
+  triggerText: string
+  /** 触发按钮图标 */
+  triggerIcon?: string
+  /** 弹框标题 */
+  popupTitle: string
+  /** 弹框内容（支持纯文本或 HTML） */
+  popupContent: string
+  /** 是否使用 HTML 渲染内容 */
+  useHtml: boolean
+  /** 弹框宽度 */
+  popupWidth: number
+  /** 遮罩层颜色 */
+  maskColor?: string
+  /** 触发按钮文字颜色 */
+  triggerFontColor: string
+  /** 触发按钮背景颜色 */
+  triggerBackgroundColor: string
+  /** 触发按钮边框颜色 */
+  triggerBorderColor: string
+  /** 触发按钮圆角 */
+  triggerBorderRadius: number
+}
+
 /** 空调风速组件配置 */
 export interface AcFanSpeedComponentConfig extends BaseComponentConfig {
   fontSize: number
@@ -441,6 +467,7 @@ export interface ComponentConfigMap {
   acFanSpeed: AcFanSpeedComponentConfig
   'value-image-switch': ValueImageSwitchComponentConfig
   'nav-button': NavButtonComponentConfig
+  popup: PopupComponentConfig
 }
 
 /** 组件统一配置类型 */

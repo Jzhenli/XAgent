@@ -1791,7 +1791,21 @@
     "selectProjectPlaceholder": "請選擇專案",
     "pleaseEnterTargetUrl": "請輸入目標網址",
     "pleaseSelectProject": "請選擇目標專案",
-    "noProjects": "暫無專案"
+    "noProjects": "暫無專案",
+    "popupConfig": "彈框設定",
+    "triggerSection": "觸發按鈕",
+    "triggerText": "按鈕文字",
+    "triggerIcon": "按鈕圖示",
+    "triggerFontColor": "按鈕文字顏色",
+    "triggerBackgroundColor": "按鈕背景顏色",
+    "triggerBorderColor": "按鈕邊框顏色",
+    "triggerBorderRadius": "按鈕圓角",
+    "popupSection": "彈框設定",
+    "popupTitle": "彈框標題",
+    "popupContent": "彈框內容",
+    "popupWidth": "彈框寬度",
+    "useHtml": "使用 HTML 渲染",
+    "maskColor": "遮罩顏色"
   },
   "scadaComponentCategories": {
     "gauge": "儀表",
@@ -1824,7 +1838,8 @@
     "arc": "弧線",
     "icon": "圖示",
     "valueImageSwitch": "圖片切換",
-    "navButton": "導航按鈕"
+    "navButton": "導航按鈕",
+    "popup": "彈框"
   },
   "ruleNodeCategories": {
     "trigger": "觸發器",

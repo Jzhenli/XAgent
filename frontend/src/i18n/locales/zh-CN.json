@@ -1791,7 +1791,21 @@
     "selectProjectPlaceholder": "请选择项目",
     "pleaseEnterTargetUrl": "请输入目标网址",
     "pleaseSelectProject": "请选择目标项目",
-    "noProjects": "暂无项目"
+    "noProjects": "暂无项目",
+    "popupConfig": "弹框配置",
+    "triggerSection": "触发按钮",
+    "triggerText": "按钮文字",
+    "triggerIcon": "按钮图标",
+    "triggerFontColor": "按钮文字颜色",
+    "triggerBackgroundColor": "按钮背景颜色",
+    "triggerBorderColor": "按钮边框颜色",
+    "triggerBorderRadius": "按钮圆角",
+    "popupSection": "弹框设置",
+    "popupTitle": "弹框标题",
+    "popupContent": "弹框内容",
+    "popupWidth": "弹框宽度",
+    "useHtml": "使用 HTML 渲染",
+    "maskColor": "遮罩颜色"
   },
   "scadaComponentCategories": {
     "gauge": "仪表",
@@ -1824,7 +1838,8 @@
     "arc": "弧线",
     "icon": "图标",
     "valueImageSwitch": "图片切换",
-    "navButton": "导航按钮"
+    "navButton": "导航按钮",
+    "popup": "弹框"
   },
   "ruleNodeCategories": {
     "trigger": "触发器",

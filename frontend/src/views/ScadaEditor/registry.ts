@@ -25,6 +25,7 @@ import { acModeMeta } from './components/scada-components/basic/ac-mode/metadata
 import { acFanSpeedMeta } from './components/scada-components/basic/ac-fan-speed/metadata'
 import { valueImageSwitchMeta } from './components/scada-components/chart/value-image-switch/metadata'
 import { navButtonMeta } from './components/scada-components/layout/nav-button/metadata'
+import { popupMeta } from './components/scada-components/layout/popup/metadata'
 
 // ─── 统一组件注册表：type -> 完整元数据 ─────────────────────────
 // 新增组件只需在此添加映射，ComponentType 自动推导
@@ -52,6 +53,7 @@ export const componentMetaRegistry = {
   acFanSpeed: acFanSpeedMeta,
   'value-image-switch': valueImageSwitchMeta,
   'nav-button': navButtonMeta,
+  popup: popupMeta,
 } as const
 
 /** 组件类型 —— 从注册表键名自动推导 */
