@@ -1778,7 +1778,20 @@
     "small": "小",
     "medium": "中",
     "large": "大",
-    "extraWide": "超宽"
+    "extraWide": "超宽",
+    "navButton": "导航按钮",
+    "navButtonConfig": "导航按钮配置",
+    "jumpSection": "跳转",
+    "jumpMode": "跳转方式",
+    "jumpModeUrl": "自定义网址",
+    "jumpModeProject": "选择项目",
+    "targetUrl": "目标网址",
+    "targetUrlPlaceholder": "请输入网址，如 https://example.com",
+    "targetProject": "目标项目",
+    "selectProjectPlaceholder": "请选择项目",
+    "pleaseEnterTargetUrl": "请输入目标网址",
+    "pleaseSelectProject": "请选择目标项目",
+    "noProjects": "暂无项目"
   },
   "scadaComponentCategories": {
     "gauge": "仪表",
@@ -1810,7 +1823,8 @@
     "line": "直线",
     "arc": "弧线",
     "icon": "图标",
-    "valueImageSwitch": "图片切换"
+    "valueImageSwitch": "图片切换",
+    "navButton": "导航按钮"
   },
   "ruleNodeCategories": {
     "trigger": "触发器",

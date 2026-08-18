@@ -37,6 +37,7 @@ export type {
   AcFanSpeedComponentConfig,
   ValueImageItem,
   ValueImageSwitchComponentConfig,
+  NavButtonComponentConfig,
   ScadaComponent,
   PanelType,
   ScadaPanel

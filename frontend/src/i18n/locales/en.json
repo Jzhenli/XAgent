@@ -1778,7 +1778,20 @@
     "small": "Small",
     "medium": "Medium",
     "large": "Large",
-    "extraWide": "Extra Wide"
+    "extraWide": "Extra Wide",
+    "navButton": "Navigation Button",
+    "navButtonConfig": "Navigation Button Config",
+    "jumpSection": "Jump",
+    "jumpMode": "Jump Mode",
+    "jumpModeUrl": "Custom URL",
+    "jumpModeProject": "Select Project",
+    "targetUrl": "Target URL",
+    "targetUrlPlaceholder": "Enter URL, e.g. https://example.com",
+    "targetProject": "Target Project",
+    "selectProjectPlaceholder": "Select a project",
+    "pleaseEnterTargetUrl": "Please enter target URL",
+    "pleaseSelectProject": "Please select a target project",
+    "noProjects": "No projects"
   },
   "scadaComponentCategories": {
     "gauge": "Gauges",
@@ -1810,7 +1823,8 @@
     "line": "Line",
     "arc": "Arc",
     "icon": "Icon",
-    "valueImageSwitch": "Value Image Switch"
+    "valueImageSwitch": "Value Image Switch",
+    "navButton": "Navigation Button"
   },
   "ruleNodeCategories": {
     "trigger": "Triggers",

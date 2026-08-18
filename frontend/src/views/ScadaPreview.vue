@@ -16,7 +16,7 @@
 
     <div v-if="currentPanel" class="preview-content">
       <div class="canvas-wrapper">
-        <ScadaCanvas />
+        <ScadaCanvas :key="`preview-${currentPanel.value?.id || 'unknown'}`" />
       </div>
     </div>
 
@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, provide } from 'vue'
+import { ref, computed, onMounted, onUnmounted, provide, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScadaEditor } from '@/views/ScadaEditor/hooks/useScadaEditor'
@@ -61,11 +61,20 @@ const currentPanel = computed(() => scada.currentPanel)
 onMounted(async () => {
   const panelId = route.params.id as string
   if (panelId) {
-    await scada.loadPanel(panelId)
     scada.isEditing.value = false
+    scada.isFullscreenPreview.value = true
+    await scada.loadPanel(panelId)
     await refreshBoundDevices()
   }
   document.addEventListener('fullscreenchange', handleFullscreenChange)
+})
+
+/** 监听路由参数变化（导航按钮跳转到同路由不同面板时，组件不会重新挂载，需手动重载） */
+watch(() => route.params.id, async (newId) => {
+  if (newId && newId !== scada.currentPanelId.value) {
+    await scada.loadPanel(newId as string)
+    await refreshBoundDevices()
+  }
 })
 
 onUnmounted(() => {

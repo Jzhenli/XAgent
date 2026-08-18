@@ -370,6 +370,25 @@ export interface ValueImageItem {
   url: string
 }
 
+/** 导航按钮组件配置 */
+export interface NavButtonComponentConfig extends BaseComponentConfig {
+  text: string
+  fontSize: number
+  fontColor: string
+  backgroundColor: string
+  borderWidth: number
+  borderColor: string
+  borderRadius: number
+  /** 跳转模式：url=自定义网址，project=从项目列表选择 */
+  jumpMode: 'url' | 'project'
+  /** 自定义跳转网址 */
+  targetUrl?: string
+  /** 目标项目 ID */
+  targetProjectId?: string
+  /** 目标项目类型（Dashboard / Graphic） */
+  targetProjectType?: PanelType
+}
+
 /** 图片切换组件配置 */
 export interface ValueImageSwitchComponentConfig extends BaseComponentConfig {
   /** 值对应图片列表 */
@@ -421,6 +440,7 @@ export interface ComponentConfigMap {
   acMode: AcModeComponentConfig
   acFanSpeed: AcFanSpeedComponentConfig
   'value-image-switch': ValueImageSwitchComponentConfig
+  'nav-button': NavButtonComponentConfig
 }
 
 /** 组件统一配置类型 */

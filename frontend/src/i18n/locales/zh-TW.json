@@ -1778,7 +1778,20 @@
     "small": "小",
     "medium": "中",
     "large": "大",
-    "extraWide": "超寬"
+    "extraWide": "超寬",
+    "navButton": "導航按鈕",
+    "navButtonConfig": "導航按鈕設定",
+    "jumpSection": "跳轉",
+    "jumpMode": "跳轉方式",
+    "jumpModeUrl": "自訂網址",
+    "jumpModeProject": "選擇專案",
+    "targetUrl": "目標網址",
+    "targetUrlPlaceholder": "請輸入網址，如 https://example.com",
+    "targetProject": "目標專案",
+    "selectProjectPlaceholder": "請選擇專案",
+    "pleaseEnterTargetUrl": "請輸入目標網址",
+    "pleaseSelectProject": "請選擇目標專案",
+    "noProjects": "暫無專案"
   },
   "scadaComponentCategories": {
     "gauge": "儀表",
@@ -1810,7 +1823,8 @@
     "line": "直線",
     "arc": "弧線",
     "icon": "圖示",
-    "valueImageSwitch": "圖片切換"
+    "valueImageSwitch": "圖片切換",
+    "navButton": "導航按鈕"
   },
   "ruleNodeCategories": {
     "trigger": "觸發器",
