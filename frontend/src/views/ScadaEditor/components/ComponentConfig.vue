@@ -305,6 +305,7 @@ const POINT_BINDINGLESS_TYPES = new Set([
   "slider-bar",
   "image",
   "nav-button",
+  "chart-line",
 ]);
 
 const showPointBinding = computed(() => {

@@ -200,6 +200,10 @@ export interface LineChartComponentConfig
   nodeFillColor?: string
   /** 是否平滑折线 */
   smooth?: boolean
+  /** 是否显示图例 */
+  showLegend?: boolean
+  /** 多序列配置（支持多条折线） */
+  seriesItems?: LineChartSeriesItem[]
 }
 
 /** 柱状图组件配置 */
@@ -234,6 +238,18 @@ export interface LineChartDataPoint {
   timestamp: number
   value: number
   quality: string
+}
+
+/** 折线图序列项（每条线的配置） */
+export interface LineChartSeriesItem {
+  /** 序列名称（显示在图例中） */
+  name: string
+  /** 点位绑定 */
+  binding: PointBinding | null
+  /** 线条颜色 */
+  lineColor: string
+  /** 节点填充色（可选，默认继承 lineColor） */
+  nodeFillColor?: string
 }
 
 /** 指示灯组件配置 */

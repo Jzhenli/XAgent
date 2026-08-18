@@ -25,6 +25,7 @@ export type {
   ChartComponentConfig,
   LineChartComponentConfig,
   LineChartDataPoint,
+  LineChartSeriesItem,
   IndicatorComponentConfig,
   SwitchComponentConfig,
   SliderComponentConfig,
