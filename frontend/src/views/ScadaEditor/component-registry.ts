@@ -12,7 +12,8 @@ export type {
   PointBinding,
   ComponentTemplate,
   ScadaComponent,
-  ScadaPanel
+  ScadaPanel,
+  PopupComponentConfig
 } from './types'
 export type { ComponentType } from './registry'
 

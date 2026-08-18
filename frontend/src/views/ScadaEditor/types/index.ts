@@ -96,6 +96,32 @@ export interface CircleComponentConfig extends Omit<BaseComponentConfig, 'border
   blur?: number
 }
 
+/** 直线组件配置 */
+export interface LineComponentConfig extends Omit<BaseComponentConfig, 'backgroundColor' | 'borderColor' | 'borderWidth' | 'borderRadius' | 'fontSize' | 'fontColor' | 'opacity'> {
+  /** 线条颜色 */
+  strokeColor: string
+  /** 线条宽度（px） */
+  strokeWidth: number
+  /** 线条角度（度），0=水平向右，90=垂直向下 */
+  angle: number
+  /** 箭头样式 */
+  arrow?: 'none' | 'start' | 'end' | 'both'
+}
+
+/** 弧线组件配置 */
+export interface ArcComponentConfig extends Omit<BaseComponentConfig, 'backgroundColor' | 'borderColor' | 'borderWidth' | 'borderRadius' | 'fontSize' | 'fontColor' | 'opacity'> {
+  /** 线条颜色 */
+  strokeColor: string
+  /** 线条宽度（px） */
+  strokeWidth: number
+  /** 起始角度（度） */
+  startAngle: number
+  /** 结束角度（度） */
+  endAngle: number
+  /** 箭头样式 */
+  arrow?: 'none' | 'start' | 'end' | 'both'
+}
+
 /** 图标组件配置 */
 export interface IconComponentConfig extends Omit<BaseComponentConfig, 'borderRadius' | 'backgroundColor' | 'borderColor' | 'borderWidth' | 'fontSize' | 'fontColor' | 'opacity'> {
   /** 图标名称（对应 xicon_<name> 的基名） */
@@ -174,6 +200,10 @@ export interface LineChartComponentConfig
   nodeFillColor?: string
   /** 是否平滑折线 */
   smooth?: boolean
+  /** 是否显示图例 */
+  showLegend?: boolean
+  /** 多序列配置（支持多条折线） */
+  seriesItems?: LineChartSeriesItem[]
 }
 
 /** 柱状图组件配置 */
@@ -210,6 +240,18 @@ export interface LineChartDataPoint {
   quality: string
 }
 
+/** 折线图序列项（每条线的配置） */
+export interface LineChartSeriesItem {
+  /** 序列名称（显示在图例中） */
+  name: string
+  /** 点位绑定 */
+  binding: PointBinding | null
+  /** 线条颜色 */
+  lineColor: string
+  /** 节点填充色（可选，默认继承 lineColor） */
+  nodeFillColor?: string
+}
+
 /** 指示灯组件配置 */
 export interface IndicatorComponentConfig
   extends Omit<BaseComponentConfig, 'backgroundColor' | 'borderRadius'> {
@@ -238,6 +280,66 @@ export interface SliderComponentConfig extends BaseComponentConfig {
   step: number
   /** 滑块颜色 */
   thumbColor?: string
+}
+
+/** 滑块式开关组件配置 */
+export interface SliderSwitchComponentConfig extends BaseComponentConfig {
+  min: number
+  max: number
+  /** 激活轨道颜色（滑块左侧） */
+  activeTrackColor: string
+  /** 未激活轨道颜色（滑块右侧） */
+  inactiveTrackColor: string
+  /** 轨道高度（激活/未激活） */
+  trackHeight: number
+  /** 滑块颜色 */
+  thumbColor: string
+  /** 是否显示数字轴 */
+  showAxis: boolean
+  /** 是否显示当前值（轨道最右侧） */
+  showValue: boolean
+  /** 数字轴字体大小 */
+  axisFontSize: number
+  /** 数字轴字体颜色 */
+  axisColor: string
+}
+
+/** 滑块式柱状图单项（柱体）配置 */
+export interface SliderBarItemConfig {
+  /** x 轴标签 */
+  label: string
+  /** 当前值：编辑态/未绑定点位时的模拟值 */
+  value: number
+  /** 点位绑定 */
+  binding: PointBinding | null
+}
+
+/** 滑块式柱状图组件配置 */
+export interface SliderBarComponentConfig extends BaseComponentConfig {
+  min: number
+  max: number
+  /** 柱体颜色（激活轨道） */
+  barColor: string
+  /** 柱体宽度（px） */
+  barWidth: number
+  /** 顶部当前值字体大小 */
+  valueFontSize: number
+  /** 顶部当前值颜色 */
+  valueColor: string
+  /** x/y 轴标签字体大小 */
+  axisFontSize: number
+  /** x/y 轴标签颜色 */
+  axisColor: string
+  /** 是否显示 Y 轴标签（刻度） */
+  showYAxisLabel?: boolean
+  /** 是否显示 X 轴（底部标签与基线） */
+  showXAxis?: boolean
+  /** 柱体顶部圆角（px） */
+  barRadius?: number
+  /** 是否显示当前值 */
+  showCurrentValue?: boolean
+  /** 柱体列表 */
+  items: SliderBarItemConfig[]
 }
 
 /** 图片组件配置 */
@@ -276,6 +378,69 @@ export interface AcModeComponentConfig extends BaseComponentConfig {
   fanValue: number | string
 }
 
+/** 图片切换项（值对应图片） */
+export interface ValueImageItem {
+  /** 绑定的数值 */
+  value: number | string
+  /** 对应的图片地址（base64 或 URL） */
+  url: string
+}
+
+/** 导航按钮组件配置 */
+export interface NavButtonComponentConfig extends BaseComponentConfig {
+  text: string
+  fontSize: number
+  fontColor: string
+  backgroundColor: string
+  borderWidth: number
+  borderColor: string
+  borderRadius: number
+  /** 跳转模式：url=自定义网址，project=从项目列表选择 */
+  jumpMode: 'url' | 'project'
+  /** 自定义跳转网址 */
+  targetUrl?: string
+  /** 目标项目 ID */
+  targetProjectId?: string
+  /** 目标项目类型（Dashboard / Graphic） */
+  targetProjectType?: PanelType
+}
+
+/** 图片切换组件配置 */
+export interface ValueImageSwitchComponentConfig extends BaseComponentConfig {
+  /** 值对应图片列表 */
+  items: ValueImageItem[]
+  /** 默认图片（无匹配值时显示） */
+  defaultUrl?: string
+  /** 图片填充方式 */
+  fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
+}
+
+/** 弹框组件配置 */
+export interface PopupComponentConfig extends BaseComponentConfig {
+  /** 触发按钮文字 */
+  triggerText: string
+  /** 触发按钮图标 */
+  triggerIcon?: string
+  /** 弹框标题 */
+  popupTitle: string
+  /** 弹框内容（支持纯文本或 HTML） */
+  popupContent: string
+  /** 是否使用 HTML 渲染内容 */
+  useHtml: boolean
+  /** 弹框宽度 */
+  popupWidth: number
+  /** 遮罩层颜色 */
+  maskColor?: string
+  /** 触发按钮文字颜色 */
+  triggerFontColor: string
+  /** 触发按钮背景颜色 */
+  triggerBackgroundColor: string
+  /** 触发按钮边框颜色 */
+  triggerBorderColor: string
+  /** 触发按钮圆角 */
+  triggerBorderRadius: number
+}
+
 /** 空调风速组件配置 */
 export interface AcFanSpeedComponentConfig extends BaseComponentConfig {
   fontSize: number
@@ -301,6 +466,8 @@ export interface ComponentConfigMap {
   'write-value': WriteValueComponentConfig
   rectangle: RectangleComponentConfig
   circle: CircleComponentConfig
+  line: LineComponentConfig
+  arc: ArcComponentConfig
   icon: IconComponentConfig
   gauge: GaugeComponentConfig
   'chart-line': LineChartComponentConfig
@@ -308,10 +475,15 @@ export interface ComponentConfigMap {
   indicator: IndicatorComponentConfig
   switch: SwitchComponentConfig
   slider: SliderComponentConfig
+  'slider-switch': SliderSwitchComponentConfig
+  'slider-bar': SliderBarComponentConfig
   image: ImageComponentConfig
   button: ButtonComponentConfig
   acMode: AcModeComponentConfig
   acFanSpeed: AcFanSpeedComponentConfig
+  'value-image-switch': ValueImageSwitchComponentConfig
+  'nav-button': NavButtonComponentConfig
+  popup: PopupComponentConfig
 }
 
 /** 组件统一配置类型 */
@@ -413,6 +585,7 @@ export interface ScadaComponent<T extends ComponentType = ComponentType> {
   binding: PointBinding | null
   locked: boolean
   visible: boolean
+  groupId?: string | null
 }
 
 export interface ScadaPanel {
@@ -495,6 +668,8 @@ export type ContextAction =
   | 'delete'
   | 'bringToFront'
   | 'sendToBack'
+  | 'group'
+  | 'ungroup'
 
 export interface PanelPreset {
   key: string

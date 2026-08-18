@@ -14,6 +14,7 @@
           trigger="hover"
           placement="bottom-end"
           popper-class="project-dropdown-popper"
+          :teleported="false"
           @command="handleMoreCommand"
         >
           <el-icon class="more-icon" :size="32">
@@ -25,17 +26,17 @@
           </el-icon>
           <template #dropdown>
             <el-dropdown-menu class="project-more-menu">
-              <el-dropdown-item command="refresh">
-                <el-icon :size="16"><Refresh /></el-icon>
-                <span style="margin-left: 6px">{{ $t("common.refresh") }}</span>
+              <el-dropdown-item command="refresh" class="dropdown-item-refresh">
+                <el-icon :size="18"><Refresh /></el-icon>
+                <span>{{ $t("common.refresh") }}</span>
               </el-dropdown-item>
-              <el-dropdown-item command="import">
-                <el-icon :size="16"><Upload /></el-icon>
-                <span style="margin-left: 6px">{{ $t("common.import") }}</span>
+              <el-dropdown-item command="import" class="dropdown-item-import">
+                <el-icon :size="18"><Upload /></el-icon>
+                <span>{{ $t("common.import") }}</span>
               </el-dropdown-item>
-              <el-dropdown-item command="export">
-                <el-icon :size="16"><Download /></el-icon>
-                <span style="margin-left: 6px">{{ $t("common.export") }}</span>
+              <el-dropdown-item command="export" class="dropdown-item-export">
+                <el-icon :size="18"><Download /></el-icon>
+                <span>{{ $t("common.export") }}</span>
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -278,6 +279,7 @@ const handleDelete = async (id: string) => {
       confirmButtonText: t("common.confirm"),
       cancelButtonText: t("common.cancel"),
       type: "warning",
+      customClass: "x-message-box",
     });
   } catch {
     return;
@@ -393,6 +395,7 @@ const handleImportFileChange = async (event: Event) => {
           confirmButtonText: t("common.confirm"),
           cancelButtonText: t("common.cancel"),
           type: "warning",
+          customClass: "x-message-box",
         },
       );
     } catch {
@@ -488,7 +491,6 @@ const formatTime = (timestamp: number) => {
 }
 
 .empty-state {
-  background: var(--bg-card);
   border-radius: 8px;
   padding: 60px 20px;
 }
@@ -542,48 +544,58 @@ const formatTime = (timestamp: number) => {
 }
 
 :deep(.project-more-menu) {
-  padding: 6px;
+  padding: 8px;
   border-radius: 12px;
-  min-width: 140px;
-  background-color: var(--bg-card) !important;
-  border: 1px solid var(--border-light);
+  min-width: 120px;
+  background: var(--bg-modal, #fff) !important;
+  border: 1px solid var(--el-border-color-lighter);
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.16),
-    0 2px 6px rgba(0, 0, 0, 0.08);
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(12px);
+  animation: projectDropdownFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-:deep(.project-more-menu .el-dropdown__item) {
-  padding: 8px 12px;
-  border-radius: 8px;
+@keyframes projectDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+:deep(.project-more-menu .el-dropdown-menu__item) {
+  padding: 5px 7px;
+  border-radius: 6px;
   font-size: 14px;
-  color: var(--text-primary);
-  transition:
-    background-color 0.15s,
-    color 0.15s;
+  font-weight: 500;
+  background: transparent !important;
+  color: var(--el-text-color-primary) !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
-:deep(.project-more-menu .el-dropdown__item:hover) {
-  background-color: var(--el-fill-color-light) !important;
-  color: var(--el-color-primary) !important;
+:deep(.project-more-menu .el-dropdown-menu__item .el-icon) {
+  transition: transform 0.2s ease;
 }
 
-:deep(.project-more-menu .el-dropdown__item .el-icon) {
-  color: var(--text-secondary);
-}
-
-:deep(.project-more-menu .el-dropdown__item:hover .el-icon) {
-  color: var(--el-color-primary);
-}
-
-:deep(.project-more-menu .el-dropdown-menu__item.is-disabled) {
-  color: var(--text-disabled);
+:deep(.project-more-menu .el-dropdown-menu__item:hover),
+:deep(.project-more-menu .el-dropdown-menu__item:focus),
+:deep(.project-more-menu .el-dropdown-menu__item:active) {
+  background: rgba(102, 102, 255, 0.1) !important;
+  color: rgba(102, 102, 255, 1) !important;
+  transform: translateX(2px);
 }
 
 :deep(.project-more-menu .el-dropdown-menu__item.is-divider) {
-  height: 1px;
-  margin: 4px 0;
-  padding: 0;
-  background-color: var(--border-light);
+  margin: 6px 4px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .btn {
@@ -620,6 +632,8 @@ const formatTime = (timestamp: number) => {
 </style>
 
 <style>
+@import './DialogCommon.css';
+
 .project-dropdown-popper {
   background: transparent !important;
   border: none !important;

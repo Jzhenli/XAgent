@@ -13,7 +13,7 @@ import type { EChartsOption } from 'echarts'
 import { use, init, type EChartsType } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
-import { GridComponent } from 'echarts/components'
+import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
 import { usePointStore } from '@/stores/points'
 import { ScadaPointReaderKey } from '@/utils/scadaPointReader'
 import { usePolling } from '@/hooks/usePolling'
@@ -21,13 +21,13 @@ import type {
   ScadaComponent,
   LineChartComponentConfig,
   LineChartDataPoint,
+  LineChartSeriesItem,
+  PointBinding,
 } from '../types'
 import { useScadaEditor } from './useScadaEditor'
-import { useScadaBinding } from './useScadaBinding'
 
-use([CanvasRenderer, LineChart, GridComponent])
+use([CanvasRenderer, LineChart, GridComponent, LegendComponent, TooltipComponent])
 
-/** 时间范围到小时数的映射 */
 const hoursMap: Record<string, number> = {
   '1h': 1,
   '6h': 6,
@@ -35,20 +35,47 @@ const hoursMap: Record<string, number> = {
   '7d': 168,
 }
 
+const DEFAULT_COLORS = [
+  '#3498db',
+  '#e74c3c',
+  '#2ecc71',
+  '#f39c12',
+  '#9b59b6',
+  '#1abc9c',
+  '#e67e22',
+  '#34495e',
+  '#16a085',
+  '#c0392b',
+]
+
 export interface UseScadaLineChartReturn {
-  /** 图表容器 DOM 引用 */
   containerRef: Ref<HTMLDivElement | null>
-  /** 容器样式 */
   containerStyle: Ref<Record<string, any>>
+}
+
+interface ResolvedSeries {
+  item: LineChartSeriesItem
+  binding: PointBinding | null
+  boundPoint: any | null
+  data: LineChartDataPoint[]
+}
+
+const ensureSeriesItems = (cfg: LineChartComponentConfig): LineChartSeriesItem[] => {
+  if (cfg.seriesItems && cfg.seriesItems.length > 0) return cfg.seriesItems
+  return [
+    {
+      name: '序列 1',
+      binding: null,
+      lineColor: cfg.lineColor || DEFAULT_COLORS[0],
+      nodeFillColor: cfg.nodeFillColor || cfg.lineColor || DEFAULT_COLORS[0],
+    },
+  ]
 }
 
 /**
  * Scada 折线图组件 Hook
  *
- * 负责折线图组件的完整业务逻辑：
- * - ECharts 实例初始化、自适应 resize、局部刷新、销毁
- * - 点位绑定与历史数据加载/轮询
- * - 根据配置动态生成 ECharts option
+ * 统一使用 seriesItems 模式，每个序列项独立绑定点位和颜色
  */
 export function useScadaLineChart(
   configRef: MaybeRef<ScadaComponent>,
@@ -59,17 +86,13 @@ export function useScadaLineChart(
 
   const config = computed(() => unref(configRef))
   const chartConfig = computed(() => config.value.config as LineChartComponentConfig)
-  const binding = computed(() => config.value.binding)
-  const fallbackValue = computed(() => chartConfig.value?.value)
-
-  const { boundPoint } = useScadaBinding(binding, {}, fallbackValue)
 
   const containerRef = ref<HTMLDivElement | null>(null)
   let chartInstance: EChartsType | null = null
   let resizeObserver: ResizeObserver | null = null
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // 历史数据加载
+  // 数据加载工具
   // ═══════════════════════════════════════════════════════════════════════════════
 
   const fetchHistoryReadings = async (asset: string, hours: number = 24) => {
@@ -93,14 +116,71 @@ export function useScadaLineChart(
     return pointStore.generateTrendData(point, hours)
   }
 
+  const resolveBoundPoint = (bind: PointBinding | null): any | null => {
+    if (!bind) return null
+    const devices = injectedReader ? injectedReader.devices.value : pointStore.devices
+    const device = devices.find(
+      (d: any) => d.asset === bind.deviceId || d.name === bind.deviceId,
+    )
+    if (!device) return null
+    return device.points.find((p: any) => p.name === bind.pointName) || null
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // 序列解析
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  const resolveAllSeries = (): ResolvedSeries[] => {
+    const cfg = chartConfig.value
+    const hours = hoursMap[cfg?.timeRange || '24h'] || 24
+    const items = ensureSeriesItems(cfg)
+
+    return items.map((item) => {
+      const bound = resolveBoundPoint(item.binding)
+      let data: LineChartDataPoint[] = []
+
+      if (scada.isEditing.value) {
+        data = generateTrendData(
+          { name: '', currentValue: 50, type: 'analog', standard_data_type: 'float' },
+          hours,
+        )
+      } else if (bound) {
+        const realData = getPointTrendData(bound.name)
+        if (realData.length > 0) {
+          data = realData
+        } else {
+          data = generateTrendData(bound, hours)
+        }
+      }
+
+      return { item, binding: item.binding, boundPoint: bound, data }
+    })
+  }
+
+  const collectDeviceIds = (): string[] => {
+    const ids = new Set<string>()
+    const items = ensureSeriesItems(chartConfig.value)
+    items.forEach((item) => {
+      if (item.binding?.deviceId) {
+        ids.add(item.binding.deviceId)
+      }
+    })
+    return Array.from(ids)
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // 历史数据加载
+  // ═══════════════════════════════════════════════════════════════════════════════
+
   const loadHistoryData = async () => {
-    if (scada.isEditing.value || !binding.value) return
+    if (scada.isEditing.value) return
+
+    const deviceIds = collectDeviceIds()
+    if (deviceIds.length === 0) return
 
     try {
-      const deviceId = binding.value.deviceId
       const hours = hoursMap[chartConfig.value?.timeRange || '24h'] || 24
-
-      await fetchHistoryReadings(deviceId, hours)
+      await Promise.allSettled(deviceIds.map((id) => fetchHistoryReadings(id, hours)))
       updateChartOption()
     } catch (e) {
       console.error('[useScadaLineChart] Failed to load history data:', e)
@@ -135,10 +215,12 @@ export function useScadaLineChart(
   )
 
   watch(
-    () => binding.value,
+    () => chartConfig.value?.seriesItems,
     () => {
       if (!scada.isEditing.value) {
         void loadHistoryData()
+      } else {
+        updateChartOption()
       }
     },
     { deep: true },
@@ -180,17 +262,13 @@ export function useScadaLineChart(
       resizeObserver.observe(containerRef.value)
     }
 
-    if (!scada.isEditing.value && binding.value) {
+    if (!scada.isEditing.value) {
       void loadHistoryData()
       startHistoryPolling()
     }
   })
 
   onUnmounted(disposeChart)
-
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // 配置变更时局部刷新
-  // ═══════════════════════════════════════════════════════════════════════════════
 
   watch(
     () => chartConfig.value,
@@ -229,12 +307,6 @@ export function useScadaLineChart(
     return color
   }
 
-  const resolveLineColor = (cfg: LineChartComponentConfig): string =>
-    cfg.lineColor || 'var(--color-primary)'
-
-  const resolveNodeFillColor = (cfg: LineChartComponentConfig): string =>
-    cfg.nodeFillColor || resolveLineColor(cfg)
-
   const formatTimestamp = (timestamp: number, hours: number): string => {
     const date = new Date(timestamp)
     const hoursStr = date.getHours().toString().padStart(2, '0')
@@ -249,47 +321,22 @@ export function useScadaLineChart(
     return `${monthStr}-${dayStr} ${hoursStr}:${minutesStr}`
   }
 
-  const buildData = (): LineChartDataPoint[] => {
-    const cfg = chartConfig.value
-    const hours = hoursMap[cfg?.timeRange || '24h'] || 24
-
-    if (scada.isEditing.value && typeof fallbackValue.value === 'number') {
-      return generateTrendData(
-        {
-          name: '',
-          currentValue: fallbackValue.value,
-          type: 'analog',
-          standard_data_type: 'float',
-        },
-        hours,
-      )
-    }
-
-    if (boundPoint.value) {
-      const realData = getPointTrendData(boundPoint.value.name)
-      if (realData.length > 0) {
-        return realData
-      }
-      return generateTrendData(boundPoint.value, hours)
-    }
-
-    return []
-  }
-
-  const buildXAxisData = (data: LineChartDataPoint[], cfg: LineChartComponentConfig): string[] => {
-    const hours = hoursMap[cfg.timeRange || '24h'] || 24
-    return data.map((item) =>
-      typeof item.timestamp === 'number' ? formatTimestamp(item.timestamp, hours) : item.time,
-    )
-  }
-
-  const buildGrid = (): EChartsOption['grid'] => ({
+  const buildGrid = (hasLegend: boolean): EChartsOption['grid'] => ({
     left: '5%',
     right: '5%',
-    top: '5%',
+    top: hasLegend ? '15%' : '5%',
     bottom: '5%',
     containLabel: true,
   })
+
+  const buildXAxisData = (allSeries: ResolvedSeries[], cfg: LineChartComponentConfig): string[] => {
+    const hours = hoursMap[cfg.timeRange || '24h'] || 24
+    const firstData = allSeries.find((s) => s.data.length > 0)
+    if (!firstData) return []
+    return firstData.data.map((item) =>
+      typeof item.timestamp === 'number' ? formatTimestamp(item.timestamp, hours) : item.time,
+    )
+  }
 
   const buildXAxisOption = (
     cfg: LineChartComponentConfig,
@@ -297,6 +344,7 @@ export function useScadaLineChart(
   ): EChartsOption['xAxis'] => ({
     type: 'category',
     data,
+    boundaryGap: false,
     axisLabel: {
       show: cfg.showXAxisLabel !== false,
       color: cfg.xAxisLabelColor || 'var(--text-secondary)',
@@ -325,16 +373,39 @@ export function useScadaLineChart(
     },
   })
 
+  const buildLegendOption = (
+    cfg: LineChartComponentConfig,
+    series: ResolvedSeries[],
+  ): EChartsOption['legend'] => {
+    const showLegend = !!cfg.showLegend
+    return {
+      show: !!showLegend,
+      top: 4,
+      left: 'center',
+      orient: 'horizontal',
+      textStyle: {
+        color: cfg.xAxisLabelColor || 'var(--text-secondary)',
+        fontSize: cfg.xAxisLabelFontSize ?? 12,
+      },
+      itemGap: 12,
+      itemWidth: 16,
+      itemHeight: 8,
+    }
+  }
+
   const buildSeriesOption = (
     cfg: LineChartComponentConfig,
-    values: number[],
+    allSeries: ResolvedSeries[],
   ): EChartsOption['series'] => {
-    const lineColor = resolveLineColor(cfg)
-    const nodeSize = cfg.nodeSize ?? 0
-    const showSymbol = nodeSize > 0
+    return allSeries.map((s) => {
+      const lineColor = s.item.lineColor || DEFAULT_COLORS[0]
+      const nodeSize = cfg.nodeSize ?? 0
+      const showSymbol = nodeSize > 0
+      const values = s.data.map((d) => d.value)
+      const hasOnlyOne = allSeries.length === 1
 
-    return [
-      {
+      return {
+        name: s.item.name || `Series ${allSeries.indexOf(s) + 1}`,
         type: 'line',
         data: values,
         smooth: cfg.smooth ?? true,
@@ -345,40 +416,55 @@ export function useScadaLineChart(
           width: cfg.lineWidth ?? 2,
         },
         itemStyle: {
-          color: resolveNodeFillColor(cfg),
+          color: s.item.nodeFillColor || lineColor,
         },
-        areaStyle: cfg.areaFill
-          ? {
-              color: {
-                type: 'linear',
-                x: 0,
-                y: 0,
-                x2: 0,
-                y2: 1,
-                colorStops: [
-                  { offset: 0, color: colorWithAlpha(lineColor, 0.25) },
-                  { offset: 1, color: colorWithAlpha(lineColor, 0.02) },
-                ],
-              },
-            }
-          : undefined,
-      },
-    ]
+        areaStyle:
+          cfg.areaFill && hasOnlyOne
+            ? {
+                color: {
+                  type: 'linear',
+                  x: 0,
+                  y: 0,
+                  x2: 0,
+                  y2: 1,
+                  colorStops: [
+                    { offset: 0, color: colorWithAlpha(lineColor, 0.25) },
+                    { offset: 1, color: colorWithAlpha(lineColor, 0.02) },
+                  ],
+                },
+              }
+            : undefined,
+      }
+    })
   }
 
   const updateChartOption = () => {
     if (!chartInstance) return
 
     const cfg = chartConfig.value
-    const data = buildData()
-    const xAxisData = buildXAxisData(data, cfg)
-    const values = data.map((d) => d.value)
+    const allSeries = resolveAllSeries()
+    const hasData = allSeries.some((s) => s.data.length > 0)
+
+    if (!hasData) {
+      chartInstance.clear()
+      return
+    }
+
+    const xAxisData = buildXAxisData(allSeries, cfg)
+    const showLegend = !!cfg.showLegend
 
     const option: EChartsOption = {
-      grid: buildGrid(),
+      grid: buildGrid(showLegend),
       xAxis: buildXAxisOption(cfg, xAxisData),
       yAxis: buildYAxisOption(cfg),
-      series: buildSeriesOption(cfg, values),
+      legend: buildLegendOption(cfg, allSeries),
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'line',
+        },
+      },
+      series: buildSeriesOption(cfg, allSeries),
     }
 
     chartInstance.setOption(option, true)

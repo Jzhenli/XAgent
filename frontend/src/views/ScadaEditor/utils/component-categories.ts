@@ -8,8 +8,8 @@ export interface CategoryConfig {
 }
 
 export const COMPONENT_CATEGORIES: CategoryConfig[] = [
-  { key: 'layout', icon: '📦', order: 1 },
-  { key: 'basic', icon: '📝', order: 2 },
+  { key: 'basic', icon: '📝', order: 1 },
+  { key: 'layout', icon: '📦', order: 2 },
   { key: 'chart', icon: '📊', order: 3 },
 ]
 

@@ -136,11 +136,35 @@ export function useScadaCanvas() {
       
       if (componentEl) {
         const componentId = componentEl.dataset.componentId!
+        const isCtrlPressed = e.ctrlKey || e.metaKey
         
-        if (selectedComponentIds.value.includes(componentId)) {
+        if (isCtrlPressed) {
+          // Ctrl+click: 切换选中；分组组件按整组增删，保证组在选集中不被拆散
+          if (selectedComponentIds.value.includes(componentId)) {
+            const memberIds = scada.getGroupMemberIds(componentId)
+            const removeSet = new Set(memberIds.length > 1 ? memberIds : [componentId])
+            const newIds = selectedComponentIds.value.filter(id => !removeSet.has(id))
+            scada.selectComponents(newIds)
+            // 已被取消选中，不再启动拖拽（否则会拖动选集中其他组件）
+          } else {
+            const addIds = scada.getGroupMemberIds(componentId)
+            const newIds = Array.from(new Set([
+              ...selectedComponentIds.value,
+              ...(addIds.length > 1 ? addIds : [componentId])
+            ]))
+            scada.selectComponents(newIds)
+            startDrag(componentId, pos)
+          }
+        } else if (selectedComponentIds.value.includes(componentId)) {
           startDrag(componentId, pos)
         } else {
-          scada.selectComponent(componentId)
+          // Check if component is in a group - if so, select all group members
+          const groupMemberIds = scada.getGroupMemberIds(componentId)
+          if (groupMemberIds.length > 1) {
+            scada.selectComponents(groupMemberIds)
+          } else {
+            scada.selectComponent(componentId)
+          }
           startDrag(componentId, pos)
         }
       } else {
@@ -483,7 +507,7 @@ export function useScadaCanvas() {
       return
     }
 
-    const selectedIds = currentPanel.value.components
+    const hitIds = currentPanel.value.components
       .filter(comp => {
         const compRight = comp.x + comp.config.width
         const compBottom = comp.y + comp.config.height
@@ -491,7 +515,20 @@ export function useScadaCanvas() {
       })
       .map(comp => comp.id)
 
-    scada.selectComponents(selectedIds)
+    // 部分命中的组扩展为整组，避免拖拽时把组拉散
+    const expandedIds = new Set<string>()
+    hitIds.forEach(id => {
+      const comp = currentPanel.value?.components.find(c => c.id === id)
+      if (comp?.groupId) {
+        currentPanel.value?.components.forEach(c => {
+          if (c.groupId === comp.groupId) expandedIds.add(c.id)
+        })
+      } else {
+        expandedIds.add(id)
+      }
+    })
+
+    scada.selectComponents(Array.from(expandedIds))
   }
 
   /**
@@ -580,7 +617,13 @@ export function useScadaCanvas() {
       contextMenu.value.targetId = componentId
       contextMenu.value.type = 'node'
       if (!selectedComponentIds.value.includes(componentId)) {
-        scada.selectComponent(componentId)
+        // 与左键行为一致：分组组件选中整组
+        const memberIds = scada.getGroupMemberIds(componentId)
+        if (memberIds.length > 1) {
+          scada.selectComponents(memberIds)
+        } else {
+          scada.selectComponent(componentId)
+        }
       }
     } else {
       contextMenu.value.targetId = null
@@ -602,14 +645,28 @@ export function useScadaCanvas() {
    * @param action - 操作类型
    */
   const handleContextAction = (action: ContextAction) => {
-    if (!contextMenu.value.targetId && action !== 'paste') {
+    // group/ungroup/paste 作用于当前选集，允许在画布（无 targetId）菜单中触发
+    if (
+      !contextMenu.value.targetId &&
+      action !== 'paste' &&
+      action !== 'group' &&
+      action !== 'ungroup'
+    ) {
       return
     }
 
     switch (action) {
       case 'copy':
         if (contextMenu.value.targetId) {
-          scada.copyComponent(contextMenu.value.targetId)
+          // 目标处于多选（如整组）时复制整个选集，与选中态保持一致
+          if (
+            selectedComponentIds.value.length > 1 &&
+            selectedComponentIds.value.includes(contextMenu.value.targetId)
+          ) {
+            scada.copySelectedComponents()
+          } else {
+            scada.copyComponent(contextMenu.value.targetId)
+          }
         }
         break
       case 'paste':
@@ -627,7 +684,13 @@ export function useScadaCanvas() {
         break
       case 'delete':
         if (contextMenu.value.type === 'node' && contextMenu.value.targetId) {
-          scada.deleteComponent(contextMenu.value.targetId)
+          // 分组组件删除整组（右键时选集已扩展为整组），避免组被拆散
+          const target = currentPanel.value?.components.find(c => c.id === contextMenu.value.targetId)
+          if (target?.groupId) {
+            scada.deleteSelectedComponents()
+          } else {
+            scada.deleteComponent(contextMenu.value.targetId)
+          }
         } else if (contextMenu.value.type === 'canvas') {
           scada.deleteSelectedComponents()
         }
@@ -641,6 +704,12 @@ export function useScadaCanvas() {
         if (contextMenu.value.targetId) {
           scada.sendToBack(contextMenu.value.targetId)
         }
+        break
+      case 'group':
+        scada.groupComponents()
+        break
+      case 'ungroup':
+        scada.ungroupComponents()
         break
     }
 
@@ -711,12 +780,34 @@ export function useScadaCanvas() {
       scada.pasteComponent(mousePosition.value.x, mousePosition.value.y)
     }
 
-    // Ctrl+D 复制
+    // Ctrl+D 复制：按组去重后逐个复制（分组组件由 duplicateComponent 复制整组）
     if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
       e.preventDefault()
-      if (selectedComponent.value) {
-        scada.duplicateComponent(selectedComponent.value.id)
+      const panel = currentPanel.value
+      if (panel && selectedComponentIds.value.length > 0) {
+        const seen = new Set<string>()
+        selectedComponentIds.value.forEach(id => {
+          const comp = panel.components.find(c => c.id === id)
+          if (!comp) return
+          const key = comp.groupId ?? comp.id
+          if (!seen.has(key)) {
+            seen.add(key)
+            scada.duplicateComponent(id)
+          }
+        })
       }
+    }
+
+    // Ctrl+G 组合选中组件
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'g') {
+      e.preventDefault()
+      scada.groupComponents()
+    }
+
+    // Ctrl+Shift+G 取消分组
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'g' || e.key === 'G')) {
+      e.preventDefault()
+      scada.ungroupComponents()
     }
 
     // Delete/Backspace 删除
@@ -749,8 +840,8 @@ export function useScadaCanvas() {
       scada.redo()
     }
 
-    // 方向键移动选中组件
-    if (selectedComponent.value && !selectedComponent.value.locked) {
+    // 方向键移动所有选中组件（整组/多选一起移动，避免拉散）
+    if (selectedComponentIds.value.length > 0) {
       const step = gridSize.value
       const keyMap: Record<string, { dx: number; dy: number }> = {
         ArrowUp: { dx: 0, dy: -step },
@@ -762,7 +853,12 @@ export function useScadaCanvas() {
       const delta = keyMap[e.key]
       if (delta) {
         e.preventDefault()
-        scada.moveComponent(selectedComponent.value.id, selectedComponent.value.x + delta.dx, selectedComponent.value.y + delta.dy)
+        selectedComponentIds.value.forEach(id => {
+          const comp = currentPanel.value?.components.find(c => c.id === id)
+          if (comp && !comp.locked) {
+            scada.moveComponent(id, comp.x + delta.dx, comp.y + delta.dy)
+          }
+        })
       }
     }
   }

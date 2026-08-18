@@ -1,0 +1,230 @@
+/**
+ * ProjectList 模块通用弹框样式
+ * 与 Devices 模块 x-dialog / x-message-box 视觉统一
+ */
+
+/* ========== 弹框容器 ========== */
+.x-dialog {
+  background-color: var(--bg-modal) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  border: 1px solid var(--border-base) !important;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.28),
+    0 8px 24px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.x-dialog .el-dialog__header {
+  background-color: var(--bg-card) !important;
+  padding: 16px 20px;
+  margin-right: 0;
+}
+
+.x-dialog .el-dialog__title {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.x-dialog .el-dialog__body {
+  background-color: var(--bg-card) !important;
+  padding: 20px;
+  color: var(--text-primary);
+}
+
+.x-dialog .el-dialog__footer {
+  background-color: var(--bg-card) !important;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ========== 表单标签 ========== */
+.x-dialog .el-form-item__label {
+  color: var(--text-primary);
+  text-align: left !important;
+  font-weight: 500;
+}
+
+.x-dialog .el-form-item.is-required .el-form-item__label::before {
+  color: var(--color-danger);
+}
+
+/* ========== 下拉菜单内容 ========== */
+.x-dialog .el-select-dropdown {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-base) !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ========== 文本输入框 / 下拉框 / 文本域 ========== */
+.x-dialog .el-input__wrapper,
+.x-dialog .el-select__wrapper,
+.x-dialog .el-textarea__wrapper {
+  box-shadow: none !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-base) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  transition: border-color 0.2s;
+}
+
+.x-dialog .el-input__wrapper.is-focus,
+.x-dialog .el-select.is-focused .el-select__wrapper,
+.x-dialog .el-textarea__wrapper.is-focus {
+  border-bottom-color: var(--color-primary) !important;
+}
+
+.x-dialog .el-input__inner,
+.x-dialog .el-textarea__inner {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.x-dialog .el-input__inner::placeholder,
+.x-dialog .el-textarea__inner::placeholder {
+  color: var(--text-placeholder);
+}
+
+.x-dialog .el-select__selected-item,
+.x-dialog .el-select__placeholder {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.x-dialog .el-select__placeholder {
+  color: var(--text-placeholder) !important;
+}
+
+.x-dialog .el-input__wrapper.is-disabled,
+.x-dialog .el-textarea.is-disabled .el-textarea__wrapper {
+  background: transparent !important;
+  border-bottom-color: var(--border-base) !important;
+}
+
+.x-dialog .el-select__suffix,
+.x-dialog .el-input__suffix {
+  color: var(--text-secondary);
+}
+
+/* ========== 按钮 ========== */
+.x-dialog .el-button {
+  transition: all 0.2s !important;
+}
+
+.x-dialog .el-button:not(.el-button--primary) {
+  background-color: var(--el-button-bg-color) !important;
+  border-color: var(--el-button-border-color) !important;
+  color: var(--text-regular) !important;
+}
+
+.x-dialog .el-button:not(.el-button--primary):hover {
+  background-color: var(--el-button-hover-bg-color) !important;
+  border-color: var(--el-color-primary) !important;
+  color: var(--color-primary) !important;
+}
+
+.x-dialog .el-button--primary {
+  background-color: rgba(102, 102, 255, 1) !important;
+  border-color: rgba(102, 102, 255, 1) !important;
+  color: #fff !important;
+}
+
+.x-dialog .el-button--primary:hover {
+  background-color: rgba(102, 102, 255, 0.88) !important;
+  border-color: rgba(102, 102, 255, 0.88) !important;
+}
+
+/* ========== MessageBox 弹框 ========== */
+.x-message-box {
+  background-color: var(--bg-modal) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  border: 1px solid var(--border-base) !important;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.28),
+    0 8px 24px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  vertical-align: middle;
+}
+
+.x-message-box .el-message-box__header {
+  background-color: var(--bg-card) !important;
+  padding: 16px 20px !important;
+}
+
+.x-message-box .el-message-box__title {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.x-message-box .el-message-box__headerbtn {
+  top: 16px;
+  right: 16px;
+}
+
+.x-message-box .el-message-box__headerbtn .el-message-box__close {
+  color: var(--text-secondary);
+}
+
+.x-message-box .el-message-box__headerbtn .el-message-box__close:hover {
+  color: var(--color-primary);
+}
+
+.x-message-box .el-message-box__content {
+  background-color: var(--bg-card) !important;
+  padding: 20px !important;
+  color: var(--text-primary);
+}
+
+.x-message-box .el-message-box__status {
+  color: var(--color-primary) !important;
+}
+
+.x-message-box .el-message-box__btns {
+  background-color: var(--bg-card) !important;
+  padding: 14px 20px !important;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.x-message-box .el-message-box__btns .el-button {
+  outline: none !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+
+.x-message-box .el-message-box__btns .el-button:focus,
+.x-message-box .el-message-box__btns .el-button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.x-message-box .el-message-box__btns .el-button:not(.el-button--primary) {
+  background-color: var(--el-button-bg-color) !important;
+  border-color: var(--el-button-border-color) !important;
+  color: var(--text-regular) !important;
+}
+
+.x-message-box .el-message-box__btns .el-button:not(.el-button--primary):hover {
+  background-color: var(--el-button-bg-color) !important;
+  border-color: var(--el-button-border-color) !important;
+  color: var(--text-regular) !important;
+}
+
+.x-message-box .el-message-box__btns .el-button--primary {
+  background-color: rgba(102, 102, 255, 1) !important;
+  border-color: rgba(102, 102, 255, 1) !important;
+  color: #fff !important;
+}
+
+.x-message-box .el-message-box__btns .el-button--primary:hover {
+  background-color: rgba(102, 102, 255, 1) !important;
+  border-color: rgba(102, 102, 255, 1) !important;
+}

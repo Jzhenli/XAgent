@@ -18,6 +18,13 @@
   --scada-bg-hover: rgba(52, 152, 219, 0.08);
   --scada-border-glow: 1px solid rgba(52, 152, 219, 0.3);
 
+  /* SCADA编辑器 el-select 统一样式 */
+  --scada-select-bg: #ffffff;
+  --scada-select-border: #dcdfe6;
+  --scada-select-border-hover: #c0c4cc;
+  --scada-select-disabled-bg: #f5f5f5;
+  --scada-select-item-hover: #f5f7fa;
+
   /* 右键菜单 */
   --scada-menu-bg: #ffffff;
   --scada-menu-border: rgba(52, 152, 219, 0.3);
@@ -305,6 +312,13 @@
   --scada-bg-elevated: rgba(255, 255, 255, 0.03);
   --scada-bg-hover: rgba(34, 211, 238, 0.08);
   --scada-border-glow: 1px solid rgba(34, 211, 238, 0.2);
+
+  /* SCADA编辑器 el-select 统一样式（纯黑底色） */
+  --scada-select-bg: #000000;
+  --scada-select-border: rgba(34, 211, 238, 0.25);
+  --scada-select-border-hover: rgba(34, 211, 238, 0.45);
+  --scada-select-disabled-bg: #141414;
+  --scada-select-item-hover: rgba(34, 211, 238, 0.08);
 
   /* 右键菜单 */
   --scada-menu-bg: #1e293b;

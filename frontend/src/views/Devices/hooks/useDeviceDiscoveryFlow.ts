@@ -6,6 +6,7 @@ import { ElMessage } from 'element-plus'
 import type { Ref } from 'vue'
 import type { DiscoveredDeviceResponse } from '@/api/types'
 import type { DeviceFormData } from '../types'
+import { populateDeviceForm, PLUGIN_DEFAULTS } from '../types'
 
 export function useDeviceDiscoveryFlow(showDeviceDialog: Ref<boolean>) {
   const { t } = useI18n()
@@ -42,28 +43,17 @@ export function useDeviceDiscoveryFlow(showDeviceDialog: Ref<boolean>) {
       showBACnetModeDialog.value = true
     } else {
       // 其他协议，打开手动配置对话框
-      form.asset = ''
-      form.name = ''
-      form.description = ''
-      form.enabled = true
-      form.pluginName = protocol
-      form.host = ''
-      form.port = protocol === 'knx' ? 3671 : 502
-      form.slave_id = 1
-      form.timeout = 5
-      form.interval = 1
-      form.serial_port = '/dev/ttyUSB0'
-      form.baudrate = 9600
-      form.parity = 'N'
-      form.stopbits = 1
-      form.bytesize = 8
-      form.gateway_ip = ''
-      form.local_ip = ''
-      form.connection_type = 'automatic'
-      form.sync_mode = 'smart'
-      form.sync_interval = 60
-      form.device_id = 1234
-      form.tags = ''
+      populateDeviceForm(form, {
+        pluginName: protocol,
+        asset: '',
+        name: '',
+        description: '',
+        enabled: true,
+        connection: {
+          host: PLUGIN_DEFAULTS[protocol]?.host ?? '',
+          port: PLUGIN_DEFAULTS[protocol]?.port ?? 502
+        }
+      })
       showProtocolDialog.value = false
       showDeviceDialog.value = true
     }
@@ -74,28 +64,14 @@ export function useDeviceDiscoveryFlow(showDeviceDialog: Ref<boolean>) {
       showDiscoveryDialog.value = true
     } else {
       // 手动配置，打开设备配置对话框
-      form.asset = ''
-      form.name = ''
-      form.description = ''
-      form.enabled = true
-      form.pluginName = 'bacnet'
-      form.host = ''
-      form.port = 47808
-      form.slave_id = 1
-      form.timeout = 5
-      form.interval = 5
-      form.serial_port = '/dev/ttyUSB0'
-      form.baudrate = 9600
-      form.parity = 'N'
-      form.stopbits = 1
-      form.bytesize = 8
-      form.gateway_ip = ''
-      form.local_ip = ''
-      form.connection_type = 'automatic'
-      form.sync_mode = 'smart'
-      form.sync_interval = 60
-      form.device_id = 1234
-      form.tags = ''
+      populateDeviceForm(form, {
+        pluginName: 'bacnet',
+        asset: '',
+        name: '',
+        description: '',
+        enabled: true,
+        connection: { host: '', port: 47808 }
+      })
       showBACnetModeDialog.value = false
       showDeviceDialog.value = true
     }

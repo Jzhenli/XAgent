@@ -6,7 +6,6 @@ const defaultConfig: LineChartComponentConfig = {
   width: 300,
   height: 200,
   backgroundColor: '#ffffff00',
-  value: 50,
   timeRange: '1h',
   lineColor: '#3498db',
   areaFill: true,
@@ -21,6 +20,15 @@ const defaultConfig: LineChartComponentConfig = {
   nodeSize: 0,
   nodeFillColor: '#3498db',
   smooth: true,
+  showLegend: false,
+  seriesItems: [
+    {
+      name: '序列 1',
+      binding: null,
+      lineColor: '#3498db',
+      nodeFillColor: '#3498db',
+    },
+  ],
 }
 
 export const chartLineMeta: ScadaComponentMeta = {

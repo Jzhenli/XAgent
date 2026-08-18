@@ -10,19 +10,37 @@
   >
     <!-- 步骤条 -->
     <div class="steps-compact mb-3">
-      <div class="step-item" :class="{ active: currentStep === STEP_CONFIG, completed: currentStep > STEP_CONFIG }">
+      <div
+        class="step-item"
+        :class="{
+          active: currentStep === STEP_CONFIG,
+          completed: currentStep > STEP_CONFIG,
+        }"
+      >
         <div class="step-circle">1</div>
-        <div class="step-text">{{ t('devices.discoveryStep1') }}</div>
+        <div class="step-text">{{ t("devices.discoveryStep1") }}</div>
       </div>
-      <div class="step-line" :class="{ active: currentStep >= STEP_SEARCHING }"></div>
-      <div class="step-item" :class="{ active: currentStep === STEP_SEARCHING, completed: currentStep > STEP_SEARCHING }">
+      <div
+        class="step-line"
+        :class="{ active: currentStep >= STEP_SEARCHING }"
+      ></div>
+      <div
+        class="step-item"
+        :class="{
+          active: currentStep === STEP_SEARCHING,
+          completed: currentStep > STEP_SEARCHING,
+        }"
+      >
         <div class="step-circle">2</div>
-        <div class="step-text">{{ t('devices.pointDiscoveryStep2') }}</div>
+        <div class="step-text">{{ t("devices.pointDiscoveryStep2") }}</div>
       </div>
-      <div class="step-line" :class="{ active: currentStep >= STEP_RESULT }"></div>
+      <div
+        class="step-line"
+        :class="{ active: currentStep >= STEP_RESULT }"
+      ></div>
       <div class="step-item" :class="{ active: currentStep === STEP_RESULT }">
         <div class="step-circle">3</div>
-        <div class="step-text">{{ t('devices.discoveryStep3') }}</div>
+        <div class="step-text">{{ t("devices.discoveryStep3") }}</div>
       </div>
     </div>
 
@@ -31,26 +49,31 @@
       <el-card shadow="never" class="search-config-card">
         <template #header>
           <div class="card-header">
-            <span class="header-title">{{ t('devices.objectTypeSelection') }}</span>
+            <span class="header-title">{{
+              t("devices.objectTypeSelection")
+            }}</span>
           </div>
         </template>
 
         <el-form label-width="80px">
           <el-form-item :label="t('devices.objectType')">
             <div class="object-type-wrapper">
-              <el-checkbox-group v-model="selectedObjectTypes" class="compact-checkbox-group">
-                <el-checkbox label="analogInput">AI</el-checkbox>
-                <el-checkbox label="analogOutput">AO</el-checkbox>
-                <el-checkbox label="analogValue">AV</el-checkbox>
-                <el-checkbox label="binaryInput">BI</el-checkbox>
-                <el-checkbox label="binaryOutput">BO</el-checkbox>
-                <el-checkbox label="binaryValue">BV</el-checkbox>
-                <el-checkbox label="multiStateInput">MI</el-checkbox>
-                <el-checkbox label="multiStateOutput">MO</el-checkbox>
-                <el-checkbox label="multiStateValue">MV</el-checkbox>
+              <el-checkbox-group
+                v-model="selectedObjectTypes"
+                class="compact-checkbox-group"
+              >
+                <el-checkbox value="analogInput">AI</el-checkbox>
+                <el-checkbox value="analogOutput">AO</el-checkbox>
+                <el-checkbox value="analogValue">AV</el-checkbox>
+                <el-checkbox value="binaryInput">BI</el-checkbox>
+                <el-checkbox value="binaryOutput">BO</el-checkbox>
+                <el-checkbox value="binaryValue">BV</el-checkbox>
+                <el-checkbox value="multiStateInput">MI</el-checkbox>
+                <el-checkbox value="multiStateOutput">MO</el-checkbox>
+                <el-checkbox value="multiStateValue">MV</el-checkbox>
               </el-checkbox-group>
               <span class="object-type-hint">
-                {{ t('devices.objectTypeHint') }}
+                {{ t("devices.objectTypeHint") }}
               </span>
             </div>
           </el-form-item>
@@ -66,8 +89,8 @@
             <Search />
           </el-icon>
           <div class="searching-text">
-            <h3>{{ t('devices.discoveringPoints') }}</h3>
-            <p class="sub-text">{{ t('devices.discoveringPointsTip') }}</p>
+            <h3>{{ t("devices.discoveringPoints") }}</h3>
+            <p class="sub-text">{{ t("devices.discoveringPointsTip") }}</p>
             <el-progress
               :percentage="searchProgress"
               :status="searchProgress === 100 ? 'success' : undefined"
@@ -85,12 +108,14 @@
         <template #header>
           <div class="card-header">
             <div class="header-left">
-              <span class="header-title">{{ t('devices.pointList') }}</span>
+              <span class="header-title">{{ t("devices.pointList") }}</span>
               <el-tag type="success">
-                {{ t('devices.foundCount', { count: discoveredPoints.length }) }}
+                {{
+                  t("devices.foundCount", { count: discoveredPoints.length })
+                }}
               </el-tag>
               <el-tag type="primary">
-                {{ t('devices.selectedCount', { count: selectedCount }) }}
+                {{ t("devices.selectedCount", { count: selectedCount }) }}
               </el-tag>
             </div>
             <el-button
@@ -98,7 +123,7 @@
               :icon="RefreshRight"
               @click="handleRediscover"
             >
-              {{ t('devices.research') }}
+              {{ t("devices.research") }}
             </el-button>
           </div>
         </template>
@@ -126,7 +151,9 @@
           :description="t('devices.discoveryNoPoints')"
           :image-size="80"
         >
-          <el-button type="primary" @click="handleRediscover">{{ t('devices.adjustAndResearch') }}</el-button>
+          <el-button type="primary" @click="handleRediscover">{{
+            t("devices.adjustAndResearch")
+          }}</el-button>
         </el-empty>
 
         <!-- 搜索无结果 -->
@@ -135,48 +162,56 @@
           :description="t('devices.noMatchingPoints')"
           :image-size="80"
         >
-          <el-button type="primary" @click="handleClearFilter">{{ t('devices.clearSearch') }}</el-button>
+          <el-button type="primary" @click="handleClearFilter">{{
+            t("devices.clearSearch")
+          }}</el-button>
         </el-empty>
 
         <!-- 点位表格 -->
         <el-table
           v-else
+          ref="tableRef"
           :data="filteredPoints"
-          :row-key="(row: DiscoveredPoint) => `${row.object_type}:${row.object_instance}`"
+          :row-key="
+            (row: DiscoveredPoint) =>
+              `${row.object_type}:${row.object_instance}`
+          "
           @selection-change="handleSelectionChange"
           max-height="360"
         >
           <el-table-column type="selection" width="48" />
-          <el-table-column prop="object_type" :label="t('devices.type')" width="80">
+          <el-table-column prop="object_type" :label="t('devices.type')">
             <template #default="{ row }">
               <el-tag>{{ row.object_type }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="object_instance" :label="t('devices.id')" width="80" align="center" />
-          <el-table-column prop="object_name" :label="t('devices.name')" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="description" :label="t('devices.description')" min-width="100" show-overflow-tooltip />
-          <el-table-column prop="writable" :label="t('devices.access')" width="60" align="center">
+          <el-table-column
+            prop="object_instance"
+            :label="t('devices.id')"
+            align="center"
+          />
+          <el-table-column
+            prop="object_name"
+            :label="t('devices.name')"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="description"
+            :label="t('devices.description')"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="writable"
+            :label="t('devices.access')"
+            align="center"
+          >
             <template #default="{ row }">
               <el-tag :type="row.writable ? 'success' : 'info'">
-                {{ row.writable ? t('common.write') : t('common.read') }}
+                {{ row.writable ? t("common.write") : t("common.read") }}
               </el-tag>
             </template>
           </el-table-column>
         </el-table>
-
-        <div v-if="filteredPoints.length > 0" class="table-footer">
-          <el-checkbox
-            v-model="selectAll"
-            @change="handleToggleSelectAll"
-            :indeterminate="selectedCount > 0 && selectedCount < filteredPoints.length"
-          >
-            {{ t('devices.selectAllCurrent') }}
-          </el-checkbox>
-          <span class="selection-count">
-            {{ selectedCount }}/{{ filteredPoints.length }}
-            {{ t('devices.selectedCount', { count: selectedCount }) }}
-          </span>
-        </div>
       </el-card>
     </div>
 
@@ -184,7 +219,7 @@
     <template #footer>
       <!-- 配置步骤 -->
       <template v-if="currentStep === STEP_CONFIG">
-        <el-button @click="handleClose">{{ t('common.cancel') }}</el-button>
+        <el-button @click="handleClose">{{ t("common.cancel") }}</el-button>
         <el-button
           type="primary"
           :icon="Search"
@@ -192,33 +227,37 @@
           :disabled="selectedObjectTypes.length === 0"
           @click="handleDiscoverPoints"
         >
-          {{ t('devices.startPointDiscovery') }}
+          {{ t("devices.startPointDiscovery") }}
         </el-button>
       </template>
 
       <!-- 搜索中步骤 -->
       <template v-else-if="currentStep === STEP_SEARCHING">
-        <el-button @click="handleClose" :disabled="searching">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="true">{{ t('devices.searching') }}</el-button>
+        <el-button @click="handleClose" :disabled="searching">{{
+          t("common.cancel")
+        }}</el-button>
+        <el-button type="primary" :loading="true">{{
+          t("devices.searching")
+        }}</el-button>
       </template>
 
       <!-- 结果步骤 -->
       <template v-else-if="currentStep === STEP_RESULT">
-        <el-button @click="handleClose">{{ t('common.close') }}</el-button>
+        <el-button @click="handleClose">{{ t("common.close") }}</el-button>
         <el-button
           :icon="Edit"
           @click="handleBatchEdit"
           :disabled="selectedCount === 0"
         >
-          {{ t('devices.batchEditWithCount', { count: selectedCount }) }}
+          {{ t("devices.batchEditWithCount", { count: selectedCount }) }}
         </el-button>
         <el-button
           type="primary"
           :icon="CircleCheck"
           @click="handleBatchAdd"
-          :disabled="selectedCount === 0"
+          :disabled="!canBatchOperate"
         >
-          {{ t('devices.batchAddSelected', { count: selectedCount }) }}
+          {{ t("devices.batchAddSelected", { count: selectedCount }) }}
         </el-button>
       </template>
     </template>
@@ -228,19 +267,40 @@
   <el-dialog
     v-model="showBatchEditDialog"
     :title="t('devices.batchEdit')"
-    width="380px"
-    class="x-dialog"
+    width="min(420px, 92vw)"
+    class="x-dialog batch-edit-dialog"
+    align-center
     :close-on-click-modal="false"
   >
-    <el-form :model="batchEditForm" label-width="80px">
+    <!-- 提示信息条 -->
+    <div class="batch-edit-hint-bar">
+      <el-icon :size="16" class="hint-icon"><InfoFilled /></el-icon>
+      <span>{{ t("devices.batchEditHint", { count: selectedCount }) }}</span>
+    </div>
+
+    <el-form :model="batchEditForm" label-width="90px" class="batch-edit-form">
       <el-form-item :label="t('devices.unit')">
-        <el-input v-model="batchEditForm.unit" :placeholder="t('devices.pointDialog.unitPlaceholder')" clearable />
+        <el-input
+          v-model="batchEditForm.unit"
+          :placeholder="t('devices.pointDialog.unitPlaceholder')"
+          clearable
+        />
       </el-form-item>
       <el-form-item :label="t('devices.scaleFactor')">
-        <el-input-number v-model="batchEditForm.scale" :precision="2" :step="0.1" clearable />
+        <el-input-number
+          v-model="batchEditForm.scale"
+          :precision="2"
+          :step="0.1"
+          clearable
+        />
       </el-form-item>
       <el-form-item :label="t('devices.offset')">
-        <el-input-number v-model="batchEditForm.offset" :precision="2" :step="0.1" clearable />
+        <el-input-number
+          v-model="batchEditForm.offset"
+          :precision="2"
+          :step="0.1"
+          clearable
+        />
       </el-form-item>
       <el-form-item :label="t('devices.highAlarm')">
         <el-input-number v-model="batchEditForm.alarm_high" clearable />
@@ -250,54 +310,54 @@
       </el-form-item>
     </el-form>
 
-    <el-alert
-      type="info"
-      :closable="false"
-      class="mb-4"
-    >
-      <template #title>
-        {{ t('devices.batchEditHint', { count: selectedCount }) }}
-      </template>
-    </el-alert>
-
     <template #footer>
-      <el-button @click="showBatchEditDialog = false">{{ t('common.cancel') }}</el-button>
-      <el-button type="primary" @click="handleBatchEditConfirm">{{ t('common.apply') }}</el-button>
+      <el-button @click="showBatchEditDialog = false">{{
+        t("common.cancel")
+      }}</el-button>
+      <el-button type="primary" @click="handleBatchEditConfirm">{{
+        t("common.apply")
+      }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, RefreshRight, Edit, CircleCheck } from '@element-plus/icons-vue'
-import { deviceApi } from '@/api/devices'
-import type { DiscoveredPoint, PointConfig } from '@/api/types'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
+import { useI18n } from "vue-i18n";
+import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  Search,
+  RefreshRight,
+  Edit,
+  CircleCheck,
+  InfoFilled,
+} from "@element-plus/icons-vue";
+import { deviceApi } from "@/api/devices";
+import type { DiscoveredPoint, PointConfig } from "@/api/types";
 
 interface Props {
-  deviceAsset: string
-  visible: boolean
+  deviceAsset: string;
+  visible: boolean;
 }
 
 interface Emits {
-  (e: 'close'): void
-  (e: 'success'): void
+  (e: "close"): void;
+  (e: "success"): void;
 }
 
 /** 响应式对话框宽度配置项 */
 interface DialogWidthEntry {
-  max: number
-  width: string
+  max: number;
+  width: string;
 }
 
 /** 批量编辑表单数据结构 */
 interface BatchEditForm {
-  unit: string
-  scale: number | null
-  offset: number | null
-  alarm_high: number | null
-  alarm_low: number | null
+  unit: string;
+  scale: number | null;
+  offset: number | null;
+  alarm_high: number | null;
+  alarm_low: number | null;
 }
 
 /**
@@ -305,149 +365,209 @@ interface BatchEditForm {
  * 优先使用后端 response.data.detail，其次使用 message，最后回退到通用错误提示
  */
 function getErrorDetail(error: unknown, fallback: string): string {
-  const err = error as { response?: { data?: { detail?: string } }; message?: string }
-  return err?.response?.data?.detail || err?.message || fallback
+  const err = error as {
+    response?: { data?: { detail?: string } };
+    message?: string;
+  };
+  return err?.response?.data?.detail || err?.message || fallback;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-const { t } = useI18n()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
+const { t } = useI18n();
 
 // ========== 步骤常量 ==========
-const STEP_CONFIG = 0      // 配置参数
-const STEP_SEARCHING = 1   // 搜索中
-const STEP_RESULT = 2      // 搜索结果
+const STEP_CONFIG = 0; // 配置参数
+const STEP_SEARCHING = 1; // 搜索中
+const STEP_RESULT = 2; // 搜索结果
 
 // 当前步骤
-const currentStep = ref(STEP_CONFIG)
+const currentStep = ref(STEP_CONFIG);
 
 // ========== 响应式对话框宽度 ==========
 
 /** 根据屏幕宽度动态调整对话框宽度，适配移动端到 4K 屏 */
 const DIALOG_WIDTH_MAP: DialogWidthEntry[] = [
-  { max: 768, width: '550px' },
-  { max: 1024, width: '600px' },
-  { max: 1440, width: '650px' },
-  { max: Infinity, width: '900px' }
-]
+  { max: 768, width: "550px" },
+  { max: 1024, width: "600px" },
+  { max: 1440, width: "650px" },
+  { max: Infinity, width: "900px" },
+];
 
-const screenWidth = ref(window.innerWidth)
+const screenWidth = ref(window.innerWidth);
 
 const dialogWidth = computed(() => {
-  return DIALOG_WIDTH_MAP.find(item => screenWidth.value < item.max)?.width ?? '700px'
-})
+  return (
+    DIALOG_WIDTH_MAP.find((item) => screenWidth.value < item.max)?.width ??
+    "700px"
+  );
+});
 
 /** resize 节流，避免频繁触发重渲染 */
-let resizeRafId: number | null = null
+let resizeRafId: number | null = null;
 
 function onWindowResize() {
-  if (resizeRafId) return
+  if (resizeRafId) return;
   resizeRafId = requestAnimationFrame(() => {
-    screenWidth.value = window.innerWidth
-    resizeRafId = null
-  })
+    screenWidth.value = window.innerWidth;
+    resizeRafId = null;
+  });
 }
 
 onMounted(() => {
-  window.addEventListener('resize', onWindowResize)
-})
+  window.addEventListener("resize", onWindowResize);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('resize', onWindowResize)
+  window.removeEventListener("resize", onWindowResize);
   if (resizeRafId) {
-    cancelAnimationFrame(resizeRafId)
-    resizeRafId = null
+    cancelAnimationFrame(resizeRafId);
+    resizeRafId = null;
   }
   if (progressTimer) {
-    clearInterval(progressTimer)
-    progressTimer = null
+    clearInterval(progressTimer);
+    progressTimer = null;
   }
-})
+});
 
 // ========== 搜索状态 ==========
 
-/** 默认勾选的对象类型，覆盖最常用的 AI/AO/AV */
-const DEFAULT_OBJECT_TYPES = ['analogInput', 'analogOutput', 'analogValue']
+/** 默认勾选全部对象类型 */
+const DEFAULT_OBJECT_TYPES = [
+  "analogInput",
+  "analogOutput",
+  "analogValue",
+  "binaryInput",
+  "binaryOutput",
+  "binaryValue",
+  "multiStateInput",
+  "multiStateOutput",
+  "multiStateValue",
+];
 
-const selectedObjectTypes = ref<string[]>([...DEFAULT_OBJECT_TYPES])
-const searching = ref(false)
-const searchProgress = ref(0)
-const discoveredPoints = ref<DiscoveredPoint[]>([])
+const selectedObjectTypes = ref<string[]>([...DEFAULT_OBJECT_TYPES]);
+const searching = ref(false);
+const searchProgress = ref(0);
+const discoveredPoints = ref<DiscoveredPoint[]>([]);
 
 /** 进度模拟定时器，搜索完成或异常时需清理以避免内存泄漏 */
-let progressTimer: ReturnType<typeof setInterval> | null = null
+let progressTimer: ReturnType<typeof setInterval> | null = null;
 
 // ========== 点位选择 ==========
 
-const selectedPoints = ref<DiscoveredPoint[]>([])
-const selectAll = ref(false)
+const selectedPoints = ref<DiscoveredPoint[]>([]);
+
+/** 表格引用，用于程序化操作行勾选 */
+interface TableInstance {
+  toggleRowSelection: (row: DiscoveredPoint, selected?: boolean) => void;
+}
+const tableRef = ref<TableInstance | null>(null);
+
+/** 设备上已存在的点位（发现前拉取，用于对比自动勾选） */
+const existingDevicePoints = ref<PointConfig[]>([]);
+
+/** 生成点位唯一标识 key */
+const getPointKey = (type: string, instance: number | string): string =>
+  `${type}:${instance}`;
+
+/** 根据已存在点位，在表格中自动勾选匹配的行 */
+const autoSelectExistingPoints = async () => {
+  if (existingDevicePoints.value.length === 0) return;
+
+  // 等待 Vue 完成渲染（表格在 v-else 块中，需要等 discoveredPoints 变更后 DOM 更新）
+  await nextTick();
+
+  if (!tableRef.value) return;
+
+  const existingKeys = new Set(
+    existingDevicePoints.value.map((p) =>
+      getPointKey(
+        (p.config?.object_type as string) || "",
+        (p.config?.object_instance as number) || 0,
+      ),
+    ),
+  );
+
+  discoveredPoints.value.forEach((row) => {
+    const key = getPointKey(row.object_type, row.object_instance);
+    if (existingKeys.has(key)) {
+      tableRef.value?.toggleRowSelection(row, true);
+    }
+  });
+};
 
 // ========== 搜索过滤 ==========
 
-const filterText = ref('')
+const filterText = ref("");
 
 /** 根据关键字过滤点位，匹配名称、描述、类型和实例编号 */
 const filteredPoints = computed(() => {
   if (!filterText.value) {
-    return discoveredPoints.value
+    return discoveredPoints.value;
   }
-  const searchText = filterText.value.toLowerCase()
-  return discoveredPoints.value.filter(point =>
-    point.object_name?.toLowerCase().includes(searchText) ||
-    point.description?.toLowerCase().includes(searchText) ||
-    point.object_type?.toLowerCase().includes(searchText) ||
-    point.object_instance?.toString().includes(searchText)
-  )
-})
-
-/** 过滤结果变化时，同步全选复选框的选中状态和 indeterminate 状态 */
-watch(filteredPoints, (newPoints) => {
-  if (newPoints.length === 0) {
-    selectAll.value = false
-    return
-  }
-  const selectedSet = new Set(selectedPoints.value.map(p => `${p.object_type}:${p.object_instance}`))
-  selectAll.value = newPoints.every(p => selectedSet.has(`${p.object_type}:${p.object_instance}`))
-})
+  const searchText = filterText.value.toLowerCase();
+  return discoveredPoints.value.filter(
+    (point) =>
+      point.object_name?.toLowerCase().includes(searchText) ||
+      point.description?.toLowerCase().includes(searchText) ||
+      point.object_type?.toLowerCase().includes(searchText) ||
+      point.object_instance?.toString().includes(searchText),
+  );
+});
 
 // ========== 批量编辑表单 ==========
 
-const showBatchEditDialog = ref(false)
+const showBatchEditDialog = ref(false);
 
 const batchEditForm = ref<BatchEditForm>({
-  unit: '',
+  unit: "",
   scale: null,
   offset: null,
   alarm_high: null,
-  alarm_low: null
-})
+  alarm_low: null,
+});
 
 // ========== 计算属性 ==========
 
 /** 已选中的点位数量 */
-const selectedCount = computed(() => selectedPoints.value.length)
+const selectedCount = computed(() => selectedPoints.value.length);
+
+/** 需要移除的点位数量（已存在但被取消勾选） */
+const removeCount = computed(() => {
+  const selectedKeys = new Set(
+    selectedPoints.value.map((p) => getPointKey(p.object_type, p.object_instance)),
+  );
+  const existingKeys = new Set(
+    existingDevicePoints.value.map((p) =>
+      getPointKey(
+        (p.config?.object_type as string) || "",
+        (p.config?.object_instance as number) || 0,
+      ),
+    ),
+  );
+  return discoveredPoints.value.filter(
+    (p) =>
+      existingKeys.has(getPointKey(p.object_type, p.object_instance)) &&
+      !selectedKeys.has(getPointKey(p.object_type, p.object_instance)),
+  ).length;
+});
+
+/** 批量操作是否可执行：有勾选或有取消勾选的已存在点位 */
+const canBatchOperate = computed(
+  () => selectedCount.value > 0 || removeCount.value > 0,
+);
 
 // ========== 事件处理 ==========
 
-/** 全选/取消全选当前过滤结果中的点位 */
-const handleToggleSelectAll = (val: boolean) => {
-  if (val) {
-    selectedPoints.value = [...filteredPoints.value]
-  } else {
-    selectedPoints.value = []
-  }
-}
-
-/** 处理表格选择变化，同步全选状态 */
+/** 处理表格选择变化，同步已选点位 */
 const handleSelectionChange = (selection: DiscoveredPoint[]) => {
-  selectedPoints.value = selection
-  selectAll.value = selection.length === filteredPoints.value.length && filteredPoints.value.length > 0
-}
+  selectedPoints.value = selection;
+};
 
 /** 清空搜索过滤条件 */
 const handleClearFilter = () => {
-  filterText.value = ''
-}
+  filterText.value = "";
+};
 
 // ========== 点位发现 ==========
 
@@ -456,163 +576,246 @@ const handleClearFilter = () => {
  * 向后端发送发现请求，期间显示进度动画，完成后展示结果列表
  */
 const handleDiscoverPoints = async () => {
-  if (searching.value) return
+  if (searching.value) return;
 
   if (!props.deviceAsset) {
-    ElMessage.warning(t('devices.pleaseSelectDevice'))
-    return
+    ElMessage.warning(t("devices.pleaseSelectDevice"));
+    return;
   }
 
   // 切换到搜索中步骤，清理上次结果
-  currentStep.value = STEP_SEARCHING
-  searching.value = true
-  searchProgress.value = 0
-  discoveredPoints.value = []
-  selectedPoints.value = []
+  currentStep.value = STEP_SEARCHING;
+  searching.value = true;
+  searchProgress.value = 0;
+  discoveredPoints.value = [];
+  selectedPoints.value = [];
+  existingDevicePoints.value = [];
 
   // 记录开始时间，用于确保搜索动画最少显示 1.5 秒，避免闪烁
-  const startTime = Date.now()
-  const minDisplayTime = 1500
+  const startTime = Date.now();
+  const minDisplayTime = 1500;
 
   try {
-    // 启动进度模拟（进度条 90% 后由实际响应完成）
+    // 并行：拉取设备已有点位 + 启动进度模拟
+    const existingPointsPromise = deviceApi.listPoints(props.deviceAsset);
+
     progressTimer = setInterval(() => {
       if (searchProgress.value < 90) {
-        searchProgress.value += 10
+        searchProgress.value += 10;
       }
-    }, 500)
+    }, 500);
 
-    const response = await deviceApi.discoverPoints(props.deviceAsset, {
-      object_types: selectedObjectTypes.value
-    })
+    const [response, existingPoints] = await Promise.all([
+      deviceApi.discoverPoints(props.deviceAsset, {
+        object_types: selectedObjectTypes.value,
+      }),
+      existingPointsPromise.catch(() => []),
+    ]);
 
-    searchProgress.value = 100
+    existingDevicePoints.value = existingPoints;
+
+    searchProgress.value = 100;
 
     // 确保最少显示时间
-    await ensureMinDisplayTime(startTime, minDisplayTime)
+    await ensureMinDisplayTime(startTime, minDisplayTime);
 
     if (response.success) {
-      discoveredPoints.value = response.points ?? []
-      currentStep.value = STEP_RESULT
+      discoveredPoints.value = response.points ?? [];
+      currentStep.value = STEP_RESULT;
+
+      // 自动勾选已存在的点位
+      if (existingPoints.length > 0 && discoveredPoints.value.length > 0) {
+        autoSelectExistingPoints();
+      }
 
       if (response.total === 0) {
-        ElMessage.warning(t('devices.discoveryNoPointsFound'))
+        ElMessage.warning(t("devices.discoveryNoPointsFound"));
       } else {
-        ElMessage.success(t('devices.discoveryFoundPoints', { count: response.total }))
+        ElMessage.success(
+          t("devices.discoveryFoundPoints", { count: response.total }),
+        );
       }
     } else {
-      ElMessage.error(t('devices.pointDiscoveryFailed'))
-      currentStep.value = STEP_CONFIG
+      ElMessage.error(t("devices.pointDiscoveryFailed"));
+      currentStep.value = STEP_CONFIG;
     }
   } catch (error: unknown) {
     // 确保最少显示时间
-    await ensureMinDisplayTime(startTime, minDisplayTime)
+    await ensureMinDisplayTime(startTime, minDisplayTime);
 
-    const detail = getErrorDetail(error, t('common.unknownError'))
-    ElMessage.error(t('devices.pointDiscoveryFailedWithDetail', { detail }))
-    currentStep.value = STEP_CONFIG
+    const detail = getErrorDetail(error, t("common.unknownError"));
+    ElMessage.error(t("devices.pointDiscoveryFailedWithDetail", { detail }));
+    currentStep.value = STEP_CONFIG;
   } finally {
     // 清理定时器，重置搜索状态
     if (progressTimer) {
-      clearInterval(progressTimer)
-      progressTimer = null
+      clearInterval(progressTimer);
+      progressTimer = null;
     }
-    searching.value = false
-    searchProgress.value = 0
+    searching.value = false;
+    searchProgress.value = 0;
   }
-}
+};
 
 /** 重新搜索：重置到配置步骤，清空已发现点位和筛选条件 */
 const handleRediscover = () => {
-  currentStep.value = STEP_CONFIG
-  discoveredPoints.value = []
-  selectedPoints.value = []
-  filterText.value = ''
-}
+  currentStep.value = STEP_CONFIG;
+  discoveredPoints.value = [];
+  selectedPoints.value = [];
+  existingDevicePoints.value = [];
+  filterText.value = "";
+};
 
 // ========== 批量操作 ==========
 
 /** 打开批量编辑对话框，对已选点位的公共属性进行批量修改 */
 const handleBatchEdit = () => {
   if (selectedPoints.value.length === 0) {
-    ElMessage.warning(t('devices.pleaseSelectPointsToEdit'))
-    return
+    ElMessage.warning(t("devices.pleaseSelectPointsToEdit"));
+    return;
   }
-  showBatchEditDialog.value = true
-}
+  showBatchEditDialog.value = true;
+};
 
 /** 确认批量编辑：关闭对话框，编辑值将在批量添加时应用到选中点位 */
 const handleBatchEditConfirm = () => {
-  showBatchEditDialog.value = false
-}
+  showBatchEditDialog.value = false;
+};
 
 /**
  * 将已选点位批量添加到设备
- * 将选中的发现点位转换为 PointConfig 格式，并应用批量编辑中的属性覆盖
+ * 同时处理取消勾选的已存在点位 → 自动删除
  */
 const handleBatchAdd = async () => {
-  if (selectedPoints.value.length === 0) {
-    ElMessage.warning(t('devices.pleaseSelectPointsToAdd'))
-    return
+  // 计算需要添加和移除的点位
+  const selectedKeys = new Set(
+    selectedPoints.value.map((p) => getPointKey(p.object_type, p.object_instance)),
+  );
+
+  const existingDiscoveredKeys = new Set(
+    existingDevicePoints.value.map((p) =>
+      getPointKey(
+        (p.config?.object_type as string) || "",
+        (p.config?.object_instance as number) || 0,
+      ),
+    ),
+  );
+
+  // 需要移除的：已存在但未勾选的点位
+  const pointsToRemove = discoveredPoints.value.filter(
+    (p) =>
+      existingDiscoveredKeys.has(getPointKey(p.object_type, p.object_instance)) &&
+      !selectedKeys.has(getPointKey(p.object_type, p.object_instance)),
+  );
+
+  // 需要添加的：已勾选但尚未存在的点位（已存在的跳过，避免重复添加）
+  const pointsToAdd = selectedPoints.value.filter(
+    (p) =>
+      !existingDiscoveredKeys.has(
+        getPointKey(p.object_type, p.object_instance),
+      ),
+  );
+
+  if (pointsToAdd.length === 0 && pointsToRemove.length === 0) {
+    ElMessage.warning(t("devices.pleaseSelectPointsToAdd"));
+    return;
   }
 
   try {
     await ElMessageBox.confirm(
-      t('devices.batchAddPointsConfirm', { count: selectedPoints.value.length }),
-      t('devices.batchAddConfirmTitle'),
+      t("devices.batchSyncPointsConfirm", {
+        addCount: pointsToAdd.length,
+        deleteCount: pointsToRemove.length,
+      }),
+      t("devices.batchAddConfirmTitle"),
       {
-        confirmButtonText: t('common.confirm'),
-        cancelButtonText: t('common.cancel'),
-        type: 'info'
-      }
-    )
+        confirmButtonText: t("common.confirm"),
+        cancelButtonText: t("common.cancel"),
+        type: "info",
+        customClass: "x-message-box",
+      },
+    );
 
-    // 将发现点位转换为 PointConfig 格式，应用批量编辑的属性覆盖
-    const pointsToAdd: PointConfig[] = selectedPoints.value.map(point => {
-      // config: OPC UA 点位核心属性
-      const config: Record<string, unknown> = {
-        object_type: point.object_type,
-        object_instance: point.object_instance,
-        writable: point.writable
-      }
-      if (batchEditForm.value.scale !== null) config.scale = batchEditForm.value.scale
-      if (batchEditForm.value.offset !== null) config.offset = batchEditForm.value.offset
-
-      // metadata: 扩展属性（单位、报警阈值等）
-      const metadata: Record<string, unknown> = {}
-      if (batchEditForm.value.unit) metadata.unit = batchEditForm.value.unit
-      if (batchEditForm.value.alarm_high !== null) metadata.alarm_high = batchEditForm.value.alarm_high
-      if (batchEditForm.value.alarm_low !== null) metadata.alarm_low = batchEditForm.value.alarm_low
-
-      return {
-        name: point.object_name,
-        description: point.description || `${point.object_type}:${point.object_instance}`,
-        data_type: point.data_type,
-        enabled: true,
-        config,
-        metadata,
-        tags: []
-      }
-    })
-
-    const response = await deviceApi.batchAddPoints(props.deviceAsset, {
-      points: pointsToAdd
-    })
-
-    if (response.success) {
-      ElMessage.success(response.message)
-      emit('success')
-      handleClose()
-    } else {
-      ElMessage.error(t('devices.batchAddFailed'))
+    // 先执行移除
+    if (pointsToRemove.length > 0) {
+      const removePromises = pointsToRemove.map((point) => {
+        // 找到对应的已有点位名称用于删除
+        const existing = existingDevicePoints.value.find(
+          (p) =>
+            getPointKey(
+              (p.config?.object_type as string) || "",
+              (p.config?.object_instance as number) || 0,
+            ) === getPointKey(point.object_type, point.object_instance),
+        );
+        if (existing) {
+          return deviceApi.removePoint(props.deviceAsset, existing.name);
+        }
+        return Promise.resolve();
+      });
+      await Promise.all(removePromises);
     }
+
+    // 再执行添加
+    if (pointsToAdd.length > 0) {
+      const addPayload: PointConfig[] = pointsToAdd.map((point) => {
+        const config: Record<string, unknown> = {
+          object_type: point.object_type,
+          object_instance: point.object_instance,
+          writable: point.writable,
+        };
+        if (batchEditForm.value.scale !== null)
+          config.scale = batchEditForm.value.scale;
+        if (batchEditForm.value.offset !== null)
+          config.offset = batchEditForm.value.offset;
+
+        const metadata: Record<string, unknown> = {};
+        if (batchEditForm.value.unit) metadata.unit = batchEditForm.value.unit;
+        if (batchEditForm.value.alarm_high !== null)
+          metadata.alarm_high = batchEditForm.value.alarm_high;
+        if (batchEditForm.value.alarm_low !== null)
+          metadata.alarm_low = batchEditForm.value.alarm_low;
+
+        return {
+          name: point.object_name,
+          description:
+            point.description || `${point.object_type}:${point.object_instance}`,
+          data_type: point.data_type,
+          enabled: true,
+          config,
+          metadata,
+          tags: [],
+        };
+      });
+
+      const response = await deviceApi.batchAddPoints(props.deviceAsset, {
+        points: addPayload,
+      });
+
+      if (!response.success) {
+        ElMessage.error(t("devices.batchAddFailed"));
+        return;
+      }
+    }
+
+    const totalMsg =
+      pointsToAdd.length > 0
+        ? t("devices.batchAddPointsSuccess", { count: pointsToAdd.length })
+        : "";
+    const removeMsg =
+      pointsToRemove.length > 0
+        ? t("devices.batchRemovePointsSuccess", { count: pointsToRemove.length })
+        : "";
+    ElMessage.success([totalMsg, removeMsg].filter(Boolean).join(" "));
+
+    emit("success");
+    handleClose();
   } catch (error: unknown) {
-    if (error !== 'cancel' && error !== 'close') {
-      const detail = getErrorDetail(error, t('common.unknownError'))
-      ElMessage.error(t('devices.batchAddFailedWithDetail', { detail }))
+    if (error !== "cancel" && error !== "close") {
+      const detail = getErrorDetail(error, t("common.unknownError"));
+      ElMessage.error(t("devices.batchAddFailedWithDetail", { detail }));
     }
   }
-}
+};
 
 // ========== 工具函数 ==========
 
@@ -621,22 +824,25 @@ const handleBatchAdd = async () => {
  * @param startTime 开始时间戳
  * @param minDuration 最少显示时长（毫秒）
  */
-async function ensureMinDisplayTime(startTime: number, minDuration: number): Promise<void> {
-  const elapsed = Date.now() - startTime
+async function ensureMinDisplayTime(
+  startTime: number,
+  minDuration: number,
+): Promise<void> {
+  const elapsed = Date.now() - startTime;
   if (elapsed < minDuration) {
-    await new Promise(resolve => setTimeout(resolve, minDuration - elapsed))
+    await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
   }
 }
 
 /** 重置批量编辑表单为初始空值 */
 function resetBatchEditForm(): void {
   batchEditForm.value = {
-    unit: '',
+    unit: "",
     scale: null,
     offset: null,
     alarm_high: null,
-    alarm_low: null
-  }
+    alarm_low: null,
+  };
 }
 
 // ========== 生命周期与清理 ==========
@@ -644,28 +850,91 @@ function resetBatchEditForm(): void {
 /** 关闭弹窗：重置所有内部状态，清除定时器，释放资源 */
 const handleClose = () => {
   if (progressTimer) {
-    clearInterval(progressTimer)
-    progressTimer = null
+    clearInterval(progressTimer);
+    progressTimer = null;
   }
-  currentStep.value = STEP_CONFIG
-  searching.value = false
-  searchProgress.value = 0
-  discoveredPoints.value = []
-  selectedPoints.value = []
-  selectAll.value = false
-  filterText.value = ''
-  showBatchEditDialog.value = false
-  resetBatchEditForm()
-  emit('close')
-}
+  currentStep.value = STEP_CONFIG;
+  searching.value = false;
+  searchProgress.value = 0;
+  discoveredPoints.value = [];
+  selectedPoints.value = [];
+  existingDevicePoints.value = [];
+  filterText.value = "";
+  showBatchEditDialog.value = false;
+  resetBatchEditForm();
+  emit("close");
+};
 </script>
 
 <style>
 /* 引入 Devices 模块通用弹框样式（需 unscoped，弹框内容 teleport 到 body） */
-@import './DialogCommon.css';
+@import "./DialogCommon.css";
+
+/* ========== 批量编辑弹框定制 ========== */
+.batch-edit-dialog .el-dialog__header {
+  padding: 16px 20px !important;
+  border-bottom: 1px solid var(--border-base);
+}
+
+.batch-edit-dialog .el-dialog__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.batch-edit-dialog .el-dialog__body {
+  padding: 16px 20px !important;
+}
+
+.batch-edit-dialog .el-dialog__footer {
+  padding: 14px 20px !important;
+  border-top: 1px solid var(--border-base);
+}
+
+/* 批量编辑表单内的输入框：统一紧凑风格 */
+.batch-edit-dialog .el-form-item {
+  margin-bottom: 16px;
+}
+
+.batch-edit-dialog .el-form-item:last-child {
+  margin-bottom: 0;
+}
+
+.batch-edit-dialog .el-input-number {
+  width: 100%;
+}
 </style>
 
 <style scoped>
+/* ========== 批量编辑弹框 scoped 样式 ========== */
+.batch-edit-hint-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: rgba(102, 102, 255, 0.08);
+  border: 1px solid rgba(102, 102, 255, 0.2);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.batch-edit-hint-bar .hint-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.batch-edit-form :deep(.el-form-item__label) {
+  color: var(--text-regular);
+  font-weight: 500;
+  text-align: left;
+}
+
+.batch-edit-form :deep(.el-form-item__content) {
+  flex: 1;
+}
+
 /* ========== 通用间距工具类 ========== */
 .mb-4 {
   margin-bottom: 16px;
@@ -717,7 +986,8 @@ const handleClose = () => {
 }
 
 .search-result-card :deep(.el-checkbox__input.is-checked .el-checkbox__inner),
-.search-result-card :deep(.el-checkbox__input.is-indeterminate .el-checkbox__inner) {
+.search-result-card
+  :deep(.el-checkbox__input.is-indeterminate .el-checkbox__inner) {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
 }
@@ -867,7 +1137,8 @@ const handleClose = () => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
@@ -959,21 +1230,6 @@ const handleClose = () => {
 
 .el-table td {
   padding: 8px 0;
-}
-
-/* ========== 表格底部 ========== */
-.table-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0 4px;
-  border-top: 1px solid var(--border-base);
-  margin-top: 8px;
-}
-
-.selection-count {
-  font-size: 13px;
-  color: var(--text-secondary);
 }
 
 /* ========== 空状态样式 ========== */

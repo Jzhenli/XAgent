@@ -11,6 +11,8 @@ export type OperationType =
   | 'paste'
   | 'lock'
   | 'reorder'
+  | 'group'
+  | 'ungroup'
   | 'panel'
 
 export interface UndoOperation {

@@ -2,15 +2,36 @@
   <div class="scada-page" :class="{ 'preview-mode': isPreviewMode }">
     <div v-if="!isPreviewMode" class="page-header">
       <div class="header-left">
-        <el-button :icon="ArrowLeft" @click="handleGoBack">{{ $t('scada.backToList') }}</el-button>
+        <Icon
+          name="arrowLeft"
+          type="mono-line"
+          :size="28"
+          :color="{ normal: 'var(--text-primary)' }"
+          @click="handleGoBack"
+        />
         <span class="project-name">{{ currentPanel?.name || 'Loading...' }}</span>
       </div>
       <div class="header-actions">
-        <el-button :icon="View" @click="handlePreview">{{ $t('scada.preview') }}</el-button>
-        <el-button :icon="FullScreen" @click="handleFullscreen">{{ $t('scada.fullscreen') }}</el-button>
-        <el-button @click="handleExport">{{ $t('common.export') }}</el-button>
-        <el-button @click="handleImport">{{ $t('common.import') }}</el-button>
-        <el-button v-if="userStore.hasPermission('scada', 'update')" @click="handleSave">{{ $t('common.save') }}</el-button>
+        <div class="action-btn" @click="handlePreview">
+          <el-icon :size="16"><View /></el-icon>
+          <span>{{ $t('scada.preview') }}</span>
+        </div>
+        <div class="action-btn" @click="handleFullscreen">
+          <el-icon :size="16"><FullScreen /></el-icon>
+          <span>{{ $t('scada.fullscreen') }}</span>
+        </div>
+        <div class="action-btn" @click="handleExport">
+          <el-icon :size="16"><Download /></el-icon>
+          <span>{{ $t('common.export') }}</span>
+        </div>
+        <div class="action-btn" @click="handleImport">
+          <el-icon :size="16"><Upload /></el-icon>
+          <span>{{ $t('common.import') }}</span>
+        </div>
+        <div v-if="userStore.hasPermission('scada', 'update')" class="action-btn" @click="handleSave">
+          <el-icon :size="16"><Check /></el-icon>
+          <span>{{ $t('common.save') }}</span>
+        </div>
       </div>
     </div>
 
@@ -150,7 +171,8 @@ import { useScadaEditor } from './hooks/useScadaEditor'
 import { useUserStore } from '@/stores/users'
 import { usePointStore } from '@/stores/points'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { FullScreen, View, ArrowLeft } from '@element-plus/icons-vue'
+import { FullScreen, View, Download, Upload, Check } from '@element-plus/icons-vue'
+import { Icon } from '@/icon'
 import { clamp } from './utils/math'
 import { useScadaData } from './hooks/useScadaEditor'
 import { useScadaNavigationGuard } from './hooks/useScadaNavigationGuard'
@@ -159,6 +181,7 @@ import ComponentList from './components/ComponentList.vue'
 import ScadaCanvas from './components/ScadaCanvas.vue'
 import ComponentConfig from './components/ComponentConfig.vue'
 import SaveConfirmModal from './modal/SaveConfirmModal.vue'
+import './style/scada-select.css'
 
 const { t } = useI18n()
 
@@ -340,7 +363,7 @@ const handleImportFileChange = async (event: Event) => {
   justify-content: space-between;
   align-items: center;
   padding: 14px 24px;
-  background: var(--scada-bg-elevated);
+  background: var(--bg-header);
   backdrop-filter: blur(10px);
   border-bottom: var(--scada-border-glow);
   flex-shrink: 0;
@@ -356,6 +379,7 @@ const handleImportFileChange = async (event: Event) => {
 .project-name {
   font-size: 18px;
   font-weight: 600;
+  line-height: 28px;
   color: var(--text-primary);
   letter-spacing: 1px;
   text-shadow: 0 0 12px var(--scada-cyan-glow);
@@ -363,7 +387,46 @@ const handleImportFileChange = async (event: Event) => {
 
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: 6px;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  height: 32px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-primary);
+  background: var(--bg-color);
+  border: 1px solid var(--border-base);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  color: var(--scada-cyan);
+  background: var(--scada-bg-hover);
+  border-color: var(--scada-cyan);
+  box-shadow: 0 0 8px var(--scada-cyan-glow);
+  transform: translateY(-1px);
+}
+
+.action-btn:active {
+  color: var(--color-primary-active, var(--scada-cyan));
+  background: var(--color-primary-light, var(--scada-bg-hover));
+  border-color: var(--color-primary-active, var(--scada-cyan));
+  transform: translateY(0);
+  box-shadow: none;
+  transition-duration: 0.05s;
+}
+
+.action-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--scada-cyan-glow);
 }
 
 .preview-header {

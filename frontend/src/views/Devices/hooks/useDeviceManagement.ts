@@ -6,6 +6,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { DeviceListItem } from '@/stores/devices'
 import type { DeviceConfig } from '@/api/types'
 import type { DeviceFormData } from '../types'
+import { populateDeviceForm, PLUGIN_DEFAULTS } from '../types'
 
 export function useDeviceManagement() {
   const { t } = useI18n()
@@ -19,36 +20,10 @@ export function useDeviceManagement() {
   const saving = ref(false)
 
   const pluginOptions = [
-    {
-      label: t('devices.protocol.modbus_tcp'),
-      value: 'modbus_tcp',
-      defaultConfig: { slave_id: 1, timeout: 5, interval: 1, host: '', port: 502 }
-    },
-    {
-      label: t('devices.protocol.modbus_rtu'),
-      value: 'modbus_rtu',
-      defaultConfig: {
-        slave_id: 1, timeout: 5, interval: 1,
-        serial_port: '/dev/ttyUSB0', baudrate: 9600, parity: 'N', stopbits: 1, bytesize: 8
-      }
-    },
-    {
-      label: t('devices.protocol.knx'),
-      value: 'knx',
-      defaultConfig: {
-        local_ip: '',
-        timeout: 5,
-        connection_type: 'automatic',
-        interval: 1,
-        sync_mode: 'smart',
-        sync_interval: 60
-      }
-    },
-    {
-      label: t('devices.protocol.bacnet'),
-      value: 'bacnet',
-      defaultConfig: { device_id: 1234, timeout: 5, interval: 1 }
-    }
+    { label: t('devices.protocol.modbus_tcp'), value: 'modbus_tcp', defaultConfig: PLUGIN_DEFAULTS.modbus_tcp },
+    { label: t('devices.protocol.modbus_rtu'), value: 'modbus_rtu', defaultConfig: PLUGIN_DEFAULTS.modbus_rtu },
+    { label: t('devices.protocol.knx'), value: 'knx', defaultConfig: PLUGIN_DEFAULTS.knx },
+    { label: t('devices.protocol.bacnet'), value: 'bacnet', defaultConfig: PLUGIN_DEFAULTS.bacnet }
   ]
 
   const handleToggleDevice = async (asset: string) => {
@@ -62,35 +37,28 @@ export function useDeviceManagement() {
 
   const handleRefresh = async () => {
     await deviceStore.fetchDevices()
-    await deviceStore.fetchConnectionStatus()
-    await pointStore.fetchDevicesWithPoints()
+    if (deviceStore.error) {
+      ElMessage.error(t('devices.refreshFailed'))
+    } else {
+      await deviceStore.fetchConnectionStatus()
+      await pointStore.fetchDevicesWithPoints()
+      ElMessage.success(t('devices.refreshSuccess'))
+    }
   }
 
   const handleEditDevice = (device: DeviceListItem, form: DeviceFormData) => {
     isEditing.value = true
     editingAsset.value = device.asset
-    form.asset = device.asset
-    form.name = device.name
-    form.description = device.description || ''
-    form.enabled = device.enabled
-    form.pluginName = device.pluginName
-    form.host = device.connection.host
-    form.port = device.connection.port
-    form.slave_id = (device.pluginConfig.slave_id as number) || 1
-    form.timeout = (device.pluginConfig.timeout as number) || 5
-    form.interval = (device.pluginConfig.interval as number) || 1
-    form.serial_port = (device.pluginConfig.serial_port as string) || '/dev/ttyUSB0'
-    form.baudrate = (device.pluginConfig.baudrate as number) || 9600
-    form.parity = (device.pluginConfig.parity as string) || 'N'
-    form.stopbits = (device.pluginConfig.stopbits as number) || 1
-    form.bytesize = (device.pluginConfig.bytesize as number) || 8
-    form.gateway_ip = (device.pluginConfig.gateway_ip as string) || ''
-    form.local_ip = (device.pluginConfig.local_ip as string) || ''
-    form.connection_type = (device.pluginConfig.connection_type as string) || 'automatic'
-    form.sync_mode = (device.pluginConfig.sync_mode as string) || 'smart'
-    form.sync_interval = (device.pluginConfig.sync_interval as number) || 60
-    form.device_id = (device.pluginConfig.device_id as number) || 1234
-    form.tags = device.tags.join(', ')
+    populateDeviceForm(form, {
+      asset: device.asset,
+      name: device.name,
+      description: device.description,
+      enabled: device.enabled,
+      pluginName: device.pluginName,
+      connection: device.connection,
+      config: device.pluginConfig,
+      tags: device.tags
+    })
     showDeviceDialog.value = true
   }
 
