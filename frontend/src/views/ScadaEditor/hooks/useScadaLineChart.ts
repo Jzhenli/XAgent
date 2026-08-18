@@ -377,7 +377,7 @@ export function useScadaLineChart(
     cfg: LineChartComponentConfig,
     series: ResolvedSeries[],
   ): EChartsOption['legend'] => {
-    const showLegend = !!cfg.showLegend && series.length > 1
+    const showLegend = !!cfg.showLegend
     return {
       show: !!showLegend,
       top: 4,
@@ -451,7 +451,7 @@ export function useScadaLineChart(
     }
 
     const xAxisData = buildXAxisData(allSeries, cfg)
-    const showLegend = !!cfg.showLegend && allSeries.length > 1
+    const showLegend = !!cfg.showLegend
 
     const option: EChartsOption = {
       grid: buildGrid(showLegend),
