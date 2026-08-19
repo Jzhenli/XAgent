@@ -303,6 +303,8 @@
       "writeSuccess": "寫入成功",
       "writeFailed": "寫值失敗"
     },
+    "exportPoints": "匯出點位",
+    "importPoints": "匯入點位",
     "export": {
       "success": "已匯出 {count} 個裝置",
       "importConfirm": "即將匯入 {count} 個裝置及其點位，是否繼續？",
@@ -311,6 +313,30 @@
       "importFailed": "匯入失敗",
       "invalidYaml": "無效的 YAML 檔案：缺少 devices 陣列",
       "importConfirmTitle": "匯入確認"
+    },
+    "import": {
+      "pointName": "點位名稱",
+      "description": "描述",
+      "dataType": "資料類型",
+      "unit": "單位",
+      "enabled": "啟用",
+      "writable": "可寫",
+      "config": "設定",
+      "metadata": "詮釋資料",
+      "tags": "標籤",
+      "pointSheet": "點位表",
+      "noPointsToExport": "目前裝置沒有可匯出的點位",
+      "exportSuccess": "已匯出 {count} 個點位",
+      "invalidExcel": "無效的 Excel 檔案",
+      "emptyFile": "Excel 檔案為空",
+      "noValidPoints": "未找到有效的點位資料",
+      "importConfirm": "即將匯入 {count} 個點位（跳過 {skipped} 個無效行），是否繼續？",
+      "importConfirmTitle": "匯入確認",
+      "importSuccess": "成功匯入 {count} 個點位",
+      "importPartial": "匯入完成：成功 {success}，失敗 {failed}",
+      "importFailed": "匯入失敗",
+      "overwriteConfirm": "偵測到 {count} 個點位已存在，是否覆寫這些點位？",
+      "overwrite": "覆寫"
     },
     "modbus": {
       "uint16": "uint16 - 無號16位整數",

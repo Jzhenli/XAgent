@@ -37,7 +37,7 @@
       </span>
       <!-- 紧凑模式下显示点位数量徽标 -->
       <span v-if="isCompact" class="point-count">{{ points.length }}</span>
-      <!-- 操作按钮组：新增点位 / 发现点位 -->
+      <!-- 操作按钮组：新增点位 / 发现点位 / 更多操作 -->
       <div class="panel-actions">
         <div
           v-if="showAddBtn"
@@ -55,6 +55,35 @@
           <el-icon :size="14"><Search /></el-icon>
           {{ t("devices.discoverPoints") }}
         </div>
+        <el-dropdown
+          trigger="click"
+          popper-class="point-dropdown-popper"
+          :teleported="false"
+          @command="handleDropdownCommand"
+        >
+          <Icon
+            name="menu"
+            type="mono-line"
+            :size="20"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
+          />
+          <template #dropdown>
+            <el-dropdown-menu class="point-more-menu">
+              <el-dropdown-item command="export" class="dropdown-item-export">
+                <el-icon :size="16"><Download /></el-icon>
+                <span>{{ t("devices.exportPoints") }}</span>
+              </el-dropdown-item>
+              <el-dropdown-item
+                v-if="userStore.hasPermission('devices', 'create')"
+                command="import"
+                class="dropdown-item-import"
+              >
+                <el-icon :size="16"><Upload /></el-icon>
+                <span>{{ t("devices.importPoints") }}</span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </div>
 
@@ -67,10 +96,7 @@
         height="100%"
       >
         <!-- 点位名称列 -->
-        <el-table-column
-          prop="name"
-          :label="t('devices.pointName')"
-        />
+        <el-table-column prop="name" :label="t('devices.pointName')" />
         <!-- 描述列（仅非紧凑模式显示） -->
         <el-table-column
           v-if="!isCompact"
@@ -90,10 +116,7 @@
           </template>
         </el-table-column>
         <!-- 数据类型列 -->
-        <el-table-column
-          prop="data_type"
-          :label="t('devices.dataType')"
-        />
+        <el-table-column prop="data_type" :label="t('devices.dataType')" />
         <!-- 质量状态列：good(绿) / bad(红) / unknown(黄) -->
         <el-table-column :label="t('devices.quality')">
           <template #default="{ row }">
@@ -120,20 +143,14 @@
           </template>
         </el-table-column>
         <!-- 最后更新时间列（仅非紧凑模式显示） -->
-        <el-table-column
-          v-if="!isCompact"
-          :label="t('devices.lastUpdate')"
-        >
+        <el-table-column v-if="!isCompact" :label="t('devices.lastUpdate')">
           <template #default="{ row }">
             <span v-if="row.lastUpdate">{{ row.lastUpdate }}</span>
             <span v-else class="text-muted">--</span>
           </template>
         </el-table-column>
         <!-- 配置预览列（仅非紧凑模式显示） -->
-        <el-table-column
-          v-if="!isCompact"
-          :label="t('common.config')"
-        >
+        <el-table-column v-if="!isCompact" :label="t('common.config')">
           <template #default="{ row }">
             <el-tooltip
               :content="JSON.stringify(row.config, null, 2)"
@@ -216,7 +233,14 @@
 import { useI18n } from "vue-i18n";
 import { useUserStore } from "@/stores/users";
 import { Icon } from "@/icon/index";
-import { TrendCharts, Plus, Search, ArrowLeft } from "@element-plus/icons-vue";
+import {
+  TrendCharts,
+  Plus,
+  Search,
+  ArrowLeft,
+  Upload,
+  Download,
+} from "@element-plus/icons-vue";
 import type { PointDisplay } from "@/stores/points";
 
 /**
@@ -257,10 +281,20 @@ const emit = defineEmits<{
   (e: "writeValue", point: PointDisplay): void;
   (e: "editPoint", point: PointDisplay): void;
   (e: "deletePoint", pointName: string): void;
+  (e: "import"): void;
+  (e: "export"): void;
 }>();
 
 const { t } = useI18n();
 const userStore = useUserStore();
+
+const handleDropdownCommand = (cmd: string) => {
+  if (cmd === "import") {
+    emit("import");
+  } else if (cmd === "export") {
+    emit("export");
+  }
+};
 </script>
 
 <style scoped>
@@ -463,7 +497,12 @@ const userStore = useUserStore();
 }
 
 /* 默认标签（无类型）：中性背景 */
-.point-list :deep(.el-tag:not(.el-tag--success):not(.el-tag--danger):not(.el-tag--warning):not(.el-tag--info)) {
+.point-list
+  :deep(
+    .el-tag:not(.el-tag--success):not(.el-tag--danger):not(
+        .el-tag--warning
+      ):not(.el-tag--info)
+  ) {
   background: var(--bg-hover) !important;
 }
 
@@ -492,6 +531,63 @@ const userStore = useUserStore();
 .point-list :deep(.el-button.is-link:hover) {
   color: var(--color-primary-hover) !important;
   background: var(--color-primary-light) !important;
+}
+
+/* ========== 下拉菜单样式 ========== */
+:deep(.point-dropdown-popper) {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+:deep(.point-more-menu) {
+  padding: 8px;
+  border-radius: 12px;
+  min-width: 120px;
+  background: var(--bg-modal, #fff) !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(12px);
+  animation: pointDropdownFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pointDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+:deep(.point-more-menu .el-dropdown-menu__item) {
+  padding: 5px 7px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent !important;
+  color: var(--el-text-color-primary) !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+:deep(.point-more-menu .el-dropdown-menu__item .el-icon) {
+  transition: transform 0.2s ease;
+}
+
+:deep(.point-more-menu .el-dropdown-menu__item:hover),
+:deep(.point-more-menu .el-dropdown-menu__item:focus),
+:deep(.point-more-menu .el-dropdown-menu__item:active) {
+  background: rgba(102, 102, 255, 0.1) !important;
+  color: rgba(102, 102, 255, 1) !important;
+  transform: translateX(2px);
 }
 
 /* ========== 响应式：平板/小屏 ========== */

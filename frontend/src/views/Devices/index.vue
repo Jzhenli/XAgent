@@ -105,6 +105,8 @@
           @writeValue="onWritePoint"
           @editPoint="onEditPoint"
           @deletePoint="onDeletePoint"
+          @import="handlePointImport"
+          @export="handlePointExport"
         />
       </div>
     </div>
@@ -136,6 +138,8 @@
           @writeValue="onWritePoint"
           @editPoint="onEditPoint"
           @deletePoint="onDeletePoint"
+          @import="handlePointImport"
+          @export="handlePointExport"
         />
       </div>
     </div>
@@ -206,6 +210,15 @@
       @change="handleImportFileChange"
     />
 
+    <!-- 隐藏的文件输入 (用于点位 Excel 导入) -->
+    <input
+      ref="pointImportFileRef"
+      type="file"
+      accept=".xlsx,.xls"
+      style="display: none"
+      @change="onPointImportFileChange"
+    />
+
     <!-- 设备发现流程组件 -->
     <ProtocolSelectionDialog
       :visible="showProtocolDialog"
@@ -258,6 +271,7 @@ import DeviceConfirmDialog from "./components/DeviceConfirmDialog.vue";
 import { useDeviceManagement } from "./hooks/useDeviceManagement";
 import { usePointManagement } from "./hooks/usePointManagement";
 import { useDeviceIO } from "./hooks/useDeviceIO";
+import { usePointIO } from "./hooks/usePointIO";
 import { useDeviceDiscoveryFlow } from "./hooks/useDeviceDiscoveryFlow";
 
 import DeviceList from "./components/DeviceList.vue";
@@ -373,6 +387,14 @@ const {
   handleImportYaml,
   handleImportFileChange,
 } = useDeviceIO();
+
+// 点位导入导出 (Excel)
+const {
+  importFileRef: pointImportFileRef,
+  handleExportExcel,
+  handleImportExcel,
+  handleImportFileChange: handlePointImportFileChange,
+} = usePointIO();
 
 // ==================== 计算属性 ====================
 
@@ -527,6 +549,25 @@ const onWritePoint = (point: PointDisplay) => {
 
 const onWriteSubmit = () => {
   handleWriteSubmit(writeForm.value);
+};
+
+// --- 点位导入导出 ---
+const handlePointExport = () => {
+  if (!selectedDeviceAsset.value) return;
+  const deviceName =
+    deviceStore.getDeviceByAsset(selectedDeviceAsset.value)?.name ||
+    selectedDeviceAsset.value;
+  const points = getDevicePoints(selectedDeviceAsset.value);
+  handleExportExcel(selectedDeviceAsset.value, deviceName, points);
+};
+
+const handlePointImport = () => {
+  handleImportExcel();
+};
+
+const onPointImportFileChange = (e: Event) => {
+  if (!selectedDeviceAsset.value) return;
+  handlePointImportFileChange(e, selectedDeviceAsset.value);
 };
 
 // --- 导航控制 ---

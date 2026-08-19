@@ -303,6 +303,8 @@
       "writeSuccess": "Write successful",
       "writeFailed": "Write failed"
     },
+    "exportPoints": "Export Points",
+    "importPoints": "Import Points",
     "export": {
       "success": "Exported {count} devices",
       "importConfirm": "About to import {count} devices and their points. Continue?",
@@ -311,6 +313,30 @@
       "importFailed": "Import failed",
       "invalidYaml": "Invalid YAML file: missing devices array",
       "importConfirmTitle": "Import Confirmation"
+    },
+    "import": {
+      "pointName": "Point Name",
+      "description": "Description",
+      "dataType": "Data Type",
+      "unit": "Unit",
+      "enabled": "Enabled",
+      "writable": "Writable",
+      "config": "Config",
+      "metadata": "Metadata",
+      "tags": "Tags",
+      "pointSheet": "Point Sheet",
+      "noPointsToExport": "No points to export for current device",
+      "exportSuccess": "Exported {count} points",
+      "invalidExcel": "Invalid Excel file",
+      "emptyFile": "Excel file is empty",
+      "noValidPoints": "No valid point data found",
+      "importConfirm": "About to import {count} points ({skipped} invalid rows skipped). Continue?",
+      "importConfirmTitle": "Import Confirmation",
+      "importSuccess": "Successfully imported {count} points",
+      "importPartial": "Import complete: {success} succeeded, {failed} failed",
+      "importFailed": "Import failed",
+      "overwriteConfirm": "{count} points already exist. Overwrite them?",
+      "overwrite": "Overwrite"
     },
     "modbus": {
       "uint16": "uint16 - Unsigned 16-bit Integer",
