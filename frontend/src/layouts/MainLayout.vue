@@ -34,7 +34,9 @@
               :color="{ normal: 'white' }"
             />
 
-            <span style="margin-left: 14px">{{ item.title }}</span>
+            <span class="menu-title" style="margin-left: 14px">{{
+              item.title
+            }}</span>
           </el-menu-item>
         </el-menu>
 
@@ -426,8 +428,15 @@ onUnmounted(() => {
   margin: 0;
 }
 
-.app-aside.collapsed .app-menu .el-menu-item span {
+.app-aside.collapsed .app-menu .el-menu-item .menu-title {
   display: none !important;
+}
+
+.app-aside.collapsed .app-menu .el-menu-item > span.fa-stack {
+  visibility: visible !important;
+  width: 28px !important;
+  height: 28px !important;
+  overflow: visible !important;
 }
 
 .app-aside.collapsed .app-menu .el-menu-item.is-active {
