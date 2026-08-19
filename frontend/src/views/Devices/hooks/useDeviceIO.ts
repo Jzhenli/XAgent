@@ -81,7 +81,7 @@ export function useDeviceIO() {
         await ElMessageBox.confirm(
           t('devices.export.importConfirm', { count: devices.length }),
           t('devices.export.importConfirmTitle'),
-          { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel'), type: 'info' }
+          { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel'), type: 'info', customClass: 'x-message-box' }
         )
       } catch {
         return

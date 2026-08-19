@@ -175,7 +175,8 @@ export function usePointIO() {
             {
               confirmButtonText: t('devices.import.overwrite'),
               cancelButtonText: t('common.cancel'),
-              type: 'warning'
+              type: 'warning',
+              customClass: 'x-message-box'
             }
           )
         } catch {
@@ -194,7 +195,8 @@ export function usePointIO() {
           {
             confirmButtonText: t('common.confirm'),
             cancelButtonText: t('common.cancel'),
-            type: 'info'
+            type: 'info',
+            customClass: 'x-message-box'
           }
         )
       } catch {
