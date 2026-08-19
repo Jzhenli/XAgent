@@ -1214,6 +1214,27 @@ const handleClose = () => {
   width: 100%;
 }
 
+/* ========== el-tag 样式优化 ========== */
+/* 默认标签（无类型）：中性背景，文字使用主题文字色 */
+.search-result-card :deep(.el-tag:not(.el-tag--success):not(.el-tag--info)) {
+  background: var(--bg-hover) !important;
+  border-color: transparent !important;
+  color: var(--text-regular) !important;
+}
+
+/* 有类型标签：纯色背景 + 白色文字，自动适配深浅色 */
+.search-result-card :deep(.el-tag--success) {
+  background: var(--color-success-light) !important;
+  border-color: transparent !important;
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+.search-result-card :deep(.el-tag--info) {
+  background: var(--el-color-info-light-3) !important;
+  border-color: transparent !important;
+  color: rgba(255, 255, 255, 1) !important;
+}
+
 /* ========== 表格样式 ========== */
 .el-table {
   font-size: 14px;
