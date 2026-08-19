@@ -16,7 +16,8 @@
           v-model="statusFilter"
           :placeholder="t('devices.statusFilter')"
           clearable
-          class="toolbar-filter"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
         >
           <el-option :label="t('common.all')" value="" />
           <el-option :label="t('common.online')" value="online" />
@@ -599,19 +600,6 @@ onMounted(async () => {
 
 .toolbar-filter {
   width: 120px;
-}
-
-.toolbar-filter :deep(.el-select__wrapper) {
-  background-color: transparent !important;
-  box-shadow: none !important;
-  border-bottom: 1px solid var(--el-border-color) !important;
-  border-radius: 0 !important;
-}
-
-.toolbar-filter :deep(.el-select__wrapper:hover),
-.toolbar-filter :deep(.el-select__wrapper.is-focused) {
-  box-shadow: none !important;
-  border-bottom: 1px solid var(--el-color-primary) !important;
 }
 
 .stat-item {

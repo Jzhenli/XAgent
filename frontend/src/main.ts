@@ -15,6 +15,7 @@ import './icon/style.css'
 import './icon/x-icon-color.css'
 import './styles/theme.css'
 import './styles/element-theme.css'
+import './styles/scada-select.css'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 
 import App from './App.vue'

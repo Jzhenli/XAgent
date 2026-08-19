@@ -10,7 +10,7 @@
         <el-input v-model="name" :placeholder="$t('scada.enterProjectName')" />
       </el-form-item>
       <el-form-item :label="$t('scada.projectType')" required>
-        <el-select v-model="type" :placeholder="$t('scada.selectProjectType')">
+        <el-select v-model="type" :placeholder="$t('scada.selectProjectType')" class="scada-select" popper-class="scada-select-dropdown">
           <el-option :label="$t('scada.dashboardType')" value="Dashboard" />
           <el-option :label="$t('scada.graphicType')" value="Graphic" />
         </el-select>

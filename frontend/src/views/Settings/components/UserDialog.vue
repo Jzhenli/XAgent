@@ -37,7 +37,7 @@
         />
       </el-form-item>
       <el-form-item :label="$t('settings.user.role')">
-        <el-select v-model="form.role_name" style="width: 100%">
+        <el-select v-model="form.role_name" class="scada-select" popper-class="scada-select-dropdown" style="width: 100%">
           <el-option
             v-for="opt in roleOptions"
             :key="opt.value"
@@ -47,7 +47,7 @@
         </el-select>
       </el-form-item>
       <el-form-item :label="$t('settings.user.status')" v-if="editingUserId">
-        <el-select v-model="form.status" style="width: 100%">
+        <el-select v-model="form.status" class="scada-select" popper-class="scada-select-dropdown" style="width: 100%">
           <el-option :label="$t('settings.status.active')" value="active" />
           <el-option :label="$t('settings.status.inactive')" value="inactive" />
           <el-option :label="$t('settings.status.locked')" value="locked" />

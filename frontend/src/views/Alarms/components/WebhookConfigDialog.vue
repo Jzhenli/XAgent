@@ -20,7 +20,7 @@
       </el-form-item>
 
       <el-form-item :label="t('alerts.requestMethod')">
-        <el-select v-model="form.method" style="width: 200px">
+        <el-select v-model="form.method" style="width: 200px" class="scada-select" popper-class="scada-select-dropdown">
           <el-option label="POST" value="POST" />
           <el-option label="PUT" value="PUT" />
         </el-select>

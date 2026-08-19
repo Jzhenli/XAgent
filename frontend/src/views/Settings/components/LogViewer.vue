@@ -7,8 +7,8 @@
           v-model="selectedLevel"
           :placeholder="$t('settings.log.levelFilter')"
           clearable
-          class="plain-select"
-          popper-class="plain-select-dropdown"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
           @change="fetchLogs"
         >
           <el-option label="DEBUG" value="DEBUG" />
@@ -215,37 +215,6 @@ onMounted(fetchLogs)
   to { transform: rotate(360deg); }
 }
 
-:deep(.el-select.plain-select) {
-  width: 180px;
-}
-
-:deep(.el-select.plain-select .el-select__wrapper) {
-  box-shadow: none !important;
-  border: none !important;
-  border-bottom: 1px solid var(--border-base, #dcdfe6) !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  padding: 0 8px;
-}
-
-:deep(.el-select.plain-select.is-focused .el-select__wrapper) {
-  border-bottom-color: var(--color-primary, #409eff) !important;
-}
-
-:deep(.el-select.plain-select .el-select__selected-item),
-:deep(.el-select.plain-select .el-select__placeholder) {
-  background: transparent !important;
-  color: var(--text-primary);
-  height: 32px;
-  line-height: 32px;
-  text-align: center;
-}
-
-:deep(.el-select.plain-select .el-select__suffix),
-:deep(.el-select.plain-select .el-input__suffix) {
-  color: var(--text-secondary);
-}
-
 .log-content {
   flex: 1;
   min-height: 300px;
@@ -308,12 +277,3 @@ onMounted(fetchLogs)
 }
 </style>
 
-<style>
-.plain-select-dropdown {
-  background: var(--bg-card) !important;
-}
-
-.plain-select-dropdown .el-select-dropdown__item {
-  text-align: center;
-}
-</style>

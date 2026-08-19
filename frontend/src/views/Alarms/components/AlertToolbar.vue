@@ -14,7 +14,8 @@
         :model-value="levelFilter"
         :placeholder="t('alerts.levelFilter')"
         clearable
-        class="toolbar-filter"
+        class="scada-select toolbar-filter"
+        popper-class="scada-select-dropdown"
         @update:model-value="emit('update:levelFilter', ($event ?? '') as string)"
       >
         <el-option
@@ -28,7 +29,8 @@
         :model-value="statusFilter"
         :placeholder="t('alerts.statusFilter')"
         clearable
-        class="toolbar-filter"
+        class="scada-select toolbar-filter"
+        popper-class="scada-select-dropdown"
         @update:model-value="emit('update:statusFilter', ($event ?? '') as string)"
       >
         <el-option
@@ -130,19 +132,6 @@ const { t } = useI18n()
 
 .toolbar-filter {
   width: 140px;
-}
-
-.toolbar-filter :deep(.el-select__wrapper) {
-  background-color: transparent !important;
-  box-shadow: none !important;
-  border-bottom: 1px solid var(--el-border-color) !important;
-  border-radius: 0 !important;
-}
-
-.toolbar-filter :deep(.el-select__wrapper:hover),
-.toolbar-filter :deep(.el-select__wrapper.is-focused) {
-  box-shadow: none !important;
-  border-bottom: 1px solid var(--el-color-primary) !important;
 }
 
 .toolbar-right {

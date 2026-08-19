@@ -24,6 +24,8 @@
   --scada-select-border-hover: #c0c4cc;
   --scada-select-disabled-bg: #f5f5f5;
   --scada-select-item-hover: #f5f7fa;
+  --scada-select-wrapper-bg: rgba(255, 255, 255, 0.6);
+  --scada-select-caret-color: #909399;
 
   /* 右键菜单 */
   --scada-menu-bg: #ffffff;
@@ -319,6 +321,8 @@
   --scada-select-border-hover: rgba(34, 211, 238, 0.45);
   --scada-select-disabled-bg: #141414;
   --scada-select-item-hover: rgba(34, 211, 238, 0.08);
+  --scada-select-wrapper-bg: rgba(255, 255, 255, 0.03);
+  --scada-select-caret-color: #8d9096;
 
   /* 右键菜单 */
   --scada-menu-bg: #1e293b;

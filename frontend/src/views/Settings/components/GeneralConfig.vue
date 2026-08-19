@@ -33,8 +33,8 @@
         <el-form-item :label="$t('settings.general.log_level')">
           <el-select
             v-model="systemConfig.logging.level"
-            class="plain-select"
-            popper-class="plain-select-dropdown"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
           >
             <el-option
               v-for="level in logLevels"
@@ -252,13 +252,11 @@ const storageFields: NumberField<keyof StorageConfig>[] = [
   background-color: transparent !important;
 }
 
-:deep(.el-input-number.plain-input-number),
-:deep(.el-select.plain-select) {
+:deep(.el-input-number.plain-input-number) {
   width: 180px;
 }
 
-:deep(.el-input-number.plain-input-number .el-input__wrapper),
-:deep(.el-select.plain-select .el-select__wrapper) {
+:deep(.el-input-number.plain-input-number .el-input__wrapper) {
   box-shadow: none !important;
   border: none !important;
   border-bottom: 1px solid var(--border-base, #dcdfe6) !important;
@@ -267,14 +265,11 @@ const storageFields: NumberField<keyof StorageConfig>[] = [
   padding: 0 8px;
 }
 
-:deep(.el-input-number.plain-input-number .el-input__wrapper.is-focus),
-:deep(.el-select.plain-select.is-focused .el-select__wrapper) {
+:deep(.el-input-number.plain-input-number .el-input__wrapper.is-focus) {
   border-bottom-color: var(--color-primary, #409eff) !important;
 }
 
-:deep(.el-input-number.plain-input-number .el-input__inner),
-:deep(.el-select.plain-select .el-select__selected-item),
-:deep(.el-select.plain-select .el-select__placeholder) {
+:deep(.el-input-number.plain-input-number .el-input__inner) {
   background: transparent !important;
   color: var(--text-primary);
   height: 32px;
@@ -303,11 +298,6 @@ const storageFields: NumberField<keyof StorageConfig>[] = [
 :deep(.el-input-number.plain-input-number .el-input-number__increase:active) {
   outline: none;
   box-shadow: none;
-}
-
-:deep(.el-select.plain-select .el-select__suffix),
-:deep(.el-select.plain-select .el-input__suffix) {
-  color: var(--text-secondary);
 }
 
 .settings-header-actions :deep(.el-form-item__label) {
@@ -385,12 +375,4 @@ const storageFields: NumberField<keyof StorageConfig>[] = [
 }
 </style>
 
-<style>
-.plain-select-dropdown {
-  background: var(--bg-card) !important;
-}
 
-.plain-select-dropdown .el-select-dropdown__item {
-  text-align: center;
-}
-</style>

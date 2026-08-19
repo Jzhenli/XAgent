@@ -59,6 +59,8 @@
           default-first-option
           :placeholder="t('alerts.recipientsPlaceholder')"
           style="width: 100%"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
         />
         <span class="form-item-hint">{{ t('alerts.recipientsHint') }}</span>
       </el-form-item>

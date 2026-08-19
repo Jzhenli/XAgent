@@ -15,7 +15,8 @@
         <el-select
           v-model="pointStore.trendTimeRange"
           style="width: 100px"
-          class="plain-select"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
         >
           <el-option
             v-for="opt in timeRangeOptions"
@@ -27,7 +28,8 @@
         <el-select
           v-model="pointStore.trendAggregation"
           style="width: 100px"
-          class="plain-select"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
         >
           <el-option
             v-for="opt in aggregationOptions"
@@ -997,18 +999,6 @@ onUnmounted(() => {
 .empty-state p {
   margin: 0;
   font-size: 14px;
-}
-
-/* ========== 选择框样式 ========== */
-:deep(.plain-select .el-select__wrapper) {
-  box-shadow: none !important;
-  border: 1px solid var(--border-base) !important;
-  background-color: var(--bg-card) !important;
-  border-radius: 4px !important;
-}
-
-:deep(.plain-select .el-select__wrapper.is-focused) {
-  border-color: var(--color-primary) !important;
 }
 
 /* ========== 响应式 ========== */

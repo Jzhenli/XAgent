@@ -17,6 +17,8 @@
             clearable
             value-key="asset"
             style="width: 100%"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
           >
             <el-option
               v-for="device in triggerDevices"
@@ -40,6 +42,8 @@
             clearable
             :disabled="!selectedTriggerDevice"
             style="width: 100%"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
             @change="updateData"
           >
             <el-option
@@ -199,6 +203,8 @@
             allow-create
             clearable
             style="width: 100%"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
             @change="updateData"
           >
             <el-option
@@ -262,6 +268,8 @@
             v-model="localData.logic.operator"
             :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.logicOperator') })"
             style="width: 100%"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
             @change="updateData"
           >
             <el-option
@@ -298,6 +306,8 @@
             clearable
             value-key="asset"
             style="width: 100%"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
           >
             <el-option
               v-for="device in actionDevices"
@@ -318,6 +328,8 @@
             v-model="localData.action.operation"
             :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.operationType') })"
             style="width: 100%"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
             @change="updateData"
           >
             <el-option :label="t('nodeConfig.writeSetpoint')" value="write_setpoint" />
@@ -334,6 +346,8 @@
               clearable
               :disabled="!selectedActionDevice"
               style="width: 100%"
+              class="scada-select"
+              popper-class="scada-select-dropdown"
             >
               <el-option
                 v-for="point in actionPoints"
@@ -390,6 +404,8 @@
             v-model="localData.notification.level"
             :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.notificationLevel') })"
             style="width: 100%"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
             @change="updateData"
           >
             <el-option
@@ -407,6 +423,8 @@
             :placeholder="t('common.pleaseSelect', { name: t('nodeConfig.notificationChannel') })"
             style="width: 100%"
             :disabled="notificationChannelTypes.length === 0"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
             @change="updateData"
           >
             <el-option

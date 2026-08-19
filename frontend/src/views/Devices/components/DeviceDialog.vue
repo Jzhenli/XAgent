@@ -55,7 +55,7 @@
           <div class="form-hint">{{ t('devices.serialPortHint') }}</div>
         </el-form-item>
         <el-form-item :label="t('devices.baudrate')">
-          <el-select v-model="form.baudrate" :placeholder="t('devices.selectBaudrate')">
+          <el-select v-model="form.baudrate" :placeholder="t('devices.selectBaudrate')" class="scada-select" popper-class="scada-select-dropdown">
             <el-option v-for="rate in baudrateOptions" :key="rate" :value="rate" :label="String(rate)" />
           </el-select>
         </el-form-item>
@@ -126,7 +126,7 @@
           <el-input v-model="form.local_ip" :placeholder="t('devices.localIpPlaceholder')" />
         </el-form-item>
         <el-form-item :label="t('devices.connectionMode')">
-          <el-select v-model="form.connection_type" :placeholder="t('devices.selectConnectionMode')">
+          <el-select v-model="form.connection_type" :placeholder="t('devices.selectConnectionMode')" class="scada-select" popper-class="scada-select-dropdown">
             <el-option :label="t('devices.connectionAutomatic')" value="automatic" />
             <el-option :label="t('devices.connectionTunneling')" value="tunneling" />
             <el-option :label="t('devices.connectionTunnelingTcp')" value="tunneling_tcp" />
@@ -141,7 +141,7 @@
           <div class="form-hint">{{ t('devices.knxIntervalHint') }}</div>
         </el-form-item>
         <el-form-item :label="t('devices.syncMode')">
-          <el-select v-model="form.sync_mode" :placeholder="t('devices.selectSyncMode')">
+          <el-select v-model="form.sync_mode" :placeholder="t('devices.selectSyncMode')" class="scada-select" popper-class="scada-select-dropdown">
             <el-option :label="t('devices.syncSmart')" value="smart" />
             <el-option :label="t('devices.syncAlways')" value="always" />
             <el-option :label="t('devices.syncPassive')" value="passive" />
