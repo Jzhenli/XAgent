@@ -110,10 +110,16 @@
 
           <!-- 设备基本信息 -->
           <div class="device-card-info">
-            <div class="device-card-name">{{ device.name }}</div>
+            <el-tooltip
+              :content="device.name"
+              placement="top"
+              :show-after="300"
+            >
+              <div class="device-card-name">{{ device.name }}</div>
+            </el-tooltip>
             <div class="device-card-meta">
-              <span>{{ device.pluginName }}</span>
-              <span
+              <div class="meta-plugin-name">{{ device.pluginName }}</div>
+              <span class="meta-point-count"
                 >{{ device.pointCount }} {{ t("devices.devicePoints") }}</span
               >
             </div>
@@ -244,8 +250,16 @@
         <div class="device-item-content">
           <div class="device-item-name">{{ device.name }}</div>
           <div class="device-item-meta">
-            <span>{{ device.pluginName }}</span>
-            <span>{{ device.pointCount }} {{ t("devices.devicePoints") }}</span>
+            <el-tooltip
+              :content="device.pluginName"
+              placement="top"
+              :show-after="300"
+            >
+              <div class="meta-plugin-name">{{ device.pluginName }}</div>
+            </el-tooltip>
+            <span class="meta-point-count"
+              >{{ device.pointCount }} {{ t("devices.devicePoints") }}</span
+            >
           </div>
         </div>
 
@@ -510,6 +524,19 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   color: var(--el-text-color-secondary);
 }
 
+.device-item-meta .meta-plugin-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-item-meta .meta-point-count {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .device-item-actions {
   flex-shrink: 0;
   display: flex;
@@ -672,6 +699,19 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   gap: 12px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+.device-card-meta .meta-plugin-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-card-meta .meta-point-count {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .device-card-actions {
