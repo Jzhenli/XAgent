@@ -1,19 +1,5 @@
 <template>
-  <div class="preview-page" :class="{ fullscreen: isFullscreen }">
-    <div v-if="!isFullscreen" class="preview-header">
-      <div class="header-left">
-        <el-button :icon="ArrowLeft" size="small" @click="handleGoBack">
-          {{ $t('scada.backToList') }}
-        </el-button>
-        <h3 class="panel-title">{{ currentPanel.value?.name }}</h3>
-      </div>
-      <div class="header-right">
-        <el-button :icon="FullScreen" size="small" @click="handleToggleFullscreen">
-          {{ $t('scada.fullscreen') }}
-        </el-button>
-      </div>
-    </div>
-
+  <div class="preview-page">
     <div v-if="currentPanel" class="preview-content">
       <div class="canvas-wrapper">
         <ScadaCanvas :key="`preview-${currentPanel.value?.id || 'unknown'}`" />
@@ -25,17 +11,21 @@
         <el-button type="primary" @click="handleGoBack">{{ $t('scada.backToProjectList') }}</el-button>
       </el-empty>
     </div>
+
+    <div class="floating-back" @click="handleGoBack">
+      <el-icon :size="20"><ArrowLeft /></el-icon>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, provide, watch } from 'vue'
+import { computed, onMounted, onUnmounted, provide, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScadaEditor } from '@/views/ScadaEditor/hooks/useScadaEditor'
 import { useScadaPolling } from '@/views/ScadaEditor/hooks/useScadaBinding'
 import { useScadaPointReader, ScadaPointReaderKey } from '@/utils/scadaPointReader'
-import { ArrowLeft, FullScreen } from '@element-plus/icons-vue'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import ScadaCanvas from '@/views/ScadaEditor/components/ScadaCanvas.vue'
 import { useSystemStore } from '@/stores/system'
 
@@ -54,8 +44,6 @@ const { refreshBoundDevices, stop: stopPolling } = useScadaPolling({
   reader: pointReader
 })
 
-const isFullscreen = ref(false)
-
 const currentPanel = computed(() => scada.currentPanel)
 
 onMounted(async () => {
@@ -66,7 +54,6 @@ onMounted(async () => {
     await scada.loadPanel(panelId)
     await refreshBoundDevices()
   }
-  document.addEventListener('fullscreenchange', handleFullscreenChange)
 })
 
 /** 监听路由参数变化（导航按钮跳转到同路由不同面板时，组件不会重新挂载，需手动重载） */
@@ -82,63 +69,20 @@ onUnmounted(() => {
   scada.isFullscreenPreview.value = false
   pointReader.clearDevices()
   stopPolling()
-  document.removeEventListener('fullscreenchange', handleFullscreenChange)
 })
-
-const handleFullscreenChange = () => {
-  isFullscreen.value = !!document.fullscreenElement
-}
 
 const handleGoBack = () => {
   router.push({ name: 'ScadaList' })
-}
-
-const handleToggleFullscreen = async () => {
-  try {
-    if (!document.fullscreenElement) {
-      await document.documentElement.requestFullscreen()
-    } else {
-      await document.exitFullscreen()
-    }
-  } catch {
-    // 全屏 API 不被支持或权限不足，静默降级
-  }
 }
 </script>
 
 <style scoped>
 .preview-page {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--bg-secondary);
-}
-
-.preview-page.fullscreen {
-  height: 100vh;
-}
-
-.preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  background: var(--bg-container);
-  border-bottom: 1px solid var(--border-base);
-  flex-shrink: 0;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.panel-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
+  background: #1a1a2e;
 }
 
 .preview-content {
@@ -146,9 +90,8 @@ const handleToggleFullscreen = async () => {
   overflow: auto;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   padding: 20px;
-  background: #1a1a2e;
 }
 
 .canvas-wrapper {
@@ -162,7 +105,25 @@ const handleToggleFullscreen = async () => {
   align-items: center;
 }
 
-.preview-page.fullscreen .preview-content {
-  padding: 0;
+.floating-back {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.floating-back:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 </style>
