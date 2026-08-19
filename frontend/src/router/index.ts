@@ -50,10 +50,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/Login.vue'),
     meta: { title: 'route.login', public: true }
   },
-  {
-    path: '/',
-    redirect: '/dashboard'
-  },
   // 预览相关路由 - 独立布局，不使用 MainLayout
   {
     path: '/scada/vant',
@@ -78,6 +74,11 @@ const routes: RouteRecordRaw[] = [
     path: '',
     component: () => import('@/layouts/MainLayout.vue'),
     children: [
+      {
+        // 空路径子路由：访问 '/' 时重定向到监控面板（旧顶级 '/' 重定向记录会被空路径布局记录覆盖，永远匹配不到）
+        path: '',
+        redirect: '/dashboard'
+      },
       {
         path: '/dashboard',
         name: 'Dashboard',
