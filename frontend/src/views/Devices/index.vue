@@ -581,6 +581,10 @@ onMounted(async () => {
   gap: 12px;
 }
 
+.toolbar-left :deep(.scada-select) {
+  width: 140px;
+}
+
 .toolbar-search {
   width: 250px;
 }
