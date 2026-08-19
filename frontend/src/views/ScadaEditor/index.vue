@@ -128,7 +128,7 @@
           </div>
         </div>
 
-        <div class="canvas-wrapper">
+        <div ref="canvasWrapperRef" class="canvas-wrapper" @wheel="handleCanvasWheel">
           <ScadaCanvas v-if="!isLoading" />
           <div v-else class="canvas-loading">
             <div class="loading-spinner">
@@ -164,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScadaEditor } from './hooks/useScadaEditor'
@@ -281,6 +281,45 @@ const handleZoomOut = () => {
 
 const handleZoomReset = () => {
   scada.zoom.value = 1
+}
+
+/** 画布视口容器引用（外层滚动区域） */
+const canvasWrapperRef = ref<HTMLDivElement | null>(null)
+
+/**
+ * 滚轮缩放画布：以光标为锚点缩放，保持光标下的内容点位置不动
+ * @param e - 滚轮事件
+ */
+const handleCanvasWheel = (e: WheelEvent) => {
+  // 仅编辑模式接管滚轮；预览模式保留原生滚动
+  if (!scada.isEditing.value) return
+  // 纯横向滚动（如触控板横滑）交还给浏览器处理
+  if (e.deltaY === 0) return
+
+  const wrapper = canvasWrapperRef.value
+  const canvasEl = wrapper?.querySelector('.scada-canvas') as HTMLElement | null
+  if (!wrapper || !canvasEl) return
+
+  e.preventDefault()
+
+  const oldZoom = scada.zoom.value
+  const newZoom = clamp(oldZoom + (e.deltaY < 0 ? 0.1 : -0.1), 0.5, 2)
+  if (newZoom === oldZoom) return
+
+  // 缩放前光标相对画布左上角的屏幕像素偏移
+  const rect = canvasEl.getBoundingClientRect()
+  const offsetX = e.clientX - rect.left
+  const offsetY = e.clientY - rect.top
+
+  scada.zoom.value = newZoom
+
+  // DOM 尺寸更新后调整滚动量，使光标下的画布内容点仍位于光标处
+  nextTick(() => {
+    const newRect = canvasEl.getBoundingClientRect()
+    const scale = newZoom / oldZoom
+    wrapper.scrollLeft += newRect.left - (e.clientX - offsetX * scale)
+    wrapper.scrollTop += newRect.top - (e.clientY - offsetY * scale)
+  })
 }
 
 const handleSave = async () => {
@@ -611,10 +650,47 @@ kbd {
   overflow: auto;
   padding: 30px;
   display: flex;
-  justify-content: center;
   align-items: flex-start;
   background-color: var(--bg-card);
   position: relative;
+}
+
+/* 画布保持自身尺寸不被 flex 压缩（flex-shrink 默认为 1 会把画布压到视口宽度，导致无溢出、无滚动条），并用 auto 外边距居中：超出视口时边距归零，保证水平方向可完整滚动 */
+.canvas-wrapper > :deep(.scada-canvas) {
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+/* 画布滚动条：全局样式在黑色主题下与背景对比度过低，此处用中性灰色提升可见性 */
+.canvas-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.canvas-wrapper::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.canvas-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.canvas-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.canvas-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.canvas-wrapper::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .canvas-loading {
