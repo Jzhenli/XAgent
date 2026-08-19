@@ -20,7 +20,6 @@ class ServiceConfig:
     metadata: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
     statistics: Dict[str, Any] = field(default_factory=dict)
-    version: int = 1
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
     created_by: Optional[str] = None
@@ -43,7 +42,6 @@ class ServiceConfig:
             "metadata": self.metadata,
             "tags": self.tags,
             "statistics": self.statistics,
-            "version": self.version,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "created_by": self.created_by,

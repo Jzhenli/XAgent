@@ -205,7 +205,6 @@ class ServiceRepository:
 
         await self._db.commit()
 
-        service.version = 1
         service.created_at = now
         service.updated_at = now
         service.created_by = user
@@ -248,7 +247,6 @@ class ServiceRepository:
         now = time.time()
         service.updated_at = now
         service.updated_by = user
-        service.version += 1
 
         config_json = json.dumps(service.to_dict(), sort_keys=True)
         config_hash = self._compute_hash(config_json)
@@ -290,7 +288,7 @@ class ServiceRepository:
 
         await self._db.commit()
 
-        logger.info(f"Service updated: {name} v{service.version} by {user}")
+        logger.info(f"Service updated: {name} at {service.updated_at} by {user}")
         return service
 
     async def replace_service(
@@ -322,7 +320,6 @@ class ServiceRepository:
         # 使用 dataclass_replace 创建新对象，避免修改传入对象
         updated_service = dataclass_replace(
             service,
-            version=existing.version + 1,
             updated_at=now,
             updated_by=user,
             created_at=existing.created_at,
@@ -338,7 +335,7 @@ class ServiceRepository:
                 display_name = ?, description = ?, protocol = ?,
                 connection_config = ?, adapter_config = ?, upload_config = ?, command_config = ?,
                 enabled = ?, status = ?, priority = ?, metadata = ?, tags = ?, statistics = ?,
-                config_hash = ?, version = ?, updated_at = ?, updated_by = ?
+                config_hash = ?, updated_at = ?, updated_by = ?
             WHERE name = ?
             """,
             (
@@ -356,7 +353,6 @@ class ServiceRepository:
                 json.dumps(updated_service.tags),
                 json.dumps(updated_service.statistics),
                 config_hash,
-                updated_service.version,
                 now,
                 user,
                 name
@@ -370,7 +366,7 @@ class ServiceRepository:
 
         await self._db.commit()
 
-        logger.info(f"Service replaced: {name} v{updated_service.version} by {user}")
+        logger.info(f"Service replaced: {name} at {updated_service.updated_at} by {user}")
         return updated_service
 
     async def delete_service(

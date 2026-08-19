@@ -296,7 +296,7 @@ class SQLiteStorage(StorageInterface):
                 if col_name not in point_columns:
                     await self._db.execute(f"ALTER TABLE point_registry ADD COLUMN {col_name} {col_type}")
                     logger.info(f"Added {col_name} column to point_registry table")
-                
+
         except Exception as e:
             logger.warning(f"Migration check failed (this is normal for new databases): {e}")
 
