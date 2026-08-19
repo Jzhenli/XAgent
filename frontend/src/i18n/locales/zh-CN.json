@@ -55,7 +55,7 @@
   },
   "layout": {
     "dashboard": "监控面板",
-    "devices": "设备管理",
+    "devices": "南向设备",
     "channels": "北向通道",
     "rules": "规则引擎",
     "alerts": "告警配置",
@@ -76,7 +76,7 @@
     "scadaPreview": "组态预览",
     "graphicPreview": "图形预览",
     "dashboard": "监控面板",
-    "devices": "设备管理",
+    "devices": "南向设备",
     "channels": "北向通道",
     "rules": "规则引擎",
     "alerts": "告警配置",
@@ -161,7 +161,7 @@
     "dataCollection": "数据采集"
   },
   "devices": {
-    "title": "设备管理",
+    "title": "南向设备",
     "searchPlaceholder": "搜索设备...",
     "statusFilter": "状态筛选",
     "totalDevices": "设备",

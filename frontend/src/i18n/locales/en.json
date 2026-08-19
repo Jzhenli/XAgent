@@ -55,7 +55,7 @@
   },
   "layout": {
     "dashboard": "Dashboard",
-    "devices": "Devices",
+    "devices": "Southbound Device",
     "channels": "Northbound Channel",
     "rules": "Rules",
     "alerts": "Alerts",
@@ -76,7 +76,7 @@
     "scadaPreview": "SCADA Preview",
     "graphicPreview": "Graphic Preview",
     "dashboard": "Dashboard",
-    "devices": "Device Management",
+    "devices": "Southbound Device",
     "channels": "Northbound Channel",
     "rules": "Rule Engine",
     "alerts": "Alert Configuration",
@@ -161,7 +161,7 @@
     "dataCollection": "Data Collection"
   },
   "devices": {
-    "title": "Device Management",
+    "title": "Southbound Device",
     "searchPlaceholder": "Search devices...",
     "statusFilter": "Status Filter",
     "totalDevices": "Devices",
