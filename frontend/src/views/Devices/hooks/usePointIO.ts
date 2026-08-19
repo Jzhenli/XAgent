@@ -59,7 +59,6 @@ export function usePointIO() {
 
     const fileName = `xagent-points-${deviceName || deviceAsset}-${new Date().toISOString().slice(0, 10)}.xlsx`
     XLSX.writeFile(wb, fileName)
-    ElMessage.success(t('devices.import.exportSuccess', { count: points.length }))
   }
 
   const handleImportExcel = () => {
