@@ -768,8 +768,14 @@ onMounted(async () => {
 }
 
 .device-panel {
-  background: var(--el-bg-color);
-  border-radius: 8px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: var(--el-box-shadow);
+}
+
+.points-panel {
+  background: var(--bg-card);
+  border-radius: 16px;
   box-shadow: var(--el-box-shadow);
 }
 

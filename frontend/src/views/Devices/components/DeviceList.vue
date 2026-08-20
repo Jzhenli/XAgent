@@ -40,38 +40,48 @@
           :content="t('devices.addDevice')"
           placement="top"
         >
-          <el-button
-            type="primary"
-            link
-            :size="actionSize"
+          <Icon
+            type="mono-line"
+            name="add"
+            :size="24"
+            :color="{ normal: 'rgba(102, 102, 255, 1)' }"
             @click="emit('add')"
-          >
-            <el-icon><Plus /></el-icon>
-          </el-button>
+          />
         </el-tooltip>
         <el-tooltip :content="t('common.export')" placement="top">
-          <el-button link :size="actionSize" @click="emit('export')">
-            <el-icon><Download /></el-icon>
-          </el-button>
+          <Icon
+            type="mono-line"
+            name="download"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
+            @click="emit('export')"
+          />
         </el-tooltip>
         <el-tooltip
           v-if="canCreate"
           :content="t('common.import')"
           placement="top"
         >
-          <el-button link :size="actionSize" @click="emit('import')">
-            <el-icon><Upload /></el-icon>
-          </el-button>
+          <Icon
+            type="mono-line"
+            name="import"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
+            @click="emit('import')"
+          />
         </el-tooltip>
         <el-tooltip :content="t('common.refresh')" placement="top">
-          <el-button
-            link
-            :size="actionSize"
-            :loading="loading"
+          <Icon
+            v-if="!loading"
+            type="mono-line"
+            name="refresh"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
             @click="emit('refresh')"
-          >
-            <el-icon><Refresh /></el-icon>
-          </el-button>
+          />
+          <el-icon v-else class="is-loading" :size="24">
+            <Refresh />
+          </el-icon>
         </el-tooltip>
       </div>
     </div>
@@ -330,9 +340,6 @@ import {
   Edit,
   RefreshRight,
   Delete,
-  Plus,
-  Upload,
-  Download,
 } from "@element-plus/icons-vue";
 import type { DeviceListItem } from "@/stores/devices";
 
