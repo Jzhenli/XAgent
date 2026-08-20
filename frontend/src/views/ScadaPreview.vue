@@ -1,8 +1,15 @@
 <template>
   <div class="preview-page">
-    <div v-if="currentPanel" class="preview-content">
-      <div class="canvas-wrapper">
-        <ScadaCanvas :key="`preview-${currentPanel.value?.id || 'unknown'}`" />
+    <div
+      v-if="currentPanel"
+      ref="adaptContainerRef"
+      class="preview-content"
+      :style="adaptContainerStyle"
+    >
+      <div class="canvas-frame" :style="adaptFrameStyle">
+        <div class="canvas-scale" :style="adaptScaleStyle">
+          <ScadaCanvas :key="`preview-${currentPanel.value?.id || 'unknown'}`" />
+        </div>
       </div>
     </div>
 
@@ -19,10 +26,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, provide, watch } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScadaEditor } from '@/views/ScadaEditor/hooks/useScadaEditor'
+import { useScadaAdapt } from '@/views/ScadaEditor/hooks/useScadaAdapt'
 import { useScadaPolling } from '@/views/ScadaEditor/hooks/useScadaBinding'
 import { useScadaPointReader, ScadaPointReaderKey } from '@/utils/scadaPointReader'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -35,6 +43,14 @@ const router = useRouter()
 const scada = useScadaEditor()
 const pointReader = useScadaPointReader()
 const systemStore = useSystemStore()
+
+/** 预览适配容器：按面板适配模式计算容器、布局框、缩放层样式 */
+const adaptContainerRef = ref<HTMLElement | null>(null)
+const {
+  containerStyle: adaptContainerStyle,
+  frameStyle: adaptFrameStyle,
+  scaleStyle: adaptScaleStyle
+} = useScadaAdapt(adaptContainerRef)
 
 provide(ScadaPointReaderKey, pointReader)
 
@@ -86,16 +102,20 @@ const handleGoBack = () => {
 }
 
 .preview-content {
+  /* 滚动与居中方式由适配模式内联样式控制 */
   flex: 1;
-  overflow: auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
+  min-width: 0;
+  min-height: 0;
 }
 
-.canvas-wrapper {
+.canvas-frame {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  /* 禁止 flex 收缩，保证滚动模式下的布局尺寸正确 */
+  flex-shrink: 0;
+}
+
+.canvas-scale {
+  transform-origin: top left;
 }
 
 .empty-state {

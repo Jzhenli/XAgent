@@ -1,7 +1,8 @@
 import { ref, computed, watch } from 'vue'
 import { useScadaEditor } from './useScadaEditor'
 import { usePointStore } from '@/stores/points'
-import type { PointBinding, PanelPreset } from '../types'
+import { normalizeAdaptMode } from '../utils/adapt'
+import type { PointBinding, PanelPreset, PanelAdaptMode } from '../types'
 
 /**
  * 预设面板尺寸列表
@@ -51,6 +52,9 @@ export function useScadaProps() {
   /** 背景类型（颜色/图片） */
   const panelBgType = ref<'color' | 'image'>('color')
 
+  /** 预览适配模式 */
+  const panelAdaptMode = ref<PanelAdaptMode>('fit')
+
   /**
    * 监听面板变化，同步面板配置
    */
@@ -62,6 +66,7 @@ export function useScadaProps() {
       panelGrid.value = panel.grid
       panelBgImage.value = panel.backgroundImage || ''
       panelBgType.value = panel.backgroundImage ? 'image' : 'color'
+      panelAdaptMode.value = normalizeAdaptMode(panel.adaptMode)
     }
   }, { immediate: true })
 
@@ -196,6 +201,14 @@ export function useScadaProps() {
   }
 
   /**
+   * 切换预览适配模式（v-model 已更新 panelAdaptMode，此处仅持久化到面板）
+   * @param mode - 适配模式
+   */
+  const onAdaptModeChange = (mode: PanelAdaptMode) => {
+    scada.updatePanel({ adaptMode: mode })
+  }
+
+  /**
    * 处理背景图片上传
    * @param e - 文件选择事件
    */
@@ -244,6 +257,7 @@ export function useScadaProps() {
     panelGrid,
     panelBgImage,
     panelBgType,
+    panelAdaptMode,
     availablePoints,
     presetSizes,
     // 方法
@@ -254,6 +268,7 @@ export function useScadaProps() {
     updateDimension,
     updatePanelSize,
     onBgTypeChange,
+    onAdaptModeChange,
     handleBgImageUpload,
     removeBgImage,
     applyPreset

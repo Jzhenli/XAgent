@@ -19,6 +19,7 @@ import {
   cloneComponent,
   migrateComponents
 } from '../utils/component'
+import { normalizeAdaptMode } from '../utils/adapt'
 import { downloadJson } from '../utils/dom'
 import { setupUndoSystem, useScadaUndo, type OperationType } from './useScadaUndo'
 
@@ -125,6 +126,7 @@ function parseProjectData(data: string | Record<string, unknown>): ScadaPanel | 
       grid: parsed.grid || 20,
       backgroundColor: parsed.backgroundColor || '#f0f2f5',
       backgroundImage: parsed.backgroundImage,
+      adaptMode: normalizeAdaptMode(parsed.adaptMode),
       components: migrateComponents(parsed.components || []),
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -145,6 +147,7 @@ function buildPanelPayload(panel: ScadaPanel): Record<string, unknown> {
     grid: panel.grid,
     backgroundColor: panel.backgroundColor,
     backgroundImage: panel.backgroundImage,
+    adaptMode: panel.adaptMode,
     components: panel.components
   }
 }
@@ -789,6 +792,7 @@ export function validatePanel(data: unknown): ScadaPanel | null {
     grid: typeof panel.grid === 'number' ? Math.max(10, Math.min(50, panel.grid)) : 20,
     backgroundColor: typeof panel.backgroundColor === 'string' ? panel.backgroundColor : '#f0f2f5',
     backgroundImage: typeof panel.backgroundImage === 'string' ? panel.backgroundImage : undefined,
+    adaptMode: normalizeAdaptMode(panel.adaptMode),
     components: validComponents,
     createdAt: typeof panel.createdAt === 'number' ? panel.createdAt : Date.now(),
     updatedAt: Date.now()

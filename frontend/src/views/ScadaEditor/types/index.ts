@@ -2,6 +2,15 @@ import type { Component } from 'vue'
 
 export type PanelType = 'Dashboard' | 'Graphic'
 
+/**
+ * 面板预览适配模式
+ * - fit: 等比缩放完整展示，保留留白
+ * - fitWidth: X 轴铺满，Y 轴等比缩放并滚动
+ * - fitHeight: Y 轴铺满，X 轴等比缩放并滚动
+ * - stretch: 非等比拉伸铺满整个屏幕
+ */
+export type PanelAdaptMode = 'fit' | 'fitWidth' | 'fitHeight' | 'stretch'
+
 export interface PointBinding {
   deviceId: string
   pointName: string
@@ -598,6 +607,8 @@ export interface ScadaPanel {
   grid: number
   backgroundColor: string
   backgroundImage?: string
+  /** 预览时的画布适配模式，缺省按 fit 处理 */
+  adaptMode?: PanelAdaptMode
   components: ScadaComponent[]
   createdAt: number
   updatedAt: number

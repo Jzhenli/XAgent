@@ -23,11 +23,20 @@
       @touchmove="onTouchMove"
       @touchend="onTouchEnd"
     >
-      <div class="slide-page">
-        <ScadaCanvas
+      <div
+        ref="adaptContainerRef"
+        class="slide-page"
+        :style="currentPanel?.type === 'Dashboard' ? adaptContainerStyle : undefined"
+      >
+        <div
           v-if="currentPanel?.type === 'Dashboard'"
-          :key="`dashboard-${currentPanel.id}`"
-        />
+          class="adapt-canvas-frame"
+          :style="adaptFrameStyle"
+        >
+          <div class="adapt-canvas-scale" :style="adaptScaleStyle">
+            <ScadaCanvas :key="`dashboard-${currentPanel.id}`" />
+          </div>
+        </div>
         <GraphicSingle
           v-else
           :project="currentPanel"
@@ -43,17 +52,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { useScadaEditor } from "@/views/ScadaEditor/hooks/useScadaEditor";
+import { useScadaAdapt } from "@/views/ScadaEditor/hooks/useScadaAdapt";
 import { useScadaPolling } from "@/views/ScadaEditor/hooks/useScadaBinding";
 import { projectApi } from "@/api/projects";
 import type { Project } from "@/types/project";
 import { ArrowLeft } from "@element-plus/icons-vue";
 import ScadaCanvas from "@/views/ScadaEditor/components/ScadaCanvas.vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
-import { listenTo } from "./utils/events";
 import { useSwipe } from "./composables/useSwipe";
 import { useKeyboardShortcuts } from "./composables/useKeyboardShortcuts";
 
@@ -65,10 +74,14 @@ const { stop: stopPolling } = useScadaPolling({ interval: 5000 });
 
 const activeTab = ref(0);
 const panels = ref<Project[]>([]);
-const scale = ref(1);
 
-/** 面板切换版本号，防止竞态条件 */
-let tabSwitchVersion = 0;
+/** 预览适配容器：按面板适配模式计算容器、布局框、缩放层样式 */
+const adaptContainerRef = ref<HTMLElement | null>(null);
+const {
+  containerStyle: adaptContainerStyle,
+  frameStyle: adaptFrameStyle,
+  scaleStyle: adaptScaleStyle,
+} = useScadaAdapt(adaptContainerRef);
 
 const tabs = computed(() =>
   panels.value.map((panel) => ({
@@ -78,10 +91,6 @@ const tabs = computed(() =>
 );
 
 const currentPanel = computed(() => panels.value[activeTab.value] ?? null);
-
-const calcScale = () => {
-  scale.value = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-};
 
 const fetchPanels = async () => {
   try {
@@ -119,8 +128,6 @@ useKeyboardShortcuts({
   ArrowRight: () => switchTab(1),
 });
 
-let resizeCleanup: (() => void) | undefined;
-
 onMounted(async () => {
   scada.isEditing.value = false;
   scada.isFullscreenPreview.value = true;
@@ -133,13 +140,6 @@ onMounted(async () => {
     activeTab.value = 0;
     await loadCurrentPanel();
   }
-
-  calcScale();
-  let resizeTimer: ReturnType<typeof setTimeout>;
-  resizeCleanup = listenTo(window, "resize", () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(calcScale, 100);
-  });
 });
 
 onUnmounted(() => {
@@ -147,17 +147,12 @@ onUnmounted(() => {
   scada.isFullscreenPreview.value = false;
   document.body.classList.remove("vant-fullscreen");
 
-  resizeCleanup?.();
   stopPolling();
 });
 
 watch(activeTab, async () => {
-  const version = ++tabSwitchVersion;
+  // 适配缩放由 useScadaAdapt 响应面板变化自动重算
   await loadCurrentPanel();
-  // 竞态防护：仅当请求版本号仍为最新时才应用结果
-  if (version === tabSwitchVersion) {
-    nextTick(calcScale);
-  }
 });
 </script>
 
@@ -242,6 +237,15 @@ watch(activeTab, async () => {
   justify-content: center;
   overflow: hidden;
   background: #000;
+}
+
+/* 适配画布布局框：禁止 flex 收缩，保证滚动模式下的布局尺寸正确 */
+.adapt-canvas-frame {
+  flex-shrink: 0;
+}
+
+.adapt-canvas-scale {
+  transform-origin: top left;
 }
 
 .empty-state {
