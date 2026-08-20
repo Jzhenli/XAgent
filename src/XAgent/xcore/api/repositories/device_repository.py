@@ -707,8 +707,70 @@ class ConfigRepository:
             )
         except aiosqlite.IntegrityError as e:
             if 'UNIQUE constraint' in str(e):
+                # 冲突: 先判断是否是软删除(deleted)记录占用了唯一键。
+                # 若是, 则复活该记录(用本次提交的配置覆盖), 以支持"删除后重新添加"。
+                reactivated = await self._try_reactivate_point(asset, point, now, config_hash)
+                if reactivated:
+                    return
                 raise ValueError(f"Point '{point['name']}' already exists in device '{asset}'")
             raise ValueError(f"Failed to create point '{point['name']}': {e}")
+
+    async def _try_reactivate_point(
+        self,
+        asset: str,
+        point: Dict[str, Any],
+        now: float,
+        config_hash: str
+    ) -> bool:
+        """尝试复活一条软删除(deleted)的同名点位。
+
+        当 (asset, point_name) 已存在一条 status='deleted' 的记录时, 用本次提交的
+        配置将其覆盖并置为 active, 视为添加成功, 返回 True。
+        若冲突来自 active 记录(真正重名), 返回 False, 由调用方报"已存在"。
+
+        Args:
+            config_hash: 由调用方基于同一算法预先计算好的点位配置哈希, 直接复用,
+                避免在多处重复计算导致算法分叉。
+        Returns:
+            bool: 是否成功复活了软删除记录
+        """
+        async with self._db.execute(
+            """
+            SELECT id FROM point_registry
+            WHERE asset = ? AND point_name = ? AND status = 'deleted'
+            """,
+            (asset, point['name'])
+        ) as cursor:
+            row = await cursor.fetchone()
+
+        if not row:
+            return False
+
+        await self._db.execute(
+            """
+            UPDATE point_registry SET
+                description = ?, data_type = ?, unit = ?,
+                config = ?, metadata = ?, tags = ?, enabled = ?,
+                config_hash = ?, created_at = ?, updated_at = ?, status = 'active',
+                deleted_at = NULL
+            WHERE asset = ? AND point_name = ? AND status = 'deleted'
+            """,
+            (
+                point.get('description'),
+                point.get('data_type'),
+                point.get('unit'),
+                json.dumps(point.get('config', {})),
+                json.dumps(point.get('metadata', {})),
+                json.dumps(point.get('tags', [])),
+                point.get('enabled', True),
+                config_hash,
+                now,
+                now,
+                asset,
+                point['name']
+            )
+        )
+        return True
 
     async def _update_device_version(self, device: DeviceConfig) -> None:
         """更新设备版本（内部方法）"""
