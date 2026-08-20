@@ -1,26 +1,5 @@
 <template>
-  <div class="preview-page" :class="{ fullscreen: isFullscreen }">
-    <div v-if="!isFullscreen" class="preview-header">
-      <div class="header-left">
-        <el-button :icon="ArrowLeft" size="small" @click="handleGoBack">
-          {{ $t("scada.backToList") }}
-        </el-button>
-        <h3 class="panel-title">{{ currentPanel?.name }}</h3>
-        <el-tag type="warning" size="small">{{
-          $t("scada.graphicType")
-        }}</el-tag>
-      </div>
-      <div class="header-right">
-        <el-button
-          :icon="FullScreen"
-          size="small"
-          @click="handleToggleFullscreen"
-        >
-          {{ $t("scada.fullscreen") }}
-        </el-button>
-      </div>
-    </div>
-
+  <div class="preview-page">
     <div v-if="loading" class="loading-state" v-loading="true" :element-loading-text="$t('common.loading')" :element-loading-spinner-size="48">
     </div>
 
@@ -33,7 +12,7 @@
     </div>
 
     <div v-else-if="currentPanel" class="preview-content">
-      <div class="blank-canvas">
+      <div class="canvas-wrapper">
         <GraphicSingle ref="graphicSingle" :project="currentPanel" />
       </div>
     </div>
@@ -45,16 +24,22 @@
         </el-button>
       </el-empty>
     </div>
+
+    <div v-if="currentPanel" class="floating-tools">
+      <div class="floating-back" @click="handleGoBack">
+        <el-icon :size="20"><ArrowLeft /></el-icon>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import { projectApi } from "@/api/projects";
-import { ArrowLeft, FullScreen } from "@element-plus/icons-vue";
+import { ArrowLeft } from "@element-plus/icons-vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
 import type { Project } from "@/types/project";
 
@@ -62,18 +47,12 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
-const isFullscreen = ref(false);
 const loading = ref(false);
 const error = ref("");
 const currentPanel = ref<Project | null>(null);
 
 onMounted(async () => {
   await loadPanelData();
-  document.addEventListener("fullscreenchange", handleFullscreenChange);
-});
-
-onUnmounted(() => {
-  document.removeEventListener("fullscreenchange", handleFullscreenChange);
 });
 
 const loadPanelData = async () => {
@@ -103,56 +82,18 @@ const loadPanelData = async () => {
   }
 };
 
-const handleFullscreenChange = () => {
-  isFullscreen.value = !!document.fullscreenElement;
-};
-
 const handleGoBack = () => {
   router.push({ name: "ScadaList" });
-};
-
-const handleToggleFullscreen = async () => {
-  if (!document.fullscreenElement) {
-    await document.documentElement.requestFullscreen();
-  } else {
-    await document.exitFullscreen();
-  }
 };
 </script>
 
 <style scoped>
 .preview-page {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--bg-secondary);
-}
-
-.preview-page.fullscreen {
-  height: 100vh;
-}
-
-.preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  background: var(--bg-container);
-  border-bottom: 1px solid var(--border-base);
-  flex-shrink: 0;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.panel-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
+  background: #1a1a2e;
 }
 
 .loading-state,
@@ -169,17 +110,11 @@ const handleToggleFullscreen = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #1a1a2e;
+  padding: 20px;
 }
 
-.blank-canvas {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: var(--text-secondary);
-  overflow: hidden;
+.canvas-wrapper {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .empty-state {
@@ -187,5 +122,30 @@ const handleToggleFullscreen = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.floating-tools {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+}
+
+.floating-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.floating-back:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 </style>
