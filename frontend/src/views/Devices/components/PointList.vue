@@ -23,20 +23,15 @@
   <div v-else class="point-list">
     <!-- 面板头部：设备名称 + 操作按钮 -->
     <div class="panel-header">
-      <!-- 紧凑模式下显示返回按钮 -->
-      <div v-if="isCompact" class="panel-header-left">
-        <el-button link @click="emit('back')">
-          <el-icon><ArrowLeft /></el-icon>
-          {{ t("devices.returnToDevice") }}
-        </el-button>
+      <div class="panel-header-left">
+        <!-- 设备名称标题 -->
+        <span class="panel-title">
+          <template v-if="!isCompact">{{ t("devices.pointList") }}</template>
+          {{ deviceName }}
+        </span>
+        <!-- 紧凑模式下显示点位数量徽标 -->
+        <span v-if="isCompact" class="point-count">{{ points.length }}</span>
       </div>
-      <!-- 设备名称标题 -->
-      <span class="panel-title">
-        <template v-if="!isCompact">{{ t("devices.pointList") }}</template>
-        {{ deviceName }}
-      </span>
-      <!-- 紧凑模式下显示点位数量徽标 -->
-      <span v-if="isCompact" class="point-count">{{ points.length }}</span>
       <!-- 操作按钮组：新增点位 / 发现点位 / 更多操作 -->
       <div class="panel-actions">
         <div
@@ -239,7 +234,6 @@ import {
   TrendCharts,
   Plus,
   Search,
-  ArrowLeft,
   Upload,
   Download,
 } from "@element-plus/icons-vue";
@@ -368,7 +362,6 @@ const handleDropdownCommand = (cmd: string) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--bg-card);
   border-radius: 16px;
   box-shadow: var(--el-box-shadow);
   border: 1px solid var(--border-base);
@@ -393,6 +386,7 @@ const handleDropdownCommand = (cmd: string) => {
 .panel-header-left {
   display: flex;
   align-items: center;
+  gap: 4px;
 }
 
 .panel-title {
