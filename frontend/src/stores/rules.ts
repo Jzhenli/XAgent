@@ -2,8 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ruleApi } from '@/api/rules'
 import type { RuleCreateRequest, RuleUpdateRequest, RuleResponse } from '@/api/types'
-import { backendToViewItem, getActionChannelCreate, getNotificationChannelCreate, type RuleViewItem } from '@/utils/ruleBridge'
-import type { RuleNode } from '@/types/rule'
+import { backendToViewItem, type RuleViewItem } from '@/utils/ruleBridge'
 
 export type { RuleViewItem }
 
@@ -61,25 +60,6 @@ export const useRuleStore = defineStore('rules', () => {
     try {
       const response = await ruleApi.create(data)
       if (response.success) {
-        if (data.channel_ids && data.channel_ids.length > 0) {
-          const visualGraph = (data.plugin?.config as Record<string, any>)?.['_visual_graph']
-          const actionNodes: RuleNode[] = (visualGraph?.nodes?.filter((n: any) => n.type === 'action') || []) as RuleNode[]
-          const notificationNodes: RuleNode[] = (visualGraph?.nodes?.filter((n: any) => n.type === 'notification') || []) as RuleNode[]
-
-          const actionChannelCreate = getActionChannelCreate(data.id, actionNodes)
-          const notifChannelCreate = getNotificationChannelCreate(data.id, notificationNodes)
-
-          for (const channelCreate of [actionChannelCreate, notifChannelCreate]) {
-            if (channelCreate) {
-              try {
-                await ruleApi.createChannel(channelCreate)
-                await ruleApi.bindRuleChannels(data.id, [channelCreate.channel_id])
-              } catch (e: any) {
-                console.warn('[RuleStore] Failed to create channel:', e)
-              }
-            }
-          }
-        }
         await fetchRules()
       }
       return response
@@ -93,28 +73,6 @@ export const useRuleStore = defineStore('rules', () => {
     try {
       const response = await ruleApi.update(ruleId, data)
       if (response.success) {
-        if (data.channel_ids && data.channel_ids.length > 0) {
-          const visualGraph = (data.plugin?.config as Record<string, any>)?.['_visual_graph']
-          const actionNodes: RuleNode[] = (visualGraph?.nodes?.filter((n: any) => n.type === 'action') || []) as RuleNode[]
-          const notificationNodes: RuleNode[] = (visualGraph?.nodes?.filter((n: any) => n.type === 'notification') || []) as RuleNode[]
-
-          const actionChannelCreate = getActionChannelCreate(ruleId, actionNodes)
-          const notifChannelCreate = getNotificationChannelCreate(ruleId, notificationNodes)
-
-          for (const channelCreate of [actionChannelCreate, notifChannelCreate]) {
-            if (channelCreate) {
-              try {
-                await ruleApi.removeChannel(channelCreate.channel_id)
-              } catch {}
-              try {
-                await ruleApi.createChannel(channelCreate)
-                await ruleApi.bindRuleChannels(ruleId, [channelCreate.channel_id])
-              } catch (e: any) {
-                console.warn('[RuleStore] Failed to update channel:', e)
-              }
-            }
-          }
-        }
         await fetchRules()
       }
       return response

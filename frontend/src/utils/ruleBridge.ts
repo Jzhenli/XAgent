@@ -378,10 +378,6 @@ export function graphToBackendCreate(
   const ruleId = existingId || `rule-${Date.now()}`
   const channelIds: string[] = []
 
-  if (actionConfig && actionConfig.target_service) {
-    channelIds.push(`action-${ruleId}`)
-  }
-
   if (notifConfig) {
     // 使用固定的通知渠道ID，而不是动态创建
     // system类型 → system-notification
@@ -403,30 +399,6 @@ export function graphToBackendCreate(
     notification,
     channel_ids: channelIds.length > 0 ? channelIds : undefined,
   }
-}
-
-export function getActionChannelCreate(
-  ruleId: string,
-  actionNodes: RuleNode[]
-): { channel_id: string; plugin_name: string; config: ActionChannelConfig } | null {
-  const actionConfig = buildActionChannelConfig(actionNodes)
-  if (!actionConfig || !actionConfig.target_service) return null
-
-  return {
-    channel_id: `action-${ruleId}`,
-    plugin_name: 'action',
-    config: actionConfig,
-  }
-}
-
-export function getNotificationChannelCreate(
-  ruleId: string,
-  notificationNodes: RuleNode[]
-): { channel_id: string; plugin_name: string; config: NotificationChannelConfig } | null {
-  // ✅ 不再为每个规则创建动态channel
-  // 规则应该使用已存在的通知渠道（如email-notification）
-  // 返回null，表示不需要创建新channel
-  return null
 }
 
 export function graphToBackendUpdate(
