@@ -557,8 +557,8 @@ const handlePointExport = () => {
   const deviceName =
     deviceStore.getDeviceByAsset(selectedDeviceAsset.value)?.name ||
     selectedDeviceAsset.value;
-  const points = getDevicePoints(selectedDeviceAsset.value);
-  handleExportExcel(selectedDeviceAsset.value, deviceName, points);
+
+  handleExportExcel(selectedDeviceAsset.value, deviceName);
 };
 
 const handlePointImport = () => {

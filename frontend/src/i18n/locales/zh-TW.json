@@ -613,6 +613,8 @@
     "batchSyncPointsConfirm": "確定要同步所選點位嗎？（新增 {addCount} 個，刪除 {deleteCount} 個）",
     "batchAddPointsSuccess": "成功新增 {count} 個點位",
     "batchRemovePointsSuccess": "成功刪除 {count} 個點位",
+    "batchAddPointsPartial": "新增完成：成功 {succeeded}，失敗 {failed}",
+    "batchAddPointsAllFailed": "新增 {count} 個點位全部失敗",
     "objectTypeSelection": "物件類型選擇",
     "objectTypeHint": "AI/AO/AV：類比量；BI/BO/BV：二進位；MI/MO/MV：多狀態",
     "pointFilterPlaceholder": "搜尋點位名稱、描述、類型或 ID...",

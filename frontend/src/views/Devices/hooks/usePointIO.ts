@@ -4,8 +4,8 @@ import * as XLSX from 'xlsx'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { deviceApi } from '@/api/devices'
 import { usePointStore } from '@/stores/points'
+import { isPointWritable } from '@/utils/pointMapping'
 import type { PointConfig } from '@/api/types'
-import type { PointDisplay } from '@/stores/points'
 
 export function usePointIO() {
   const { t } = useI18n()
@@ -27,7 +27,9 @@ export function usePointIO() {
 
   const HEADER_KEYS = ['name', 'description', 'data_type', 'unit', 'enabled', 'writable', 'config', 'metadata', 'tags']
 
-  const handleExportExcel = (deviceAsset: string, deviceName: string, points: PointDisplay[]) => {
+  const handleExportExcel = async (deviceAsset: string, deviceName: string) => {
+    const points = await deviceApi.listPoints(deviceAsset)
+
     if (!points || points.length === 0) {
       ElMessage.warning(t('devices.import.noPointsToExport'))
       return
@@ -40,7 +42,7 @@ export function usePointIO() {
         [t('devices.import.dataType')]: p.data_type,
         [t('devices.import.unit')]: p.unit || '',
         [t('devices.import.enabled')]: p.enabled ? 'TRUE' : 'FALSE',
-        [t('devices.import.writable')]: p.writable ? 'TRUE' : 'FALSE',
+        [t('devices.import.writable')]: isPointWritable(p) ? 'TRUE' : 'FALSE',
         [t('devices.import.config')]: p.config ? JSON.stringify(p.config) : '',
         [t('devices.import.metadata')]: p.metadata ? JSON.stringify(p.metadata) : '',
         [t('devices.import.tags')]: p.tags ? p.tags.join(', ') : ''
@@ -80,6 +82,9 @@ export function usePointIO() {
     const enabledRaw = String(getVal('enabled') ?? 'TRUE').trim().toUpperCase()
     const enabled = enabledRaw === 'TRUE' || enabledRaw === '1' || enabledRaw === 'YES'
 
+    const writableRaw = String(getVal('writable') ?? '').trim().toUpperCase()
+    const writable = writableRaw === 'TRUE' || writableRaw === '1' || writableRaw === 'YES'
+
     const configRaw = String(getVal('config') ?? '').trim()
     let config: Record<string, unknown> = {}
     if (configRaw) {
@@ -89,6 +94,7 @@ export function usePointIO() {
         config = {}
       }
     }
+    if (writable) config.writable = true
 
     const metadataRaw = String(getVal('metadata') ?? '').trim()
     let metadata: Record<string, unknown> | undefined
@@ -103,10 +109,13 @@ export function usePointIO() {
     const tagsRaw = String(getVal('tags') ?? '').trim()
     const tags = tagsRaw ? tagsRaw.split(/[,，]/).map(t => t.trim()).filter(Boolean) : undefined
 
+    const standardDataType = dataType.toLowerCase().includes('bool') ? 'bool' as const : undefined
+
     const point: PointConfig = {
       name,
       description: String(getVal('description') ?? '').trim() || undefined,
       data_type: dataType,
+      standard_data_type: standardDataType,
       unit: String(getVal('unit') ?? '').trim() || undefined,
       enabled,
       config

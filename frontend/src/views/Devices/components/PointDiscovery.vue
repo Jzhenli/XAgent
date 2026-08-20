@@ -333,7 +333,11 @@ import {
   InfoFilled,
 } from "@element-plus/icons-vue";
 import { deviceApi } from "@/api/devices";
-import type { DiscoveredPoint, PointConfig } from "@/api/types";
+import type {
+  DiscoveredPoint,
+  PointConfig,
+  BatchAddPointsResponse,
+} from "@/api/types";
 
 interface Props {
   deviceAsset: string;
@@ -755,6 +759,8 @@ const handleBatchAdd = async () => {
       await Promise.all(removePromises);
     }
 
+    let batchAddResult: BatchAddPointsResponse | null = null;
+
     // 再执行添加
     if (pointsToAdd.length > 0) {
       const addPayload: PointConfig[] = pointsToAdd.map((point) => {
@@ -787,27 +793,74 @@ const handleBatchAdd = async () => {
         };
       });
 
-      const response = await deviceApi.batchAddPoints(props.deviceAsset, {
+      batchAddResult = await deviceApi.batchAddPoints(props.deviceAsset, {
         points: addPayload,
       });
 
-      if (!response.success) {
-        ElMessage.error(t("devices.batchAddFailed"));
+      if (!batchAddResult.success) {
+        ElMessage.error(
+          batchAddResult.message || t("devices.batchAddFailed"),
+        );
         return;
       }
     }
 
-    const totalMsg =
-      pointsToAdd.length > 0
-        ? t("devices.batchAddPointsSuccess", { count: pointsToAdd.length })
-        : "";
-    const removeMsg =
-      pointsToRemove.length > 0
-        ? t("devices.batchRemovePointsSuccess", { count: pointsToRemove.length })
-        : "";
-    ElMessage.success([totalMsg, removeMsg].filter(Boolean).join(" "));
+    const messages: string[] = [];
+    let allFailed = false;
 
-    emit("success");
+    if (batchAddResult && batchAddResult.total > 0) {
+      if (batchAddResult.failed > 0) {
+        const errorDetails = (batchAddResult.details || [])
+          .filter((d) => d["status"] === "failed")
+          .map(
+            (d) => `${d["point_name"]}: ${d["message"]}`,
+          )
+          .join("; ");
+
+        if (batchAddResult.succeeded > 0) {
+          messages.push(
+            t("devices.batchAddPointsPartial", {
+              succeeded: batchAddResult.succeeded,
+              failed: batchAddResult.failed,
+            }) + (errorDetails ? ` (${errorDetails})` : ""),
+          );
+        } else {
+          messages.push(
+            t("devices.batchAddPointsAllFailed", {
+              count: batchAddResult.failed,
+            }) + (errorDetails ? `: ${errorDetails}` : ""),
+          );
+          allFailed = true;
+        }
+      } else {
+        messages.push(
+          t("devices.batchAddPointsSuccess", {
+            count: batchAddResult.succeeded,
+          }),
+        );
+      }
+    }
+
+    if (pointsToRemove.length > 0) {
+      messages.push(
+        t("devices.batchRemovePointsSuccess", {
+          count: pointsToRemove.length,
+        }),
+      );
+    }
+
+    const resultMessage = messages.join(" ");
+    if (allFailed) {
+      ElMessage.error(resultMessage);
+    } else if (batchAddResult && batchAddResult.failed > 0) {
+      ElMessage.warning(resultMessage);
+    } else if (resultMessage) {
+      ElMessage.success(resultMessage);
+    }
+
+    if (!allFailed) {
+      emit("success");
+    }
     handleClose();
   } catch (error: unknown) {
     if (error !== "cancel" && error !== "close") {
