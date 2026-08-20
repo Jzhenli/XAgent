@@ -48,6 +48,15 @@ export interface DeviceWithPoints {
 }
 
 /**
+ * 解析单条后端读数为统一数据结构
+ * @param reading 后端读数
+ */
+function parseReading(reading: Reading): ReadingData {
+  const { standardPoints, timestamp } = parseStandardPoints(reading.standard_points)
+  return { data: reading.data || {}, standardPoints, timestamp }
+}
+
+/**
  * 将后端读数数据转换为以 asset 为 key 的 Map
  * @param readings 后端设备读数列表
  */
@@ -55,12 +64,7 @@ function buildReadingMap(readings: any[]): Map<string, ReadingData> {
   const readingMap = new Map<string, ReadingData>()
 
   for (const reading of readings) {
-    const { standardPoints, timestamp } = parseStandardPoints(reading.standard_points)
-    readingMap.set(reading.asset, {
-      data: reading.data || {},
-      standardPoints,
-      timestamp
-    })
+    readingMap.set(reading.asset, parseReading(reading))
   }
 
   return readingMap
@@ -68,6 +72,25 @@ function buildReadingMap(readings: any[]): Map<string, ReadingData> {
 
 const WRITE_PROTECTION_DURATION = 10000
 const writeProtectionMap = new Map<string, { value: any; expiresAt: number }>()
+
+/**
+ * 应用写值保护：保护期内返回保护值，过期则清理保护记录并返回 fallback
+ * @param asset 设备 asset
+ * @param pointName 点位名
+ * @param fallback 无保护或保护过期时使用的值
+ */
+function applyWriteProtection<T>(asset: string, pointName: string, fallback: T): T {
+  const protectionKey = `${asset}:${pointName}`
+  const protection = writeProtectionMap.get(protectionKey)
+
+  if (protection && Date.now() < protection.expiresAt) {
+    return protection.value
+  }
+  if (protection) {
+    writeProtectionMap.delete(protectionKey)
+  }
+  return fallback
+}
 
 export const usePointStore = defineStore('points', () => {
   const devices = ref<DeviceWithPoints[]>([])
@@ -115,22 +138,13 @@ export const usePointStore = defineStore('points', () => {
       const readingList = readingResult.status === 'fulfilled' ? readingResult.value.devices : []
 
       const readingMap = buildReadingMap(readingList)
-      const now = Date.now()
 
       devices.value = deviceList.map(device => {
         const mappedDevice = mapDeviceWithPoints(device, readingMap.get(device.asset))
-        mappedDevice.points = mappedDevice.points.map(point => {
-          const protectionKey = `${device.asset}:${point.name}`
-          const protection = writeProtectionMap.get(protectionKey)
-          
-          if (protection && now < protection.expiresAt) {
-            return { ...point, currentValue: protection.value }
-          } else if (protection) {
-            writeProtectionMap.delete(protectionKey)
-          }
-          
-          return point
-        })
+        mappedDevice.points = mappedDevice.points.map(point => ({
+          ...point,
+          currentValue: applyWriteProtection(device.asset, point.name, point.currentValue)
+        }))
         return mappedDevice
       })
     } catch (e: unknown) {
@@ -156,25 +170,11 @@ export const usePointStore = defineStore('points', () => {
       const points = pointsResult.status === 'fulfilled' ? pointsResult.value : []
       const readings = readingsResult.status === 'fulfilled' ? readingsResult.value.readings : []
 
-      let readingData: ReadingData | undefined
-      if (readings.length > 0) {
-        const reading = readings[0]
-        const { standardPoints, timestamp } = parseStandardPoints(reading.standard_points)
-        readingData = { data: reading.data || {}, standardPoints, timestamp }
-      }
+      const readingData = readings.length > 0 ? parseReading(readings[0]) : undefined
 
-      const now = Date.now()
       const mappedPoints = points.map(point => {
         const result = mapPointToDisplay(point, readingData)
-        const protectionKey = `${asset}:${point.name}`
-        const protection = writeProtectionMap.get(protectionKey)
-        
-        if (protection && now < protection.expiresAt) {
-          result.currentValue = protection.value
-        } else if (protection) {
-          writeProtectionMap.delete(protectionKey)
-        }
-        
+        result.currentValue = applyWriteProtection(asset, point.name, result.currentValue)
         return result
       })
       const deviceIndex = devices.value.findIndex(d => d.asset === asset)
@@ -201,6 +201,51 @@ export const usePointStore = defineStore('points', () => {
 
   async function fetchAllLatestReadings() {
     // No longer needed - data is merged in fetchDevicesWithPoints
+  }
+
+  /**
+   * 轻量级刷新指定设备的读数（仅更新 currentValue / quality / lastUpdate）
+   * 用于周期性轮询，避免重复拉取点位定义
+   * @param asset 设备 asset
+   */
+  async function refreshDeviceReadings(asset: string) {
+    try {
+      const response = await dataApi.getReadings({ asset, limit: 1, active_only: false })
+      const readings = response.readings
+
+      if (readings.length === 0) return
+
+      const { data: readingData, standardPoints, timestamp } = parseReading(readings[0])
+
+      const deviceIndex = devices.value.findIndex(d => d.asset === asset)
+      if (deviceIndex === -1) return
+
+      const device = devices.value[deviceIndex]
+      const updatedPoints = device.points.map(point => {
+        const standardPoint = standardPoints.get(point.name)
+        const rawValue = readingData[point.name]
+        const currentValue = standardPoint?.value ?? rawValue
+
+        return {
+          ...point,
+          currentValue: applyWriteProtection(
+            asset,
+            point.name,
+            currentValue !== undefined && currentValue !== null
+              ? (currentValue as number | boolean | string)
+              : undefined
+          ),
+          quality: (standardPoint?.quality as 'good' | 'bad' | 'uncertain') ?? point.quality,
+          lastUpdate: timestamp
+            ? new Date(timestamp * 1000).toLocaleString('zh-CN')
+            : point.lastUpdate
+        }
+      })
+
+      devices.value[deviceIndex] = { ...device, points: updatedPoints }
+    } catch (e: unknown) {
+      console.error(`Failed to refresh readings for ${asset}:`, e)
+    }
   }
 
   /**
@@ -446,6 +491,7 @@ export const usePointStore = defineStore('points', () => {
     allPoints,
     fetchDevicesWithPoints,
     fetchDevicePoints,
+    refreshDeviceReadings,
     fetchLatestReadings,
     fetchAllLatestReadings,
     fetchHistoryReadings,

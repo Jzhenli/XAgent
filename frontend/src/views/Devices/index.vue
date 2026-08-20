@@ -440,6 +440,8 @@ const deviceListProps = computed(() => ({
 
 /**
  * PointList 组件的 Props (避免在模板中重复)
+ * pollingEnabled：紧凑模式下面板通过 v-show 切换、组件不卸载，
+ * 仅在"点位"标签页可见时轮询，避免返回设备列表后轮询空转
  */
 const pointListProps = computed(() => ({
   selectedAsset: selectedDeviceAsset.value,
@@ -455,6 +457,7 @@ const pointListProps = computed(() => ({
   showDiscoverBtn:
     userStore.hasPermission("devices", "create") &&
     currentDevicePluginName.value === "bacnet",
+  pollingEnabled: !isCompactMode.value || activeTab.value === "points",
 }));
 
 // ==================== 事件处理 (从子组件到 Hooks 的桥接) ====================

@@ -230,8 +230,10 @@
 </template>
 
 <script setup lang="ts">
+import { watch, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useUserStore } from "@/stores/users";
+import { usePointStore } from "@/stores/points";
 import { Icon } from "@/icon/index";
 import {
   TrendCharts,
@@ -252,6 +254,7 @@ import type { PointDisplay } from "@/stores/points";
  * @property isCompact - 是否为紧凑布局模式
  * @property showAddBtn - 是否显示"添加点位"按钮
  * @property showDiscoverBtn - 是否显示"发现点位"按钮
+ * @property pollingEnabled - 是否启用读数轮询（紧凑模式下仅面板可见时为 true）
  */
 const props = defineProps<{
   selectedAsset: string | null;
@@ -261,6 +264,7 @@ const props = defineProps<{
   isCompact: boolean;
   showAddBtn: boolean;
   showDiscoverBtn: boolean;
+  pollingEnabled: boolean;
 }>();
 
 /**
@@ -287,6 +291,53 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const userStore = useUserStore();
+const pointStore = usePointStore();
+
+const POLLING_INTERVAL = 5000;
+let pollingTimer: ReturnType<typeof setTimeout> | null = null;
+/** 轮询会话令牌：每次启停递增，使进行中的旧请求链失效，防止切设备后双链并行 */
+let pollingSession = 0;
+
+/**
+ * 启动周期性读数轮询
+ * 采用 setTimeout 自调度链：上一次请求返回后才排下一次，
+ * 避免慢接口下 setInterval 固定触发导致的请求堆叠与乱序覆盖
+ */
+const startPolling = (asset: string) => {
+  stopPolling();
+  const session = ++pollingSession;
+  const tick = async () => {
+    await pointStore.refreshDeviceReadings(asset);
+    // 会话已失效（已停止或已被新设备替换），终止本链
+    if (session !== pollingSession) return;
+    pollingTimer = setTimeout(tick, POLLING_INTERVAL);
+  };
+  pollingTimer = setTimeout(tick, POLLING_INTERVAL);
+};
+
+const stopPolling = () => {
+  pollingSession++;
+  if (pollingTimer !== null) {
+    clearTimeout(pollingTimer);
+    pollingTimer = null;
+  }
+};
+
+watch(
+  () => [props.selectedAsset, props.pollingEnabled] as const,
+  ([newAsset, enabled]) => {
+    if (newAsset && enabled) {
+      startPolling(newAsset);
+    } else {
+      stopPolling();
+    }
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  stopPolling();
+});
 
 const handleDropdownCommand = (cmd: string) => {
   if (cmd === "import") {
