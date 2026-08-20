@@ -110,11 +110,13 @@ const handleGoBack = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  
 }
 
 .canvas-wrapper {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 .empty-state {
