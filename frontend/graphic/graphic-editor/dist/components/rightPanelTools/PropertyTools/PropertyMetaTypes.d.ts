@@ -11,7 +11,8 @@ export declare enum propertyGroupRenderType {
     propertyGroupViewPosition = "propertyGroupViewPosition",
     animationConfigGroup = "animationConfigGroup",
     iconPropertyConfig = "iconPropertyConfig",
-    GlowEffectConfig = "GlowEffectConfig"
+    GlowEffectConfig = "GlowEffectConfig",
+    popupConfigGroup = "popupConfigGroup"
 }
 export declare enum brushTypes {
     backgroundStyle = "backgroundStyle",
@@ -36,7 +37,8 @@ export declare enum shapePropertyRenderType {
     customBinding = "customBinding",
     bindingPopup = "bindingPopup",
     bindingMultiplePopup = "bindingMultiplePopup",
-    bindingExpression = "bindingExpression"
+    bindingExpression = "bindingExpression",
+    popupConfig = "popupConfig"
 }
 export type shapePropertyDef = {
     name: string;

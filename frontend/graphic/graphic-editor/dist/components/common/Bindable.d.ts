@@ -55,6 +55,42 @@ export type popupBindingValue = {
     graphicId: string;
     graphicName: string;
 };
+export type triggerModeType = 'switch' | 'number';
+export type switchTriggerConfig = {
+    mode: 'switch';
+    onLabel: string;
+    offLabel: string;
+};
+export type numberTriggerConfig = {
+    mode: 'number';
+    label: string;
+};
+export type triggerConfig = switchTriggerConfig | numberTriggerConfig;
+export type pointInfo = {
+    deviceId: string;
+    deviceName: string;
+    pointId: string;
+    pointName: string;
+    unit: string;
+    description: string;
+};
+export type popupPointBinding = {
+    id: string;
+    displayName: string;
+    pointInfo: pointInfo;
+    triggerConfig?: triggerConfig;
+};
+export type popupConfigValue = {
+    enablePopup: boolean;
+    popupTitle: string;
+    popupWidth: number;
+    popupHeight: number;
+    popupBgColor: string;
+    popupFontSize: number;
+    popupFontColor: string;
+    popupPointBindings: popupPointBinding[];
+};
+export declare function createDefaultPopupConfig(): popupConfigValue;
 export type animationConfig = {
     defaultState: string | undefined;
     continous: string[];
