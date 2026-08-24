@@ -68,10 +68,12 @@ const graphicLoaded = () => {
 };
 
 const itemclick = (params: any) => {
-   console.log('itemclick', params)
   if (params.action === 'setValue') {
+    console.log('setValue', params)
     clickParam.value = params
     isShowModal.value = true
+  } else if (params.action === 'configPopup') {
+    console.log('configPopup', params)
   }
 };
 
