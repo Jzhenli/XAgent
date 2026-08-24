@@ -1,19 +1,20 @@
 <template>
-  <el-dialog
-    v-model="dialogVisible"
-    :close-on-click-modal="true"
-    :show-close="false"
-    :teleported="false"
-    :width="dialogWidth"
-    :style="{ height: dialogHeight }"
-    align-center
-    class="config-dialog"
-    modal-class="config-overlay"
-  >
+  <div class="config-modal-root">
+    <el-dialog
+      v-model="dialogVisible"
+      :close-on-click-modal="true"
+      :show-close="false"
+      :teleported="false"
+      :width="dialogWidth"
+      :style="{ height: dialogHeight }"
+      align-center
+      class="config-dialog"
+      modal-class="config-overlay"
+    >
     <template #header>
       <div class="config-header">
         <span class="config-header__title">{{
-          param.popupTitle || "配置弹窗"
+          param.popupTitle || t("scada.configPopup.defaultTitle")
         }}</span>
         <el-icon class="config-header__close" @click="handleClose">
           <Close />
@@ -39,7 +40,7 @@
               }"
               @click="handleSwitchClick(item, 'off')"
             >
-              {{ item.triggerConfig.offLabel || "关" }}
+              {{ item.triggerConfig.offLabel || t("scada.configPopup.off") }}
             </button>
             <button
               class="trigger-btn"
@@ -49,7 +50,7 @@
               }"
               @click="handleSwitchClick(item, 'on')"
             >
-              {{ item.triggerConfig.onLabel || "开" }}
+              {{ item.triggerConfig.onLabel || t("scada.configPopup.on") }}
             </button>
           </div>
           <div v-else class="trigger-input">
@@ -68,17 +69,18 @@
       </div>
 
       <div v-if="pointBindings.length === 0" class="config-empty">
-        暂无配置项
+        {{ t("scada.configPopup.empty") }}
       </div>
     </div>
-  </el-dialog>
+    </el-dialog>
+  </div>
 
   <teleport to="body">
     <div v-if="showKeypad" class="keypad-mask" @click.self="closeKeypad">
       <div class="keypad-panel">
         <div class="keypad-header">
           <span class="keypad-title">
-            {{ keypadTargetItem?.triggerConfig?.label || keypadTargetItem?.displayName || "数值输入" }}
+            {{ keypadTargetItem?.triggerConfig?.label || keypadTargetItem?.displayName || t("scada.configPopup.keypadTitle") }}
           </span>
           <span class="keypad-display">{{ keypadValue || "0" }}</span>
         </div>
@@ -109,7 +111,7 @@
                 <button class="keypad-btn keypad-btn--cancel" @click="closeKeypad">✕</button>
               </div>
             </div>
-            <button class="keypad-btn keypad-btn--confirm keypad-btn--confirm-lg" @click="handleKeypadConfirm">确认</button>
+            <button class="keypad-btn keypad-btn--confirm keypad-btn--confirm-lg" @click="handleKeypadConfirm">{{ t("scada.configPopup.confirm") }}</button>
           </div>
         </div>
       </div>
@@ -349,7 +351,7 @@ const handleKeypadConfirm = async () => {
 
   const numValue = Number(keypadValue.value);
   if (keypadValue.value === "" || isNaN(numValue)) {
-    ElMessage.warning("请输入有效数值");
+    ElMessage.warning(t("scada.configPopup.invalidValue"));
     return;
   }
 
@@ -384,16 +386,10 @@ const handleKeypadConfirm = async () => {
 };
 </script>
 
-<style lang="scss">
-/* ==================== 遮罩层 ==================== */
-.config-overlay {
-  background-color: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
+<style lang="scss" scoped>
 /* ==================== 弹窗容器 ==================== */
-.config-dialog.el-dialog {
+/* teleported=false 时弹窗 DOM 保留在 .config-modal-root 内，通过 :deep() 穿透 */
+.config-modal-root :deep(.config-dialog.el-dialog) {
   padding: 0;
   border-radius: 16px;
   overflow: hidden;
@@ -405,7 +401,7 @@ const handleKeypadConfirm = async () => {
 }
 
 /* ==================== 头部 ==================== */
-.config-dialog .el-dialog__header {
+.config-modal-root :deep(.config-dialog .el-dialog__header) {
   display: flex;
   align-items: center;
   padding: 0 16px;
@@ -443,7 +439,7 @@ const handleKeypadConfirm = async () => {
 }
 
 /* ==================== 主体 ==================== */
-.config-dialog .el-dialog__body {
+.config-modal-root :deep(.config-dialog .el-dialog__body) {
   padding: 8px 24px 16px;
 }
 
@@ -571,19 +567,19 @@ const handleKeypadConfirm = async () => {
   width: 200px;
 }
 
-.trigger-input .el-input__wrapper {
+.trigger-input :deep(.el-input__wrapper) {
   background-color: var(--bg-base);
   box-shadow: 0 0 0 1px var(--border-base) inset;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.trigger-input .el-input__wrapper:hover {
+.trigger-input :deep(.el-input__wrapper:hover) {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 1px var(--color-primary) inset;
 }
 
-.trigger-input .el-input__inner {
+.trigger-input :deep(.el-input__inner) {
   color: inherit;
   cursor: pointer;
 }
@@ -595,6 +591,15 @@ const handleKeypadConfirm = async () => {
   padding: 40px 0;
   font-size: 14px;
   color: var(--text-placeholder);
+}
+</style>
+
+<style lang="scss">
+/* ==================== 遮罩层 ==================== */
+.config-overlay {
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 /* ==================== 数字键盘遮罩 ==================== */

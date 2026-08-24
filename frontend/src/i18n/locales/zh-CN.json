@@ -1465,7 +1465,16 @@
       "group": "组合 {count} 个组件",
       "ungroup": "取消分组 {count} 个组件"
     },
-    "groupTag": "已分组"
+    "groupTag": "已分组",
+    "configPopup": {
+      "defaultTitle": "配置弹窗",
+      "on": "开",
+      "off": "关",
+      "empty": "暂无配置项",
+      "keypadTitle": "数值输入",
+      "confirm": "确认",
+      "invalidValue": "请输入有效数值"
+    }
   },
   "ruleEditor": {
     "defaultRuleName": "新规则",
