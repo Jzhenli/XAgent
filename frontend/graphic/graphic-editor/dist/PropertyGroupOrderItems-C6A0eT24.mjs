@@ -1,6 +1,6 @@
 import { defineComponent as l, openBlock as a, createElementBlock as d, createElementVNode as p, toDisplayString as g, unref as t, createVNode as r } from "vue";
 import { XIconCpnt as o } from "@x-plateform-mono/common";
-import { t as n, p as s } from "./index-Bwj364VS.mjs";
+import { t as n, p as s } from "./index-DE_tu-es.mjs";
 const m = { class: "property-group-panel-title" }, c = { class: "label" }, u = {
   class: "property-group-single-line",
   style: { "justify-content": "start" }

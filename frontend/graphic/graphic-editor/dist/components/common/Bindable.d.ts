@@ -85,9 +85,6 @@ export type popupConfigValue = {
     popupTitle: string;
     popupWidth: number;
     popupHeight: number;
-    popupBgColor: string;
-    popupFontSize: number;
-    popupFontColor: string;
     popupPointBindings: popupPointBinding[];
 };
 export declare function createDefaultPopupConfig(): popupConfigValue;

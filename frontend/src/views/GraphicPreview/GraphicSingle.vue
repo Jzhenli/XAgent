@@ -12,6 +12,11 @@
     v-model:visible="isShowModal"
     @confirm="handleConfirm"
   />
+
+  <ConfigModal
+    v-model:visible="isShowConfigModal"
+    :param="configParam"
+  />
 </template>
 
 <script setup lang="ts">
@@ -22,6 +27,7 @@ import { ElMessage } from 'element-plus'
 import { controlApi } from '@/api/control'
 import DataHandleManager from './DataHandleManager'
 import WriteValueModal from './modal/WriteValueModal.vue'
+import ConfigModal from './modal/ConfigModal.vue'
 
 const { t } = useI18n()
 
@@ -34,6 +40,8 @@ const graphicRenderItem = ref<InstanceType<typeof GraphicRender> | null>(null)
 
 const isShowModal = ref(false)
 const clickParam = ref<Record<string, any>>({})
+const isShowConfigModal = ref(false)
+const configParam = ref<Record<string, any>>({})
 
 const dataHandleManager = new DataHandleManager();
 
@@ -74,6 +82,8 @@ const itemclick = (params: any) => {
     isShowModal.value = true
   } else if (params.action === 'configPopup') {
     console.log('configPopup', params)
+    configParam.value = params.param || {}
+    isShowConfigModal.value = true
   }
 };
 

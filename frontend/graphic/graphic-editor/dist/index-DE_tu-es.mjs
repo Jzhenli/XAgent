@@ -3750,10 +3750,7 @@ class PropertyPanelManager extends Eventful$1 {
         { name: "enablePopup", label: "启用弹框", type: shapePropertyRenderType.boolean },
         { name: "popupTitle", label: "弹框标题", type: shapePropertyRenderType.text },
         { name: "popupWidth", label: "弹框宽度", type: shapePropertyRenderType.number, opt: { min: 100, max: 1e3, unit: "px" } },
-        { name: "popupHeight", label: "弹框高度", type: shapePropertyRenderType.number, opt: { min: 100, max: 800, unit: "px" } },
-        { name: "popupBgColor", label: "背景色", type: shapePropertyRenderType.color },
-        { name: "popupFontSize", label: "字体大小", type: shapePropertyRenderType.number, opt: { min: 8, max: 48, unit: "px" } },
-        { name: "popupFontColor", label: "字体颜色", type: shapePropertyRenderType.color }
+        { name: "popupHeight", label: "弹框高度", type: shapePropertyRenderType.number, opt: { min: 100, max: 800, unit: "px" } }
         // popupPointBindings 无需声明：由 PropertyGroupPopupConfig 内嵌的 PointBindingsRender 单独渲染
       ]
     };
@@ -5296,7 +5293,7 @@ const _hoisted_1$q = { class: "property-group-panel-title" }, _hoisted_2$m = { c
       ])
     ]));
   }
-}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-B5488rqf.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-Bc6D02-1.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-vYBcS7-l.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-BFoMEBSO.mjs"));
+}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-ChRMwRjf.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-K9sJ1oLZ.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-C6A0eT24.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-R3WZNXJ_.mjs"));
 var propertyGroupRenderType = /* @__PURE__ */ ((l) => (l.normal = "normal", l.binding = "binding", l.listBinding = "listBinding", l.alignItems = "alignItems", l.orderItems = "orderItems", l.bindingDashboard = "bindingDashboard", l.propertyGroupBackground = "propertyGroupBackground", l.propertyGroupText = "propertyGroupText", l.propertyGroupPositionSize = "propertyGroupPositionSize", l.propertyGroupViewPosition = "propertyGroupViewPosition", l.animationConfigGroup = "animationConfigGroup", l.iconPropertyConfig = "iconPropertyConfig", l.GlowEffectConfig = "GlowEffectConfig", l.popupConfigGroup = "popupConfigGroup", l))(propertyGroupRenderType || {}), brushTypes = /* @__PURE__ */ ((l) => (l.backgroundStyle = "backgroundStyle", l.textStyle = "textStyle", l.shadingColor = "shadingColor", l.iconStyle = "iconStyle", l))(brushTypes || {});
 const brushPropertiesMap = /* @__PURE__ */ new Map([
   ["backgroundStyle", [
@@ -5532,11 +5529,8 @@ function createDefaultPopupConfig() {
   return {
     enablePopup: !1,
     popupTitle: "",
-    popupWidth: 300,
-    popupHeight: 200,
-    popupBgColor: "#333333",
-    popupFontSize: 14,
-    popupFontColor: "#ffffff",
+    popupWidth: 500,
+    popupHeight: 400,
     popupPointBindings: []
   };
 }
