@@ -53,9 +53,14 @@
             </button>
           </div>
           <div v-else class="trigger-input">
+            <span class="trigger-input__label">
+              {{ item.triggerConfig?.label || item.displayName }}
+            </span>
             <el-input
+              class="trigger-input__field"
               :model-value="getInputValue(item.id)"
-              @update:model-value="(val: string) => setInputValue(item.id, val)"
+              readonly
+              @click="openKeypad(item)"
               :placeholder="item.triggerConfig?.label || item.displayName"
             />
           </div>
@@ -67,6 +72,49 @@
       </div>
     </div>
   </el-dialog>
+
+  <teleport to="body">
+    <div v-if="showKeypad" class="keypad-mask" @click.self="closeKeypad">
+      <div class="keypad-panel">
+        <div class="keypad-header">
+          <span class="keypad-title">
+            {{ keypadTargetItem?.triggerConfig?.label || keypadTargetItem?.displayName || "数值输入" }}
+          </span>
+          <span class="keypad-display">{{ keypadValue || "0" }}</span>
+        </div>
+
+        <div class="keypad-grid">
+          <div class="keypad-row">
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('1')">1</button>
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('2')">2</button>
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('3')">3</button>
+            <button class="keypad-btn keypad-btn--action keypad-btn--del" @click="handleKeypadInput('del')">⌫</button>
+          </div>
+          <div class="keypad-row">
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('4')">4</button>
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('5')">5</button>
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('6')">6</button>
+            <button class="keypad-btn keypad-btn--action keypad-btn--clear" @click="handleKeypadInput('clear')">C</button>
+          </div>
+          <div class="keypad-row keypad-row--bottom">
+            <div class="keypad-row-left">
+              <div class="keypad-row keypad-row--inner">
+                <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('7')">7</button>
+                <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('8')">8</button>
+                <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('9')">9</button>
+              </div>
+              <div class="keypad-row keypad-row--inner">
+                <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('.')">.</button>
+                <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('0')">0</button>
+                <button class="keypad-btn keypad-btn--cancel" @click="closeKeypad">✕</button>
+              </div>
+            </div>
+            <button class="keypad-btn keypad-btn--confirm keypad-btn--confirm-lg" @click="handleKeypadConfirm">确认</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </teleport>
 </template>
 
 <script setup lang="ts">
@@ -253,6 +301,87 @@ watch(dialogVisible, (val) => {
 const handleClose = () => {
   dialogVisible.value = false;
 };
+
+const activeInputId = ref<string | null>(null);
+const keypadValue = ref<string>("");
+const showKeypad = ref(false);
+
+const keypadTargetItem = computed<PopupPointBinding | null>(() => {
+  if (!activeInputId.value) return null;
+  const list = props.param?.popupPointBindings || [];
+  return list.find((item) => item.id === activeInputId.value) || null;
+});
+
+const openKeypad = (item: PopupPointBinding) => {
+  activeInputId.value = item.id;
+  keypadValue.value = "";
+  showKeypad.value = true;
+};
+
+const closeKeypad = () => {
+  showKeypad.value = false;
+  activeInputId.value = null;
+  keypadValue.value = "";
+};
+
+const handleKeypadInput = (key: string) => {
+  if (key === "del") {
+    keypadValue.value = keypadValue.value.slice(0, -1);
+  } else if (key === "clear") {
+    keypadValue.value = "";
+  } else if (key === ".") {
+    if (!keypadValue.value.includes(".")) {
+      keypadValue.value += ".";
+    }
+  } else {
+    if (keypadValue.value === "0" && key === "0") return;
+    if (keypadValue.value === "0") {
+      keypadValue.value = key;
+    } else {
+      keypadValue.value += key;
+    }
+  }
+};
+
+const handleKeypadConfirm = async () => {
+  const item = keypadTargetItem.value;
+  if (!item) return;
+
+  const numValue = Number(keypadValue.value);
+  if (keypadValue.value === "" || isNaN(numValue)) {
+    ElMessage.warning("请输入有效数值");
+    return;
+  }
+
+  setInputValue(item.id, keypadValue.value);
+
+  const { pointInfo } = item;
+  if (!pointInfo) return;
+
+  const targetService = pointInfo.service || pointInfo.deviceId;
+  const targetAsset = pointInfo.deviceId;
+  const point = pointInfo.pointName || pointInfo.pointId;
+
+  try {
+    const result = await controlApi.writeSetpoint(
+      targetService,
+      targetAsset,
+      point,
+      numValue
+    );
+
+    if (result.status === "ACCEPTED" || result.status === "COMPLETED") {
+      ElMessage.success(t("scada.writeValueDialog.success"));
+    } else {
+      ElMessage.warning(`${t("scada.writeValueDialog.result")} ${result.message}`);
+    }
+  } catch (error) {
+    console.error("Write value failed:", error);
+    ElMessage.error(t("scada.writeValueDialog.failed"));
+  }
+
+  closeKeypad();
+};
 </script>
 
 <style lang="scss">
@@ -375,13 +504,15 @@ const handleClose = () => {
 }
 
 .trigger-segmented {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid var(--border-base);
 }
 
 .trigger-btn {
+  flex: 1;
   padding: 5px 14px;
   font-size: 13px;
   font-weight: 500;
@@ -421,16 +552,40 @@ const handleClose = () => {
 }
 
 .trigger-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
+}
+
+.trigger-input__label {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-regular);
+  min-width: 60px;
+}
+
+.trigger-input__field {
+  width: 200px;
 }
 
 .trigger-input .el-input__wrapper {
   background-color: var(--bg-base);
   box-shadow: 0 0 0 1px var(--border-base) inset;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.trigger-input .el-input__wrapper:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
 }
 
 .trigger-input .el-input__inner {
   color: inherit;
+  cursor: pointer;
 }
 
 .config-empty {
@@ -440,5 +595,166 @@ const handleClose = () => {
   padding: 40px 0;
   font-size: 14px;
   color: var(--text-placeholder);
+}
+
+/* ==================== 数字键盘遮罩 ==================== */
+.keypad-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  animation: keypad-fade-in 0.15s ease-out;
+}
+
+@keyframes keypad-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ==================== 数字键盘面板 ==================== */
+.keypad-panel {
+  width: 320px;
+  background: var(--bg-modal);
+  border: 1px solid var(--border-base);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  animation: keypad-slide-up 0.2s ease-out;
+}
+
+@keyframes keypad-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== 键盘头部 ==================== */
+.keypad-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid var(--border-base);
+  margin-bottom: 12px;
+}
+
+.keypad-title {
+  font-size: 13px;
+  color: var(--text-regular);
+  margin-bottom: 8px;
+}
+
+.keypad-display {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: "SF Mono", "Monaco", "Consolas", monospace;
+  min-height: 36px;
+  letter-spacing: 2px;
+}
+
+/* ==================== 键盘按钮网格 ==================== */
+.keypad-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.keypad-row {
+  display: flex;
+  gap: 8px;
+}
+
+.keypad-row--bottom {
+  display: flex;
+  gap: 8px;
+}
+
+.keypad-row-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.keypad-row--inner {
+  display: flex;
+  gap: 8px;
+}
+
+.keypad-btn {
+  flex: 1;
+  height: 48px;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.keypad-btn:hover {
+  filter: brightness(1.15);
+}
+
+.keypad-btn:active {
+  transform: scale(0.95);
+  filter: brightness(0.9);
+}
+
+/* 数字按钮 */
+.keypad-btn--num {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 20px;
+}
+
+/* 删除按钮 */
+.keypad-btn--del {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-regular);
+  font-size: 18px;
+}
+
+/* 清除按钮 */
+.keypad-btn--clear {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-regular);
+  font-size: 18px;
+}
+
+/* 取消按钮 */
+.keypad-btn--cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-regular);
+}
+
+/* 合并确认按钮（跨2行） */
+.keypad-btn--confirm-lg {
+  flex: 0 0 auto;
+  width: 64px;
+  height: auto;
+  min-height: 104px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 16px;
+  border-radius: 8px;
+}
+
+.keypad-btn--confirm-lg:hover {
+  background: var(--color-primary-hover);
 }
 </style>
