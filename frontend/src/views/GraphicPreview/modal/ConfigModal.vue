@@ -57,13 +57,13 @@
             <span class="trigger-input__label">
               {{ item.triggerConfig?.label || item.displayName }}
             </span>
-            <el-input
+            <div
               class="trigger-input__field"
-              :model-value="getInputValue(item.id)"
-              readonly
+              :class="{ 'is-placeholder': !getInputValue(item.id) }"
               @click="openKeypad(item)"
-              :placeholder="item.triggerConfig?.label || item.displayName"
-            />
+            >
+              {{ getInputValue(item.id) || item.triggerConfig?.label || item.displayName }}
+            </div>
           </div>
         </div>
       </div>
@@ -565,23 +565,28 @@ const handleKeypadConfirm = async () => {
 
 .trigger-input__field {
   width: 200px;
-}
-
-.trigger-input :deep(.el-input__wrapper) {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
   background-color: var(--bg-base);
-  box-shadow: 0 0 0 1px var(--border-base) inset;
+  border: 1px solid var(--border-base);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
+  user-select: none;
+  box-sizing: border-box;
 }
 
-.trigger-input :deep(.el-input__wrapper:hover) {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary) inset;
+.trigger-input__field:hover {
+  border-color: rgba(102, 102, 255, 1);
+  box-shadow: 0 0 0 1px rgba(102, 102, 255, 1) inset;
 }
 
-.trigger-input :deep(.el-input__inner) {
-  color: inherit;
-  cursor: pointer;
+.trigger-input__field.is-placeholder {
+  color: var(--text-placeholder);
 }
 
 .config-empty {
