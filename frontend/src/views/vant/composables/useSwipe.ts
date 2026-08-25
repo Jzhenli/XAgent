@@ -1,5 +1,3 @@
-import { ref } from 'vue'
-
 /**
  * 滑动手势组合式函数
  * 监听触摸事件，检测水平滑动并触发回调
@@ -12,20 +10,22 @@ export function useSwipe(
   onSwipeLeft?: () => void,
   onSwipeRight?: () => void
 ) {
-  const touchStartX = ref(0)
-  const touchDeltaX = ref(0)
+  // 纯内部临时数据，不参与视图渲染：用普通变量避免 touchmove
+  // 高频赋值（60~120 次/秒）经过响应式代理造成无谓开销
+  let touchStartX = 0
+  let touchDeltaX = 0
 
   const onTouchStart = (e: TouchEvent) => {
-    touchStartX.value = e.touches[0].clientX
-    touchDeltaX.value = 0
+    touchStartX = e.touches[0].clientX
+    touchDeltaX = 0
   }
 
   const onTouchMove = (e: TouchEvent) => {
-    touchDeltaX.value = e.touches[0].clientX - touchStartX.value
+    touchDeltaX = e.touches[0].clientX - touchStartX
   }
 
   const onTouchEnd = () => {
-    const delta = touchDeltaX.value
+    const delta = touchDeltaX
     if (Math.abs(delta) > threshold) {
       if (delta > 0) {
         onSwipeRight?.()
@@ -33,7 +33,7 @@ export function useSwipe(
         onSwipeLeft?.()
       }
     }
-    touchDeltaX.value = 0
+    touchDeltaX = 0
   }
 
   return {

@@ -19,9 +19,9 @@
     <div
       v-if="panels.length > 0"
       class="slide-wrapper"
-      @touchstart="onTouchStart"
-      @touchmove="onTouchMove"
-      @touchend="onTouchEnd"
+      @touchstart.passive="onTouchStart"
+      @touchmove.passive="onTouchMove"
+      @touchend.passive="onTouchEnd"
     >
       <div
         ref="adaptContainerRef"
@@ -101,10 +101,30 @@ const fetchPanels = async () => {
   }
 };
 
+/** 待加载的最新面板 id：加载进行中时仅记录目标，加载完成后接着加载最新值 */
+let pendingPanelId: string | null = null;
+/** 加载锁：串行化面板加载，防止快速滑动时并发请求乱序覆盖 */
+let isLoadingPanel = false;
+
 const loadCurrentPanel = async () => {
   const panel = currentPanel.value;
   if (!panel) return;
-  await scada.loadPanel(panel.id);
+  pendingPanelId = panel.id;
+  if (isLoadingPanel) return;
+
+  isLoadingPanel = true;
+  try {
+    // 串行加载并合并连续切换：保证最后一次加载最终生效
+    while (pendingPanelId !== null) {
+      const id = pendingPanelId;
+      pendingPanelId = null;
+      if (scada.currentPanelId.value !== id) {
+        await scada.loadPanel(id);
+      }
+    }
+  } finally {
+    isLoadingPanel = false;
+  }
 };
 
 const switchTab = (dir: -1 | 1) => {
