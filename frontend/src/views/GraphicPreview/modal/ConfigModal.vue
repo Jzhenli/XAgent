@@ -612,12 +612,11 @@ const handleKeypadConfirm = async () => {
 }
 
 /* ==================== 数字键盘遮罩 ==================== */
+/* 平板设备 backdrop-filter 与底层弹窗叠加会导致 GPU 负载过高，改用纯色半透明遮罩 */
 .keypad-mask {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -697,19 +696,23 @@ const handleKeypadConfirm = async () => {
   font-size: 18px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  /* 仅过渡合成器友好的属性，避免 all 触发无关样式重算 */
+  transition: transform 0.1s ease;
   user-select: none;
   background: var(--bg-base);
   color: var(--text-primary);
+  /* 触摸平板无 hover，仅桌面生效 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .keypad-btn:hover {
-  filter: brightness(1.15);
+  background: var(--bg-base-hover, rgba(255, 255, 255, 0.12));
 }
 
 .keypad-btn:active {
   transform: scale(0.95);
-  filter: brightness(0.9);
+  background: var(--bg-base-hover, rgba(255, 255, 255, 0.12));
 }
 
 /* 数字按钮 */
