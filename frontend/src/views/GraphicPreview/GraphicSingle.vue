@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { GraphicRender } from '@x-plateform/graphic-editor'
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { controlApi } from '@/api/control'
@@ -55,9 +55,10 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  //console.log("onMounted", props.project);
-});
+onUnmounted(() => {
+  // 清除轮询定时器与回调引用，防止页面离开后定时器残留导致内存泄漏
+  dataHandleManager.dispose()
+})
 
 const parsedGraphics = computed(() => {
   let ret = {};
@@ -77,11 +78,9 @@ const graphicLoaded = () => {
 
 const itemclick = (params: any) => {
   if (params.action === 'setValue') {
-    console.log('setValue', params)
     clickParam.value = params
     isShowModal.value = true
   } else if (params.action === 'configPopup') {
-    console.log('configPopup', params)
     configParam.value = params.param || {}
     isShowConfigModal.value = true
   }

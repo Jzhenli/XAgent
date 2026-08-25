@@ -166,13 +166,7 @@ const bodyStyle = computed(() => {
 const inputValues = ref<Map<string, string>>(new Map());
 
 const pointBindings = computed<PopupPointBinding[]>(() => {
-  const list = props.param?.popupPointBindings || [];
-  return list.map((item) => {
-    if (!inputValues.value.has(item.id)) {
-      inputValues.value.set(item.id, "");
-    }
-    return item;
-  });
+  return props.param?.popupPointBindings || [];
 });
 
 const getInputValue = (id: string) => inputValues.value.get(id) ?? "";
@@ -289,6 +283,10 @@ watch(
     dialogVisible.value = val;
     if (val) {
       await loadPointValues();
+    } else {
+      // 关闭时清理状态，避免换图后残留旧点位数据
+      inputValues.value.clear();
+      switchStates.value.clear();
     }
   },
 );

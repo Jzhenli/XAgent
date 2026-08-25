@@ -48,6 +48,7 @@ const isDark = computed(() => themeStore.theme === "dark");
 const graphicData = ref<any | null>(null);
 const showEditor = ref(true);
 const lastSavedData = ref<string>("");
+let remountTimer: number | null = null;
 
 const getCurrentGraphicData = (): any | null => {
   if (!window.graphicItemManager) return null;
@@ -115,6 +116,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("beforeunload", handleBeforeUnload);
+  if (remountTimer !== null) {
+    clearTimeout(remountTimer);
+    remountTimer = null;
+  }
 });
 
 const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -214,8 +219,12 @@ const setLang = () => {
   // 隐藏编辑器后切换语言，再重新挂载以触发完整重建
   showEditor.value = false;
   window.graphicItemManager?.switchLanguage(targetLang);
-  setTimeout(() => {
+  if (remountTimer !== null) {
+    clearTimeout(remountTimer);
+  }
+  remountTimer = window.setTimeout(() => {
     showEditor.value = true;
+    remountTimer = null;
   }, 50);
 };
 </script>

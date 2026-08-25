@@ -39,10 +39,15 @@ interface PointCallbackInfo {
 
 export default class DataHandleManager extends DataManager {
   private intervalId: number | null = null
+  /** 请求防重叠标记：上一次轮询未返回时跳过本次，避免慢网络下请求堆积 */
+  private isFetching = false
+  /** 点位上次值缓存：值未变化时不触发回调，减少无效渲染 */
+  private lastValues = new Map<string, any>()
 
   async setPointBindings(bindingPairs: BindingPair[]): Promise<any[]> {
-    // 清理之前的定时器
+    // 清理之前的定时器与值缓存（重新绑定时需重新推送初始值）
     this.clearInterval()
+    this.lastValues.clear()
 
     // 创建点ID到回调信息的映射
     const callbackMap = new Map<string, PointCallbackInfo[]>()
@@ -96,10 +101,23 @@ export default class DataHandleManager extends DataManager {
     return []
   }
 
+  /** 值未变化时跳过回调，避免每个轮询周期触发全量组件重渲染 */
+  private shouldNotify(pointName: string, value: any): boolean {
+    if (this.lastValues.has(pointName) && this.lastValues.get(pointName) === value) {
+      return false
+    }
+    this.lastValues.set(pointName, value)
+    return true
+  }
+
   private async fetchAndUpdatePoints(
     pointIds: string[],
     callbackMap: Map<string, PointCallbackInfo[]>
   ) {
+    // 上一次请求未返回时跳过，防止慢网络下请求堆积
+    if (this.isFetching) return
+    this.isFetching = true
+
     try {
       const res = await deviceApi.getLatest(false)
       if (!res.devices || !Array.isArray(res.devices)) {
@@ -116,14 +134,16 @@ export default class DataHandleManager extends DataManager {
           const callbackInfos = callbackMap.get(pointName)
           if (!callbackInfos) continue
 
+          let value = standardPoint.value
+          if (value === true || value === 'true') {
+            value = 1
+          } else if (value === false || value === 'false') {
+            value = 0
+          }
+          if (!this.shouldNotify(pointName, value)) continue
+
           callbackInfos.forEach(({ callback, pointType }) => {
             try {
-              let value = standardPoint.value
-              if (value === true || value === 'true') {
-                value = 1
-              } else if (value === false || value === 'false') {
-                value = 0
-              }
               callback(value, pointType)
             } catch (err) {
               console.error(`Error executing callback for point ${pointName}`, err)
@@ -138,14 +158,16 @@ export default class DataHandleManager extends DataManager {
             const callbackInfos = callbackMap.get(pointName)
             if (!callbackInfos) continue
 
+            let value = rawValue
+            if (value === true || value === 'true') {
+              value = 1
+            } else if (value === false || value === 'false') {
+              value = 0
+            }
+            if (!this.shouldNotify(pointName, value)) continue
+
             callbackInfos.forEach(({ callback, pointType }) => {
               try {
-                let value = rawValue
-                if (value === true || value === 'true') {
-                  value = 1
-                } else if (value === false || value === 'false') {
-                  value = 0
-                }
                 callback(value, pointType)
               } catch (err) {
                 console.error(`Error executing callback for point ${pointName}`, err)
@@ -156,6 +178,8 @@ export default class DataHandleManager extends DataManager {
       }
     } catch (err) {
       console.error('Failed to fetch points data', err)
+    } finally {
+      this.isFetching = false
     }
   }
 
@@ -168,5 +192,6 @@ export default class DataHandleManager extends DataManager {
 
   dispose() {
     this.clearInterval()
+    this.lastValues.clear()
   }
 }
