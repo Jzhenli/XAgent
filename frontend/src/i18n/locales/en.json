@@ -1473,6 +1473,7 @@
       "empty": "No configuration items",
       "keypadTitle": "Numeric Input",
       "confirm": "Confirm",
+      "cancel": "Cancel",
       "invalidValue": "Please enter a valid value"
     }
   },

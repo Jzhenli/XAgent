@@ -98,20 +98,17 @@
             <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('6')">6</button>
             <button class="keypad-btn keypad-btn--action keypad-btn--clear" @click="handleKeypadInput('clear')">C</button>
           </div>
-          <div class="keypad-row keypad-row--bottom">
-            <div class="keypad-row-left">
-              <div class="keypad-row keypad-row--inner">
-                <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('7')">7</button>
-                <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('8')">8</button>
-                <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('9')">9</button>
-              </div>
-              <div class="keypad-row keypad-row--inner">
-                <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('.')">.</button>
-                <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('0')">0</button>
-                <button class="keypad-btn keypad-btn--cancel" @click="closeKeypad">✕</button>
-              </div>
-            </div>
-            <button class="keypad-btn keypad-btn--confirm keypad-btn--confirm-lg" @click="handleKeypadConfirm">{{ t("scada.configPopup.confirm") }}</button>
+          <div class="keypad-row">
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('7')">7</button>
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('8')">8</button>
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('9')">9</button>
+            <button class="keypad-btn keypad-btn--toggle" @click="handleKeypadInput('negate')">+/-</button>
+          </div>
+          <div class="keypad-row">
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('0')">0</button>
+            <button class="keypad-btn keypad-btn--num" @click="handleKeypadInput('.')">.</button>
+            <button class="keypad-btn keypad-btn--cancel" @click="closeKeypad">{{ t("scada.configPopup.cancel") }}</button>
+            <button class="keypad-btn keypad-btn--confirm" @click="handleKeypadConfirm">{{ t("scada.configPopup.confirm") }}</button>
           </div>
         </div>
       </div>
@@ -331,6 +328,13 @@ const handleKeypadInput = (key: string) => {
     keypadValue.value = keypadValue.value.slice(0, -1);
   } else if (key === "clear") {
     keypadValue.value = "";
+  } else if (key === "negate") {
+    if (keypadValue.value === "" || keypadValue.value === "0") return;
+    if (keypadValue.value.startsWith("-")) {
+      keypadValue.value = keypadValue.value.slice(1);
+    } else {
+      keypadValue.value = "-" + keypadValue.value;
+    }
   } else if (key === ".") {
     if (!keypadValue.value.includes(".")) {
       keypadValue.value += ".";
@@ -685,23 +689,6 @@ const handleKeypadConfirm = async () => {
   gap: 8px;
 }
 
-.keypad-row--bottom {
-  display: flex;
-  gap: 8px;
-}
-
-.keypad-row-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.keypad-row--inner {
-  display: flex;
-  gap: 8px;
-}
-
 .keypad-btn {
   flex: 1;
   height: 48px;
@@ -746,25 +733,28 @@ const handleKeypadConfirm = async () => {
   font-size: 18px;
 }
 
+/* 正负切换按钮 */
+.keypad-btn--toggle {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-primary);
+  font-size: 15px;
+}
+
 /* 取消按钮 */
 .keypad-btn--cancel {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-regular);
+  font-size: 13px;
 }
 
-/* 合并确认按钮（跨2行） */
-.keypad-btn--confirm-lg {
-  flex: 0 0 auto;
-  width: 64px;
-  height: auto;
-  min-height: 104px;
+/* 确认按钮 */
+.keypad-btn--confirm {
   background: var(--color-primary);
   color: #fff;
-  font-size: 16px;
-  border-radius: 8px;
+  font-size: 13px;
 }
 
-.keypad-btn--confirm-lg:hover {
+.keypad-btn--confirm:hover {
   background: var(--color-primary-hover);
 }
 </style>
