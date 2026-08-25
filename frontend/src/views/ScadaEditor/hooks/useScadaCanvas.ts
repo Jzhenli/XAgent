@@ -221,6 +221,17 @@ export function useScadaCanvas() {
    * @param e - 鼠标事件
    */
   const handleMouseMove = (e: MouseEvent) => {
+    // 预览模式无编辑交互（mousedown 已被拦截，拖拽/框选/缩放状态不会激活），
+    // 直接跳过坐标换算与响应式更新，避免触摸滑动时每次 move 都触发 getBoundingClientRect
+    if (
+      !isEditing.value &&
+      !dragState.value.active &&
+      !boxSelectState.value.active &&
+      !resizeState.value.active
+    ) {
+      return
+    }
+
     const pos = screenToCanvas(e.clientX, e.clientY)
     mousePosition.value = pos
     isMouseOnCanvas.value = true

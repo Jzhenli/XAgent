@@ -43,6 +43,9 @@ const trendAggregation = ref<'none' | '1min' | '5min' | '15min' | '1h'>('5min')
 const writeProtectionMap = new Map<string, { value: any; expiresAt: number }>()
 const WRITE_PROTECTION_DURATION = 10000
 
+/** 写值成功后的延迟回读定时器（clearDevices 时需要清除，避免离开页面后仍触发请求） */
+let writeFollowUpTimer: ReturnType<typeof setTimeout> | null = null
+
 /**
  * 将后端读数数据转换为以 asset 为 key 的 Map
  * @param readings 后端设备读数列表
@@ -344,7 +347,14 @@ export function useScadaPointReader(): ScadaPointReader {
           }
         }
 
-        setTimeout(() => fetchDevicePoints(deviceAsset), 2000)
+        // 复用同一回读定时器，连续写值时只保留最后一次回读
+        if (writeFollowUpTimer) {
+          clearTimeout(writeFollowUpTimer)
+        }
+        writeFollowUpTimer = setTimeout(() => {
+          writeFollowUpTimer = null
+          void fetchDevicePoints(deviceAsset)
+        }, 2000)
         return {
           success: true,
           message: `写值命令已下发 (命令ID: ${response.command_id.slice(0, 8)}...)`
@@ -379,6 +389,11 @@ export function useScadaPointReader(): ScadaPointReader {
    * 清空所有设备数据与状态
    */
   function clearDevices(): void {
+    if (writeFollowUpTimer) {
+      clearTimeout(writeFollowUpTimer)
+      writeFollowUpTimer = null
+    }
+    writeProtectionMap.clear()
     devices.value = []
     historyReadings.value = []
     error.value = null

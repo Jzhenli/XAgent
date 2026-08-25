@@ -108,8 +108,13 @@ export function useScadaBinding(
     }
   }
 
-  // 监听绑定点位、编辑模式和模拟值变化，自动更新显示值
-  watch(boundPoint, updateCurrentValue, { deep: true })
+  // 监听绑定点位引用及当前值变化，自动更新显示值
+  // （不用 deep watch：轮询每次整体替换 devices 数组，deep 会遍历每个点位对象，
+  //   画布组件数量多时每轮轮询产生大量无意义深度比较）
+  watch(
+    () => [boundPoint.value, boundPoint.value?.currentValue] as const,
+    updateCurrentValue
+  )
   watch(() => scada.isEditing.value, updateCurrentValue)
   if (fallbackValue) {
     watch(fallbackValue, updateCurrentValue)
@@ -260,15 +265,14 @@ export function useScadaPolling(options: UseScadaPollingOptions = {}) {
     }
   )
 
-  // 绑定设备变化时立即刷新一次
+  // 绑定设备变化时立即刷新一次（computed 返回新数组，引用比较即可，无需 deep）
   watch(
     boundAssets,
     () => {
       if (!scada.isEditing.value) {
         void refreshBoundDevices()
       }
-    },
-    { deep: true }
+    }
   )
 
   return {

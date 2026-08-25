@@ -212,6 +212,8 @@ export function useScadaEditor() {
     isDirty.value = false
     selectedComponentId.value = null
     selectedComponentIds.value = []
+    // 面板切换后旧撤销快照已无意义：既占内存，误按 Ctrl+Z 还会把新面板恢复成旧面板内容
+    undo.clearHistory()
 
     return panel
   }
