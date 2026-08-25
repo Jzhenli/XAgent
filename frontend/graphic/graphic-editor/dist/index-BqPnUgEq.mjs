@@ -1,341 +1,5 @@
 import { defineComponent, ref, watch, onMounted, openBlock, createElementBlock, createElementVNode, toDisplayString, createVNode as createVNode$1, unref, Fragment, createBlock, createCommentVNode, withModifiers, createTextVNode, normalizeClass, computed, reactive, withCtx, renderList, withDirectives, vShow, nextTick, normalizeStyle as normalizeStyle$1, onUnmounted, resolveDynamicComponent, defineAsyncComponent, onBeforeUnmount, triggerRef, Teleport } from "vue";
 import { InputCpnt, ColorPicker, Toast, SwitchCpnt, SelectSingle, HeaderFooterPanel, TabPanel, CheckboxCpnt, XIconCpnt, PopupModal, IconCpnt, ColorTools, IconUtils, PopoverMenu, HeaderPanel, FloatMenu, InlineTextEditor, DomTools, Popover, MenuPanel } from "@x-plateform-mono/common";
-let Eventful$1 = class {
-  _eventCallback = /* @__PURE__ */ new Map();
-  on(a, n) {
-    let d = this._eventCallback.get(a);
-    return d === void 0 && (d = [], this._eventCallback.set(a, d)), d.push(n), () => {
-      const f = d.indexOf(n);
-      f !== -1 && d.splice(f, 1);
-    };
-  }
-  off(a, n) {
-    const d = this._eventCallback.get(a);
-    if (d !== void 0)
-      if (n === void 0)
-        d.splice(0, d.length);
-      else {
-        const f = d.indexOf(n);
-        d.splice(f, 1);
-      }
-  }
-  dispatch(a, n) {
-    const d = this._eventCallback.get(a);
-    d !== void 0 && d.length > 0 && d.forEach((f) => f.call(this, n));
-  }
-  eventPenerate(a, n) {
-    return !1;
-  }
-};
-function create$4(l, a) {
-  return l == null && (l = 0), a == null && (a = 0), [l, a];
-}
-function distanceSquare$1(l, a) {
-  return (l[0] - a[0]) * (l[0] - a[0]) + (l[1] - a[1]) * (l[1] - a[1]);
-}
-const distSquare$1 = distanceSquare$1;
-function applyTransform$2(l, a, n) {
-  const d = a[0], f = a[1];
-  return l[0] = n[0] * d + n[2] * f + n[4], l[1] = n[1] * d + n[3] * f + n[5], l;
-}
-function min$3(l, a, n) {
-  return l[0] = Math.min(a[0], n[0]), l[1] = Math.min(a[1], n[1]), l;
-}
-function max$3(l, a, n) {
-  return l[0] = Math.max(a[0], n[0]), l[1] = Math.max(a[1], n[1]), l;
-}
-const mathPow$3 = Math.pow, mathSqrt$4 = Math.sqrt, EPSILON$6 = 1e-8, EPSILON_NUMERIC$1 = 1e-4, THREE_SQRT$1 = mathSqrt$4(3), ONE_THIRD$1 = 1 / 3, _v0$1 = create$4(), _v1$1 = create$4(), _v2$1 = create$4();
-function isAroundZero$2(l) {
-  return l > -EPSILON$6 && l < EPSILON$6;
-}
-function isNotAroundZero$2(l) {
-  return l > EPSILON$6 || l < -EPSILON$6;
-}
-function cubicAt$1(l, a, n, d, f) {
-  const g = 1 - f;
-  return g * g * (g * l + 3 * f * a) + f * f * (f * d + 3 * g * n);
-}
-function cubicRootAt$1(l, a, n, d, f, g) {
-  const v = d + 3 * (a - n) - l, x = 3 * (n - a * 2 + l), R = 3 * (a - l), V = l - f, K = x * x - 3 * v * R, Ge = x * R - 9 * v * V, Ue = R * R - 3 * x * V;
-  let Xe = 0;
-  if (isAroundZero$2(K) && isAroundZero$2(Ge))
-    if (isAroundZero$2(x))
-      g[0] = 0;
-    else {
-      const Je = -R / x;
-      Je >= 0 && Je <= 1 && (g[Xe++] = Je);
-    }
-  else {
-    const Je = Ge * Ge - 4 * K * Ue;
-    if (isAroundZero$2(Je)) {
-      const pt = Ge / K, ct = -x / v + pt, yt = -pt / 2;
-      ct >= 0 && ct <= 1 && (g[Xe++] = ct), yt >= 0 && yt <= 1 && (g[Xe++] = yt);
-    } else if (Je > 0) {
-      const pt = mathSqrt$4(Je);
-      let ct = K * x + 1.5 * v * (-Ge + pt), yt = K * x + 1.5 * v * (-Ge - pt);
-      ct < 0 ? ct = -mathPow$3(-ct, ONE_THIRD$1) : ct = mathPow$3(ct, ONE_THIRD$1), yt < 0 ? yt = -mathPow$3(-yt, ONE_THIRD$1) : yt = mathPow$3(yt, ONE_THIRD$1);
-      const xt = (-x - (ct + yt)) / (3 * v);
-      xt >= 0 && xt <= 1 && (g[Xe++] = xt);
-    } else {
-      const pt = (2 * K * x - 3 * v * Ge) / (2 * mathSqrt$4(K * K * K)), ct = Math.acos(pt) / 3, yt = mathSqrt$4(K), xt = Math.cos(ct), Ht = (-x - 2 * yt * xt) / (3 * v), Ut = (-x + yt * (xt + THREE_SQRT$1 * Math.sin(ct))) / (3 * v), Zt = (-x + yt * (xt - THREE_SQRT$1 * Math.sin(ct))) / (3 * v);
-      Ht >= 0 && Ht <= 1 && (g[Xe++] = Ht), Ut >= 0 && Ut <= 1 && (g[Xe++] = Ut), Zt >= 0 && Zt <= 1 && (g[Xe++] = Zt);
-    }
-  }
-  return Xe;
-}
-function cubicExtrema$1(l, a, n, d, f) {
-  const g = 6 * n - 12 * a + 6 * l, v = 9 * a + 3 * d - 3 * l - 9 * n, x = 3 * a - 3 * l;
-  let R = 0;
-  if (isAroundZero$2(v)) {
-    if (isNotAroundZero$2(g)) {
-      const V = -x / g;
-      V >= 0 && V <= 1 && (f[R++] = V);
-    }
-  } else {
-    const V = g * g - 4 * v * x;
-    if (isAroundZero$2(V))
-      f[0] = -g / (2 * v);
-    else if (V > 0) {
-      const K = mathSqrt$4(V), Ge = (-g + K) / (2 * v), Ue = (-g - K) / (2 * v);
-      Ge >= 0 && Ge <= 1 && (f[R++] = Ge), Ue >= 0 && Ue <= 1 && (f[R++] = Ue);
-    }
-  }
-  return R;
-}
-function cubicSubdivide$1(l, a, n, d, f, g) {
-  const v = (a - l) * f + l, x = (n - a) * f + a, R = (d - n) * f + n, V = (x - v) * f + v, K = (R - x) * f + x, Ge = (K - V) * f + V;
-  g[0] = l, g[1] = v, g[2] = V, g[3] = Ge, g[4] = Ge, g[5] = K, g[6] = R, g[7] = d;
-}
-function cubicProjectPoint$1(l, a, n, d, f, g, v, x, R, V, K) {
-  let Ge, Ue = 5e-3, Xe = 1 / 0, Je, pt, ct, yt;
-  _v0$1[0] = R, _v0$1[1] = V;
-  for (let xt = 0; xt < 1; xt += 0.05)
-    _v1$1[0] = cubicAt$1(l, n, f, v, xt), _v1$1[1] = cubicAt$1(a, d, g, x, xt), ct = distSquare$1(_v0$1, _v1$1), ct < Xe && (Ge = xt, Xe = ct);
-  Xe = 1 / 0;
-  for (let xt = 0; xt < 32 && !(Ue < EPSILON_NUMERIC$1); xt++)
-    Je = Ge - Ue, pt = Ge + Ue, _v1$1[0] = cubicAt$1(l, n, f, v, Je), _v1$1[1] = cubicAt$1(a, d, g, x, Je), ct = distSquare$1(_v1$1, _v0$1), Je >= 0 && ct < Xe ? (Ge = Je, Xe = ct) : (_v2$1[0] = cubicAt$1(l, n, f, v, pt), _v2$1[1] = cubicAt$1(a, d, g, x, pt), yt = distSquare$1(_v2$1, _v0$1), pt <= 1 && yt < Xe ? (Ge = pt, Xe = yt) : Ue *= 0.5);
-  return K && (K[0] = cubicAt$1(l, n, f, v, Ge), K[1] = cubicAt$1(a, d, g, x, Ge), K[2] = Ge), mathSqrt$4(Xe);
-}
-function cubicLength$1(l, a, n, d, f, g, v, x, R) {
-  let V = l, K = a, Ge = 0;
-  const Ue = 1 / R;
-  for (let Xe = 1; Xe <= R; Xe++) {
-    let Je = Xe * Ue;
-    const pt = cubicAt$1(l, n, f, v, Je), ct = cubicAt$1(a, d, g, x, Je), yt = pt - V, xt = ct - K;
-    Ge += Math.sqrt(yt * yt + xt * xt), V = pt, K = ct;
-  }
-  return Ge;
-}
-function quadraticAt$2(l, a, n, d) {
-  const f = 1 - d;
-  return f * (f * l + 2 * d * a) + d * d * n;
-}
-function quadraticRootAt$1(l, a, n, d, f) {
-  const g = l - 2 * a + n, v = 2 * (a - l), x = l - d;
-  let R = 0;
-  if (isAroundZero$2(g)) {
-    if (isNotAroundZero$2(v)) {
-      const V = -x / v;
-      V >= 0 && V <= 1 && (f[R++] = V);
-    }
-  } else {
-    const V = v * v - 4 * g * x;
-    if (isAroundZero$2(V)) {
-      const K = -v / (2 * g);
-      K >= 0 && K <= 1 && (f[R++] = K);
-    } else if (V > 0) {
-      const K = mathSqrt$4(V), Ge = (-v + K) / (2 * g), Ue = (-v - K) / (2 * g);
-      Ge >= 0 && Ge <= 1 && (f[R++] = Ge), Ue >= 0 && Ue <= 1 && (f[R++] = Ue);
-    }
-  }
-  return R;
-}
-function quadraticExtremum$1(l, a, n) {
-  const d = l + n - 2 * a;
-  return d === 0 ? 0.5 : (l - a) / d;
-}
-function quadraticSubdivide$1(l, a, n, d, f) {
-  const g = (a - l) * d + l, v = (n - a) * d + a, x = (v - g) * d + g;
-  f[0] = l, f[1] = g, f[2] = x, f[3] = x, f[4] = v, f[5] = n;
-}
-function quadraticProjectPoint$1(l, a, n, d, f, g, v, x, R) {
-  let V, K = 5e-3, Ge = 1 / 0;
-  _v0$1[0] = v, _v0$1[1] = x;
-  for (let Ue = 0; Ue < 1; Ue += 0.05) {
-    _v1$1[0] = quadraticAt$2(l, n, f, Ue), _v1$1[1] = quadraticAt$2(a, d, g, Ue);
-    const Xe = distSquare$1(_v0$1, _v1$1);
-    Xe < Ge && (V = Ue, Ge = Xe);
-  }
-  Ge = 1 / 0;
-  for (let Ue = 0; Ue < 32 && !(K < EPSILON_NUMERIC$1); Ue++) {
-    const Xe = V - K, Je = V + K;
-    _v1$1[0] = quadraticAt$2(l, n, f, Xe), _v1$1[1] = quadraticAt$2(a, d, g, Xe);
-    const pt = distSquare$1(_v1$1, _v0$1);
-    if (Xe >= 0 && pt < Ge)
-      V = Xe, Ge = pt;
-    else {
-      _v2$1[0] = quadraticAt$2(l, n, f, Je), _v2$1[1] = quadraticAt$2(a, d, g, Je);
-      const ct = distSquare$1(_v2$1, _v0$1);
-      Je <= 1 && ct < Ge ? (V = Je, Ge = ct) : K *= 0.5;
-    }
-  }
-  return R && (R[0] = quadraticAt$2(l, n, f, V), R[1] = quadraticAt$2(a, d, g, V), R[2] = V), mathSqrt$4(Ge);
-}
-function quadraticLength$1(l, a, n, d, f, g, v) {
-  let x = l, R = a, V = 0;
-  const K = 1 / v;
-  for (let Ge = 1; Ge <= v; Ge++) {
-    let Ue = Ge * K;
-    const Xe = quadraticAt$2(l, n, f, Ue), Je = quadraticAt$2(a, d, g, Ue), pt = Xe - x, ct = Je - R;
-    V += Math.sqrt(pt * pt + ct * ct), x = Xe, R = Je;
-  }
-  return V;
-}
-const mathMin$c = Math.min, mathMax$c = Math.max, mathSin$6 = Math.sin, mathCos$6 = Math.cos, PI2$b = Math.PI * 2, start$1 = create$4(), end$1 = create$4(), extremity$1 = create$4();
-function fromPoints$1(l, a, n) {
-  if (l.length === 0)
-    return;
-  let d = l[0], f = d[0], g = d[0], v = d[1], x = d[1];
-  for (let R = 1; R < l.length; R++)
-    d = l[R], f = mathMin$c(f, d[0]), g = mathMax$c(g, d[0]), v = mathMin$c(v, d[1]), x = mathMax$c(x, d[1]);
-  a[0] = f, a[1] = v, n[0] = g, n[1] = x;
-}
-function fromLine$1(l, a, n, d, f, g) {
-  f[0] = mathMin$c(l, n), f[1] = mathMin$c(a, d), g[0] = mathMax$c(l, n), g[1] = mathMax$c(a, d);
-}
-const xDim$1 = [], yDim$1 = [];
-function fromCubic$1(l, a, n, d, f, g, v, x, R, V) {
-  const K = cubicExtrema$1, Ge = cubicAt$1;
-  let Ue = K(l, n, f, v, xDim$1);
-  R[0] = 1 / 0, R[1] = 1 / 0, V[0] = -1 / 0, V[1] = -1 / 0;
-  for (let Xe = 0; Xe < Ue; Xe++) {
-    const Je = Ge(l, n, f, v, xDim$1[Xe]);
-    R[0] = mathMin$c(Je, R[0]), V[0] = mathMax$c(Je, V[0]);
-  }
-  Ue = K(a, d, g, x, yDim$1);
-  for (let Xe = 0; Xe < Ue; Xe++) {
-    const Je = Ge(a, d, g, x, yDim$1[Xe]);
-    R[1] = mathMin$c(Je, R[1]), V[1] = mathMax$c(Je, V[1]);
-  }
-  R[0] = mathMin$c(l, R[0]), V[0] = mathMax$c(l, V[0]), R[0] = mathMin$c(v, R[0]), V[0] = mathMax$c(v, V[0]), R[1] = mathMin$c(a, R[1]), V[1] = mathMax$c(a, V[1]), R[1] = mathMin$c(x, R[1]), V[1] = mathMax$c(x, V[1]);
-}
-function fromQuadratic$1(l, a, n, d, f, g, v, x) {
-  const R = quadraticExtremum$1, V = quadraticAt$2, K = mathMax$c(
-    mathMin$c(R(l, n, f), 1),
-    0
-  ), Ge = mathMax$c(
-    mathMin$c(R(a, d, g), 1),
-    0
-  ), Ue = V(l, n, f, K), Xe = V(a, d, g, Ge);
-  v[0] = mathMin$c(l, f, Ue), v[1] = mathMin$c(a, g, Xe), x[0] = mathMax$c(l, f, Ue), x[1] = mathMax$c(a, g, Xe);
-}
-function fromArc$1(l, a, n, d, f, g, v, x, R) {
-  const V = min$3, K = max$3, Ge = Math.abs(f - g);
-  if (Ge % PI2$b < 1e-4 && Ge > 1e-4) {
-    x[0] = l - n, x[1] = a - d, R[0] = l + n, R[1] = a + d;
-    return;
-  }
-  if (start$1[0] = mathCos$6(f) * n + l, start$1[1] = mathSin$6(f) * d + a, end$1[0] = mathCos$6(g) * n + l, end$1[1] = mathSin$6(g) * d + a, V(x, start$1, end$1), K(R, start$1, end$1), f = f % PI2$b, f < 0 && (f = f + PI2$b), g = g % PI2$b, g < 0 && (g = g + PI2$b), f > g && !v ? g += PI2$b : f < g && v && (f += PI2$b), v) {
-    const Ue = g;
-    g = f, f = Ue;
-  }
-  for (let Ue = 0; Ue < g; Ue += Math.PI / 2)
-    Ue > f && (extremity$1[0] = mathCos$6(Ue) * n + l, extremity$1[1] = mathSin$6(Ue) * d + a, V(x, extremity$1, x), K(R, extremity$1, R));
-}
-var Key_enum = {}, hasRequiredKey_enum;
-function requireKey_enum() {
-  return hasRequiredKey_enum || (hasRequiredKey_enum = 1, (function(l) {
-    Object.defineProperty(l, "__esModule", { value: !0 }), (function(a) {
-      a.Unidentified = "Unidentified", a.Alt = "Alt", a.AltGraph = "AltGraph", a.CapsLock = "CapsLock", a.Control = "Control", a.Fn = "Fn", a.FnLock = "FnLock", a.Hyper = "Hyper", a.Meta = "Meta", a.NumLock = "NumLock", a.ScrollLock = "ScrollLock", a.Shift = "Shift", a.Super = "Super", a.Symbol = "Symbol", a.SymbolLock = "SymbolLock", a.Enter = "Enter", a.Tab = "Tab", a.ArrowDown = "ArrowDown", a.ArrowLeft = "ArrowLeft", a.ArrowRight = "ArrowRight", a.ArrowUp = "ArrowUp", a.End = "End", a.Home = "Home", a.PageDown = "PageDown", a.PageUp = "PageUp", a.Backspace = "Backspace", a.Clear = "Clear", a.Copy = "Copy", a.CrSel = "CrSel", a.Cut = "Cut", a.Delete = "Delete", a.EraseEof = "EraseEof", a.ExSel = "ExSel", a.Insert = "Insert", a.Paste = "Paste", a.Redo = "Redo", a.Undo = "Undo", a.Accept = "Accept", a.Again = "Again", a.Attn = "Attn", a.Cancel = "Cancel", a.ContextMenu = "ContextMenu", a.Escape = "Escape", a.Execute = "Execute", a.Find = "Find", a.Finish = "Finish", a.Help = "Help", a.Pause = "Pause", a.Play = "Play", a.Props = "Props", a.Select = "Select", a.ZoomIn = "ZoomIn", a.ZoomOut = "ZoomOut", a.BrightnessDown = "BrightnessDown", a.BrightnessUp = "BrightnessUp", a.Eject = "Eject", a.LogOff = "LogOff", a.Power = "Power", a.PowerOff = "PowerOff", a.PrintScreen = "PrintScreen", a.Hibernate = "Hibernate", a.Standby = "Standby", a.WakeUp = "WakeUp", a.AllCandidates = "AllCandidates", a.Alphanumeric = "Alphanumeric", a.CodeInput = "CodeInput", a.Compose = "Compose", a.Convert = "Convert", a.Dead = "Dead", a.FinalMode = "FinalMode", a.GroupFirst = "GroupFirst", a.GroupLast = "GroupLast", a.GroupNext = "GroupNext", a.GroupPrevious = "GroupPrevious", a.ModeChange = "ModeChange", a.NextCandidate = "NextCandidate", a.NonConvert = "NonConvert", a.PreviousCandidate = "PreviousCandidate", a.Process = "Process", a.SingleCandidate = "SingleCandidate", a.HangulMode = "HangulMode", a.HanjaMode = "HanjaMode", a.JunjaMode = "JunjaMode", a.Eisu = "Eisu", a.Hankaku = "Hankaku", a.Hiragana = "Hiragana", a.HiraganaKatakana = "HiraganaKatakana", a.KanaMode = "KanaMode", a.KanjiMode = "KanjiMode", a.Katakana = "Katakana", a.Romaji = "Romaji", a.Zenkaku = "Zenkaku", a.ZenkakuHanaku = "ZenkakuHanaku", a.F1 = "F1", a.F2 = "F2", a.F3 = "F3", a.F4 = "F4", a.F5 = "F5", a.F6 = "F6", a.F7 = "F7", a.F8 = "F8", a.F9 = "F9", a.F10 = "F10", a.F11 = "F11", a.F12 = "F12", a.F13 = "F13", a.F14 = "F14", a.F15 = "F15", a.F16 = "F16", a.F17 = "F17", a.F18 = "F18", a.F19 = "F19", a.F20 = "F20", a.Soft1 = "Soft1", a.Soft2 = "Soft2", a.Soft3 = "Soft3", a.Soft4 = "Soft4", a.AppSwitch = "AppSwitch", a.Call = "Call", a.Camera = "Camera", a.CameraFocus = "CameraFocus", a.EndCall = "EndCall", a.GoBack = "GoBack", a.GoHome = "GoHome", a.HeadsetHook = "HeadsetHook", a.LastNumberRedial = "LastNumberRedial", a.Notification = "Notification", a.MannerMode = "MannerMode", a.VoiceDial = "VoiceDial", a.ChannelDown = "ChannelDown", a.ChannelUp = "ChannelUp", a.MediaFastForward = "MediaFastForward", a.MediaPause = "MediaPause", a.MediaPlay = "MediaPlay", a.MediaPlayPause = "MediaPlayPause", a.MediaRecord = "MediaRecord", a.MediaRewind = "MediaRewind", a.MediaStop = "MediaStop", a.MediaTrackNext = "MediaTrackNext", a.MediaTrackPrevious = "MediaTrackPrevious", a.AudioBalanceLeft = "AudioBalanceLeft", a.AudioBalanceRight = "AudioBalanceRight", a.AudioBassDown = "AudioBassDown", a.AudioBassBoostDown = "AudioBassBoostDown", a.AudioBassBoostToggle = "AudioBassBoostToggle", a.AudioBassBoostUp = "AudioBassBoostUp", a.AudioBassUp = "AudioBassUp", a.AudioFaderFront = "AudioFaderFront", a.AudioFaderRear = "AudioFaderRear", a.AudioSurroundModeNext = "AudioSurroundModeNext", a.AudioTrebleDown = "AudioTrebleDown", a.AudioTrebleUp = "AudioTrebleUp", a.AudioVolumeDown = "AudioVolumeDown", a.AudioVolumeMute = "AudioVolumeMute", a.AudioVolumeUp = "AudioVolumeUp", a.MicrophoneToggle = "MicrophoneToggle", a.MicrophoneVolumeDown = "MicrophoneVolumeDown", a.MicrophoneVolumeMute = "MicrophoneVolumeMute", a.MicrophoneVolumeUp = "MicrophoneVolumeUp", a.TV = "TV", a.TV3DMode = "TV3DMode", a.TVAntennaCable = "TVAntennaCable", a.TVAudioDescription = "TVAudioDescription", a.TVAudioDescriptionMixDown = "TVAudioDescriptionMixDown", a.TVAudioDescriptionMixUp = "TVAudioDescriptionMixUp", a.TVContentsMenu = "TVContentsMenu", a.TVDataService = "TVDataService", a.TVInput = "TVInput", a.TVInputComponent1 = "TVInputComponent1", a.TVInputComponent2 = "TVInputComponent2", a.TVInputComposite1 = "TVInputComposite1", a.TVInputComposite2 = "TVInputComposite2", a.TVInputHDMI1 = "TVInputHDMI1", a.TVInputHDMI2 = "TVInputHDMI2", a.TVInputHDMI3 = "TVInputHDMI3", a.TVInputHDMI4 = "TVInputHDMI4", a.TVInputVGA1 = "TVInputVGA1", a.TVMediaContext = "TVMediaContext", a.TVNetwork = "TVNetwork", a.TVNumberEntry = "TVNumberEntry", a.TVPower = "TVPower", a.TVRadioService = "TVRadioService", a.TVSatellite = "TVSatellite", a.TVSatelliteBS = "TVSatelliteBS", a.TVSatelliteCS = "TVSatelliteCS", a.TVSatelliteToggle = "TVSatelliteToggle", a.TVTerrestrialAnalog = "TVTerrestrialAnalog", a.TVTerrestrialDigital = "TVTerrestrialDigital", a.TVTimer = "TVTimer", a.AVRInput = "AVRInput", a.AVRPower = "AVRPower", a.ColorF0Red = "ColorF0Red", a.ColorF1Green = "ColorF1Green", a.ColorF2Yellow = "ColorF2Yellow", a.ColorF3Blue = "ColorF3Blue", a.ColorF4Grey = "ColorF4Grey", a.ColorF5Brown = "ColorF5Brown", a.ClosedCaptionToggle = "ClosedCaptionToggle", a.Dimmer = "Dimmer", a.DisplaySwap = "DisplaySwap", a.DVR = "DVR", a.Exit = "Exit", a.FavoriteClear0 = "FavoriteClear0", a.FavoriteClear1 = "FavoriteClear1", a.FavoriteClear2 = "FavoriteClear2", a.FavoriteClear3 = "FavoriteClear3", a.FavoriteRecall0 = "FavoriteRecall0", a.FavoriteRecall1 = "FavoriteRecall1", a.FavoriteRecall2 = "FavoriteRecall2", a.FavoriteRecall3 = "FavoriteRecall3", a.FavoriteStore0 = "FavoriteStore0", a.FavoriteStore1 = "FavoriteStore1", a.FavoriteStore2 = "FavoriteStore2", a.FavoriteStore3 = "FavoriteStore3", a.Guide = "Guide", a.GuideNextDay = "GuideNextDay", a.GuidePreviousDay = "GuidePreviousDay", a.Info = "Info", a.InstantReplay = "InstantReplay", a.Link = "Link", a.ListProgram = "ListProgram", a.LiveContent = "LiveContent", a.Lock = "Lock", a.MediaApps = "MediaApps", a.MediaAudioTrack = "MediaAudioTrack", a.MediaLast = "MediaLast", a.MediaSkipBackward = "MediaSkipBackward", a.MediaSkipForward = "MediaSkipForward", a.MediaStepBackward = "MediaStepBackward", a.MediaStepForward = "MediaStepForward", a.MediaTopMenu = "MediaTopMenu", a.NavigateIn = "NavigateIn", a.NavigateNext = "NavigateNext", a.NavigateOut = "NavigateOut", a.NavigatePrevious = "NavigatePrevious", a.NextFavoriteChannel = "NextFavoriteChannel", a.NextUserProfile = "NextUserProfile", a.OnDemand = "OnDemand", a.Pairing = "Pairing", a.PinPDown = "PinPDown", a.PinPMove = "PinPMove", a.PinPToggle = "PinPToggle", a.PinPUp = "PinPUp", a.PlaySpeedDown = "PlaySpeedDown", a.PlaySpeedReset = "PlaySpeedReset", a.PlaySpeedUp = "PlaySpeedUp", a.RandomToggle = "RandomToggle", a.RcLowBattery = "RcLowBattery", a.RecordSpeedNext = "RecordSpeedNext", a.RfBypass = "RfBypass", a.ScanChannelsToggle = "ScanChannelsToggle", a.ScreenModeNext = "ScreenModeNext", a.Settings = "Settings", a.SplitScreenToggle = "SplitScreenToggle", a.STBInput = "STBInput", a.STBPower = "STBPower", a.Subtitle = "Subtitle", a.Teletext = "Teletext", a.VideoModeNext = "VideoModeNext", a.Wink = "Wink", a.ZoomToggle = "ZoomToggle", a.SpeechCorrectionList = "SpeechCorrectionList", a.SpeechInputToggle = "SpeechInputToggle", a.Close = "Close", a.New = "New", a.Open = "Open", a.Print = "Print", a.Save = "Save", a.SpellCheck = "SpellCheck", a.MailForward = "MailForward", a.MailReply = "MailReply", a.MailSend = "MailSend", a.LaunchCalculator = "LaunchCalculator", a.LaunchCalendar = "LaunchCalendar", a.LaunchContacts = "LaunchContacts", a.LaunchMail = "LaunchMail", a.LaunchMediaPlayer = "LaunchMediaPlayer", a.LaunchMusicPlayer = "LaunchMusicPlayer", a.LaunchMyComputer = "LaunchMyComputer", a.LaunchPhone = "LaunchPhone", a.LaunchScreenSaver = "LaunchScreenSaver", a.LaunchSpreadsheet = "LaunchSpreadsheet", a.LaunchWebBrowser = "LaunchWebBrowser", a.LaunchWebCam = "LaunchWebCam", a.LaunchWordProcessor = "LaunchWordProcessor", a.LaunchApplication1 = "LaunchApplication1", a.LaunchApplication2 = "LaunchApplication2", a.LaunchApplication3 = "LaunchApplication3", a.LaunchApplication4 = "LaunchApplication4", a.LaunchApplication5 = "LaunchApplication5", a.LaunchApplication6 = "LaunchApplication6", a.LaunchApplication7 = "LaunchApplication7", a.LaunchApplication8 = "LaunchApplication8", a.LaunchApplication9 = "LaunchApplication9", a.LaunchApplication10 = "LaunchApplication10", a.LaunchApplication11 = "LaunchApplication11", a.LaunchApplication12 = "LaunchApplication12", a.LaunchApplication13 = "LaunchApplication13", a.LaunchApplication14 = "LaunchApplication14", a.LaunchApplication15 = "LaunchApplication15", a.LaunchApplication16 = "LaunchApplication16", a.BrowserBack = "BrowserBack", a.BrowserFavorites = "BrowserFavorites", a.BrowserForward = "BrowserForward", a.BrowserHome = "BrowserHome", a.BrowserRefresh = "BrowserRefresh", a.BrowserSearch = "BrowserSearch", a.BrowserStop = "BrowserStop", a.Decimal = "Decimal", a.Key11 = "Key11", a.Key12 = "Key12", a.Multiply = "Multiply", a.Add = "Add", a.Divide = "Divide", a.Subtract = "Subtract", a.Separator = "Separator";
-    })(l.Key || (l.Key = {}));
-  })(Key_enum)), Key_enum;
-}
-var Key_enumExports = requireKey_enum();
-const _hoisted_1$x = { class: "position-property-render-item" }, _sfc_main$E = /* @__PURE__ */ defineComponent({
-  __name: "PositionPropertyRender",
-  props: {
-    label: {},
-    value: {}
-  },
-  emits: ["changeValue"],
-  setup(l, { emit: a }) {
-    const n = l, d = a, f = ref(n.value?.x.toFixed(1) || "0"), g = ref(n.value?.y.toFixed(1) || "0");
-    function v() {
-      f.value = n.value?.x.toFixed(1) || "0", g.value = n.value?.y.toFixed(1) || "0";
-    }
-    watch(() => n.value, v);
-    function x(R, V) {
-      if (!V) {
-        v();
-        return;
-      }
-      const K = parseFloat(V);
-      if (isNaN(K)) {
-        v();
-        return;
-      }
-      const Ge = { x: n.value?.x || 0, y: n.value?.y || 0 };
-      R == "x" ? Ge.x = K : Ge.y = K, d("changeValue", Ge);
-    }
-    return onMounted(v), (R, V) => (openBlock(), createElementBlock("div", _hoisted_1$x, [
-      createElementVNode("span", null, toDisplayString(l.label), 1),
-      createElementVNode("span", null, [
-        V[4] || (V[4] = createElementVNode("span", { style: { "margin-left": "20px" } }, "X :", -1)),
-        createVNode$1(unref(InputCpnt), {
-          modelValue: f.value,
-          "onUpdate:modelValue": V[0] || (V[0] = (K) => f.value = K),
-          onChange: V[1] || (V[1] = (K) => x("x", K)),
-          width: 80,
-          height: 24
-        }, null, 8, ["modelValue"]),
-        V[5] || (V[5] = createElementVNode("span", { style: { "margin-left": "20px" } }, "Y :", -1)),
-        createVNode$1(unref(InputCpnt), {
-          modelValue: g.value,
-          "onUpdate:modelValue": V[2] || (V[2] = (K) => g.value = K),
-          onChange: V[3] || (V[3] = (K) => x("y", K)),
-          width: 80,
-          height: 24
-        }, null, 8, ["modelValue"])
-      ])
-    ]));
-  }
-}), _sfc_main$D = /* @__PURE__ */ defineComponent({
-  __name: "ColorPropertyRender",
-  props: {
-    label: {},
-    value: {},
-    opt: {}
-  },
-  emits: ["changeValue"],
-  setup(l, { emit: a }) {
-    const n = a;
-    function d(f) {
-      console.log(f), n("changeValue", f);
-    }
-    return (f, g) => (openBlock(), createElementBlock(Fragment, null, [
-      createElementVNode("span", null, toDisplayString(l.label), 1),
-      l.opt?.gaugeColor ? createCommentVNode("", !0) : (openBlock(), createBlock(unref(ColorPicker), {
-        key: 0,
-        value: l.value || "#000000",
-        enableOpacity: l.opt?.enableOpacity,
-        linearGradient: l.opt?.gradient,
-        radialGradient: l.opt?.gradient,
-        conicGradient: l.opt?.gradient,
-        onChange: d
-      }, null, 8, ["value", "enableOpacity", "linearGradient", "radialGradient", "conicGradient"])),
-      l.opt?.gaugeColor ? (openBlock(), createBlock(unref(ColorPicker), {
-        key: 1,
-        value: l.value,
-        enableOpacity: !1,
-        linearGradient: !1,
-        radialGradient: !1,
-        conicGradientCenter: !1,
-        conicGradient: !0,
-        onChange: d
-      }, null, 8, ["value"])) : createCommentVNode("", !0)
-    ], 64));
-  }
-});
 var Le = Object.defineProperty, at = (l, a, n) => a in l ? Le(l, a, { enumerable: !0, configurable: !0, writable: !0, value: n }) : l[a] = n, o = (l, a) => Le(l, "name", { value: a, configurable: !0 }), _ = ((l) => typeof require < "u" ? require : typeof Proxy < "u" ? new Proxy(l, { get: (a, n) => (typeof require < "u" ? require : a)[n] }) : l)(function(l) {
   if (typeof require < "u") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + l + '" is not supported');
@@ -3184,8 +2848,342 @@ const i18nScope = new ot({
   ...settings
 }), t = i18nScope.t;
 i18nScope.$t;
-i18nScope.Translate;
-const _hoisted_1$w = { class: "number-property-render-item" }, _sfc_main$C = /* @__PURE__ */ defineComponent({
+let Eventful$1 = class {
+  _eventCallback = /* @__PURE__ */ new Map();
+  on(a, n) {
+    let d = this._eventCallback.get(a);
+    return d === void 0 && (d = [], this._eventCallback.set(a, d)), d.push(n), () => {
+      const f = d.indexOf(n);
+      f !== -1 && d.splice(f, 1);
+    };
+  }
+  off(a, n) {
+    const d = this._eventCallback.get(a);
+    if (d !== void 0)
+      if (n === void 0)
+        d.splice(0, d.length);
+      else {
+        const f = d.indexOf(n);
+        d.splice(f, 1);
+      }
+  }
+  dispatch(a, n) {
+    const d = this._eventCallback.get(a);
+    d !== void 0 && d.length > 0 && d.forEach((f) => f.call(this, n));
+  }
+  eventPenerate(a, n) {
+    return !1;
+  }
+};
+function create$4(l, a) {
+  return l == null && (l = 0), a == null && (a = 0), [l, a];
+}
+function distanceSquare$1(l, a) {
+  return (l[0] - a[0]) * (l[0] - a[0]) + (l[1] - a[1]) * (l[1] - a[1]);
+}
+const distSquare$1 = distanceSquare$1;
+function applyTransform$2(l, a, n) {
+  const d = a[0], f = a[1];
+  return l[0] = n[0] * d + n[2] * f + n[4], l[1] = n[1] * d + n[3] * f + n[5], l;
+}
+function min$3(l, a, n) {
+  return l[0] = Math.min(a[0], n[0]), l[1] = Math.min(a[1], n[1]), l;
+}
+function max$3(l, a, n) {
+  return l[0] = Math.max(a[0], n[0]), l[1] = Math.max(a[1], n[1]), l;
+}
+const mathPow$3 = Math.pow, mathSqrt$4 = Math.sqrt, EPSILON$6 = 1e-8, EPSILON_NUMERIC$1 = 1e-4, THREE_SQRT$1 = mathSqrt$4(3), ONE_THIRD$1 = 1 / 3, _v0$1 = create$4(), _v1$1 = create$4(), _v2$1 = create$4();
+function isAroundZero$2(l) {
+  return l > -EPSILON$6 && l < EPSILON$6;
+}
+function isNotAroundZero$2(l) {
+  return l > EPSILON$6 || l < -EPSILON$6;
+}
+function cubicAt$1(l, a, n, d, f) {
+  const g = 1 - f;
+  return g * g * (g * l + 3 * f * a) + f * f * (f * d + 3 * g * n);
+}
+function cubicRootAt$1(l, a, n, d, f, g) {
+  const v = d + 3 * (a - n) - l, x = 3 * (n - a * 2 + l), R = 3 * (a - l), V = l - f, K = x * x - 3 * v * R, Ge = x * R - 9 * v * V, Ue = R * R - 3 * x * V;
+  let Xe = 0;
+  if (isAroundZero$2(K) && isAroundZero$2(Ge))
+    if (isAroundZero$2(x))
+      g[0] = 0;
+    else {
+      const Je = -R / x;
+      Je >= 0 && Je <= 1 && (g[Xe++] = Je);
+    }
+  else {
+    const Je = Ge * Ge - 4 * K * Ue;
+    if (isAroundZero$2(Je)) {
+      const pt = Ge / K, ct = -x / v + pt, yt = -pt / 2;
+      ct >= 0 && ct <= 1 && (g[Xe++] = ct), yt >= 0 && yt <= 1 && (g[Xe++] = yt);
+    } else if (Je > 0) {
+      const pt = mathSqrt$4(Je);
+      let ct = K * x + 1.5 * v * (-Ge + pt), yt = K * x + 1.5 * v * (-Ge - pt);
+      ct < 0 ? ct = -mathPow$3(-ct, ONE_THIRD$1) : ct = mathPow$3(ct, ONE_THIRD$1), yt < 0 ? yt = -mathPow$3(-yt, ONE_THIRD$1) : yt = mathPow$3(yt, ONE_THIRD$1);
+      const xt = (-x - (ct + yt)) / (3 * v);
+      xt >= 0 && xt <= 1 && (g[Xe++] = xt);
+    } else {
+      const pt = (2 * K * x - 3 * v * Ge) / (2 * mathSqrt$4(K * K * K)), ct = Math.acos(pt) / 3, yt = mathSqrt$4(K), xt = Math.cos(ct), Ht = (-x - 2 * yt * xt) / (3 * v), Ut = (-x + yt * (xt + THREE_SQRT$1 * Math.sin(ct))) / (3 * v), Zt = (-x + yt * (xt - THREE_SQRT$1 * Math.sin(ct))) / (3 * v);
+      Ht >= 0 && Ht <= 1 && (g[Xe++] = Ht), Ut >= 0 && Ut <= 1 && (g[Xe++] = Ut), Zt >= 0 && Zt <= 1 && (g[Xe++] = Zt);
+    }
+  }
+  return Xe;
+}
+function cubicExtrema$1(l, a, n, d, f) {
+  const g = 6 * n - 12 * a + 6 * l, v = 9 * a + 3 * d - 3 * l - 9 * n, x = 3 * a - 3 * l;
+  let R = 0;
+  if (isAroundZero$2(v)) {
+    if (isNotAroundZero$2(g)) {
+      const V = -x / g;
+      V >= 0 && V <= 1 && (f[R++] = V);
+    }
+  } else {
+    const V = g * g - 4 * v * x;
+    if (isAroundZero$2(V))
+      f[0] = -g / (2 * v);
+    else if (V > 0) {
+      const K = mathSqrt$4(V), Ge = (-g + K) / (2 * v), Ue = (-g - K) / (2 * v);
+      Ge >= 0 && Ge <= 1 && (f[R++] = Ge), Ue >= 0 && Ue <= 1 && (f[R++] = Ue);
+    }
+  }
+  return R;
+}
+function cubicSubdivide$1(l, a, n, d, f, g) {
+  const v = (a - l) * f + l, x = (n - a) * f + a, R = (d - n) * f + n, V = (x - v) * f + v, K = (R - x) * f + x, Ge = (K - V) * f + V;
+  g[0] = l, g[1] = v, g[2] = V, g[3] = Ge, g[4] = Ge, g[5] = K, g[6] = R, g[7] = d;
+}
+function cubicProjectPoint$1(l, a, n, d, f, g, v, x, R, V, K) {
+  let Ge, Ue = 5e-3, Xe = 1 / 0, Je, pt, ct, yt;
+  _v0$1[0] = R, _v0$1[1] = V;
+  for (let xt = 0; xt < 1; xt += 0.05)
+    _v1$1[0] = cubicAt$1(l, n, f, v, xt), _v1$1[1] = cubicAt$1(a, d, g, x, xt), ct = distSquare$1(_v0$1, _v1$1), ct < Xe && (Ge = xt, Xe = ct);
+  Xe = 1 / 0;
+  for (let xt = 0; xt < 32 && !(Ue < EPSILON_NUMERIC$1); xt++)
+    Je = Ge - Ue, pt = Ge + Ue, _v1$1[0] = cubicAt$1(l, n, f, v, Je), _v1$1[1] = cubicAt$1(a, d, g, x, Je), ct = distSquare$1(_v1$1, _v0$1), Je >= 0 && ct < Xe ? (Ge = Je, Xe = ct) : (_v2$1[0] = cubicAt$1(l, n, f, v, pt), _v2$1[1] = cubicAt$1(a, d, g, x, pt), yt = distSquare$1(_v2$1, _v0$1), pt <= 1 && yt < Xe ? (Ge = pt, Xe = yt) : Ue *= 0.5);
+  return K && (K[0] = cubicAt$1(l, n, f, v, Ge), K[1] = cubicAt$1(a, d, g, x, Ge), K[2] = Ge), mathSqrt$4(Xe);
+}
+function cubicLength$1(l, a, n, d, f, g, v, x, R) {
+  let V = l, K = a, Ge = 0;
+  const Ue = 1 / R;
+  for (let Xe = 1; Xe <= R; Xe++) {
+    let Je = Xe * Ue;
+    const pt = cubicAt$1(l, n, f, v, Je), ct = cubicAt$1(a, d, g, x, Je), yt = pt - V, xt = ct - K;
+    Ge += Math.sqrt(yt * yt + xt * xt), V = pt, K = ct;
+  }
+  return Ge;
+}
+function quadraticAt$2(l, a, n, d) {
+  const f = 1 - d;
+  return f * (f * l + 2 * d * a) + d * d * n;
+}
+function quadraticRootAt$1(l, a, n, d, f) {
+  const g = l - 2 * a + n, v = 2 * (a - l), x = l - d;
+  let R = 0;
+  if (isAroundZero$2(g)) {
+    if (isNotAroundZero$2(v)) {
+      const V = -x / v;
+      V >= 0 && V <= 1 && (f[R++] = V);
+    }
+  } else {
+    const V = v * v - 4 * g * x;
+    if (isAroundZero$2(V)) {
+      const K = -v / (2 * g);
+      K >= 0 && K <= 1 && (f[R++] = K);
+    } else if (V > 0) {
+      const K = mathSqrt$4(V), Ge = (-v + K) / (2 * g), Ue = (-v - K) / (2 * g);
+      Ge >= 0 && Ge <= 1 && (f[R++] = Ge), Ue >= 0 && Ue <= 1 && (f[R++] = Ue);
+    }
+  }
+  return R;
+}
+function quadraticExtremum$1(l, a, n) {
+  const d = l + n - 2 * a;
+  return d === 0 ? 0.5 : (l - a) / d;
+}
+function quadraticSubdivide$1(l, a, n, d, f) {
+  const g = (a - l) * d + l, v = (n - a) * d + a, x = (v - g) * d + g;
+  f[0] = l, f[1] = g, f[2] = x, f[3] = x, f[4] = v, f[5] = n;
+}
+function quadraticProjectPoint$1(l, a, n, d, f, g, v, x, R) {
+  let V, K = 5e-3, Ge = 1 / 0;
+  _v0$1[0] = v, _v0$1[1] = x;
+  for (let Ue = 0; Ue < 1; Ue += 0.05) {
+    _v1$1[0] = quadraticAt$2(l, n, f, Ue), _v1$1[1] = quadraticAt$2(a, d, g, Ue);
+    const Xe = distSquare$1(_v0$1, _v1$1);
+    Xe < Ge && (V = Ue, Ge = Xe);
+  }
+  Ge = 1 / 0;
+  for (let Ue = 0; Ue < 32 && !(K < EPSILON_NUMERIC$1); Ue++) {
+    const Xe = V - K, Je = V + K;
+    _v1$1[0] = quadraticAt$2(l, n, f, Xe), _v1$1[1] = quadraticAt$2(a, d, g, Xe);
+    const pt = distSquare$1(_v1$1, _v0$1);
+    if (Xe >= 0 && pt < Ge)
+      V = Xe, Ge = pt;
+    else {
+      _v2$1[0] = quadraticAt$2(l, n, f, Je), _v2$1[1] = quadraticAt$2(a, d, g, Je);
+      const ct = distSquare$1(_v2$1, _v0$1);
+      Je <= 1 && ct < Ge ? (V = Je, Ge = ct) : K *= 0.5;
+    }
+  }
+  return R && (R[0] = quadraticAt$2(l, n, f, V), R[1] = quadraticAt$2(a, d, g, V), R[2] = V), mathSqrt$4(Ge);
+}
+function quadraticLength$1(l, a, n, d, f, g, v) {
+  let x = l, R = a, V = 0;
+  const K = 1 / v;
+  for (let Ge = 1; Ge <= v; Ge++) {
+    let Ue = Ge * K;
+    const Xe = quadraticAt$2(l, n, f, Ue), Je = quadraticAt$2(a, d, g, Ue), pt = Xe - x, ct = Je - R;
+    V += Math.sqrt(pt * pt + ct * ct), x = Xe, R = Je;
+  }
+  return V;
+}
+const mathMin$c = Math.min, mathMax$c = Math.max, mathSin$6 = Math.sin, mathCos$6 = Math.cos, PI2$b = Math.PI * 2, start$1 = create$4(), end$1 = create$4(), extremity$1 = create$4();
+function fromPoints$1(l, a, n) {
+  if (l.length === 0)
+    return;
+  let d = l[0], f = d[0], g = d[0], v = d[1], x = d[1];
+  for (let R = 1; R < l.length; R++)
+    d = l[R], f = mathMin$c(f, d[0]), g = mathMax$c(g, d[0]), v = mathMin$c(v, d[1]), x = mathMax$c(x, d[1]);
+  a[0] = f, a[1] = v, n[0] = g, n[1] = x;
+}
+function fromLine$1(l, a, n, d, f, g) {
+  f[0] = mathMin$c(l, n), f[1] = mathMin$c(a, d), g[0] = mathMax$c(l, n), g[1] = mathMax$c(a, d);
+}
+const xDim$1 = [], yDim$1 = [];
+function fromCubic$1(l, a, n, d, f, g, v, x, R, V) {
+  const K = cubicExtrema$1, Ge = cubicAt$1;
+  let Ue = K(l, n, f, v, xDim$1);
+  R[0] = 1 / 0, R[1] = 1 / 0, V[0] = -1 / 0, V[1] = -1 / 0;
+  for (let Xe = 0; Xe < Ue; Xe++) {
+    const Je = Ge(l, n, f, v, xDim$1[Xe]);
+    R[0] = mathMin$c(Je, R[0]), V[0] = mathMax$c(Je, V[0]);
+  }
+  Ue = K(a, d, g, x, yDim$1);
+  for (let Xe = 0; Xe < Ue; Xe++) {
+    const Je = Ge(a, d, g, x, yDim$1[Xe]);
+    R[1] = mathMin$c(Je, R[1]), V[1] = mathMax$c(Je, V[1]);
+  }
+  R[0] = mathMin$c(l, R[0]), V[0] = mathMax$c(l, V[0]), R[0] = mathMin$c(v, R[0]), V[0] = mathMax$c(v, V[0]), R[1] = mathMin$c(a, R[1]), V[1] = mathMax$c(a, V[1]), R[1] = mathMin$c(x, R[1]), V[1] = mathMax$c(x, V[1]);
+}
+function fromQuadratic$1(l, a, n, d, f, g, v, x) {
+  const R = quadraticExtremum$1, V = quadraticAt$2, K = mathMax$c(
+    mathMin$c(R(l, n, f), 1),
+    0
+  ), Ge = mathMax$c(
+    mathMin$c(R(a, d, g), 1),
+    0
+  ), Ue = V(l, n, f, K), Xe = V(a, d, g, Ge);
+  v[0] = mathMin$c(l, f, Ue), v[1] = mathMin$c(a, g, Xe), x[0] = mathMax$c(l, f, Ue), x[1] = mathMax$c(a, g, Xe);
+}
+function fromArc$1(l, a, n, d, f, g, v, x, R) {
+  const V = min$3, K = max$3, Ge = Math.abs(f - g);
+  if (Ge % PI2$b < 1e-4 && Ge > 1e-4) {
+    x[0] = l - n, x[1] = a - d, R[0] = l + n, R[1] = a + d;
+    return;
+  }
+  if (start$1[0] = mathCos$6(f) * n + l, start$1[1] = mathSin$6(f) * d + a, end$1[0] = mathCos$6(g) * n + l, end$1[1] = mathSin$6(g) * d + a, V(x, start$1, end$1), K(R, start$1, end$1), f = f % PI2$b, f < 0 && (f = f + PI2$b), g = g % PI2$b, g < 0 && (g = g + PI2$b), f > g && !v ? g += PI2$b : f < g && v && (f += PI2$b), v) {
+    const Ue = g;
+    g = f, f = Ue;
+  }
+  for (let Ue = 0; Ue < g; Ue += Math.PI / 2)
+    Ue > f && (extremity$1[0] = mathCos$6(Ue) * n + l, extremity$1[1] = mathSin$6(Ue) * d + a, V(x, extremity$1, x), K(R, extremity$1, R));
+}
+var Key_enum = {}, hasRequiredKey_enum;
+function requireKey_enum() {
+  return hasRequiredKey_enum || (hasRequiredKey_enum = 1, (function(l) {
+    Object.defineProperty(l, "__esModule", { value: !0 }), (function(a) {
+      a.Unidentified = "Unidentified", a.Alt = "Alt", a.AltGraph = "AltGraph", a.CapsLock = "CapsLock", a.Control = "Control", a.Fn = "Fn", a.FnLock = "FnLock", a.Hyper = "Hyper", a.Meta = "Meta", a.NumLock = "NumLock", a.ScrollLock = "ScrollLock", a.Shift = "Shift", a.Super = "Super", a.Symbol = "Symbol", a.SymbolLock = "SymbolLock", a.Enter = "Enter", a.Tab = "Tab", a.ArrowDown = "ArrowDown", a.ArrowLeft = "ArrowLeft", a.ArrowRight = "ArrowRight", a.ArrowUp = "ArrowUp", a.End = "End", a.Home = "Home", a.PageDown = "PageDown", a.PageUp = "PageUp", a.Backspace = "Backspace", a.Clear = "Clear", a.Copy = "Copy", a.CrSel = "CrSel", a.Cut = "Cut", a.Delete = "Delete", a.EraseEof = "EraseEof", a.ExSel = "ExSel", a.Insert = "Insert", a.Paste = "Paste", a.Redo = "Redo", a.Undo = "Undo", a.Accept = "Accept", a.Again = "Again", a.Attn = "Attn", a.Cancel = "Cancel", a.ContextMenu = "ContextMenu", a.Escape = "Escape", a.Execute = "Execute", a.Find = "Find", a.Finish = "Finish", a.Help = "Help", a.Pause = "Pause", a.Play = "Play", a.Props = "Props", a.Select = "Select", a.ZoomIn = "ZoomIn", a.ZoomOut = "ZoomOut", a.BrightnessDown = "BrightnessDown", a.BrightnessUp = "BrightnessUp", a.Eject = "Eject", a.LogOff = "LogOff", a.Power = "Power", a.PowerOff = "PowerOff", a.PrintScreen = "PrintScreen", a.Hibernate = "Hibernate", a.Standby = "Standby", a.WakeUp = "WakeUp", a.AllCandidates = "AllCandidates", a.Alphanumeric = "Alphanumeric", a.CodeInput = "CodeInput", a.Compose = "Compose", a.Convert = "Convert", a.Dead = "Dead", a.FinalMode = "FinalMode", a.GroupFirst = "GroupFirst", a.GroupLast = "GroupLast", a.GroupNext = "GroupNext", a.GroupPrevious = "GroupPrevious", a.ModeChange = "ModeChange", a.NextCandidate = "NextCandidate", a.NonConvert = "NonConvert", a.PreviousCandidate = "PreviousCandidate", a.Process = "Process", a.SingleCandidate = "SingleCandidate", a.HangulMode = "HangulMode", a.HanjaMode = "HanjaMode", a.JunjaMode = "JunjaMode", a.Eisu = "Eisu", a.Hankaku = "Hankaku", a.Hiragana = "Hiragana", a.HiraganaKatakana = "HiraganaKatakana", a.KanaMode = "KanaMode", a.KanjiMode = "KanjiMode", a.Katakana = "Katakana", a.Romaji = "Romaji", a.Zenkaku = "Zenkaku", a.ZenkakuHanaku = "ZenkakuHanaku", a.F1 = "F1", a.F2 = "F2", a.F3 = "F3", a.F4 = "F4", a.F5 = "F5", a.F6 = "F6", a.F7 = "F7", a.F8 = "F8", a.F9 = "F9", a.F10 = "F10", a.F11 = "F11", a.F12 = "F12", a.F13 = "F13", a.F14 = "F14", a.F15 = "F15", a.F16 = "F16", a.F17 = "F17", a.F18 = "F18", a.F19 = "F19", a.F20 = "F20", a.Soft1 = "Soft1", a.Soft2 = "Soft2", a.Soft3 = "Soft3", a.Soft4 = "Soft4", a.AppSwitch = "AppSwitch", a.Call = "Call", a.Camera = "Camera", a.CameraFocus = "CameraFocus", a.EndCall = "EndCall", a.GoBack = "GoBack", a.GoHome = "GoHome", a.HeadsetHook = "HeadsetHook", a.LastNumberRedial = "LastNumberRedial", a.Notification = "Notification", a.MannerMode = "MannerMode", a.VoiceDial = "VoiceDial", a.ChannelDown = "ChannelDown", a.ChannelUp = "ChannelUp", a.MediaFastForward = "MediaFastForward", a.MediaPause = "MediaPause", a.MediaPlay = "MediaPlay", a.MediaPlayPause = "MediaPlayPause", a.MediaRecord = "MediaRecord", a.MediaRewind = "MediaRewind", a.MediaStop = "MediaStop", a.MediaTrackNext = "MediaTrackNext", a.MediaTrackPrevious = "MediaTrackPrevious", a.AudioBalanceLeft = "AudioBalanceLeft", a.AudioBalanceRight = "AudioBalanceRight", a.AudioBassDown = "AudioBassDown", a.AudioBassBoostDown = "AudioBassBoostDown", a.AudioBassBoostToggle = "AudioBassBoostToggle", a.AudioBassBoostUp = "AudioBassBoostUp", a.AudioBassUp = "AudioBassUp", a.AudioFaderFront = "AudioFaderFront", a.AudioFaderRear = "AudioFaderRear", a.AudioSurroundModeNext = "AudioSurroundModeNext", a.AudioTrebleDown = "AudioTrebleDown", a.AudioTrebleUp = "AudioTrebleUp", a.AudioVolumeDown = "AudioVolumeDown", a.AudioVolumeMute = "AudioVolumeMute", a.AudioVolumeUp = "AudioVolumeUp", a.MicrophoneToggle = "MicrophoneToggle", a.MicrophoneVolumeDown = "MicrophoneVolumeDown", a.MicrophoneVolumeMute = "MicrophoneVolumeMute", a.MicrophoneVolumeUp = "MicrophoneVolumeUp", a.TV = "TV", a.TV3DMode = "TV3DMode", a.TVAntennaCable = "TVAntennaCable", a.TVAudioDescription = "TVAudioDescription", a.TVAudioDescriptionMixDown = "TVAudioDescriptionMixDown", a.TVAudioDescriptionMixUp = "TVAudioDescriptionMixUp", a.TVContentsMenu = "TVContentsMenu", a.TVDataService = "TVDataService", a.TVInput = "TVInput", a.TVInputComponent1 = "TVInputComponent1", a.TVInputComponent2 = "TVInputComponent2", a.TVInputComposite1 = "TVInputComposite1", a.TVInputComposite2 = "TVInputComposite2", a.TVInputHDMI1 = "TVInputHDMI1", a.TVInputHDMI2 = "TVInputHDMI2", a.TVInputHDMI3 = "TVInputHDMI3", a.TVInputHDMI4 = "TVInputHDMI4", a.TVInputVGA1 = "TVInputVGA1", a.TVMediaContext = "TVMediaContext", a.TVNetwork = "TVNetwork", a.TVNumberEntry = "TVNumberEntry", a.TVPower = "TVPower", a.TVRadioService = "TVRadioService", a.TVSatellite = "TVSatellite", a.TVSatelliteBS = "TVSatelliteBS", a.TVSatelliteCS = "TVSatelliteCS", a.TVSatelliteToggle = "TVSatelliteToggle", a.TVTerrestrialAnalog = "TVTerrestrialAnalog", a.TVTerrestrialDigital = "TVTerrestrialDigital", a.TVTimer = "TVTimer", a.AVRInput = "AVRInput", a.AVRPower = "AVRPower", a.ColorF0Red = "ColorF0Red", a.ColorF1Green = "ColorF1Green", a.ColorF2Yellow = "ColorF2Yellow", a.ColorF3Blue = "ColorF3Blue", a.ColorF4Grey = "ColorF4Grey", a.ColorF5Brown = "ColorF5Brown", a.ClosedCaptionToggle = "ClosedCaptionToggle", a.Dimmer = "Dimmer", a.DisplaySwap = "DisplaySwap", a.DVR = "DVR", a.Exit = "Exit", a.FavoriteClear0 = "FavoriteClear0", a.FavoriteClear1 = "FavoriteClear1", a.FavoriteClear2 = "FavoriteClear2", a.FavoriteClear3 = "FavoriteClear3", a.FavoriteRecall0 = "FavoriteRecall0", a.FavoriteRecall1 = "FavoriteRecall1", a.FavoriteRecall2 = "FavoriteRecall2", a.FavoriteRecall3 = "FavoriteRecall3", a.FavoriteStore0 = "FavoriteStore0", a.FavoriteStore1 = "FavoriteStore1", a.FavoriteStore2 = "FavoriteStore2", a.FavoriteStore3 = "FavoriteStore3", a.Guide = "Guide", a.GuideNextDay = "GuideNextDay", a.GuidePreviousDay = "GuidePreviousDay", a.Info = "Info", a.InstantReplay = "InstantReplay", a.Link = "Link", a.ListProgram = "ListProgram", a.LiveContent = "LiveContent", a.Lock = "Lock", a.MediaApps = "MediaApps", a.MediaAudioTrack = "MediaAudioTrack", a.MediaLast = "MediaLast", a.MediaSkipBackward = "MediaSkipBackward", a.MediaSkipForward = "MediaSkipForward", a.MediaStepBackward = "MediaStepBackward", a.MediaStepForward = "MediaStepForward", a.MediaTopMenu = "MediaTopMenu", a.NavigateIn = "NavigateIn", a.NavigateNext = "NavigateNext", a.NavigateOut = "NavigateOut", a.NavigatePrevious = "NavigatePrevious", a.NextFavoriteChannel = "NextFavoriteChannel", a.NextUserProfile = "NextUserProfile", a.OnDemand = "OnDemand", a.Pairing = "Pairing", a.PinPDown = "PinPDown", a.PinPMove = "PinPMove", a.PinPToggle = "PinPToggle", a.PinPUp = "PinPUp", a.PlaySpeedDown = "PlaySpeedDown", a.PlaySpeedReset = "PlaySpeedReset", a.PlaySpeedUp = "PlaySpeedUp", a.RandomToggle = "RandomToggle", a.RcLowBattery = "RcLowBattery", a.RecordSpeedNext = "RecordSpeedNext", a.RfBypass = "RfBypass", a.ScanChannelsToggle = "ScanChannelsToggle", a.ScreenModeNext = "ScreenModeNext", a.Settings = "Settings", a.SplitScreenToggle = "SplitScreenToggle", a.STBInput = "STBInput", a.STBPower = "STBPower", a.Subtitle = "Subtitle", a.Teletext = "Teletext", a.VideoModeNext = "VideoModeNext", a.Wink = "Wink", a.ZoomToggle = "ZoomToggle", a.SpeechCorrectionList = "SpeechCorrectionList", a.SpeechInputToggle = "SpeechInputToggle", a.Close = "Close", a.New = "New", a.Open = "Open", a.Print = "Print", a.Save = "Save", a.SpellCheck = "SpellCheck", a.MailForward = "MailForward", a.MailReply = "MailReply", a.MailSend = "MailSend", a.LaunchCalculator = "LaunchCalculator", a.LaunchCalendar = "LaunchCalendar", a.LaunchContacts = "LaunchContacts", a.LaunchMail = "LaunchMail", a.LaunchMediaPlayer = "LaunchMediaPlayer", a.LaunchMusicPlayer = "LaunchMusicPlayer", a.LaunchMyComputer = "LaunchMyComputer", a.LaunchPhone = "LaunchPhone", a.LaunchScreenSaver = "LaunchScreenSaver", a.LaunchSpreadsheet = "LaunchSpreadsheet", a.LaunchWebBrowser = "LaunchWebBrowser", a.LaunchWebCam = "LaunchWebCam", a.LaunchWordProcessor = "LaunchWordProcessor", a.LaunchApplication1 = "LaunchApplication1", a.LaunchApplication2 = "LaunchApplication2", a.LaunchApplication3 = "LaunchApplication3", a.LaunchApplication4 = "LaunchApplication4", a.LaunchApplication5 = "LaunchApplication5", a.LaunchApplication6 = "LaunchApplication6", a.LaunchApplication7 = "LaunchApplication7", a.LaunchApplication8 = "LaunchApplication8", a.LaunchApplication9 = "LaunchApplication9", a.LaunchApplication10 = "LaunchApplication10", a.LaunchApplication11 = "LaunchApplication11", a.LaunchApplication12 = "LaunchApplication12", a.LaunchApplication13 = "LaunchApplication13", a.LaunchApplication14 = "LaunchApplication14", a.LaunchApplication15 = "LaunchApplication15", a.LaunchApplication16 = "LaunchApplication16", a.BrowserBack = "BrowserBack", a.BrowserFavorites = "BrowserFavorites", a.BrowserForward = "BrowserForward", a.BrowserHome = "BrowserHome", a.BrowserRefresh = "BrowserRefresh", a.BrowserSearch = "BrowserSearch", a.BrowserStop = "BrowserStop", a.Decimal = "Decimal", a.Key11 = "Key11", a.Key12 = "Key12", a.Multiply = "Multiply", a.Add = "Add", a.Divide = "Divide", a.Subtract = "Subtract", a.Separator = "Separator";
+    })(l.Key || (l.Key = {}));
+  })(Key_enum)), Key_enum;
+}
+var Key_enumExports = requireKey_enum();
+const _hoisted_1$x = { class: "position-property-render-item" }, _sfc_main$E = /* @__PURE__ */ defineComponent({
+  __name: "PositionPropertyRender",
+  props: {
+    label: {},
+    value: {}
+  },
+  emits: ["changeValue"],
+  setup(l, { emit: a }) {
+    const n = l, d = a, f = ref(n.value?.x.toFixed(1) || "0"), g = ref(n.value?.y.toFixed(1) || "0");
+    function v() {
+      f.value = n.value?.x.toFixed(1) || "0", g.value = n.value?.y.toFixed(1) || "0";
+    }
+    watch(() => n.value, v);
+    function x(R, V) {
+      if (!V) {
+        v();
+        return;
+      }
+      const K = parseFloat(V);
+      if (isNaN(K)) {
+        v();
+        return;
+      }
+      const Ge = { x: n.value?.x || 0, y: n.value?.y || 0 };
+      R == "x" ? Ge.x = K : Ge.y = K, d("changeValue", Ge);
+    }
+    return onMounted(v), (R, V) => (openBlock(), createElementBlock("div", _hoisted_1$x, [
+      createElementVNode("span", null, toDisplayString(l.label), 1),
+      createElementVNode("span", null, [
+        V[4] || (V[4] = createElementVNode("span", { style: { "margin-left": "20px" } }, "X :", -1)),
+        createVNode$1(unref(InputCpnt), {
+          modelValue: f.value,
+          "onUpdate:modelValue": V[0] || (V[0] = (K) => f.value = K),
+          onChange: V[1] || (V[1] = (K) => x("x", K)),
+          width: 80,
+          height: 24
+        }, null, 8, ["modelValue"]),
+        V[5] || (V[5] = createElementVNode("span", { style: { "margin-left": "20px" } }, "Y :", -1)),
+        createVNode$1(unref(InputCpnt), {
+          modelValue: g.value,
+          "onUpdate:modelValue": V[2] || (V[2] = (K) => g.value = K),
+          onChange: V[3] || (V[3] = (K) => x("y", K)),
+          width: 80,
+          height: 24
+        }, null, 8, ["modelValue"])
+      ])
+    ]));
+  }
+}), _sfc_main$D = /* @__PURE__ */ defineComponent({
+  __name: "ColorPropertyRender",
+  props: {
+    label: {},
+    value: {},
+    opt: {}
+  },
+  emits: ["changeValue"],
+  setup(l, { emit: a }) {
+    const n = a;
+    function d(f) {
+      console.log(f), n("changeValue", f);
+    }
+    return (f, g) => (openBlock(), createElementBlock(Fragment, null, [
+      createElementVNode("span", null, toDisplayString(l.label), 1),
+      l.opt?.gaugeColor ? createCommentVNode("", !0) : (openBlock(), createBlock(unref(ColorPicker), {
+        key: 0,
+        value: l.value || "#000000",
+        enableOpacity: l.opt?.enableOpacity,
+        linearGradient: l.opt?.gradient,
+        radialGradient: l.opt?.gradient,
+        conicGradient: l.opt?.gradient,
+        onChange: d
+      }, null, 8, ["value", "enableOpacity", "linearGradient", "radialGradient", "conicGradient"])),
+      l.opt?.gaugeColor ? (openBlock(), createBlock(unref(ColorPicker), {
+        key: 1,
+        value: l.value,
+        enableOpacity: !1,
+        linearGradient: !1,
+        radialGradient: !1,
+        conicGradientCenter: !1,
+        conicGradient: !0,
+        onChange: d
+      }, null, 8, ["value"])) : createCommentVNode("", !0)
+    ], 64));
+  }
+}), _hoisted_1$w = { class: "number-property-render-item" }, _sfc_main$C = /* @__PURE__ */ defineComponent({
   __name: "NumberPropertyRender",
   props: {
     label: {},
@@ -5293,7 +5291,7 @@ const _hoisted_1$q = { class: "property-group-panel-title" }, _hoisted_2$m = { c
       ])
     ]));
   }
-}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-ChRMwRjf.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-K9sJ1oLZ.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-C6A0eT24.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-R3WZNXJ_.mjs"));
+}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-C8-ow_zY.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-DOZPPoMf.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-a6__dAoW.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-Bz4DnJ-1.mjs"));
 var propertyGroupRenderType = /* @__PURE__ */ ((l) => (l.normal = "normal", l.binding = "binding", l.listBinding = "listBinding", l.alignItems = "alignItems", l.orderItems = "orderItems", l.bindingDashboard = "bindingDashboard", l.propertyGroupBackground = "propertyGroupBackground", l.propertyGroupText = "propertyGroupText", l.propertyGroupPositionSize = "propertyGroupPositionSize", l.propertyGroupViewPosition = "propertyGroupViewPosition", l.animationConfigGroup = "animationConfigGroup", l.iconPropertyConfig = "iconPropertyConfig", l.GlowEffectConfig = "GlowEffectConfig", l.popupConfigGroup = "popupConfigGroup", l))(propertyGroupRenderType || {}), brushTypes = /* @__PURE__ */ ((l) => (l.backgroundStyle = "backgroundStyle", l.textStyle = "textStyle", l.shadingColor = "shadingColor", l.iconStyle = "iconStyle", l))(brushTypes || {});
 const brushPropertiesMap = /* @__PURE__ */ new Map([
   ["backgroundStyle", [
