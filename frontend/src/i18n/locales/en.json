@@ -55,8 +55,8 @@
   },
   "layout": {
     "dashboard": "Dashboard",
-    "devices": "Southbound Device",
-    "channels": "Northbound Channel",
+    "devices": "Devices",
+    "channels": "Channels",
     "rules": "Rules",
     "alerts": "Alerts",
     "scada": "SCADA",
