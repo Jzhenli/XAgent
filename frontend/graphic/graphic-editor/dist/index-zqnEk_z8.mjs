@@ -5315,7 +5315,7 @@ const _hoisted_1$q = { class: "property-group-panel-title" }, _hoisted_2$m = { c
       ])
     ]));
   }
-}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-RVdiZscr.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-BI7r640n.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-Da8dBgZr.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-e8PlvH6x.mjs"));
+}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-DVvT0hNo.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-B40_U9Do.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-CnNL8McO.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-Dk11r_st.mjs"));
 var propertyGroupRenderType = /* @__PURE__ */ ((l) => (l.normal = "normal", l.binding = "binding", l.listBinding = "listBinding", l.alignItems = "alignItems", l.orderItems = "orderItems", l.bindingDashboard = "bindingDashboard", l.propertyGroupBackground = "propertyGroupBackground", l.propertyGroupText = "propertyGroupText", l.propertyGroupPositionSize = "propertyGroupPositionSize", l.propertyGroupViewPosition = "propertyGroupViewPosition", l.animationConfigGroup = "animationConfigGroup", l.iconPropertyConfig = "iconPropertyConfig", l.GlowEffectConfig = "GlowEffectConfig", l.popupConfigGroup = "popupConfigGroup", l))(propertyGroupRenderType || {}), brushTypes = /* @__PURE__ */ ((l) => (l.backgroundStyle = "backgroundStyle", l.textStyle = "textStyle", l.shadingColor = "shadingColor", l.iconStyle = "iconStyle", l))(brushTypes || {});
 const brushPropertiesMap = /* @__PURE__ */ new Map([
   ["backgroundStyle", [
@@ -67590,7 +67590,7 @@ class GraphicItemManager extends Eventful$1 {
       const x = new GLayer();
       await x.loadData(v, a.customImageCache), this.layers.push(x);
     });
-    await Promise.all(g), this.layers.length === 0 && this.layers.push(new GLayer(t("背景图层"))), this.activateLayer(this.layers[this.layers.length - 1]), drawingArea.zoomFit(), n || (graphicUndoManager.pushState(!0), this.updateBindingPointName()), this.dispatch("dataReload", null);
+    await Promise.all(g), this.layers.length === 0 && this.layers.push(new GLayer("背景图层")), this.activateLayer(this.layers[this.layers.length - 1]), drawingArea.zoomFit(), n || (graphicUndoManager.pushState(!0), this.updateBindingPointName()), this.dispatch("dataReload", null);
   }
   addLayerFromData(a, n) {
     const d = new GLayer();
@@ -71696,7 +71696,7 @@ const _hoisted_1$6 = { style: { position: "absolute", inset: "0", overflow: "hid
             }, null, 8, ["style", "onClick"]),
             createElementVNode("div", _hoisted_3$4, [
               createVNode$1(unref(InlineTextEditor), {
-                value: hr.name,
+                value: unref(t)(hr.name),
                 inputWidth: 150,
                 height: 40,
                 onEditStateChange: (dr) => Ge(dr, hr),
@@ -72458,8 +72458,8 @@ const _hoisted_1$6 = { style: { position: "absolute", inset: "0", overflow: "hid
         }),
         createElementVNode("div", {
           class: "currentValue",
-          title: a.value
-        }, toDisplayString(a.value), 9, _hoisted_5)
+          title: unref(t)(a.value)
+        }, toDisplayString(unref(t)(a.value)), 9, _hoisted_5)
       ])
     ]));
   }
