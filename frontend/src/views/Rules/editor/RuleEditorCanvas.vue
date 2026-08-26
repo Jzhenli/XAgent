@@ -121,17 +121,48 @@
         </div>
       </div>
     </div>
+
+    <!-- 校验失败弹框 -->
+    <Teleport to="body">
+      <Transition name="validation-fade">
+        <div v-if="validationDialog.visible" class="validation-overlay" @click.self="validationDialog.visible = false">
+          <div class="validation-dialog">
+            <div class="vd-glow" aria-hidden="true"></div>
+            <div class="vd-header">
+              <div class="vd-icon-wrap">
+                <span class="vd-icon">⚠️</span>
+              </div>
+              <div class="vd-title">{{ t('ruleEditor.validationTitle') }}</div>
+            </div>
+            <div class="vd-body">
+              <p class="vd-hint">{{ t('ruleEditor.validationHint') }}</p>
+              <ul class="vd-list">
+                <li v-for="(msg, idx) in validationDialog.messages" :key="idx" class="vd-item">
+                  <span class="vd-item-dot"></span>
+                  <span class="vd-item-text">{{ msg }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="vd-footer">
+              <el-button class="vd-confirm-btn" @click="validationDialog.visible = false">
+                {{ t('common.confirm') }}
+              </el-button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, markRaw, watch, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, markRaw, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { VueFlow, useVueFlow, type Connection, type NodeChange, type EdgeChange } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
 
 import NodePalette from './NodePalette.vue'
@@ -200,6 +231,12 @@ const contextMenuVisible = ref(false)
 const contextMenuPos = ref({ x: 0, y: 0 })
 const contextMenuType = ref<'node' | 'edge'>('node')
 const contextMenuTargetId = ref<string>('')
+
+/** 校验失败弹框状态 */
+const validationDialog = reactive({
+  visible: false,
+  messages: [] as string[]
+})
 
 /** 关闭右键菜单 */
 const closeContextMenu = () => {
@@ -405,13 +442,8 @@ const handleSave = async () => {
   // 表单校验
   const result = validateGraph(currentNodes, edges.value, { ruleName: ruleName.value })
   if (!result.valid) {
-    const messages = result.errors.map(err => t(err.key, err.params ?? {}))
-    const html = `<div style="margin-bottom:8px">${t('ruleEditor.validationHint')}</div><ul style="padding-left:18px;margin:0">${messages.map(m => `<li style="margin-bottom:4px">${m}</li>`).join('')}</ul>`
-    ElMessageBox.alert(html, t('ruleEditor.validationTitle'), {
-      confirmButtonText: t('common.confirm'),
-      dangerouslyUseHTMLString: true,
-      type: 'warning'
-    })
+    validationDialog.messages = result.errors.map(err => t(err.key, err.params ?? {}))
+    validationDialog.visible = true
     return
   }
 
@@ -871,5 +903,198 @@ onBeforeUnmount(() => {
 .context-menu-item:hover {
   background: var(--re-chip-bg);
   color: var(--re-accent);
+}
+
+/* ===== 校验失败弹框 ===== */
+.validation-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.validation-dialog {
+  position: relative;
+  width: 420px;
+  max-width: 92vw;
+  background: var(--re-panel-bg);
+  backdrop-filter: var(--re-panel-blur);
+  -webkit-backdrop-filter: var(--re-panel-blur);
+  border: 1px solid var(--re-panel-border);
+  border-radius: 18px;
+  box-shadow:
+    0 0 40px color-mix(in srgb, var(--re-accent) 20%, transparent),
+    0 20px 60px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: vd-pop-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.vd-glow {
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 200px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(231, 76, 60, 0.4) 0%, transparent 70%);
+  filter: blur(30px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vd-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 24px;
+}
+
+.vd-icon-wrap {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.2));
+  border: 1.5px solid rgba(231, 76, 60, 0.5);
+  border-radius: 14px;
+  box-shadow: 0 0 20px rgba(231, 76, 60, 0.3);
+  animation: vd-icon-pulse 2s ease-in-out infinite;
+}
+
+.vd-icon {
+  font-size: 26px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-2px);
+}
+
+.vd-title {
+  font-size: 18px;
+  font-weight: 700;
+  background: var(--re-title-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.3px;
+}
+
+.vd-body {
+  position: relative;
+  z-index: 1;
+  padding: 8px 24px 16px;
+}
+
+.vd-hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.vd-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vd-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--re-chip-bg);
+  border: 1px solid var(--re-chip-border);
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.vd-item:hover {
+  background: color-mix(in srgb, var(--re-accent) 12%, transparent);
+  border-color: var(--re-accent);
+  transform: translateX(4px);
+}
+
+.vd-item-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+}
+
+.vd-item-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.vd-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 24px 20px;
+  border-top: 1px solid var(--re-panel-border);
+}
+
+.vd-confirm-btn {
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, var(--re-accent), var(--re-accent-2)) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  padding: 10px 28px !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--re-accent) 40%, transparent) !important;
+  transition: all 0.25s !important;
+}
+
+.vd-confirm-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--re-accent) 50%, transparent) !important;
+}
+
+/* 动画 */
+@keyframes vd-pop-in {
+  0% { opacity: 0; transform: scale(0.9) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes vd-icon-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(231, 76, 60, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(231, 76, 60, 0.6); }
+}
+
+.validation-fade-enter-active,
+.validation-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.validation-fade-enter-active .validation-dialog,
+.validation-fade-leave-active .validation-dialog {
+  animation: vd-pop-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.validation-fade-leave-active .validation-dialog {
+  animation: vd-pop-in 0.25s cubic-bezier(0.4, 0, 1, 1) reverse;
+}
+
+.validation-fade-enter-from,
+.validation-fade-leave-to {
+  opacity: 0;
 }
 </style>
