@@ -39,6 +39,9 @@
       :with-header="true"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
+      :append-to-body="false"
+      :teleported="false"
+      class="rule-editor-drawer"
       @closed="handleDrawerClosed"
     >
       <RuleEditorCanvas
@@ -137,5 +140,57 @@ onMounted(() => {
   flex-direction: column;
   padding: 0;
   gap: 12px;
+}
+
+:deep(.rule-editor-drawer .el-drawer) {
+  background: var(--re-canvas-bg) !important;
+  box-shadow: var(--re-shadow-glow) !important;
+}
+
+:deep(.rule-editor-drawer .el-drawer__header) {
+  background: var(--re-toolbar-bg) !important;
+  backdrop-filter: var(--re-panel-blur);
+  -webkit-backdrop-filter: var(--re-panel-blur);
+  border-bottom: 1px solid var(--re-panel-border) !important;
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  letter-spacing: 0.3px !important;
+  padding: 16px 20px !important;
+  margin-bottom: 0 !important;
+  position: relative;
+}
+
+:deep(.rule-editor-drawer .el-drawer__header::before) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--re-accent), var(--re-accent-2), transparent);
+  opacity: 0.5;
+}
+
+:deep(.rule-editor-drawer .el-drawer__body) {
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: var(--re-canvas-bg) !important;
+}
+
+:deep(.rule-editor-drawer .el-drawer__close-btn) {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+:deep(.rule-editor-drawer .el-drawer__close-btn:hover) {
+  color: var(--text-primary) !important;
+  background: transparent !important;
 }
 </style>

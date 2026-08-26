@@ -3,21 +3,34 @@
     <!-- 顶部工具栏：规则名称/描述输入 + 节点统计 + 清除/保存按钮 -->
     <div class="editor-toolbar">
       <div class="toolbar-left">
+        <div class="toolbar-glow" aria-hidden="true"></div>
         <el-input
           v-model="ruleName"
           :placeholder="t('ruleEditor.ruleName')"
+          class="rule-input"
           style="width: 200px"
         />
         <el-input
           v-model="ruleDescription"
           :placeholder="t('ruleEditor.ruleDescription')"
+          class="rule-input"
           style="width: 300px"
         />
       </div>
       <div class="toolbar-right">
-        <span class="node-count">{{ t('ruleEditor.nodeCount') }}: {{ nodes.length }} | {{ t('ruleEditor.edgeCount') }}: {{ edges.length }}</span>
+        <div class="node-count">
+          <span class="count-item">
+            <span class="count-value">{{ nodes.length }}</span>
+            <span class="count-label">{{ t('ruleEditor.nodeCount') }}</span>
+          </span>
+          <span class="count-divider"></span>
+          <span class="count-item">
+            <span class="count-value">{{ edges.length }}</span>
+            <span class="count-label">{{ t('ruleEditor.edgeCount') }}</span>
+          </span>
+        </div>
         <el-button class="clear-btn" @click="handleClear" :disabled="loading || saving">{{ t('ruleEditor.clear') }}</el-button>
-        <el-button type="primary" :disabled="saving" :loading="saving" @click="handleSave">
+        <el-button class="save-btn" type="primary" :disabled="saving" :loading="saving" @click="handleSave">
           {{ saving ? t('ruleEditor.saving') : t('ruleEditor.save') }}
         </el-button>
       </div>
@@ -50,7 +63,7 @@
           @node-context-menu="onNodeContextMenu"
           @edge-context-menu="onEdgeContextMenu"
         >
-          <Background pattern-color="#aaa" :gap="25" />
+          <Background :pattern-color="isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'" :gap="25" />
           <Controls />
           <MiniMap />
         </VueFlow>
@@ -81,8 +94,11 @@
 
       <!-- 选中节点时显示配置面板 -->
       <div v-if="selectedNode" class="config-panel">
-        <div class="panel-header">
-          <span>{{ t('ruleEditor.nodeConfig') }}</span>
+        <div class="config-panel-header">
+          <div class="panel-header-left">
+            <span class="panel-title">{{ t('ruleEditor.nodeConfig') }}</span>
+            <div class="panel-accent-bar"></div>
+          </div>
           <el-button type="danger" link size="small" @click="handleResetNodeData">
             {{ t('ruleEditor.resetData') }}
           </el-button>
@@ -132,6 +148,7 @@ import { NODE_TEMPLATES } from '@/types/rule'
 import { createNode, validateGraph } from '@/utils/ruleConverter'
 import { graphToBackendCreate, graphToBackendUpdate, backendToGraph } from '@/utils/ruleBridge'
 import { useRuleStore } from '@/stores/rules'
+import { useThemeStore } from '@/stores/theme'
 import { Icon } from '@/icon'
 
 const { t } = useI18n()
@@ -147,6 +164,8 @@ const emit = defineEmits<{
 }>()
 
 const ruleStore = useRuleStore()
+const themeStore = useThemeStore()
+const isDark = computed(() => themeStore.theme === 'dark')
 
 /** VueFlow 核心 hooks */
 const {
@@ -528,7 +547,8 @@ onBeforeUnmount(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--bg-secondary);
+  background: var(--re-canvas-bg);
+  position: relative;
 }
 
 .editor-toolbar {
@@ -536,36 +556,122 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: var(--bg-container);
-  border-bottom: 1px solid var(--border-base);
+  background: var(--re-toolbar-bg);
+  backdrop-filter: var(--re-panel-blur);
+  -webkit-backdrop-filter: var(--re-panel-blur);
+  border-bottom: 1px solid var(--re-panel-border);
+  position: relative;
+  overflow: hidden;
 }
 
 .toolbar-left {
   display: flex;
   gap: 12px;
+  position: relative;
+}
+
+.toolbar-glow {
+  position: absolute;
+  top: -20px;
+  left: -10px;
+  width: 120px;
+  height: 60px;
+  background: radial-gradient(circle, var(--re-accent) 0%, transparent 70%);
+  opacity: 0.18;
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.rule-input :deep(.el-input__wrapper) {
+  background: var(--re-input-bg) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 0 1px var(--re-panel-border) inset !important;
+  transition: box-shadow 0.2s !important;
+}
+
+.rule-input :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--re-accent) inset !important;
+}
+
+.rule-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px var(--re-accent) inset, 0 0 0 3px color-mix(in srgb, var(--re-accent) 18%, transparent) !important;
+}
+
+.rule-input :deep(.el-input__inner) {
+  color: var(--text-primary) !important;
 }
 
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .node-count {
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: var(--re-chip-bg);
+  border: 1px solid var(--re-chip-border);
+  border-radius: 10px;
+}
+
+.count-item {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.count-value {
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--re-title-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+.count-label {
+  font-size: 11px;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.count-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--re-panel-border);
 }
 
 .clear-btn {
   background-color: transparent !important;
-  border-color: var(--border-base) !important;
+  border: 1px solid var(--re-panel-border) !important;
   color: var(--text-primary) !important;
+  border-radius: 10px !important;
+  transition: all 0.25s !important;
 }
 
 .clear-btn:hover {
-  background-color: var(--bg-hover) !important;
-  border-color: var(--border-base) !important;
-  color: var(--text-primary) !important;
+  background-color: var(--re-chip-bg) !important;
+  border-color: var(--re-accent) !important;
+  color: var(--re-accent) !important;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--re-accent) 25%, transparent) !important;
+}
+
+.save-btn {
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, var(--re-accent), var(--re-accent-2)) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--re-accent) 40%, transparent) !important;
+  transition: all 0.25s !important;
+}
+
+.save-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--re-accent) 50%, transparent) !important;
 }
 
 .editor-loading {
@@ -588,6 +694,7 @@ onBeforeUnmount(() => {
 .editor-canvas {
   flex: 1;
   position: relative;
+  background: var(--re-canvas-bg);
 }
 
 .vue-flow-container {
@@ -596,27 +703,52 @@ onBeforeUnmount(() => {
 }
 
 .config-panel {
-  width: 320px;
-  background: var(--bg-container);
-  border-left: 1px solid var(--border-base);
+  width: 340px;
+  background: var(--re-panel-bg);
+  backdrop-filter: var(--re-panel-blur);
+  -webkit-backdrop-filter: var(--re-panel-blur);
+  border-left: 1px solid var(--re-panel-border);
   display: flex;
   flex-direction: column;
 }
 
-.panel-header {
+.config-panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-base);
-  font-weight: 600;
-  color: var(--text-primary);
+  padding: 14px 16px;
+  background: var(--re-toolbar-bg);
+  border-bottom: 1px solid var(--re-panel-border);
+}
+
+.panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--re-title-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.panel-accent-bar {
+  width: 3px;
+  height: 16px;
+  background: linear-gradient(180deg, var(--re-accent), var(--re-accent-2));
+  border-radius: 2px;
 }
 
 .empty-panel {
-  width: 320px;
-  background: var(--bg-container);
-  border-left: 1px solid var(--border-base);
+  width: 340px;
+  background: var(--re-panel-bg);
+  backdrop-filter: var(--re-panel-blur);
+  -webkit-backdrop-filter: var(--re-panel-blur);
+  border-left: 1px solid var(--re-panel-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -624,23 +756,86 @@ onBeforeUnmount(() => {
 
 .empty-content {
   text-align: center;
-  padding: 20px;
+  padding: 24px 20px;
 }
 
 .empty-icon {
-  font-size: 48px;
+  font-size: 56px;
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
 }
 
 .empty-content p {
   margin: 4px 0;
   color: var(--text-primary);
+  font-weight: 500;
 }
 
 .empty-content .hint {
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+.editor-canvas :deep(.vue-flow__background) {
+  background: transparent !important;
+}
+
+.editor-canvas :deep(.vue-flow__controls) {
+  background: var(--re-panel-bg) !important;
+  backdrop-filter: var(--re-panel-blur);
+  border: 1px solid var(--re-panel-border) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--re-shadow-soft) !important;
+  padding: 4px !important;
+}
+
+.editor-canvas :deep(.vue-flow__controls-button) {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 8px !important;
+  color: var(--text-primary) !important;
+  width: 28px !important;
+  height: 28px !important;
+  transition: all 0.2s !important;
+}
+
+.editor-canvas :deep(.vue-flow__controls-button:hover) {
+  background: var(--re-chip-bg) !important;
+  color: var(--re-accent) !important;
+}
+
+.editor-canvas :deep(.vue-flow__controls-button svg) {
+  fill: currentColor !important;
+}
+
+.editor-canvas :deep(.vue-flow__minimap) {
+  background: var(--re-panel-bg) !important;
+  backdrop-filter: var(--re-panel-blur);
+  border: 1px solid var(--re-panel-border) !important;
+  border-radius: 10px !important;
+  box-shadow: var(--re-shadow-soft) !important;
+  overflow: hidden !important;
+}
+
+.editor-canvas :deep(.vue-flow__edge-path) {
+  stroke: var(--re-edge-color) !important;
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 0 6px var(--re-edge-glow));
+}
+
+.editor-canvas :deep(.vue-flow__edge.animated .vue-flow__edge-path) {
+  stroke-dasharray: 6 3 !important;
+}
+
+.editor-canvas :deep(.vue-flow__edge.selected .vue-flow__edge-path) {
+  stroke: var(--re-accent) !important;
+  stroke-width: 3 !important;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--re-accent) 60%, transparent));
+}
+
+.editor-canvas :deep(.vue-flow__attribution) {
+  display: none !important;
 }
 </style>
 
@@ -648,28 +843,33 @@ onBeforeUnmount(() => {
 .context-menu {
   position: fixed;
   z-index: 9999;
-  background: var(--bg-container);
-  border: 1px solid var(--border-base);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  padding: 4px 0;
-  min-width: 140px;
+  background: var(--re-panel-bg);
+  backdrop-filter: var(--re-panel-blur);
+  -webkit-backdrop-filter: var(--re-panel-blur);
+  border: 1px solid var(--re-panel-border);
+  border-radius: 12px;
+  box-shadow: var(--re-shadow-glow);
+  padding: 6px;
+  min-width: 160px;
   user-select: none;
+  overflow: hidden;
 }
 
 .context-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 10px 14px;
   font-size: 13px;
   color: var(--text-primary);
   cursor: pointer;
-  transition: background-color 0.15s;
+  transition: all 0.15s;
   white-space: nowrap;
+  border-radius: 8px;
 }
 
 .context-menu-item:hover {
-  background: var(--bg-hover);
+  background: var(--re-chip-bg);
+  color: var(--re-accent);
 }
 </style>

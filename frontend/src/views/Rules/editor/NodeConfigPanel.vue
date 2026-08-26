@@ -711,30 +711,63 @@ const isDaySelected = (day: number) => {
 <style scoped>
 .node-config-panel {
   width: 100%;
-  background: var(--bg-container);
-  border-left: 1px solid var(--border-base);
+  background: var(--re-panel-bg);
+  backdrop-filter: var(--re-panel-blur);
+  -webkit-backdrop-filter: var(--re-panel-blur);
+  border-left: 1px solid var(--re-panel-border);
   display: flex;
   flex-direction: column;
 }
 
 .panel-header {
   padding: 16px;
-  border-bottom: 1px solid var(--border-base);
-  background: var(--bg-hover);
+  border-bottom: 1px solid var(--re-panel-border);
+  background: var(--re-toolbar-bg);
   display: flex;
   align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-header::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: -10px;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, var(--re-accent) 0%, transparent 70%);
+  opacity: 0.15;
+  filter: blur(16px);
+  pointer-events: none;
 }
 
 .panel-header h3 {
   margin: 0;
   font-size: 15px;
-  color: var(--text-primary);
+  font-weight: 700;
+  background: var(--re-title-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.3px;
 }
 
 .panel-body {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
+}
+
+.panel-body::-webkit-scrollbar {
+  width: 6px;
+}
+.panel-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.panel-body::-webkit-scrollbar-thumb {
+  background: var(--border-base);
+  border-radius: 3px;
 }
 
 .form-group {
@@ -744,24 +777,31 @@ const isDaySelected = (day: number) => {
 .form-group label {
   display: block;
   margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border-base);
-  border-radius: 6px;
+  padding: 9px 12px;
+  border: 1px solid var(--re-input-border);
+  border-radius: 10px;
   font-size: 13px;
-  background-color: var(--bg-input);
+  background-color: var(--re-input-bg);
   color: var(--text-primary);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
   box-sizing: border-box;
-  color-scheme: dark;
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: var(--re-input-border-hover);
 }
 
 .form-group input::placeholder,
@@ -773,8 +813,8 @@ const isDaySelected = (day: number) => {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-light);
+  border-color: var(--re-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--re-accent) 20%, transparent), 0 0 12px color-mix(in srgb, var(--re-accent) 25%, transparent);
 }
 
 .form-group select option {
@@ -794,14 +834,10 @@ const isDaySelected = (day: number) => {
   filter: invert(0.5);
 }
 
-.form-group input[type="time"],
-.form-group input[type="date"] {
-  color-scheme: inherit;
-}
-
 .form-group textarea {
   min-height: 60px;
   resize: vertical;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
 }
 
 .form-group .hint {
@@ -812,12 +848,13 @@ const isDaySelected = (day: number) => {
 }
 
 .info-group .info-value {
-  padding: 8px 12px;
-  background: var(--color-info-light, #f0f9ff);
-  border: 1px solid var(--color-info-border, #bae6fd);
-  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--re-chip-bg);
+  border: 1px solid var(--re-chip-border);
+  border-radius: 10px;
   font-size: 13px;
-  color: var(--color-info-text, #0369a1);
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
 }
 
 .device-option {
@@ -853,9 +890,10 @@ const isDaySelected = (day: number) => {
 }
 
 .logic-hint {
-  padding: 12px;
-  background: var(--bg-hover);
-  border-radius: 6px;
+  padding: 12px 14px;
+  background: var(--re-chip-bg);
+  border: 1px solid var(--re-chip-border);
+  border-radius: 10px;
   margin-bottom: 16px;
 }
 
@@ -872,23 +910,26 @@ const isDaySelected = (day: number) => {
 }
 
 .weekday-btn {
-  padding: 6px 10px;
-  border: 1px solid var(--border-base);
-  border-radius: 4px;
-  background: var(--bg-container);
+  padding: 7px 11px;
+  border: 1px solid var(--re-input-border);
+  border-radius: 8px;
+  background: var(--re-input-bg);
   cursor: pointer;
   font-size: 12px;
   transition: all 0.2s;
+  color: var(--text-primary);
 }
 
 .weekday-btn:hover {
-  border-color: var(--color-primary);
+  border-color: var(--re-input-border-hover);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--re-accent) 30%, transparent);
 }
 
 .weekday-btn.active {
-  background: var(--color-primary);
-  color: var(--text-white);
-  border-color: var(--color-primary);
+  background: linear-gradient(135deg, var(--re-accent), var(--re-accent-2));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--re-accent) 40%, transparent);
 }
 
 .date-range {
@@ -907,12 +948,14 @@ const isDaySelected = (day: number) => {
 }
 
 .cron-examples {
-  padding: 12px;
-  background: var(--bg-hover);
-  border-radius: 6px;
+  padding: 12px 14px;
+  background: var(--re-chip-bg);
+  border: 1px solid var(--re-chip-border);
+  border-radius: 10px;
   margin-bottom: 16px;
   font-size: 12px;
   color: var(--text-secondary);
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
 }
 
 .cron-examples p {
@@ -923,12 +966,12 @@ const isDaySelected = (day: number) => {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  padding: 8px;
-  background: var(--color-info-light, #f0f9ff);
-  border: 1px solid var(--color-info-border, #bae6fd);
-  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--re-chip-bg);
+  border: 1px solid var(--re-chip-border);
+  border-radius: 10px;
   font-size: 12px;
-  color: var(--color-info-text, #0369a1);
+  color: var(--text-primary);
   line-height: 1.4;
 }
 
