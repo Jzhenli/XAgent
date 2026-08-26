@@ -9,7 +9,6 @@
           src="@/assets/login/lubanx_dark.svg"
           alt="lubanx_dark"
         />
-        <span class="logo-text">LUBANX</span>
       </div>
 
       <div class="login-form-section">
@@ -311,6 +310,8 @@ async function handleLogin() {
   font-size: 24px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.93);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .login-form :deep(.el-form-item) {

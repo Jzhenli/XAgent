@@ -153,6 +153,13 @@ html, body {
 
 .vue-flow__node {
   cursor: pointer;
+  outline: none !important;
+}
+
+.vue-flow__node:hover,
+.vue-flow__node:focus,
+.vue-flow__node:focus-visible {
+  outline: none !important;
 }
 
 .vue-flow__node.selected .rule-node {

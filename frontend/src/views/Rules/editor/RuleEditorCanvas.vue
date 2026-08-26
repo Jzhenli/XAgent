@@ -813,6 +813,13 @@ onBeforeUnmount(() => {
   background: transparent !important;
 }
 
+.editor-canvas :deep(.vue-flow__node),
+.editor-canvas :deep(.vue-flow__node:hover),
+.editor-canvas :deep(.vue-flow__node:focus),
+.editor-canvas :deep(.vue-flow__node:focus-visible) {
+  outline: none !important;
+}
+
 .editor-canvas :deep(.vue-flow__controls) {
   background: var(--re-panel-bg) !important;
   backdrop-filter: var(--re-panel-blur);
