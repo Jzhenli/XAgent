@@ -40,13 +40,18 @@
             />
           </el-form-item>
           <div class="lang-switch-wrapper">
-            <el-dropdown trigger="click" @command="handleLanguageChange">
+            <el-dropdown
+              trigger="click"
+              popper-class="lang-dropdown-popper"
+              :teleported="false"
+              @command="handleLanguageChange"
+            >
               <span class="lang-switch-text">
                 {{ currentLanguageLabel }}
                 <el-icon><Switch /></el-icon>
               </span>
               <template #dropdown>
-                <el-dropdown-menu>
+                <el-dropdown-menu class="lang-dropdown-menu">
                   <el-dropdown-item
                     v-for="opt in languageOptions"
                     :key="opt.value"
@@ -391,6 +396,55 @@ async function handleLogin() {
   font-size: 16px;
 }
 
+.lang-switch-wrapper :deep(.lang-dropdown-menu) {
+  padding: 8px;
+  border-radius: 12px;
+  min-width: 110px;
+  background: rgba(30, 26, 68, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
+  animation: langDropdownFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes langDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.lang-switch-wrapper :deep(.lang-dropdown-menu .el-dropdown-menu__item) {
+  padding: 5px 7px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.93) !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.lang-switch-wrapper
+  :deep(.lang-dropdown-menu .el-dropdown-menu__item:hover),
+.lang-switch-wrapper
+  :deep(.lang-dropdown-menu .el-dropdown-menu__item:focus),
+.lang-switch-wrapper
+  :deep(.lang-dropdown-menu .el-dropdown-menu__item:active) {
+  background: rgba(102, 102, 255, 0.25) !important;
+  color: rgba(180, 180, 255, 1) !important;
+  transform: translateX(2px);
+}
+
 /* 关于我们弹框 */
 :deep(.el-dialog) {
   background: rgba(0, 0, 0, 1);
@@ -563,5 +617,18 @@ async function handleLogin() {
   .login-title {
     font-size: 24px;
   }
+}
+</style>
+
+<style>
+.lang-dropdown-popper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.lang-dropdown-popper .el-popper__arrow {
+  display: none !important;
 }
 </style>
