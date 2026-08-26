@@ -68,7 +68,9 @@
     "version": "v1.0.0",
     "theme": "主題切換",
     "lightTheme": "淺色主題",
-    "darkTheme": "深色主題"
+    "darkTheme": "深色主題",
+    "aboutUs": "關於我們",
+    "softwareVersion": "軟體版本"
   },
   "route": {
     "login": "登入",

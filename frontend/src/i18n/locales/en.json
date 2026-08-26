@@ -68,7 +68,9 @@
     "version": "v1.0.0",
     "theme": "Theme",
     "lightTheme": "Light Theme",
-    "darkTheme": "Dark Theme"
+    "darkTheme": "Dark Theme",
+    "aboutUs": "About Us",
+    "softwareVersion": "Software Version"
   },
   "route": {
     "login": "Login",

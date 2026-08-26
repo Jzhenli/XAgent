@@ -68,7 +68,9 @@
     "version": "v1.0.0",
     "theme": "主题切换",
     "lightTheme": "浅色主题",
-    "darkTheme": "深色主题"
+    "darkTheme": "深色主题",
+    "aboutUs": "关于我们",
+    "softwareVersion": "软件版本"
   },
   "route": {
     "login": "登录",

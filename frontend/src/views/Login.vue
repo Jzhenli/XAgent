@@ -85,44 +85,10 @@
         <span class="footer-link">{{ t("login.contactUs") }}</span>
       </div>
 
-      <el-dialog
+      <AboutUsDialog
         v-model="aboutDialogVisible"
-        :title="t('login.aboutUs')"
-        width="460px"
-        align-center
-        class="about-dialog"
-      >
-        <div class="about-content">
-          <img class="about-logo" src="@/assets/login/logo.svg" alt="logo" />
-          <div class="about-product">XPlay by LUBANX</div>
-          <div class="about-version-list">
-            <div class="about-version-row">
-              <span class="about-version-label">{{
-                t("login.softwareVersion")
-              }}</span>
-              <span class="about-version-value">{{
-                versionInfo.software
-              }}</span>
-            </div>
-            <div class="about-version-row">
-              <span class="about-version-label">{{
-                t("login.uiVersion")
-              }}</span>
-              <span class="about-version-value">{{ versionInfo.ui }}</span>
-            </div>
-            <div class="about-version-row">
-              <span class="about-version-label">{{
-                t("login.backendVersion")
-              }}</span>
-              <span class="about-version-value">{{ versionInfo.backend }}</span>
-            </div>
-          </div>
-          <div class="about-company">无锡研奇智联技术有限公司</div>
-          <div class="about-copyright">
-            Control © 2024 Adveco Technology Co., Ltd. All rights reserved.
-          </div>
-        </div>
-      </el-dialog>
+        :versions="aboutVersions"
+      />
     </div>
 
     <!-- 右侧：登录背景图 -->
@@ -143,7 +109,7 @@ import { useUserStore } from "@/stores/users";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import { Switch } from "@element-plus/icons-vue";
-import { systemApi } from "@/api/system";
+import AboutUsDialog from "@/components/AboutUsDialog.vue";
 import packageInfo from "../../package.json";
 
 /** 路由实例 */
@@ -167,6 +133,12 @@ const versionInfo = ref({
   ui: packageInfo.version,
   backend: "-",
 });
+
+const aboutVersions = computed(() => [
+  { labelKey: "login.softwareVersion", value: versionInfo.value.software },
+  { labelKey: "login.uiVersion", value: versionInfo.value.ui },
+  { labelKey: "login.backendVersion", value: versionInfo.value.backend },
+]);
 
 /** 支持的语言列表 */
 interface LanguageOption {
@@ -195,16 +167,9 @@ function handleLanguageChange(lang: string) {
   localStorage.setItem("locale", lang);
 }
 
-/** 打开关于我们弹框，并尝试从后端获取最新版本信息 */
-async function openAboutDialog() {
+/** 打开关于我们弹框 */
+function openAboutDialog() {
   aboutDialogVisible.value = true;
-  // try {
-  //   const data = await systemApi.getVersion();
-  //   versionInfo.value.software = data.software || versionInfo.value.software;
-  //   versionInfo.value.backend = data.backend || versionInfo.value.backend;
-  // } catch {
-  //   // 后端接口不可用时保留默认版本信息
-  // }
 }
 
 /** 处理登录提交 */
@@ -443,98 +408,6 @@ async function handleLogin() {
   background: rgba(102, 102, 255, 0.25) !important;
   color: rgba(180, 180, 255, 1) !important;
   transform: translateX(2px);
-}
-
-/* 关于我们弹框 */
-:deep(.el-dialog) {
-  background: rgba(0, 0, 0, 1);
-  border-radius: 18px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(50px);
-}
-
-:deep(.el-dialog__header) {
-  padding: 4px 24px 0;
-  margin-right: 0;
-}
-
-:deep(.el-dialog__title) {
-  color: rgba(255, 255, 255, 0.93);
-  font-size: 18px;
-  font-weight: 500;
-}
-
-:deep(.el-dialog__headerbtn) {
-  top: 5px;
-  right: 16px;
-}
-
-:deep(.el-dialog__headerbtn .el-dialog__close) {
-  color: rgba(255, 255, 255, 0.93);
-  font-size: 24px;
-}
-
-:deep(.el-dialog__headerbtn:hover .el-dialog__close) {
-  color: rgba(255, 255, 255, 1);
-}
-
-:deep(.el-dialog__body) {
-  padding: 8px 24px 32px;
-}
-
-.about-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  color: white;
-}
-
-.about-logo {
-  width: 72px;
-  height: 72px;
-  margin-bottom: 16px;
-}
-
-.about-product {
-  font-size: 14px;
-  font-weight: 400;
-  margin-bottom: 16px;
-  letter-spacing: 0.5px;
-}
-
-.about-version-list {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 60px;
-}
-
-.about-version-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.about-version-label {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.about-version-value {
-  color: rgba(255, 255, 255, 0.93);
-  font-weight: 400;
-}
-
-.about-company {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 6px;
-}
-
-.about-copyright {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
 }
 
 .login-footer {

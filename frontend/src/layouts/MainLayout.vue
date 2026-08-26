@@ -177,6 +177,9 @@
                 <el-dropdown-item @click="router.push('/settings')">{{
                   $t("layout.personalSettings")
                 }}</el-dropdown-item>
+                <el-dropdown-item divided @click="openAboutDialog">{{
+                  $t("layout.aboutUs")
+                }}</el-dropdown-item>
                 <el-dropdown-item divided @click="handleLogout">{{
                   $t("layout.logout")
                 }}</el-dropdown-item>
@@ -202,6 +205,11 @@
         </router-view>
       </el-main>
     </el-container>
+
+    <AboutUsDialog
+      v-model="aboutDialogVisible"
+      :versions="aboutVersions"
+    />
   </el-container>
 </template>
 
@@ -223,6 +231,7 @@ import { useAlertStore } from "@/stores/alerts";
 import { useUserStore } from "@/stores/users";
 import { useResponsive } from "@/utils/useResponsive";
 import ThemeSwitcher from "@/components/ThemeSwitcher.vue";
+import AboutUsDialog from "@/components/AboutUsDialog.vue";
 import { ElMessage } from "element-plus";
 import "@x-plateform/graphic-editor/dist/index.css";
 import "@x-plateform-mono/common/dist/index.css";
@@ -239,6 +248,15 @@ const { isTablet, isMobile, width, height } = useResponsive();
 const isCollapsed = ref(false);
 const isDrawerVisible = ref(false);
 const forceExpanded = ref(false);
+const aboutDialogVisible = ref(false);
+
+function openAboutDialog() {
+  aboutDialogVisible.value = true;
+}
+
+const aboutVersions = computed(() => [
+  { labelKey: "layout.softwareVersion", value: "1.0.0" },
+]);
 
 const languageOptions = [
   { value: "zh-CN", label: "简体中文" },
