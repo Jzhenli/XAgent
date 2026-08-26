@@ -105,6 +105,8 @@
           <el-badge
             :value="alertStore.pendingAlerts"
             :hidden="alertStore.pendingAlerts === 0"
+            :max="99"
+            class="alert-badge"
           >
             <Icon
               name="alarm"
@@ -663,6 +665,16 @@ onUnmounted(() => {
 
 .header-right :deep(.el-dropdown__trigger:focus) {
   outline: none;
+}
+
+.alert-badge :deep(.el-badge__content) {
+  min-width: 20px;
+  height: 20px;
+  line-height: 20px;
+  padding: 0 6px;
+  text-align: center;
+  overflow: visible;
+  white-space: nowrap;
 }
 
 /* ========== Header 下拉菜单 ========== */
