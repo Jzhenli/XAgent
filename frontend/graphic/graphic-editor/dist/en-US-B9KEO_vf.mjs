@@ -1,14 +1,14 @@
 const e = {
-  2098: "弹框配置",
+  2098: "Popup Configuration",
   2099: "解锁",
   2100: "锁定",
-  2101: "绑定项",
-  2102: "删除绑定",
-  2103: "请选择设备",
-  2104: "请选择点位",
-  2105: "显示名称",
-  2106: "显示名称（可选）",
-  2107: "添加绑定",
+  2101: "Binding Item",
+  2102: "Delete Binding",
+  2103: "Please select a device",
+  2104: "Please select a point",
+  2105: "Display Name",
+  2106: "Display Name (Optional)",
+  2107: "Add Binding",
   2261: "Deselect",
   2262: "Select this object",
   2263: "Vertical rotation direction",
@@ -486,7 +486,19 @@ const e = {
   3741: "X Cold Machine",
   3751: "Save graphic",
   3767: "Status {idx} ({stateName})",
-  3768: "Status {idx}"
+  3768: "Status {idx}",
+  3769: "Enable Popup",
+  3770: "Popup Title",
+  3771: "Popup Width",
+  3772: "Popup Height",
+  3773: "Trigger Mode",
+  3774: "Please select trigger mode",
+  3775: "On Label",
+  3776: "Off Label",
+  3777: "Number Label",
+  3778: "Switch",
+  3779: "Number Input",
+  3780: "Numeric Value"
 };
 export {
   e as default

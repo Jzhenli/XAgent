@@ -2324,7 +2324,19 @@ const loader = void 0, zhCN = {}, enUS = {}, paragraphs = {
   大型二通电磁阀: 2922,
   大型三通电磁阀: 2923,
   小型二通电磁阀: 2924,
-  小型三通电磁阀: 2925
+  小型三通电磁阀: 2925,
+  启用弹框: 3769,
+  弹框标题: 3770,
+  弹框宽度: 3771,
+  弹框高度: 3772,
+  触发方式: 3773,
+  请选择触发方式: 3774,
+  开启标签: 3775,
+  关闭标签: 3776,
+  数字标签: 3777,
+  开关: 3778,
+  数字输入: 3779,
+  数值: 3780
 }, component = void 0, transform = void 0, languages = [{ name: "zh-CN", title: "Chinese (Simplified)", nativeTitle: "简体中文", active: !0, default: !0 }, { name: "en-US", title: "English (United States)", nativeTitle: "English (United States)" }, { name: "zh-TW", title: "Chinese (Traditional - Taiwan)", nativeTitle: "繁體中文(臺灣)" }, { name: "km-KH", title: "高棉语", nativeTitle: "ខ្មែរ" }, { name: "ja-JP", title: "Japanese", nativeTitle: "日本語" }, { name: "ko-KR", title: "Korean", nativeTitle: "한국어" }], library = !0, debug = !1, settings = {
   languages,
   library,
@@ -2817,14 +2829,26 @@ const loader = void 0, zhCN = {}, enUS = {}, paragraphs = {
   3741: "X冷机",
   3751: "保存图形",
   3767: "状态{idx} ({stateName})",
-  3768: "状态{idx}"
+  3768: "状态{idx}",
+  3769: "启用弹框",
+  3770: "弹框标题",
+  3771: "弹框宽度",
+  3772: "弹框高度",
+  3773: "触发方式",
+  3774: "请选择触发方式",
+  3775: "开启标签",
+  3776: "关闭标签",
+  3777: "数字标签",
+  3778: "开关",
+  3779: "数字输入",
+  3780: "数值"
 }, messages$1 = {
   "zh-CN": defaultMessages,
-  "zh-TW": () => import("./zh-TW-Dv611an9.mjs"),
-  "en-US": () => import("./en-US-D2WqVMXi.mjs"),
-  "km-KH": () => import("./km-KH-DyAnw2NY.mjs"),
-  "ja-JP": () => import("./ja-JP-VvDcFjzG.mjs"),
-  "ko-KR": () => import("./ko-KR-BNfv2e5I.mjs")
+  "zh-TW": () => import("./zh-TW-4js1zlen.mjs"),
+  "en-US": () => import("./en-US-B9KEO_vf.mjs"),
+  "km-KH": () => import("./km-KH-D0QMBuki.mjs"),
+  "ja-JP": () => import("./ja-JP-AG9SZ9Ib.mjs"),
+  "ko-KR": () => import("./ko-KR-DgsqIp5V.mjs")
 };
 settings.library = !1;
 const i18nScope = new ot({
@@ -5291,7 +5315,7 @@ const _hoisted_1$q = { class: "property-group-panel-title" }, _hoisted_2$m = { c
       ])
     ]));
   }
-}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-C8-ow_zY.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-DOZPPoMf.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-a6__dAoW.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-Bz4DnJ-1.mjs"));
+}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-RVdiZscr.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-BI7r640n.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-Da8dBgZr.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-e8PlvH6x.mjs"));
 var propertyGroupRenderType = /* @__PURE__ */ ((l) => (l.normal = "normal", l.binding = "binding", l.listBinding = "listBinding", l.alignItems = "alignItems", l.orderItems = "orderItems", l.bindingDashboard = "bindingDashboard", l.propertyGroupBackground = "propertyGroupBackground", l.propertyGroupText = "propertyGroupText", l.propertyGroupPositionSize = "propertyGroupPositionSize", l.propertyGroupViewPosition = "propertyGroupViewPosition", l.animationConfigGroup = "animationConfigGroup", l.iconPropertyConfig = "iconPropertyConfig", l.GlowEffectConfig = "GlowEffectConfig", l.popupConfigGroup = "popupConfigGroup", l))(propertyGroupRenderType || {}), brushTypes = /* @__PURE__ */ ((l) => (l.backgroundStyle = "backgroundStyle", l.textStyle = "textStyle", l.shadingColor = "shadingColor", l.iconStyle = "iconStyle", l))(brushTypes || {});
 const brushPropertiesMap = /* @__PURE__ */ new Map([
   ["backgroundStyle", [

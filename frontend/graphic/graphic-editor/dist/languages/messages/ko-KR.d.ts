@@ -487,5 +487,17 @@ declare const _default: {
     "3751": string;
     "3767": string;
     "3768": string;
+    "3769": string;
+    "3770": string;
+    "3771": string;
+    "3772": string;
+    "3773": string;
+    "3774": string;
+    "3775": string;
+    "3776": string;
+    "3777": string;
+    "3778": string;
+    "3779": string;
+    "3780": string;
 };
 export default _default;
