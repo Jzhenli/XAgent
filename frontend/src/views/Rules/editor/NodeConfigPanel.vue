@@ -79,22 +79,40 @@
       <template v-if="nodeType === 'schedule-trigger' && localData.scheduleTrigger">
         <div class="form-group">
           <label>{{ t('nodeConfig.triggerMode') }}</label>
-          <select v-model="localData.scheduleTrigger.mode" @change="updateData">
-            <option v-for="mode in SCHEDULE_MODES" :key="mode.value" :value="mode.value">
-              {{ t(mode.labelKey) }}
-            </option>
-          </select>
+          <el-select
+            v-model="localData.scheduleTrigger.mode"
+            style="width: 100%"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
+            @change="updateData"
+          >
+            <el-option
+              v-for="mode in SCHEDULE_MODES"
+              :key="mode.value"
+              :label="t(mode.labelKey)"
+              :value="mode.value"
+            />
+          </el-select>
         </div>
 
         <!-- 周期模式配置 -->
         <template v-if="localData.scheduleTrigger.mode === 'periodic'">
           <div class="form-group">
             <label>{{ t('nodeConfig.executionFrequency') }}</label>
-            <select v-model="localData.scheduleTrigger.frequency" @change="updateData">
-              <option v-for="freq in SCHEDULE_FREQUENCIES" :key="freq.value" :value="freq.value">
-                {{ t(freq.labelKey) }}
-              </option>
-            </select>
+            <el-select
+            v-model="localData.scheduleTrigger.frequency"
+            style="width: 100%"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
+            @change="updateData"
+          >
+            <el-option
+              v-for="freq in SCHEDULE_FREQUENCIES"
+              :key="freq.value"
+              :label="t(freq.labelKey)"
+              :value="freq.value"
+            />
+          </el-select>
           </div>
 
           <div class="form-group">
@@ -224,11 +242,20 @@
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.operator') }}</label>
-          <select v-model="localData.condition.operator" @change="updateData">
-            <option v-for="op in OPERATORS" :key="op.value" :value="op.value">
-              {{ t(op.labelKey) }}
-            </option>
-          </select>
+          <el-select
+            v-model="localData.condition.operator"
+            style="width: 100%"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
+            @change="updateData"
+          >
+            <el-option
+              v-for="op in OPERATORS"
+              :key="op.value"
+              :label="t(op.labelKey)"
+              :value="op.value"
+            />
+          </el-select>
         </div>
         <div class="form-group">
           <label>{{ t('nodeConfig.comparisonValue') }}</label>
@@ -784,8 +811,7 @@ const isDaySelected = (day: number) => {
   letter-spacing: 0.5px;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
   width: 100%;
   padding: 8px 0;
   border: none;
@@ -810,8 +836,7 @@ const isDaySelected = (day: number) => {
   box-sizing: border-box;
 }
 
-.form-group input:hover,
-.form-group select:hover {
+.form-group input:hover {
   border-bottom-color: var(--re-input-border-hover);
 }
 
@@ -824,8 +849,7 @@ const isDaySelected = (day: number) => {
   color: var(--text-placeholder);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   outline: none;
   border-bottom-color: var(--re-accent);
 }
@@ -834,11 +858,6 @@ const isDaySelected = (day: number) => {
   outline: none;
   border-color: var(--re-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--re-accent) 20%, transparent), 0 0 12px color-mix(in srgb, var(--re-accent) 25%, transparent);
-}
-
-.form-group select option {
-  background-color: var(--bg-container);
-  color: var(--text-primary);
 }
 
 .form-group input[type="time"]::-webkit-calendar-picker-indicator,
