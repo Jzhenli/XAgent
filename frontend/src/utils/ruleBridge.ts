@@ -7,7 +7,7 @@ import type {
   RuleDataSubscription,
   RuleNotificationConfig
 } from '@/api/types'
-import { graphToExpression } from './ruleConverter'
+import { graphToExpression, graphToExpressions } from './ruleConverter'
 
 const VISUAL_GRAPH_KEY = '_visual_graph'
 
@@ -19,6 +19,7 @@ export interface RuleViewItem {
   enabled: boolean
   priority: number
   expression?: string
+  expressions: string[]
   executionCount: number
   lastTriggered?: string
   plugin?: RulePluginConfig
@@ -85,35 +86,43 @@ function extractRuleType(rule: RuleResponse): 'scene' | 'alert' | 'schedule' {
   return 'scene'
 }
 
-function extractExpression(rule: RuleResponse): string {
+function extractExpression(rule: RuleResponse): { combined: string; list: string[] } {
   const pluginConfig = rule.plugin?.config || {}
   const visualGraph = pluginConfig[VISUAL_GRAPH_KEY]
 
   if (visualGraph?.nodes && visualGraph.edges) {
-    return graphToExpression(visualGraph.nodes)
+    return {
+      combined: graphToExpression(visualGraph.nodes),
+      list: graphToExpressions(visualGraph.nodes, visualGraph.edges),
+    }
   }
 
   if (rule.plugin?.name === 'schedule_rule') {
     const triggerType = rule.plugin.config.trigger_type
     if (triggerType === 'cron') {
-      return `cron: ${rule.plugin.config.cron}`
+      const cron = rule.plugin.config.cron
+      return { combined: `cron: ${cron}`, list: [`cron: ${cron}`] }
     }
-    return `每 ${rule.plugin.config.interval || 60} 秒`
+    const interval = rule.plugin.config.interval || 60
+    return { combined: `每 ${interval} 秒`, list: [`每 ${interval} 秒`] }
   }
 
   if (rule.plugin?.name === 'threshold_rule') {
     const { threshold, operator } = rule.plugin.config
-    return `value ${operator || '>'} ${threshold}`
+    const expr = `value ${operator || '>'} ${threshold}`
+    return { combined: expr, list: [expr] }
   }
 
   if (rule.plugin?.name === 'expression_rule') {
-    return rule.plugin.config.expression || ''
+    const expr = rule.plugin.config.expression || ''
+    return { combined: expr, list: expr ? [expr] : [] }
   }
 
-  return ''
+  return { combined: '', list: [] }
 }
 
 export function backendToViewItem(rule: RuleResponse): RuleViewItem {
+  const { combined, list } = extractExpression(rule)
   return {
     id: rule.id,
     name: rule.name,
@@ -121,7 +130,8 @@ export function backendToViewItem(rule: RuleResponse): RuleViewItem {
     type: extractRuleType(rule),
     enabled: rule.enabled,
     priority: 10,
-    expression: extractExpression(rule),
+    expression: combined,
+    expressions: list,
     executionCount: rule.execution_count ?? 0,
     lastTriggered: rule.last_triggered
       ? new Date(rule.last_triggered * 1000).toLocaleString('zh-CN')
