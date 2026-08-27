@@ -360,7 +360,6 @@
             @change="updateData"
           >
             <el-option :label="t('nodeConfig.writeSetpoint')" value="write_setpoint" />
-            <el-option :label="t('nodeConfig.executeOperation')" value="execute_operation" />
           </el-select>
         </div>
         <template v-if="localData.action.operation === 'write_setpoint'">
