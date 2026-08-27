@@ -64,7 +64,7 @@ const durationText = computed(() => {
 .rule-node {
   position: relative; min-width: 180px;
   background: var(--node-condition-bg);
-  border: 1.5px solid var(--node-condition-border);
+  border: none;
   border-radius: 14px; padding: 0;
   box-shadow: 0 4px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 0 1px rgba(255,255,255,0.06);
   backdrop-filter: blur(10px) saturate(1.4); -webkit-backdrop-filter: blur(10px) saturate(1.4);
@@ -73,7 +73,14 @@ const durationText = computed(() => {
 }
 .rule-node:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.25), 0 0 20px var(--node-condition-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.25), 0 0 24px var(--node-condition-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.rule-node.selected,
+:deep(.vue-flow__node.selected) .rule-node {
+  box-shadow:
+    0 0 0 2px var(--node-condition-glow),
+    0 0 40px var(--node-condition-glow),
+    0 6px 20px rgba(0, 0, 0, 0.3);
 }
 .node-glow {
   position: absolute; inset: -3px; border-radius: 16px;
@@ -99,7 +106,6 @@ const durationText = computed(() => {
   display: flex; align-items: center; gap: 4px;
   font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 12px;
   background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.15);
 }
 .condition-expr .field { color: #fff; font-weight: 600; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
 .condition-expr .operator { color: #ffe066; font-weight: bold; }

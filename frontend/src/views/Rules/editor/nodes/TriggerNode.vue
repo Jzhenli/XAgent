@@ -49,7 +49,7 @@ const hasValidData = computed(() =>
   position: relative;
   min-width: 180px;
   background: var(--node-trigger-bg);
-  border: 1.5px solid var(--node-trigger-border);
+  border: none;
   border-radius: 14px;
   padding: 0;
   box-shadow:
@@ -68,15 +68,15 @@ const hasValidData = computed(() =>
   transform: translateY(-2px);
   box-shadow:
     0 8px 28px rgba(0, 0, 0, 0.25),
-    0 0 20px var(--node-trigger-glow),
+    0 0 24px var(--node-trigger-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .rule-node.selected,
 :deep(.vue-flow__node.selected) .rule-node {
   box-shadow:
-    0 0 0 2px var(--node-trigger-border),
-    0 0 30px var(--node-trigger-glow),
+    0 0 0 2px var(--node-trigger-glow),
+    0 0 40px var(--node-trigger-glow),
     0 6px 20px rgba(0, 0, 0, 0.3);
 }
 

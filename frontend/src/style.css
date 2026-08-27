@@ -49,9 +49,9 @@ html, body {
   box-shadow: var(--shadow-hover);
 }
 
-.rule-node.selected {
+/* .rule-node.selected {
   box-shadow: 0 0 0 3px var(--color-primary), var(--shadow-hover);
-}
+} */
 
 .trigger-node {
   background: var(--node-trigger-bg);
@@ -160,10 +160,6 @@ html, body {
 .vue-flow__node:focus,
 .vue-flow__node:focus-visible {
   outline: none !important;
-}
-
-.vue-flow__node.selected .rule-node {
-  box-shadow: 0 0 0 3px var(--color-primary), var(--shadow-hover);
 }
 
 .vue-flow__edge-path {

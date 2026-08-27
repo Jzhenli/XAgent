@@ -58,7 +58,7 @@ const delayText = computed(() => {
 .rule-node {
   position: relative; min-width: 180px;
   background: var(--node-action-bg);
-  border: 1.5px solid var(--node-action-border);
+  border: none;
   border-radius: 14px; padding: 0;
   box-shadow: 0 4px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 0 1px rgba(255,255,255,0.06);
   backdrop-filter: blur(10px) saturate(1.4); -webkit-backdrop-filter: blur(10px) saturate(1.4);
@@ -67,7 +67,14 @@ const delayText = computed(() => {
 }
 .rule-node:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.25), 0 0 20px var(--node-action-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.25), 0 0 24px var(--node-action-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.rule-node.selected,
+:deep(.vue-flow__node.selected) .rule-node {
+  box-shadow:
+    0 0 0 2px var(--node-action-glow),
+    0 0 40px var(--node-action-glow),
+    0 6px 20px rgba(0, 0, 0, 0.3);
 }
 .node-glow {
   position: absolute; inset: -3px; border-radius: 16px;

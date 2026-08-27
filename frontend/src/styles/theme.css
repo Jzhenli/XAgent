@@ -406,7 +406,7 @@
   --text-white: #ffffff;
 
   /* 边框色 */
-  --border-base: #2a2a4e;
+  --border-base: rgba(255, 255, 255, 0.2);
   --border-light: #3a3a5e;
   --border-lighter: #4a4a6e;
   --border-sidebar: rgba(255, 255, 255, 0.08);
@@ -472,8 +472,8 @@
   --re-handle-border: #409eff;
   --re-handle-glow: rgba(64, 158, 255, 0.7);
   --re-input-bg: rgba(30, 40, 65, 0.85);
-  --re-input-border: rgba(255, 255, 255, 0.12);
-  --re-input-border-hover: rgba(255, 255, 255, 0.22);
+  --re-input-border: rgba(255, 255, 255, 0.25);
+  --re-input-border-hover: rgba(255, 255, 255, 0.4);
   --re-chip-bg: rgba(64, 158, 255, 0.15);
   --re-chip-border: rgba(64, 158, 255, 0.35);
   --re-accent: #409eff;
