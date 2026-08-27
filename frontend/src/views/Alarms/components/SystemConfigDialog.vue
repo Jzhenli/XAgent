@@ -53,10 +53,10 @@
         <span class="form-item-hint">{{ t('alerts.desktopNotificationHint') }}</span>
       </el-form-item>
 
-      <el-form-item :label="t('alerts.soundLabel')">
+      <!-- <el-form-item :label="t('alerts.soundLabel')">
         <el-switch v-model="form.soundEnabled" />
         <span class="form-item-hint">{{ t('alerts.soundHint') }}</span>
-      </el-form-item>
+      </el-form-item> -->
 
       <el-divider content-position="left">{{ t('alerts.doNotDisturb') }}</el-divider>
 
