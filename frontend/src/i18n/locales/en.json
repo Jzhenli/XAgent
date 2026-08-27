@@ -1001,7 +1001,9 @@
       "testSuccess": "System notification test sent successfully! Notification channel is working.",
       "testFailed": "Notification channel test failed. Please check the configuration.",
       "testDesktopTitle": "XAgent System Notification Test",
-      "testDesktopBody": "This is a test notification. If you see this message, the system notification channel is working properly."
+      "testDesktopBody": "This is a test notification. If you see this message, the system notification channel is working properly.",
+      "notificationMore": "{count} more unhandled alerts",
+      "viewInAlerts": "View in Alerts"
     },
     "tabAlerts": "Alert Records",
     "levelCritical": "Critical",

@@ -1001,7 +1001,9 @@
       "testSuccess": "系統通知測試發送成功！通知管道運作正常。",
       "testFailed": "通知管道測試失敗，請檢查設定。",
       "testDesktopTitle": "XAgent 系統通知測試",
-      "testDesktopBody": "這是一則測試通知，如果您看到此訊息，表示系統通知管道運作正常。"
+      "testDesktopBody": "這是一則測試通知，如果您看到此訊息，表示系統通知管道運作正常。",
+      "notificationMore": "還有 {count} 條未處理警報",
+      "viewInAlerts": "查看警報"
     },
     "tabAlerts": "告警記錄",
     "levelCritical": "緊急",

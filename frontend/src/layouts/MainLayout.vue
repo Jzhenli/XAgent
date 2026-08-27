@@ -230,6 +230,7 @@ import {
 import { useAlertStore } from "@/stores/alerts";
 import { useUserStore } from "@/stores/users";
 import { useResponsive } from "@/utils/useResponsive";
+import { useDesktopNotification } from "@/views/Alarms/hooks/useDesktopNotification";
 import ThemeSwitcher from "@/components/ThemeSwitcher.vue";
 import AboutUsDialog from "@/components/AboutUsDialog.vue";
 import { ElMessage } from "element-plus";
@@ -244,6 +245,9 @@ const router = useRouter();
 const alertStore = useAlertStore();
 const userStore = useUserStore();
 const { isTablet, isMobile, width, height } = useResponsive();
+
+// ==================== 桌面通知 ====================
+const desktopNotification = useDesktopNotification();
 
 const isCollapsed = ref(false);
 const isDrawerVisible = ref(false);
@@ -408,7 +412,7 @@ function handleLogout() {
   router.push("/login");
 }
 
-onMounted(() => {
+onMounted(async () => {
   timeTimer = setInterval(() => {
     currentTime.value = new Date().toLocaleString(locale.value, {
       year: "numeric",
@@ -419,12 +423,29 @@ onMounted(() => {
       second: "2-digit",
     });
   }, 1000);
+
+  // 初始化告警数据并启动轮询
+  await alertStore.fetchChannels();
+  alertStore.startPolling(5000);
+
+  // 标签页隐藏时暂停轮询, 恢复时重启
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 });
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    alertStore.stopPolling();
+  } else {
+    alertStore.startPolling(5000);
+  }
+}
 
 onUnmounted(() => {
   if (timeTimer) {
     clearInterval(timeTimer);
   }
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
+  alertStore.stopPolling();
 });
 </script>
 

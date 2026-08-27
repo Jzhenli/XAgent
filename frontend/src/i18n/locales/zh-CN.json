@@ -1001,7 +1001,9 @@
       "testSuccess": "系统通知测试发送成功！通知渠道工作正常。",
       "testFailed": "通知渠道测试失败，请检查配置。",
       "testDesktopTitle": "XAgent 系统通知测试",
-      "testDesktopBody": "这是一条测试通知，如果您看到此消息，说明系统通知渠道工作正常。"
+      "testDesktopBody": "这是一条测试通知，如果您看到此消息，说明系统通知渠道工作正常。",
+      "notificationMore": "还有 {count} 条未处理告警",
+      "viewInAlerts": "查看告警"
     },
     "tabAlerts": "告警记录",
     "levelCritical": "紧急",

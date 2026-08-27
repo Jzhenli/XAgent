@@ -212,9 +212,11 @@ const {
 } = useChannelManagement()
 
 // ==================== 初始化 ====================
-onMounted(async () => {
-  await alertStore.fetchAlerts()
-  await alertStore.fetchChannels()
+// 告警数据已由 MainLayout.vue 全局轮询加载，这里无需重复获取
+onMounted(() => {
+  if (!alertStore.channels.length) {
+    void alertStore.fetchChannels()
+  }
 })
 </script>
 
