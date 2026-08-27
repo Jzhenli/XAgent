@@ -12,32 +12,38 @@
         }}</el-tag>
       </div>
       <div class="header-right">
-        <el-select
-          v-model="pointStore.trendTimeRange"
-          style="width: 100px"
-          class="scada-select"
-          popper-class="scada-select-dropdown"
-        >
-          <el-option
-            v-for="opt in timeRangeOptions"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
-        <el-select
-          v-model="pointStore.trendAggregation"
-          style="width: 100px"
-          class="scada-select"
-          popper-class="scada-select-dropdown"
-        >
-          <el-option
-            v-for="opt in aggregationOptions"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
+        <div class="select-with-label">
+          <span class="select-label">{{ t("pointTrend.timeRange") }}</span>
+          <el-select
+            v-model="pointStore.trendTimeRange"
+            style="width: 100px"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
+          >
+            <el-option
+              v-for="opt in timeRangeOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </div>
+        <div class="select-with-label">
+          <span class="select-label">{{ t("pointTrend.aggregation") }}</span>
+          <el-select
+            v-model="pointStore.trendAggregation"
+            style="width: 100px"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
+          >
+            <el-option
+              v-for="opt in aggregationOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </div>
         <el-button @click="loadData" :loading="pointStore.historyLoading">{{
           t("pointTrend.refresh")
         }}</el-button>
@@ -782,6 +788,18 @@ onUnmounted(() => {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.select-with-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.select-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .header-right :deep(.el-button) {

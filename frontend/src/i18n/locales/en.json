@@ -2047,6 +2047,7 @@
     "avgValue": "Avg Value",
     "dataPoints": "Data Points",
     "timeRange": "Time Range",
+    "aggregation": "Aggregation",
     "pointType": "Point Type",
     "dataQuality": "Data Quality",
     "range": "Range",

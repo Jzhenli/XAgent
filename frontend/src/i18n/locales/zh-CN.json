@@ -2062,6 +2062,7 @@
     "avgValue": "平均值",
     "dataPoints": "数据点数",
     "timeRange": "时间范围",
+    "aggregation": "聚合粒度",
     "pointType": "点位类型",
     "dataQuality": "数据质量",
     "range": "量程",
