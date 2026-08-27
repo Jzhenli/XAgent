@@ -157,7 +157,7 @@ class UserPermissionService:
                 ),
             )
 
-        hashed, salt = _hash_password("admin")
+        hashed, salt = _hash_password("123456")
         await self._db.execute(
             """
             INSERT INTO users (username, password_hash, password_salt, display_name, role_name, status, created_at, updated_at)
