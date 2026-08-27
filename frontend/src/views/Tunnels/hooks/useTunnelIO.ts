@@ -38,7 +38,7 @@ export function useTunnelIO() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `xagent-channels-${new Date().toISOString().slice(0, 10)}.yaml`
+      a.download = `xplay-channels-${new Date().toISOString().slice(0, 10)}.yaml`
       a.click()
       URL.revokeObjectURL(url)
       ElMessage.success(t('channels.exportSuccess', { count: channels.length }))

@@ -52,7 +52,7 @@ export function useDeviceIO() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `xagent-devices-${new Date().toISOString().slice(0, 10)}.yaml`
+    a.download = `xplay-devices-${new Date().toISOString().slice(0, 10)}.yaml`
     a.click()
     URL.revokeObjectURL(url)
     ElMessage.success(t('devices.export.success', { count: devices.length }))
