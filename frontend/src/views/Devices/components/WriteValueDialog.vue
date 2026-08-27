@@ -204,6 +204,158 @@ const isSubmitDisabled = computed(() => {
   border-top: 1px solid rgba(102, 102, 255, 0.15);
   padding: 16px 20px !important;
 }
+
+/* ========== 浅色主题样式覆盖 ========== */
+[data-theme='light'] .write-value-dialog {
+  background: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme='light'] .write-value-dialog .el-dialog__header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #ebeef5;
+}
+
+[data-theme='light'] .write-value-dialog .el-dialog__title {
+  color: #2c3e50 !important;
+  background: none;
+  -webkit-text-fill-color: #2c3e50;
+}
+
+[data-theme='light'] .write-value-dialog .el-dialog__body {
+  background: #ffffff !important;
+}
+
+[data-theme='light'] .write-value-dialog .el-dialog__footer {
+  background: #ffffff !important;
+  border-top: 1px solid #ebeef5;
+}
+
+/* ========== 浅色主题 - 装饰线 ========== */
+[data-theme='light'] .write-value-dialog .deco-line {
+  background: linear-gradient(90deg, transparent 0%, #3498db 50%, transparent 100%) !important;
+  opacity: 0.6 !important;
+}
+
+/* ========== 浅色主题 - 核心展示面板 ========== */
+[data-theme='light'] .write-value-dialog .cyber-panel {
+  background: linear-gradient(145deg, #f8fafc 0%, #ffffff 100%) !important;
+  border: 1px solid #e8ecf1 !important;
+  box-shadow: inset 0 0 16px rgba(52, 152, 219, 0.05) !important;
+}
+
+[data-theme='light'] .write-value-dialog .cyber-panel-label {
+  color: #3498db !important;
+}
+
+[data-theme='light'] .write-value-dialog .cyber-panel-label .dot {
+  background: #3498db !important;
+  box-shadow: 0 0 6px rgba(52, 152, 219, 0.5) !important;
+}
+
+[data-theme='light'] .write-value-dialog .cyber-panel-value {
+  background: #f5f7fa !important;
+  border-left: 3px solid #3498db !important;
+}
+
+[data-theme='light'] .write-value-dialog .value-text {
+  color: #2c3e50 !important;
+  text-shadow: none !important;
+}
+
+[data-theme='light'] .write-value-dialog .value-unit {
+  color: #7f8c8d !important;
+}
+
+[data-theme='light'] .write-value-dialog .scan-line {
+  background: linear-gradient(90deg, transparent 0%, rgba(52, 152, 219, 0.6) 50%, transparent 100%) !important;
+  opacity: 0.4 !important;
+}
+
+/* ========== 浅色主题 - 信息网格 ========== */
+[data-theme='light'] .write-value-dialog .info-cell {
+  background: #f8fafc !important;
+  border: 1px solid #e8ecf1 !important;
+}
+
+[data-theme='light'] .write-value-dialog .info-cell:hover {
+  border-color: #3498db !important;
+  background: rgba(52, 152, 219, 0.05) !important;
+}
+
+[data-theme='light'] .write-value-dialog .info-cell-label {
+  color: #95a5a6 !important;
+}
+
+[data-theme='light'] .write-value-dialog .info-cell-value {
+  color: #2c3e50 !important;
+}
+
+/* ========== 浅色主题 - 写值输入区 ========== */
+[data-theme='light'] .write-value-dialog .target-label {
+  color: #2c3e50 !important;
+}
+
+[data-theme='light'] .write-value-dialog .dot-pulse {
+  background: #3498db !important;
+  box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.5) !important;
+}
+
+[data-theme='light'] .write-value-dialog .input-glow-wrapper:focus-within {
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2) !important;
+}
+
+[data-theme='light'] .write-value-dialog .input-unit {
+  color: #7f8c8d !important;
+}
+
+[data-theme='light'] .write-value-dialog .write-bool-control {
+  background: #f8fafc !important;
+  border: 1px solid #e8ecf1 !important;
+}
+
+[data-theme='light'] .write-value-dialog .write-hint {
+  color: #95a5a6 !important;
+}
+
+/* ========== 浅色主题 - 底部按钮区 ========== */
+[data-theme='light'] .write-value-dialog .action-btn {
+  color: #606266 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #dcdfe6 !important;
+}
+
+[data-theme='light'] .write-value-dialog .action-btn:hover {
+  background-color: #f5f7fa !important;
+  border-color: #c0c4cc !important;
+}
+
+[data-theme='light'] .write-value-dialog .action-btn.btn-primary {
+  color: #fff !important;
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3) !important;
+}
+
+[data-theme='light'] .write-value-dialog .action-btn.btn-primary::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent) !important;
+}
+
+[data-theme='light'] .write-value-dialog .action-btn.btn-primary:hover:not(.is-disabled) {
+  box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4) !important;
+}
+
+[data-theme='light'] .write-value-dialog .action-btn.btn-primary:active:not(.is-disabled) {
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3) !important;
+}
+
+[data-theme='light'] .write-value-dialog .action-btn.is-disabled {
+  opacity: 0.5 !important;
+  filter: grayscale(0.3) !important;
+}
 </style>
 
 <style scoped>
