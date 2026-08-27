@@ -23,6 +23,22 @@
           <el-option :label="t('common.online')" value="online" />
           <el-option :label="t('common.offline')" value="offline" />
         </el-select>
+        <!-- 协议过滤器 -->
+        <el-select
+          v-model="protocolFilter"
+          :placeholder="t('devices.protocolFilter')"
+          clearable
+          class="scada-select"
+          popper-class="scada-select-dropdown"
+        >
+          <el-option :label="t('common.all')" value="" />
+          <el-option
+            v-for="p in protocolOptions"
+            :key="p.value"
+            :label="p.label"
+            :value="p.value"
+          />
+        </el-select>
       </div>
       <div class="toolbar-right">
         <!-- 统计信息 -->
@@ -301,6 +317,17 @@ const isCompactMode = computed(
 // ==================== 工具栏状态 ====================
 const searchQuery = ref("");
 const statusFilter = ref("");
+const protocolFilter = ref("");
+
+/**
+ * 协议筛选选项（与 PLUGIN_DEFAULTS 保持一致）
+ */
+const protocolOptions = [
+  { value: "modbus_tcp", label: "Modbus TCP" },
+  { value: "modbus_rtu", label: "Modbus RTU" },
+  { value: "knx", label: "KNX" },
+  { value: "bacnet", label: "BACnet" },
+];
 
 // ==================== 设备/点位 状态 ====================
 const selectedDeviceAsset = ref<string | null>(null);
@@ -416,6 +443,9 @@ const filteredSouthDevices = computed(() => {
     list = list.filter((d) => d.status === "active" && d.enabled);
   } else if (statusFilter.value === "offline") {
     list = list.filter((d) => d.status !== "active" || !d.enabled);
+  }
+  if (protocolFilter.value) {
+    list = list.filter((d) => d.pluginName === protocolFilter.value);
   }
   return list;
 });

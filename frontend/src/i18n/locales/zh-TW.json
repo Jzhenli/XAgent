@@ -166,6 +166,7 @@
     "title": "南向設備",
     "searchPlaceholder": "搜尋裝置...",
     "statusFilter": "狀態篩選",
+    "protocolFilter": "協定篩選",
     "totalDevices": "裝置",
     "addDevice": "新增裝置",
     "refresh": "重新整理",

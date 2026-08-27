@@ -166,6 +166,7 @@
     "title": "南向设备",
     "searchPlaceholder": "搜索设备...",
     "statusFilter": "状态筛选",
+    "protocolFilter": "协议筛选",
     "totalDevices": "设备",
     "addDevice": "新增设备",
     "refresh": "刷新",

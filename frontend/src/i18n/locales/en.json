@@ -166,6 +166,7 @@
     "title": "Southbound Device",
     "searchPlaceholder": "Search devices...",
     "statusFilter": "Status Filter",
+    "protocolFilter": "Protocol Filter",
     "totalDevices": "Devices",
     "addDevice": "Add Device",
     "refresh": "Refresh",
