@@ -2073,7 +2073,13 @@
     "aggregation15min": "15 Minutes",
     "aggregation1h": "1 Hour",
     "statistics": "Statistics",
-    "pointInfo": "Point Info"
+    "pointInfo": "Point Info",
+    "download": "Download",
+    "downloadSuccess": "Trend data exported",
+    "timeColumn": "Time",
+    "valueColumn": "Value",
+    "unitColumn": "Unit",
+    "sheetName": "Trend Data"
   },
   "dragStart": "Drag Start",
   "cancel": "Cancel",

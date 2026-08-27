@@ -51,6 +51,10 @@
           <el-icon class="el-icon--left"><Setting /></el-icon>
           {{ t("pointTrend.config") }}
         </el-button>
+        <el-button @click="handleDownloadExcel" :disabled="!trendData.length">
+          <el-icon class="el-icon--left"><Download /></el-icon>
+          {{ t("pointTrend.download") }}
+        </el-button>
         <el-button @click="emit('close')" class="close-btn"
           >✕ {{ t("pointTrend.close") }}</el-button
         >
@@ -258,7 +262,9 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import dayjs from "dayjs";
-import { Setting } from "@element-plus/icons-vue";
+import * as XLSX from "xlsx";
+import { Download, Setting } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
 
 /* ========== i18n / ECharts 注册 / Store ========== */
 const { t } = useI18n();
@@ -437,6 +443,44 @@ async function loadData() {
   if (!pointStore.selectedDeviceAsset) return;
   const hours = HOURS_MAP[pointStore.trendTimeRange] || 24;
   await pointStore.fetchHistoryReadings(pointStore.selectedDeviceAsset, hours);
+}
+
+/**
+ * 导出趋势数据为 Excel 文件。
+ */
+function handleDownloadExcel() {
+  const data = trendData.value;
+  const point = pointStore.selectedPoint;
+  if (!data.length || !point) return;
+
+  const isDigital = isDigitalPoint(point);
+  const rows = data.map((d) => ({
+    [t("pointTrend.timeColumn")]: dayjs(d.timestamp).format("YYYY-MM-DD HH:mm:ss"),
+    [t("pointTrend.valueColumn")]: isDigital
+      ? d.value === 1
+        ? t("pointTrend.on")
+        : t("pointTrend.off")
+      : d.value,
+    [t("pointTrend.unitColumn")]: point.unit || "",
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [
+    { wch: 22 },
+    { wch: 15 },
+    { wch: 10 },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, t("pointTrend.sheetName"));
+
+  const deviceName = pointStore.selectedDeviceAsset || "device";
+  const pointName = point.name || "point";
+  const timeStr = dayjs().format("YYYYMMDD-HHmmss");
+  const fileName = `xplay-trend-${deviceName}-${pointName}-${timeStr}.xlsx`;
+
+  XLSX.writeFile(wb, fileName);
+  ElMessage.success(t("pointTrend.downloadSuccess"));
 }
 
 /* ========== 图表 option 构建（拆分为纯函数，便于阅读） ========== */
@@ -626,13 +670,6 @@ const chartOption = computed(() => {
       bottom: "15%",
       top: "15%",
       containLabel: true,
-    },
-    toolbox: {
-      feature: {
-        dataZoom: { yAxisIndex: "none" },
-        restore: {},
-        saveAsImage: {},
-      },
     },
     dataZoom: dataZoomOption.value,
     xAxis: {

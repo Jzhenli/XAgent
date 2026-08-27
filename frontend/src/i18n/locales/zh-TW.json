@@ -2088,7 +2088,13 @@
     "aggregation15min": "15分鐘",
     "aggregation1h": "1小時",
     "statistics": "統計資訊",
-    "pointInfo": "點位資訊"
+    "pointInfo": "點位資訊",
+    "download": "下載",
+    "downloadSuccess": "趨勢資料已匯出",
+    "timeColumn": "時間",
+    "valueColumn": "數值",
+    "unitColumn": "單位",
+    "sheetName": "趨勢資料"
   },
   "dragStart": "拖曳開始",
   "cancel": "取消",

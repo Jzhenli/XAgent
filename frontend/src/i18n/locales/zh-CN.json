@@ -2088,7 +2088,13 @@
     "aggregation15min": "15分钟",
     "aggregation1h": "1小时",
     "statistics": "统计信息",
-    "pointInfo": "点位信息"
+    "pointInfo": "点位信息",
+    "download": "下载",
+    "downloadSuccess": "趋势数据已导出",
+    "timeColumn": "时间",
+    "valueColumn": "数值",
+    "unitColumn": "单位",
+    "sheetName": "趋势数据"
   },
   "dragStart": "拖拽开始",
   "cancel": "取消",
