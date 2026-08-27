@@ -130,6 +130,60 @@ export function graphToExpression(nodes: RuleNode[]): string {
   return parts.join(' -> ')
 }
 
+export function graphToExpressions(nodes: RuleNode[], edges: RuleEdge[] = []): string[] {
+  if (nodes.length === 0) return []
+
+  if (edges.length === 0) {
+    const combined = graphToExpression(nodes)
+    return combined ? [combined] : []
+  }
+
+  const nodeMap = new Map(nodes.map(n => [n.id, n]))
+
+  const adj = new Map<string, Set<string>>()
+  nodes.forEach(n => adj.set(n.id, new Set()))
+  edges.forEach(e => {
+    if (adj.has(e.source) && adj.has(e.target)) {
+      adj.get(e.source)!.add(e.target)
+      adj.get(e.target)!.add(e.source)
+    }
+  })
+
+  const visited = new Set<string>()
+  const groups: RuleNode[][] = []
+
+  for (const node of nodes) {
+    if (visited.has(node.id)) continue
+    const groupIds: string[] = []
+    const queue = [node.id]
+    visited.add(node.id)
+    while (queue.length > 0) {
+      const current = queue.shift()!
+      groupIds.push(current)
+      const neighbors = adj.get(current)
+      if (neighbors) {
+        for (const neighbor of neighbors) {
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor)
+            queue.push(neighbor)
+          }
+        }
+      }
+    }
+    const groupNodes = groupIds.map(id => nodeMap.get(id)!).filter(Boolean)
+    if (groupNodes.length > 0) {
+      groups.push(groupNodes)
+    }
+  }
+
+  if (groups.length <= 1) {
+    const combined = graphToExpression(nodes)
+    return combined ? [combined] : []
+  }
+
+  return groups.map(g => graphToExpression(g)).filter(Boolean)
+}
+
 export interface GraphValidationError {
   key: string
   params?: Record<string, string | number>

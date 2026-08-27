@@ -25,9 +25,12 @@
       />
     </div>
 
-    <!-- 规则表达式 -->
+    <!-- 规则表达式列表 -->
     <div class="rule-expression">
-      <code>{{ rule.expression || t("rules.noExpression") }}</code>
+      <template v-if="rule.expressions && rule.expressions.length > 0">
+        <code v-for="(expr, idx) in rule.expressions" :key="idx" class="expression-line">{{ expr }}</code>
+      </template>
+      <code v-else>{{ rule.expression || t("rules.noExpression") }}</code>
     </div>
 
     <!-- 执行统计信息 -->
@@ -183,12 +186,18 @@ const typeTag = computed(
   padding: 12px 16px;
   border-radius: 6px;
   margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.rule-expression code {
+.rule-expression code,
+.expression-line {
   font-family: "Fira Code", monospace;
   font-size: 13px;
   color: var(--rule-expression-color);
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 .rule-meta {

@@ -5,8 +5,8 @@
         <el-select
           v-model="activePermissionRole"
           :placeholder="$t('settings.permission.select_role')"
-          class="plain-select"
-          popper-class="plain-select-dropdown"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
         >
           <el-option
             v-for="role in userStore.permissionMatrix?.roles || []"
@@ -207,37 +207,6 @@ const {
   border-color: rgba(255, 255, 255, 0.13);
 }
 
-:deep(.el-select.plain-select) {
-  width: 200px;
-}
-
-:deep(.el-select.plain-select .el-select__wrapper) {
-  box-shadow: none !important;
-  border: none !important;
-  border-bottom: 1px solid var(--border-base, #dcdfe6) !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  padding: 0 8px;
-}
-
-:deep(.el-select.plain-select.is-focused .el-select__wrapper) {
-  border-bottom-color: var(--color-primary, #409eff) !important;
-}
-
-:deep(.el-select.plain-select .el-select__selected-item),
-:deep(.el-select.plain-select .el-select__placeholder) {
-  background: transparent !important;
-  color: var(--text-primary);
-  height: 32px;
-  line-height: 32px;
-  text-align: center;
-}
-
-:deep(.el-select.plain-select .el-select__suffix),
-:deep(.el-select.plain-select .el-input__suffix) {
-  color: var(--text-secondary);
-}
-
 .permission-matrix {
   overflow-x: auto;
 }
@@ -383,14 +352,6 @@ const {
 </style>
 
 <style>
-.plain-select-dropdown {
-  background: var(--bg-card) !important;
-}
-
-.plain-select-dropdown .el-select-dropdown__item {
-  text-align: center;
-}
-
 .permission-matrix .el-checkbox .el-checkbox__inner {
   background-color: var(--bg-container);
   border-color: var(--border-base);

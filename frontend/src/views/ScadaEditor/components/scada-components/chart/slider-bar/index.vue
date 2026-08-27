@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, reactive, ref } from 'vue'
+import { computed, inject, onUnmounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { PointBinding, ScadaComponent, SliderBarComponentConfig, SliderBarItemConfig } from '@/types/scada'
@@ -160,6 +160,13 @@ const valueLabelStyle = (item: SliderBarItemConfig, index: number) => ({
 const activeTrackEl = ref<HTMLDivElement | null>(null)
 const dragStartValues = reactive<Record<number, number>>({})
 
+/** 移除拖拽期间挂载的 window 监听（pointerup/pointercancel/卸载时统一调用） */
+const stopDragListeners = () => {
+  window.removeEventListener('pointermove', handlePointerMove)
+  window.removeEventListener('pointerup', handlePointerUp)
+  window.removeEventListener('pointercancel', handlePointerCancel)
+}
+
 const handlePointerDown = (index: number, event: PointerEvent) => {
   if (props.editing) return
   event.preventDefault()
@@ -172,7 +179,9 @@ const handlePointerDown = (index: number, event: PointerEvent) => {
   draggingIndex.value = index
   updateFromEvent(index, event)
   window.addEventListener('pointermove', handlePointerMove)
-  window.addEventListener('pointerup', handlePointerUp, { once: true })
+  window.addEventListener('pointerup', handlePointerUp)
+  // 触摸屏手势被系统打断时只会派发 pointercancel，必须一并监听否则监听器泄漏
+  window.addEventListener('pointercancel', handlePointerCancel)
 }
 
 const handlePointerMove = (event: PointerEvent) => {
@@ -181,11 +190,22 @@ const handlePointerMove = (event: PointerEvent) => {
   updateFromEvent(draggingIndex.value, event)
 }
 
+/** 拖拽被系统取消：丢弃未写入的拖动值，不执行写值 */
+const handlePointerCancel = () => {
+  const index = draggingIndex.value
+  draggingIndex.value = null
+  activeTrackEl.value = null
+  stopDragListeners()
+  if (index !== null) {
+    delete dragValues[index]
+  }
+}
+
 const handlePointerUp = async () => {
   const index = draggingIndex.value
   draggingIndex.value = null
   activeTrackEl.value = null
-  window.removeEventListener('pointermove', handlePointerMove)
+  stopDragListeners()
 
   if (index === null) return
   const item = items.value[index]
@@ -218,6 +238,9 @@ const updateFromEvent = (index: number, event: PointerEvent) => {
   // 只取整数值，不写小数
   dragValues[index] = Math.round(rawValue)
 }
+
+/** 兜底：拖拽中组件被卸载时移除 window 监听 */
+onUnmounted(stopDragListeners)
 </script>
 
 <style scoped>

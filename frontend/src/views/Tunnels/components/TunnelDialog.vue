@@ -46,6 +46,8 @@
                 :model-value="form.protocol"
                 @update:model-value="handleProtocolChange"
                 :placeholder="t('channels.selectProtocol')"
+                class="scada-select"
+                popper-class="scada-select-dropdown"
               >
                 <el-option
                   v-for="opt in protocolOptions"
@@ -144,6 +146,8 @@
                 :placeholder="t('channels.adapterHint')"
                 filterable
                 allow-create
+                class="scada-select"
+                popper-class="scada-select-dropdown"
               >
                 <el-option
                   v-for="opt in mqttAdapterOptions"

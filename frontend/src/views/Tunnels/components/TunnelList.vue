@@ -257,7 +257,7 @@
             <span>
               {{ channel.uploadRate }} {{ t("channels.itemsPerMin") }}
             </span>
-            <span>{{ channel.successRate }}%</span>
+            <!-- <span>{{ channel.successRate }}%</span> -->
           </div>
         </div>
         <div class="channel-item-actions" @click.stop>
@@ -385,7 +385,7 @@ const handleDropdownCommand = (cmd: string, channel: ChannelListItem) => {
 
 <style scoped>
 .channel-list-panel {
-  width: 360px;
+  width: 300px;
   min-width: 260px;
   flex-shrink: 0;
   background: var(--bg-card);

@@ -42,6 +42,8 @@
               v-model="form.data_type"
               :placeholder="t('devices.selectDataType')"
               :teleported="false"
+              class="scada-select"
+              popper-class="scada-select-dropdown"
             >
               <el-option
                 v-for="opt in modbusDataTypes"
@@ -64,6 +66,8 @@
               v-model="form.register_type"
               :placeholder="t('devices.selectRegisterType')"
               :teleported="false"
+              class="scada-select"
+              popper-class="scada-select-dropdown"
             >
               <el-option
                 v-for="opt in registerTypes"
@@ -110,6 +114,8 @@
               v-model="form.data_type"
               :placeholder="t('devices.selectDataType')"
               :teleported="false"
+              class="scada-select"
+              popper-class="scada-select-dropdown"
             >
               <el-option
                 v-for="opt in knxDataTypes"
@@ -152,6 +158,8 @@
               v-model="form.object_type"
               :placeholder="t('devices.selectObjectType')"
               :teleported="false"
+              class="scada-select"
+              popper-class="scada-select-dropdown"
               @change="form.data_type = form.object_type"
             >
               <el-option

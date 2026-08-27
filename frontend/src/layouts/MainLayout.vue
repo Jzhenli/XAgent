@@ -34,7 +34,9 @@
               :color="{ normal: 'white' }"
             />
 
-            <span style="margin-left: 14px">{{ item.title }}</span>
+            <span class="menu-title" style="margin-left: 14px">{{
+              item.title
+            }}</span>
           </el-menu-item>
         </el-menu>
 
@@ -103,6 +105,8 @@
           <el-badge
             :value="alertStore.pendingAlerts"
             :hidden="alertStore.pendingAlerts === 0"
+            :max="99"
+            class="alert-badge"
           >
             <Icon
               name="alarm"
@@ -113,12 +117,18 @@
             />
           </el-badge>
           <ThemeSwitcher />
-          <el-dropdown @command="handleLanguageChange">
+          <el-dropdown
+            trigger="click"
+            placement="bottom-end"
+            popper-class="header-dropdown-popper"
+            :teleported="false"
+            @command="handleLanguageChange"
+          >
             <div class="language-selector">
               {{ currentLanguageLabel }}
             </div>
             <template #dropdown>
-              <el-dropdown-menu>
+              <el-dropdown-menu class="header-dropdown-menu">
                 <el-dropdown-item
                   v-for="lang in languageOptions"
                   :key="lang.value"
@@ -129,7 +139,12 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-          <el-dropdown>
+          <el-dropdown
+            trigger="click"
+            placement="bottom-end"
+            popper-class="header-dropdown-popper"
+            :teleported="false"
+          >
             <div class="user-info">
               <el-avatar :size="32" class="user-avatar">
                 <el-icon><User /></el-icon>
@@ -143,7 +158,7 @@
               </span>
             </div>
             <template #dropdown>
-              <el-dropdown-menu>
+              <el-dropdown-menu class="header-dropdown-menu">
                 <el-dropdown-item v-if="userStore.isLoggedIn" disabled>
                   <el-tag
                     size="small"
@@ -161,6 +176,9 @@
                 </el-dropdown-item>
                 <el-dropdown-item @click="router.push('/settings')">{{
                   $t("layout.personalSettings")
+                }}</el-dropdown-item>
+                <el-dropdown-item divided @click="openAboutDialog">{{
+                  $t("layout.aboutUs")
                 }}</el-dropdown-item>
                 <el-dropdown-item divided @click="handleLogout">{{
                   $t("layout.logout")
@@ -187,6 +205,11 @@
         </router-view>
       </el-main>
     </el-container>
+
+    <AboutUsDialog
+      v-model="aboutDialogVisible"
+      :versions="aboutVersions"
+    />
   </el-container>
 </template>
 
@@ -207,7 +230,9 @@ import {
 import { useAlertStore } from "@/stores/alerts";
 import { useUserStore } from "@/stores/users";
 import { useResponsive } from "@/utils/useResponsive";
+import { useDesktopNotification } from "@/views/Alarms/hooks/useDesktopNotification";
 import ThemeSwitcher from "@/components/ThemeSwitcher.vue";
+import AboutUsDialog from "@/components/AboutUsDialog.vue";
 import { ElMessage } from "element-plus";
 import "@x-plateform/graphic-editor/dist/index.css";
 import "@x-plateform-mono/common/dist/index.css";
@@ -221,9 +246,21 @@ const alertStore = useAlertStore();
 const userStore = useUserStore();
 const { isTablet, isMobile, width, height } = useResponsive();
 
+// ==================== 桌面通知 ====================
+const desktopNotification = useDesktopNotification();
+
 const isCollapsed = ref(false);
 const isDrawerVisible = ref(false);
 const forceExpanded = ref(false);
+const aboutDialogVisible = ref(false);
+
+function openAboutDialog() {
+  aboutDialogVisible.value = true;
+}
+
+const aboutVersions = computed(() => [
+  { labelKey: "layout.softwareVersion", value: "3.0.1" },
+]);
 
 const languageOptions = [
   { value: "zh-CN", label: "简体中文" },
@@ -375,7 +412,7 @@ function handleLogout() {
   router.push("/login");
 }
 
-onMounted(() => {
+onMounted(async () => {
   timeTimer = setInterval(() => {
     currentTime.value = new Date().toLocaleString(locale.value, {
       year: "numeric",
@@ -386,12 +423,29 @@ onMounted(() => {
       second: "2-digit",
     });
   }, 1000);
+
+  // 初始化告警数据并启动轮询
+  await alertStore.fetchChannels();
+  alertStore.startPolling(5000);
+
+  // 标签页隐藏时暂停轮询, 恢复时重启
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 });
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    alertStore.stopPolling();
+  } else {
+    alertStore.startPolling(5000);
+  }
+}
 
 onUnmounted(() => {
   if (timeTimer) {
     clearInterval(timeTimer);
   }
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
+  alertStore.stopPolling();
 });
 </script>
 
@@ -426,8 +480,15 @@ onUnmounted(() => {
   margin: 0;
 }
 
-.app-aside.collapsed .app-menu .el-menu-item span {
+.app-aside.collapsed .app-menu .el-menu-item .menu-title {
   display: none !important;
+}
+
+.app-aside.collapsed .app-menu .el-menu-item > span.fa-stack {
+  visibility: visible !important;
+  width: 28px !important;
+  height: 28px !important;
+  overflow: visible !important;
 }
 
 .app-aside.collapsed .app-menu .el-menu-item.is-active {
@@ -645,6 +706,68 @@ onUnmounted(() => {
   outline: none;
 }
 
+.alert-badge :deep(.el-badge__content) {
+  min-width: 20px;
+  height: 20px;
+  line-height: 20px;
+  padding: 0 6px;
+  text-align: center;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+/* ========== Header 下拉菜单 ========== */
+.header-right :deep(.header-dropdown-menu) {
+  padding: 8px;
+  border-radius: 12px;
+  min-width: 110px;
+  background: var(--bg-modal, #fff) !important;
+  border: 1px solid var(--el-border-color-lighter);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(12px);
+  animation: headerDropdownFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes headerDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.header-right :deep(.header-dropdown-menu .el-dropdown-menu__item) {
+  padding: 5px 7px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent !important;
+  color: var(--el-text-color-primary) !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.header-right :deep(.header-dropdown-menu .el-dropdown-menu__item:hover),
+.header-right :deep(.header-dropdown-menu .el-dropdown-menu__item:focus),
+.header-right :deep(.header-dropdown-menu .el-dropdown-menu__item:active) {
+  background: rgba(102, 102, 255, 0.1) !important;
+  color: rgba(102, 102, 255, 1) !important;
+  transform: translateX(2px);
+}
+
+.header-right :deep(.header-dropdown-menu .el-dropdown-menu__item.is-divider) {
+  margin: 6px 4px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
 .app-main {
   padding: 20px;
   overflow-y: auto;
@@ -723,5 +846,19 @@ onUnmounted(() => {
   .page-title {
     font-size: 14px;
   }
+}
+</style>
+
+<style>
+/* ========== Header 下拉菜单 Popper 容器 ========== */
+.header-dropdown-popper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.header-dropdown-popper .el-popper__arrow {
+  display: none !important;
 }
 </style>

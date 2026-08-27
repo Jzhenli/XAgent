@@ -215,7 +215,29 @@
           />
         </div>
       </div>
-
+      <div class="config-section">
+        <div class="section-title">{{ t("componentConfig.adaptMode") }}</div>
+        <div class="form-group">
+          <el-radio-group
+            v-model="panelAdaptMode"
+            class="adapt-mode-group"
+            @change="onAdaptModeChange"
+          >
+            <el-radio value="fit">{{
+              t("componentConfig.adaptFit")
+            }}</el-radio>
+            <el-radio value="fitWidth">{{
+              t("componentConfig.adaptFitWidth")
+            }}</el-radio>
+            <el-radio value="fitHeight">{{
+              t("componentConfig.adaptFitHeight")
+            }}</el-radio>
+            <el-radio value="stretch">{{
+              t("componentConfig.adaptStretch")
+            }}</el-radio>
+          </el-radio-group>
+        </div>
+      </div>
       <div class="config-section">
         <div class="section-title">{{ t("componentConfig.panelInfo") }}</div>
         <div class="info-item">
@@ -269,6 +291,7 @@ const {
   panelGrid,
   panelBgImage,
   panelBgType,
+  panelAdaptMode,
   availablePoints,
   presetSizes,
   handleDeviceChange,
@@ -278,6 +301,7 @@ const {
   updateDimension,
   updatePanelSize,
   onBgTypeChange,
+  onAdaptModeChange,
   handleBgImageUpload,
   removeBgImage,
   applyPreset,
@@ -624,6 +648,30 @@ const triggerBgImageUpload = () => {
   font-size: 14px;
   text-align: center;
   line-height: 1.6;
+}
+
+.adapt-mode-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.adapt-mode-group :deep(.el-radio) {
+  margin-right: 0;
+  height: auto;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.adapt-mode-group :deep(.el-radio:hover) {
+  background: rgba(34, 211, 238, 0.05);
+}
+
+.adapt-mode-group :deep(.el-radio__label) {
+  white-space: normal;
+  line-height: 1.4;
 }
 
 :deep(.el-radio) {

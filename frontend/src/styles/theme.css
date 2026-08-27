@@ -24,6 +24,8 @@
   --scada-select-border-hover: #c0c4cc;
   --scada-select-disabled-bg: #f5f5f5;
   --scada-select-item-hover: #f5f7fa;
+  --scada-select-wrapper-bg: rgba(255, 255, 255, 0.6);
+  --scada-select-caret-color: #909399;
 
   /* 右键菜单 */
   --scada-menu-bg: #ffffff;
@@ -101,19 +103,53 @@
   --color-info-border: #dcdfe6;
   --color-info-text: #606266;
 
-  /* 节点颜色（保持原有渐变） */
-  --node-trigger-bg: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  --node-trigger-border: #2980b9;
-  --node-schedule-bg: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
-  --node-schedule-border: #0097a7;
-  --node-condition-bg: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
-  --node-condition-border: #8e44ad;
-  --node-logic-bg: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-  --node-logic-border: #e67e22;
-  --node-action-bg: linear-gradient(135deg, #27ae60 0%, #229954 100%);
-  --node-action-border: #229954;
-  --node-notification-bg: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  --node-notification-border: #c0392b;
+  /* 节点颜色 — 霓虹玻璃风格 (Light) */
+  --node-trigger-bg: linear-gradient(135deg, rgba(52, 152, 219, 0.92) 0%, rgba(41, 128, 185, 0.92) 100%);
+  --node-trigger-border: rgba(52, 152, 219, 0.65);
+  --node-trigger-glow: rgba(52, 152, 219, 0.35);
+  --node-trigger-halo: rgba(52, 152, 219, 0.18);
+  --node-schedule-bg: linear-gradient(135deg, rgba(0, 188, 212, 0.92) 0%, rgba(0, 151, 167, 0.92) 100%);
+  --node-schedule-border: rgba(0, 188, 212, 0.65);
+  --node-schedule-glow: rgba(0, 188, 212, 0.35);
+  --node-schedule-halo: rgba(0, 188, 212, 0.18);
+  --node-condition-bg: linear-gradient(135deg, rgba(155, 89, 182, 0.92) 0%, rgba(142, 68, 173, 0.92) 100%);
+  --node-condition-border: rgba(155, 89, 182, 0.65);
+  --node-condition-glow: rgba(155, 89, 182, 0.35);
+  --node-condition-halo: rgba(155, 89, 182, 0.18);
+  --node-logic-bg: linear-gradient(135deg, rgba(243, 156, 18, 0.92) 0%, rgba(230, 126, 34, 0.92) 100%);
+  --node-logic-border: rgba(243, 156, 18, 0.65);
+  --node-logic-glow: rgba(243, 156, 18, 0.35);
+  --node-logic-halo: rgba(243, 156, 18, 0.18);
+  --node-action-bg: linear-gradient(135deg, rgba(39, 174, 96, 0.92) 0%, rgba(34, 153, 84, 0.92) 100%);
+  --node-action-border: rgba(39, 174, 96, 0.65);
+  --node-action-glow: rgba(39, 174, 96, 0.35);
+  --node-action-halo: rgba(39, 174, 96, 0.18);
+  --node-notification-bg: linear-gradient(135deg, rgba(231, 76, 60, 0.92) 0%, rgba(192, 57, 43, 0.92) 100%);
+  --node-notification-border: rgba(231, 76, 60, 0.65);
+  --node-notification-glow: rgba(231, 76, 60, 0.35);
+  --node-notification-halo: rgba(231, 76, 60, 0.18);
+
+  /* 规则编辑器 — 霓虹玻璃面板 (Light) */
+  --re-panel-bg: rgba(255, 255, 255, 0.72);
+  --re-panel-blur: blur(18px) saturate(1.4);
+  --re-panel-border: rgba(255, 255, 255, 0.55);
+  --re-toolbar-bg: rgba(255, 255, 255, 0.78);
+  --re-canvas-bg: radial-gradient(ellipse at 30% 20%, rgba(52, 152, 219, 0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 80%, rgba(155, 89, 182, 0.07) 0%, transparent 50%), #f0f4f8;
+  --re-edge-glow: rgba(52, 152, 219, 0.45);
+  --re-edge-color: #3498db;
+  --re-handle-bg: #ffffff;
+  --re-handle-border: #3498db;
+  --re-handle-glow: rgba(52, 152, 219, 0.6);
+  --re-input-bg: rgba(255, 255, 255, 0.85);
+  --re-input-border: rgba(0, 0, 0, 0.18);
+  --re-input-border-hover: rgba(0, 0, 0, 0.28);
+  --re-chip-bg: rgba(52, 152, 219, 0.12);
+  --re-chip-border: rgba(52, 152, 219, 0.3);
+  --re-accent: #3498db;
+  --re-accent-2: #9b59b6;
+  --re-title-gradient: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  --re-shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --re-shadow-glow: 0 0 24px rgba(52, 152, 219, 0.25), 0 8px 32px rgba(0, 0, 0, 0.1);
 
   /* 登录页相关 */
   --login-bg-gradient: linear-gradient(135deg, #0d1b2a 0%, #1e3a5f 50%, #2c5f8a 100%);
@@ -319,6 +355,8 @@
   --scada-select-border-hover: rgba(34, 211, 238, 0.45);
   --scada-select-disabled-bg: #141414;
   --scada-select-item-hover: rgba(34, 211, 238, 0.08);
+  --scada-select-wrapper-bg: rgba(255, 255, 255, 0.03);
+  --scada-select-caret-color: #8d9096;
 
   /* 右键菜单 */
   --scada-menu-bg: #1e293b;
@@ -368,7 +406,7 @@
   --text-white: #ffffff;
 
   /* 边框色 */
-  --border-base: #2a2a4e;
+  --border-base: rgba(255, 255, 255, 0.2);
   --border-light: #3a3a5e;
   --border-lighter: #4a4a6e;
   --border-sidebar: rgba(255, 255, 255, 0.08);
@@ -396,19 +434,53 @@
   --color-info-border: #3a3a5e;
   --color-info-text: #c0c4cc;
 
-  /* 节点颜色（深色模式适配） */
-  --node-trigger-bg: linear-gradient(135deg, #409eff 0%, #3a8ee6 100%);
-  --node-trigger-border: #3a8ee6;
-  --node-schedule-bg: linear-gradient(135deg, #00d4e6 0%, #00a7b8 100%);
-  --node-schedule-border: #00a7b8;
-  --node-condition-bg: linear-gradient(135deg, #a869c4 0%, #9b59b6 100%);
-  --node-condition-border: #9b59b6;
-  --node-logic-bg: linear-gradient(135deg, #f5a623 0%, #e68a1a 100%);
-  --node-logic-border: #e68a1a;
-  --node-action-bg: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-  --node-action-border: #27ae60;
-  --node-notification-bg: linear-gradient(135deg, #f56c6c 0%, #e74c3c 100%);
-  --node-notification-border: #e74c3c;
+  /* 节点颜色 — 霓虹玻璃风格 (Dark) */
+  --node-trigger-bg: linear-gradient(135deg, rgba(64, 158, 255, 0.92) 0%, rgba(58, 142, 230, 0.92) 100%);
+  --node-trigger-border: rgba(64, 158, 255, 0.7);
+  --node-trigger-glow: rgba(64, 158, 255, 0.45);
+  --node-trigger-halo: rgba(64, 158, 255, 0.2);
+  --node-schedule-bg: linear-gradient(135deg, rgba(0, 212, 230, 0.92) 0%, rgba(0, 167, 184, 0.92) 100%);
+  --node-schedule-border: rgba(0, 212, 230, 0.7);
+  --node-schedule-glow: rgba(0, 212, 230, 0.45);
+  --node-schedule-halo: rgba(0, 212, 230, 0.2);
+  --node-condition-bg: linear-gradient(135deg, rgba(168, 105, 196, 0.92) 0%, rgba(155, 89, 182, 0.92) 100%);
+  --node-condition-border: rgba(168, 105, 196, 0.7);
+  --node-condition-glow: rgba(168, 105, 196, 0.45);
+  --node-condition-halo: rgba(168, 105, 196, 0.2);
+  --node-logic-bg: linear-gradient(135deg, rgba(245, 166, 35, 0.92) 0%, rgba(230, 138, 26, 0.92) 100%);
+  --node-logic-border: rgba(245, 166, 35, 0.7);
+  --node-logic-glow: rgba(245, 166, 35, 0.45);
+  --node-logic-halo: rgba(245, 166, 35, 0.2);
+  --node-action-bg: linear-gradient(135deg, rgba(46, 204, 113, 0.92) 0%, rgba(39, 174, 96, 0.92) 100%);
+  --node-action-border: rgba(46, 204, 113, 0.7);
+  --node-action-glow: rgba(46, 204, 113, 0.45);
+  --node-action-halo: rgba(46, 204, 113, 0.2);
+  --node-notification-bg: linear-gradient(135deg, rgba(245, 108, 108, 0.92) 0%, rgba(231, 76, 60, 0.92) 100%);
+  --node-notification-border: rgba(245, 108, 108, 0.7);
+  --node-notification-glow: rgba(245, 108, 108, 0.45);
+  --node-notification-halo: rgba(245, 108, 108, 0.2);
+
+  /* 规则编辑器 — 霓虹玻璃面板 (Dark) */
+  --re-panel-bg: rgba(22, 33, 62, 0.72);
+  --re-panel-blur: blur(18px) saturate(1.4);
+  --re-panel-border: rgba(64, 158, 255, 0.2);
+  --re-toolbar-bg: rgba(26, 39, 68, 0.82);
+  --re-canvas-bg: radial-gradient(ellipse at 30% 20%, rgba(64, 158, 255, 0.1) 0%, transparent 55%), radial-gradient(ellipse at 80% 80%, rgba(155, 89, 182, 0.08) 0%, transparent 50%), #0d1526;
+  --re-edge-glow: rgba(64, 158, 255, 0.5);
+  --re-edge-color: #409eff;
+  --re-handle-bg: #1a2340;
+  --re-handle-border: #409eff;
+  --re-handle-glow: rgba(64, 158, 255, 0.7);
+  --re-input-bg: rgba(30, 40, 65, 0.85);
+  --re-input-border: rgba(255, 255, 255, 0.25);
+  --re-input-border-hover: rgba(255, 255, 255, 0.4);
+  --re-chip-bg: rgba(64, 158, 255, 0.15);
+  --re-chip-border: rgba(64, 158, 255, 0.35);
+  --re-accent: #409eff;
+  --re-accent-2: #a869c4;
+  --re-title-gradient: linear-gradient(135deg, #e4e7ed 0%, #409eff 100%);
+  --re-shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+  --re-shadow-glow: 0 0 28px rgba(64, 158, 255, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4);
 
   /* 登录页相关（深色模式） */
   --login-bg-gradient: linear-gradient(135deg, #0a0f1a 0%, #0f2744 50%, #1a3a5f 100%);

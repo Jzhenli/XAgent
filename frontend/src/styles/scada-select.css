@@ -1,0 +1,148 @@
+/**
+ * 全局 el-select 统一样式（黑白主题兼容）
+ * 参考 ScadaEditor/ComponentConfig.vue 的 select 样式
+ *
+ * 用法：
+ *   <el-select class="scada-select" popper-class="scada-select-dropdown">
+ *
+ * 主题变量定义于 src/styles/theme.css：
+ *   --scada-select-bg / --scada-select-border / --scada-select-border-hover
+ *   --scada-select-disabled-bg / --scada-select-item-hover
+ *   --scada-select-wrapper-bg / --scada-select-caret-color
+ */
+
+/* ==================== 选择器主体 ==================== */
+.scada-select {
+  width: 100%;
+}
+
+.scada-select .el-select__wrapper {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: none !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--border-base) !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-size: 13px;
+  background-color: transparent;
+  transition:
+    background-color 0.2s ease,
+    border-bottom-color 0.2s ease;
+  cursor: pointer;
+}
+
+/* 悬停 */
+.scada-select .el-select__wrapper:hover {
+  border: none !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--border-base) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 聚焦 */
+.scada-select .el-select__wrapper.is-focused,
+.scada-select .el-select__wrapper:focus,
+.scada-select .el-select__wrapper:focus-visible {
+  border: none !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--color-primary) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 占位符 */
+.scada-select .el-select__placeholder {
+  color: var(--text-placeholder);
+}
+
+/* 已选中项文本 */
+.scada-select .el-select__selected-item {
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* 可筛选模式下的输入框 */
+.scada-select .el-select__input {
+  color: var(--text-primary);
+}
+
+/* 下拉箭头 / 清除图标 */
+.scada-select .el-select__caret {
+  color: var(--scada-select-caret-color);
+}
+
+.scada-select .el-select__caret:hover {
+  color: var(--scada-cyan);
+}
+
+/* 禁用态 */
+.scada-select.is-disabled .el-select__wrapper {
+  background-color: var(--scada-select-disabled-bg);
+  border: none !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--border-base) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  cursor: not-allowed;
+}
+
+.scada-select.is-disabled .el-select__selected-item,
+.scada-select.is-disabled .el-select__placeholder {
+  color: var(--text-disabled);
+}
+
+/* suffix 图标（清除按钮等） */
+.scada-select .el-select__suffix,
+.scada-select .el-input__suffix {
+  color: var(--text-secondary);
+}
+
+/* ==================== 下拉面板（teleport 至 body） ==================== */
+.scada-select-dropdown.el-popper {
+  background: var(--scada-select-bg) !important;
+  border: 1px solid var(--scada-select-border) !important;
+  border-radius: 6px !important;
+}
+
+/* 面板箭头与面板底色保持一致 */
+.scada-select-dropdown .el-popper__arrow::before {
+  background: var(--scada-select-bg) !important;
+  border-color: var(--scada-select-border) !important;
+}
+
+/* 选项 */
+.scada-select-dropdown .el-select-dropdown__item {
+  color: var(--text-regular);
+  font-size: 13px;
+}
+
+.scada-select-dropdown .el-select-dropdown__item.is-hovering {
+  background-color: var(--scada-select-item-hover);
+  color: var(--text-primary);
+}
+
+.scada-select-dropdown .el-select-dropdown__item.is-selected {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.scada-select-dropdown .el-select-dropdown__item.is-disabled {
+  color: var(--text-disabled);
+  background-color: transparent;
+}
+
+/* el-select-dropdown__wrap 容器背景 */
+.scada-select-dropdown.el-popper .el-select-dropdown__wrap {
+  background: var(--scada-select-bg);
+}

@@ -52,18 +52,10 @@
   color: var(--color-danger);
 }
 
-/* ========== 下拉菜单内容 ========== */
-.x-dialog .el-select-dropdown {
-  background-color: var(--bg-card) !important;
-  border-color: var(--border-base) !important;
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.2),
-    0 2px 6px rgba(0, 0, 0, 0.1) !important;
-}
+/* ========== 下拉菜单内容（el-select 由 scada-select.css 统一样式） ========== */
 
-/* ========== 文本输入框 / 下拉框 / 文本域 ========== */
+/* ========== 文本输入框 / 文本域（el-select 由 scada-select.css 统一样式） ========== */
 .x-dialog .el-input__wrapper,
-.x-dialog .el-select__wrapper,
 .x-dialog .el-textarea__wrapper {
   box-shadow: none !important;
   border: none !important;
@@ -74,7 +66,6 @@
 }
 
 .x-dialog .el-input__wrapper.is-focus,
-.x-dialog .el-select.is-focused .el-select__wrapper,
 .x-dialog .el-textarea__wrapper.is-focus {
   border-bottom-color: var(--color-primary) !important;
 }
@@ -90,25 +81,10 @@
   color: var(--text-placeholder);
 }
 
-.x-dialog .el-select__selected-item,
-.x-dialog .el-select__placeholder {
-  background: transparent !important;
-  color: var(--text-primary) !important;
-}
-
-.x-dialog .el-select__placeholder {
-  color: var(--text-placeholder) !important;
-}
-
 .x-dialog .el-input__wrapper.is-disabled,
 .x-dialog .el-textarea.is-disabled .el-textarea__wrapper {
   background: transparent !important;
   border-bottom-color: var(--border-base) !important;
-}
-
-.x-dialog .el-select__suffix,
-.x-dialog .el-input__suffix {
-  color: var(--text-secondary);
 }
 
 /* ========== 按钮 ========== */

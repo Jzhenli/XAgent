@@ -11,6 +11,7 @@ declare class PropertyPanelManager extends Eventful {
     gItem: PropertySerializable | null;
     rerender: () => void;
     setPanel(options: any, propertyMeta: shapePropertyGroupDef[], item: PropertySerializable): void;
+    createPopupConfigGroup(): shapePropertyGroupDef;
     isUpdated: boolean;
     lastUpdateTime: number;
     debounceStep: number;

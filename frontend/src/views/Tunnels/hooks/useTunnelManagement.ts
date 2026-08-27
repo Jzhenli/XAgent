@@ -51,7 +51,7 @@ export function useTunnelManagement() {
       }
     },
     {
-      label: 'XNC',
+      label: 'XLink',
       value: 'xnc',
       defaultPort: 9000,
       defaultConfig: {

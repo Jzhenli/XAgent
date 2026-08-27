@@ -16,11 +16,28 @@
           v-model="statusFilter"
           :placeholder="t('devices.statusFilter')"
           clearable
-          class="toolbar-filter"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
         >
           <el-option :label="t('common.all')" value="" />
           <el-option :label="t('common.online')" value="online" />
           <el-option :label="t('common.offline')" value="offline" />
+        </el-select>
+        <!-- 协议过滤器 -->
+        <el-select
+          v-model="protocolFilter"
+          :placeholder="t('devices.protocolFilter')"
+          clearable
+          class="scada-select"
+          popper-class="scada-select-dropdown"
+        >
+          <el-option :label="t('common.all')" value="" />
+          <el-option
+            v-for="p in protocolOptions"
+            :key="p.value"
+            :label="p.label"
+            :value="p.value"
+          />
         </el-select>
       </div>
       <div class="toolbar-right">
@@ -104,6 +121,8 @@
           @writeValue="onWritePoint"
           @editPoint="onEditPoint"
           @deletePoint="onDeletePoint"
+          @import="handlePointImport"
+          @export="handlePointExport"
         />
       </div>
     </div>
@@ -135,6 +154,8 @@
           @writeValue="onWritePoint"
           @editPoint="onEditPoint"
           @deletePoint="onDeletePoint"
+          @import="handlePointImport"
+          @export="handlePointExport"
         />
       </div>
     </div>
@@ -205,6 +226,15 @@
       @change="handleImportFileChange"
     />
 
+    <!-- 隐藏的文件输入 (用于点位 Excel 导入) -->
+    <input
+      ref="pointImportFileRef"
+      type="file"
+      accept=".xlsx,.xls"
+      style="display: none"
+      @change="onPointImportFileChange"
+    />
+
     <!-- 设备发现流程组件 -->
     <ProtocolSelectionDialog
       :visible="showProtocolDialog"
@@ -257,6 +287,7 @@ import DeviceConfirmDialog from "./components/DeviceConfirmDialog.vue";
 import { useDeviceManagement } from "./hooks/useDeviceManagement";
 import { usePointManagement } from "./hooks/usePointManagement";
 import { useDeviceIO } from "./hooks/useDeviceIO";
+import { usePointIO } from "./hooks/usePointIO";
 import { useDeviceDiscoveryFlow } from "./hooks/useDeviceDiscoveryFlow";
 
 import DeviceList from "./components/DeviceList.vue";
@@ -286,6 +317,17 @@ const isCompactMode = computed(
 // ==================== 工具栏状态 ====================
 const searchQuery = ref("");
 const statusFilter = ref("");
+const protocolFilter = ref("");
+
+/**
+ * 协议筛选选项（与 PLUGIN_DEFAULTS 保持一致）
+ */
+const protocolOptions = [
+  { value: "modbus_tcp", label: "Modbus TCP" },
+  { value: "modbus_rtu", label: "Modbus RTU" },
+  { value: "knx", label: "KNX" },
+  { value: "bacnet", label: "BACnet" },
+];
 
 // ==================== 设备/点位 状态 ====================
 const selectedDeviceAsset = ref<string | null>(null);
@@ -342,7 +384,7 @@ const {
   handleDeviceDiscoverySuccess,
   handleDeviceConfirmSuccess,
   handleBackToDiscovery,
-} = useDeviceDiscoveryFlow(showDeviceDialog);
+} = useDeviceDiscoveryFlow(showDeviceDialog, isEditing);
 
 // 点位管理 (Dialog状态、表单操作、CRUD、写入)
 const {
@@ -373,6 +415,14 @@ const {
   handleImportFileChange,
 } = useDeviceIO();
 
+// 点位导入导出 (Excel)
+const {
+  importFileRef: pointImportFileRef,
+  handleExportExcel,
+  handleImportExcel,
+  handleImportFileChange: handlePointImportFileChange,
+} = usePointIO();
+
 // ==================== 计算属性 ====================
 
 /**
@@ -393,6 +443,9 @@ const filteredSouthDevices = computed(() => {
     list = list.filter((d) => d.status === "active" && d.enabled);
   } else if (statusFilter.value === "offline") {
     list = list.filter((d) => d.status !== "active" || !d.enabled);
+  }
+  if (protocolFilter.value) {
+    list = list.filter((d) => d.pluginName === protocolFilter.value);
   }
   return list;
 });
@@ -417,6 +470,8 @@ const deviceListProps = computed(() => ({
 
 /**
  * PointList 组件的 Props (避免在模板中重复)
+ * pollingEnabled：紧凑模式下面板通过 v-show 切换、组件不卸载，
+ * 仅在"点位"标签页可见时轮询，避免返回设备列表后轮询空转
  */
 const pointListProps = computed(() => ({
   selectedAsset: selectedDeviceAsset.value,
@@ -432,6 +487,7 @@ const pointListProps = computed(() => ({
   showDiscoverBtn:
     userStore.hasPermission("devices", "create") &&
     currentDevicePluginName.value === "bacnet",
+  pollingEnabled: !isCompactMode.value || activeTab.value === "points",
 }));
 
 // ==================== 事件处理 (从子组件到 Hooks 的桥接) ====================
@@ -528,6 +584,25 @@ const onWriteSubmit = () => {
   handleWriteSubmit(writeForm.value);
 };
 
+// --- 点位导入导出 ---
+const handlePointExport = () => {
+  if (!selectedDeviceAsset.value) return;
+  const deviceName =
+    deviceStore.getDeviceByAsset(selectedDeviceAsset.value)?.name ||
+    selectedDeviceAsset.value;
+
+  handleExportExcel(selectedDeviceAsset.value, deviceName);
+};
+
+const handlePointImport = () => {
+  handleImportExcel();
+};
+
+const onPointImportFileChange = (e: Event) => {
+  if (!selectedDeviceAsset.value) return;
+  handlePointImportFileChange(e, selectedDeviceAsset.value);
+};
+
 // --- 导航控制 ---
 const handleBackToDevices = () => {
   if (isCompactMode.value) {
@@ -580,6 +655,10 @@ onMounted(async () => {
   gap: 12px;
 }
 
+.toolbar-left :deep(.scada-select) {
+  width: 140px;
+}
+
 .toolbar-search {
   width: 250px;
 }
@@ -599,19 +678,6 @@ onMounted(async () => {
 
 .toolbar-filter {
   width: 120px;
-}
-
-.toolbar-filter :deep(.el-select__wrapper) {
-  background-color: transparent !important;
-  box-shadow: none !important;
-  border-bottom: 1px solid var(--el-border-color) !important;
-  border-radius: 0 !important;
-}
-
-.toolbar-filter :deep(.el-select__wrapper:hover),
-.toolbar-filter :deep(.el-select__wrapper.is-focused) {
-  box-shadow: none !important;
-  border-bottom: 1px solid var(--el-color-primary) !important;
 }
 
 .stat-item {
@@ -732,8 +798,14 @@ onMounted(async () => {
 }
 
 .device-panel {
-  background: var(--el-bg-color);
-  border-radius: 8px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: var(--el-box-shadow);
+}
+
+.points-panel {
+  background: var(--bg-card);
+  border-radius: 16px;
   box-shadow: var(--el-box-shadow);
 }
 

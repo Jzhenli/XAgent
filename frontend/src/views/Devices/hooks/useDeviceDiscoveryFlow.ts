@@ -8,7 +8,7 @@ import type { DiscoveredDeviceResponse } from '@/api/types'
 import type { DeviceFormData } from '../types'
 import { populateDeviceForm, PLUGIN_DEFAULTS } from '../types'
 
-export function useDeviceDiscoveryFlow(showDeviceDialog: Ref<boolean>) {
+export function useDeviceDiscoveryFlow(showDeviceDialog: Ref<boolean>, isEditing: Ref<boolean>) {
   const { t } = useI18n()
   const deviceStore = useDeviceStore()
   const pointStore = usePointStore()
@@ -54,6 +54,8 @@ export function useDeviceDiscoveryFlow(showDeviceDialog: Ref<boolean>) {
           port: PLUGIN_DEFAULTS[protocol]?.port ?? 502
         }
       })
+      // 重置编辑状态，确保设备标识可输入
+      isEditing.value = false
       showProtocolDialog.value = false
       showDeviceDialog.value = true
     }
@@ -72,6 +74,8 @@ export function useDeviceDiscoveryFlow(showDeviceDialog: Ref<boolean>) {
         enabled: true,
         connection: { host: '', port: 47808 }
       })
+      // 重置编辑状态，确保设备标识可输入
+      isEditing.value = false
       showBACnetModeDialog.value = false
       showDeviceDialog.value = true
     }

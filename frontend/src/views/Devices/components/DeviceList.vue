@@ -40,38 +40,48 @@
           :content="t('devices.addDevice')"
           placement="top"
         >
-          <el-button
-            type="primary"
-            link
-            :size="actionSize"
+          <Icon
+            type="mono-line"
+            name="add"
+            :size="24"
+            :color="{ normal: 'rgba(102, 102, 255, 1)' }"
             @click="emit('add')"
-          >
-            <el-icon><Plus /></el-icon>
-          </el-button>
+          />
         </el-tooltip>
         <el-tooltip :content="t('common.export')" placement="top">
-          <el-button link :size="actionSize" @click="emit('export')">
-            <el-icon><Download /></el-icon>
-          </el-button>
+          <Icon
+            type="mono-line"
+            name="download"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
+            @click="emit('export')"
+          />
         </el-tooltip>
         <el-tooltip
           v-if="canCreate"
           :content="t('common.import')"
           placement="top"
         >
-          <el-button link :size="actionSize" @click="emit('import')">
-            <el-icon><Upload /></el-icon>
-          </el-button>
+          <Icon
+            type="mono-line"
+            name="import"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
+            @click="emit('import')"
+          />
         </el-tooltip>
         <el-tooltip :content="t('common.refresh')" placement="top">
-          <el-button
-            link
-            :size="actionSize"
-            :loading="loading"
+          <Icon
+            v-if="!loading"
+            type="mono-line"
+            name="refresh"
+            :size="24"
+            :color="{ normal: 'var(--el-text-color-primary)' }"
             @click="emit('refresh')"
-          >
-            <el-icon><Refresh /></el-icon>
-          </el-button>
+          />
+          <el-icon v-else class="is-loading" :size="24">
+            <Refresh />
+          </el-icon>
         </el-tooltip>
       </div>
     </div>
@@ -110,10 +120,16 @@
 
           <!-- 设备基本信息 -->
           <div class="device-card-info">
-            <div class="device-card-name">{{ device.name }}</div>
+            <el-tooltip
+              :content="device.name"
+              placement="top"
+              :show-after="300"
+            >
+              <div class="device-card-name">{{ device.name }}</div>
+            </el-tooltip>
             <div class="device-card-meta">
-              <span>{{ device.pluginName }}</span>
-              <span
+              <div class="meta-plugin-name">{{ device.pluginName }}</div>
+              <span class="meta-point-count"
                 >{{ device.pointCount }} {{ t("devices.devicePoints") }}</span
               >
             </div>
@@ -244,8 +260,16 @@
         <div class="device-item-content">
           <div class="device-item-name">{{ device.name }}</div>
           <div class="device-item-meta">
-            <span>{{ device.pluginName }}</span>
-            <span>{{ device.pointCount }} {{ t("devices.devicePoints") }}</span>
+            <el-tooltip
+              :content="device.pluginName"
+              placement="top"
+              :show-after="300"
+            >
+              <div class="meta-plugin-name">{{ device.pluginName }}</div>
+            </el-tooltip>
+            <span class="meta-point-count"
+              >{{ device.pointCount }} {{ t("devices.devicePoints") }}</span
+            >
           </div>
         </div>
 
@@ -316,9 +340,6 @@ import {
   Edit,
   RefreshRight,
   Delete,
-  Plus,
-  Upload,
-  Download,
 } from "@element-plus/icons-vue";
 import type { DeviceListItem } from "@/stores/devices";
 
@@ -385,7 +406,7 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
 @import "./DialogCommon.css";
 /* ========== 桌面端：设备列表面板 ========== */
 .device-list-panel {
-  width: 360px;
+  width: 300px;
   min-width: 260px;
   flex-shrink: 0;
   background: var(--bg-card);
@@ -508,6 +529,19 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   gap: 12px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+.device-item-meta .meta-plugin-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-item-meta .meta-point-count {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .device-item-actions {
@@ -672,6 +706,19 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   gap: 12px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+.device-card-meta .meta-plugin-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-card-meta .meta-point-count {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .device-card-actions {

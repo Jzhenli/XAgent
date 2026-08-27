@@ -61,6 +61,30 @@ export const useAlertStore = defineStore('alerts', () => {
   // 动态获取通知渠道（从后端API）
   const channels = ref<NotificationChannel[]>([])
 
+  // ==================== 告警轮询 ====================
+  const pollingActive = ref(false)
+  let pollingTimer: ReturnType<typeof setInterval> | null = null
+  let fetchInFlight = false
+
+  function startPolling(intervalMs: number = 5000) {
+    if (pollingTimer) return
+    pollingActive.value = true
+    void fetchAlerts()
+    pollingTimer = setInterval(() => {
+      if (!fetchInFlight) {
+        void fetchAlerts()
+      }
+    }, intervalMs)
+  }
+
+  function stopPolling() {
+    if (pollingTimer) {
+      clearInterval(pollingTimer)
+      pollingTimer = null
+    }
+    pollingActive.value = false
+  }
+
   const pendingAlerts = computed(() =>
     alerts.value.filter(a => a.status === 'new').length
   )
@@ -70,6 +94,8 @@ export const useAlertStore = defineStore('alerts', () => {
   )
 
   async function fetchAlerts() {
+    if (fetchInFlight) return
+    fetchInFlight = true
     loading.value = true
     error.value = null
     try {
@@ -80,6 +106,7 @@ export const useAlertStore = defineStore('alerts', () => {
       console.error('Failed to fetch alerts:', e)
     } finally {
       loading.value = false
+      fetchInFlight = false
     }
   }
 
@@ -396,15 +423,18 @@ export const useAlertStore = defineStore('alerts', () => {
     channels,
     pendingAlerts,
     criticalAlerts,
+    pollingActive,
     fetchAlerts,
-    fetchChannels,         // ✨ 新增导出
+    fetchChannels,
+    startPolling,
+    stopPolling,
     acknowledgeAlert,
     resolveAlert,
     ignoreAlert,
     clearResolvedAlerts,
     toggleChannel,
     updateChannelConfig,
-    testChannel            // ✨ 新增导出
+    testChannel
   }
 }, {
   persist: {

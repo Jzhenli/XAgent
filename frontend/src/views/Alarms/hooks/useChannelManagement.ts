@@ -137,13 +137,42 @@ export function useChannelManagement() {
   }
 
   /** 保存系统通知配置 */
-  const handleSaveSystemConfig = () =>
+  const handleSaveSystemConfig = async () => {
+    if (systemConfigForm.desktopEnabled) {
+      await ensureDesktopNotificationPermission()
+    }
+
     persistChannelConfig({
       form: systemConfigForm,
       channelType: 'system',
       successKey: 'alerts.systemConfigSaved',
       dialogVisible: systemConfigDialogVisible,
     })
+  }
+
+  /**
+   * 确保桌面通知权限已获取
+   * 必须在用户手势 (如保存按钮点击) 中调用
+   */
+  async function ensureDesktopNotificationPermission() {
+    if (!('Notification' in window)) return
+
+    if (Notification.permission === 'granted') return
+
+    if (Notification.permission === 'denied') {
+      ElMessage.warning(t('alerts.desktopNotificationDenied'))
+      return
+    }
+
+    try {
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        ElMessage.warning(t('alerts.desktopNotificationDenied'))
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   /** 保存邮件配置 */
   const handleSaveEmailConfig = () =>

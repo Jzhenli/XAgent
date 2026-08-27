@@ -41,7 +41,7 @@ defineEmits<{
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--confirm-overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,16 +49,20 @@ defineEmits<{
 }
 
 .modal-container {
-  background: var(--bg-container);
-  border-radius: 8px;
+  background: var(--bg-modal);
+  border-radius: 16px;
   width: 400px;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.28),
+    0 8px 24px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  border: 1px solid var(--border-base);
 }
 
 .modal-header {
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border-base);
+  background-color: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -66,7 +70,7 @@ defineEmits<{
 
 .modal-title {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -78,25 +82,47 @@ defineEmits<{
 }
 
 .modal-close:hover {
-  color: var(--text-primary);
+  color: var(--color-primary);
 }
 
 .modal-body {
   padding: 20px;
+  background-color: var(--bg-card);
 }
 
 .modal-body p {
   margin: 0;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 14px;
   line-height: 1.6;
 }
 
 .modal-footer {
-  padding: 12px 20px;
-  border-top: 1px solid var(--border-base);
+  padding: 14px 20px;
+  background-color: var(--bg-card);
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 10px;
+}
+
+.modal-footer :deep(.el-button) {
+  transition: all 0.2s;
+}
+
+.modal-footer :deep(.el-button:not(.el-button--primary)) {
+  background-color: var(--el-button-bg-color);
+  border-color: var(--el-button-border-color);
+  color: var(--text-regular);
+}
+
+.modal-footer :deep(.el-button.el-button--primary) {
+  background-color: rgba(102, 102, 255, 1);
+  border-color: rgba(102, 102, 255, 1);
+  color: #fff;
+}
+
+.modal-footer :deep(.el-button.el-button--primary:hover) {
+  background-color: rgba(102, 102, 255, 0.88);
+  border-color: rgba(102, 102, 255, 0.88);
 }
 </style>

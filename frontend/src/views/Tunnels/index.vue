@@ -14,7 +14,8 @@
           v-model="statusFilter"
           :placeholder="t('channels.statusFilter')"
           clearable
-          class="toolbar-filter"
+          class="scada-select toolbar-filter"
+          popper-class="scada-select-dropdown"
         >
           <el-option :label="t('common.all')" value="" />
           <el-option :label="t('channels.online')" value="online" />
@@ -24,7 +25,8 @@
           v-model="protocolFilter"
           :placeholder="t('channels.protocolFilter')"
           clearable
-          class="toolbar-filter"
+          class="scada-select toolbar-filter"
+          popper-class="scada-select-dropdown"
         >
           <el-option :label="t('common.all')" value="" />
           <el-option label="MQTT" value="mqtt" />
@@ -340,19 +342,6 @@ onMounted(async () => {
   width: 120px;
 }
 
-.toolbar-filter :deep(.el-select__wrapper) {
-  background-color: transparent !important;
-  box-shadow: none !important;
-  border-bottom: 1px solid var(--el-border-color) !important;
-  border-radius: 0 !important;
-}
-
-.toolbar-filter :deep(.el-select__wrapper:hover),
-.toolbar-filter :deep(.el-select__wrapper.is-focused) {
-  box-shadow: none !important;
-  border-bottom: 1px solid var(--el-color-primary) !important;
-}
-
 .stat-item {
   display: flex;
   align-items: baseline;
@@ -469,7 +458,6 @@ onMounted(async () => {
   display: flex;
   overflow: hidden;
   min-width: 0;
-  background: var(--bg-card);
   border-radius: 16px;
 }
 

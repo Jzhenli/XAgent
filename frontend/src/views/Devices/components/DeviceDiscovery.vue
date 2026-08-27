@@ -49,7 +49,8 @@
               v-model="selectedInterfaceIp"
               :placeholder="t('devices.discoverySelectNicPlaceholder')"
               clearable
-              class="w-full"
+              class="scada-select"
+              popper-class="scada-select-dropdown"
             >
               <el-option
                 v-for="nic in networkInterfaces"

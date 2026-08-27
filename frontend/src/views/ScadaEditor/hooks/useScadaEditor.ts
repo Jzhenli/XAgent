@@ -19,6 +19,7 @@ import {
   cloneComponent,
   migrateComponents
 } from '../utils/component'
+import { normalizeAdaptMode } from '../utils/adapt'
 import { downloadJson } from '../utils/dom'
 import { setupUndoSystem, useScadaUndo, type OperationType } from './useScadaUndo'
 
@@ -125,6 +126,7 @@ function parseProjectData(data: string | Record<string, unknown>): ScadaPanel | 
       grid: parsed.grid || 20,
       backgroundColor: parsed.backgroundColor || '#f0f2f5',
       backgroundImage: parsed.backgroundImage,
+      adaptMode: normalizeAdaptMode(parsed.adaptMode),
       components: migrateComponents(parsed.components || []),
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -145,6 +147,7 @@ function buildPanelPayload(panel: ScadaPanel): Record<string, unknown> {
     grid: panel.grid,
     backgroundColor: panel.backgroundColor,
     backgroundImage: panel.backgroundImage,
+    adaptMode: panel.adaptMode,
     components: panel.components
   }
 }
@@ -209,6 +212,8 @@ export function useScadaEditor() {
     isDirty.value = false
     selectedComponentId.value = null
     selectedComponentIds.value = []
+    // 面板切换后旧撤销快照已无意义：既占内存，误按 Ctrl+Z 还会把新面板恢复成旧面板内容
+    undo.clearHistory()
 
     return panel
   }
@@ -789,6 +794,7 @@ export function validatePanel(data: unknown): ScadaPanel | null {
     grid: typeof panel.grid === 'number' ? Math.max(10, Math.min(50, panel.grid)) : 20,
     backgroundColor: typeof panel.backgroundColor === 'string' ? panel.backgroundColor : '#f0f2f5',
     backgroundImage: typeof panel.backgroundImage === 'string' ? panel.backgroundImage : undefined,
+    adaptMode: normalizeAdaptMode(panel.adaptMode),
     components: validComponents,
     createdAt: typeof panel.createdAt === 'number' ? panel.createdAt : Date.now(),
     updatedAt: Date.now()

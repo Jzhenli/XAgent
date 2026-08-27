@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ScadaComponent, SliderComponentConfig } from '@/types/scada'
 import { useScadaBinding } from '@/views/ScadaEditor/hooks'
@@ -84,6 +84,13 @@ const trackRef = ref<HTMLDivElement | null>(null)
 const isDragging = ref(false)
 const dragStartValue = ref(0)
 
+/** 移除拖拽期间挂载的 window 监听（pointerup/pointercancel/卸载时统一调用） */
+const stopDragListeners = () => {
+  window.removeEventListener('pointermove', handlePointerMove)
+  window.removeEventListener('pointerup', handlePointerUp)
+  window.removeEventListener('pointercancel', handlePointerCancel)
+}
+
 const handlePointerDown = (event: PointerEvent) => {
   if (props.editing) return
   event.preventDefault()
@@ -92,7 +99,9 @@ const handlePointerDown = (event: PointerEvent) => {
   isDragging.value = true
   updateFromEvent(event)
   window.addEventListener('pointermove', handlePointerMove)
-  window.addEventListener('pointerup', handlePointerUp, { once: true })
+  window.addEventListener('pointerup', handlePointerUp)
+  // 触摸屏手势被系统打断时只会派发 pointercancel，必须一并监听否则监听器泄漏
+  window.addEventListener('pointercancel', handlePointerCancel)
 }
 
 const handlePointerMove = (event: PointerEvent) => {
@@ -101,9 +110,16 @@ const handlePointerMove = (event: PointerEvent) => {
   updateFromEvent(event)
 }
 
+/** 拖拽被系统取消：回退到拖动前数值，不执行写值 */
+const handlePointerCancel = () => {
+  isDragging.value = false
+  stopDragListeners()
+  currentValue.value = dragStartValue.value
+}
+
 const handlePointerUp = async () => {
   isDragging.value = false
-  window.removeEventListener('pointermove', handlePointerMove)
+  stopDragListeners()
 
   if (!binding.value || !boundPoint.value) {
     return
@@ -133,6 +149,9 @@ const updateFromEvent = (event: PointerEvent) => {
   const stepped = Math.round(rawValue / step.value) * step.value
   currentValue.value = Math.max(min.value, Math.min(max.value, stepped))
 }
+
+/** 兜底：拖拽中组件被卸载时移除 window 监听 */
+onUnmounted(stopDragListeners)
 </script>
 
 <style scoped>

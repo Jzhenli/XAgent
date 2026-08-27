@@ -14,7 +14,8 @@
         :model-value="typeFilter"
         :placeholder="t('rules.typeFilter')"
         clearable
-        class="toolbar-filter"
+        class="scada-select toolbar-filter"
+        popper-class="scada-select-dropdown"
         @update:model-value="emit('update:typeFilter', $event ?? '')"
       >
         <el-option
@@ -119,13 +120,6 @@ const { t } = useI18n();
 
 .toolbar-filter {
   width: 140px;
-}
-
-.toolbar-filter :deep(.el-select__wrapper) {
-  background-color: transparent !important;
-  box-shadow: none !important;
-  border-bottom: 1px solid var(--el-border-color-dark) !important;
-  border-radius: 0 !important;
 }
 
 .toolbar-right {

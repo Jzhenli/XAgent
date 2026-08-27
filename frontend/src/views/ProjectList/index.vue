@@ -87,6 +87,24 @@
       @save="handleSaveEdit"
     />
 
+    <ProjectSelectDialog
+      v-model="showExportDialog"
+      :title="$t('scada.exportDialogTitle')"
+      :items="projects"
+      :confirm-text="$t('scada.exportSelected')"
+      :empty-text="$t('scada.noProjectsToExport')"
+      @confirm="handleExportConfirm"
+    />
+
+    <ProjectSelectDialog
+      v-model="showImportDialog"
+      :title="$t('scada.importDialogTitle')"
+      :items="parsedImportProjects"
+      :confirm-text="$t('scada.importSelected')"
+      :empty-text="$t('scada.noProjectsToImport')"
+      @confirm="handleImportConfirm"
+    />
+
     <input
       ref="importInputRef"
       type="file"
@@ -117,6 +135,7 @@ import type { Project } from "@/types/project";
 import ProjectCard from "./components/ProjectCard.vue";
 import CreateDialog from "./components/CreateDialog.vue";
 import EditDialog from "./components/EditDialog.vue";
+import ProjectSelectDialog from "./components/ProjectSelectDialog.vue";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -131,6 +150,9 @@ const loading = ref(false);
 const showCreateDialog = ref(false);
 const showEditDialog = ref(false);
 const editingProjectId = ref<string | null>(null);
+const showExportDialog = ref(false);
+const showImportDialog = ref(false);
+const parsedImportProjects = ref<ProjectCreateRequest[]>([]);
 
 // 导入文件输入
 const importInputRef = ref<HTMLInputElement | null>(null);
@@ -341,101 +363,141 @@ const triggerImport = () => {
   importInputRef.value?.click();
 };
 
-/** 解析并校验导入的项目数据 */
-const normalizeImportedProject = (
-  item: unknown,
-): ProjectCreateRequest | null => {
-  if (!item || typeof item !== "object") return null;
-  const project = item as Partial<Project>;
-  if (!project.name || !project.type) return null;
-  return {
-    id: project.id,
-    name: project.name,
-    type: project.type,
-    description: project.description,
-    data: project.data,
-    createdAt: project.createdAt,
-    updatedAt: project.updatedAt,
-  };
+/** 导入文件解析结果（按 kind 判别：解析成功 / JSON 失败 / 结构无效） */
+type ImportParseResult =
+  | { kind: "ok"; items: unknown[] }
+  | { kind: "json"; message: string }
+  | { kind: "structure" };
+
+/** 解析导入文件：JSON 解析 + 顶层结构校验 */
+const parseImportFile = (text: string): ImportParseResult => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (e) {
+    return { kind: "json", message: getErrorMessage(e, "") };
+  }
+
+  if (Array.isArray(parsed)) {
+    return { kind: "ok", items: parsed };
+  }
+
+  // 顶层可能为 null / 数字 / 字符串等，统一按结构无效处理
+  if (!parsed || typeof parsed !== "object") {
+    return { kind: "structure" };
+  }
+
+  const container = parsed as { projects?: unknown; data?: unknown };
+  if (Array.isArray(container.projects)) {
+    return { kind: "ok", items: container.projects };
+  }
+  if (Array.isArray(container.data)) {
+    return { kind: "ok", items: container.data };
+  }
+  return { kind: "structure" };
 };
 
-/** 导入项目文件 */
+/** 校验导入项目条目：过滤非法项，并为缺失 id 的条目生成回退 id */
+const validateImportedItems = (items: unknown[]): ProjectCreateRequest[] => {
+  const timestamp = Date.now();
+  const valid: ProjectCreateRequest[] = [];
+
+  items.forEach((item, index) => {
+    if (!item || typeof item !== "object") return;
+    const project = item as Partial<Project>;
+    if (!project.name) return;
+    if (!project.type || !isValidProjectType(project.type)) return;
+
+    valid.push({
+      id: project.id ?? `panel-import-${timestamp}-${index}`,
+      name: project.name,
+      type: project.type,
+      description: project.description,
+      data: project.data,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+    });
+  });
+
+  return valid;
+};
+
+/** 导入项目文件（解析并打开选择弹窗） */
 const handleImportFileChange = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
 
   try {
-    const text = await file.text();
-    const parsed = JSON.parse(text);
-    const rawProjects = Array.isArray(parsed)
-      ? parsed
-      : parsed.projects || parsed.data;
-
-    if (!Array.isArray(rawProjects)) {
-      ElMessage.error(t("scada.invalidProjectsFile"));
-      return;
-    }
-
-    const requests = rawProjects
-      .map(normalizeImportedProject)
-      .filter((item): item is ProjectCreateRequest => item !== null);
-
-    if (requests.length === 0) {
-      ElMessage.warning(t("scada.invalidProjectsFile"));
-      return;
-    }
-
-    const confirmMessage = t("scada.importConfirm", { count: requests.length });
-    try {
-      await ElMessageBox.confirm(
-        confirmMessage,
-        t("scada.importConfirmTitle"),
-        {
-          confirmButtonText: t("common.confirm"),
-          cancelButtonText: t("common.cancel"),
-          type: "warning",
-          customClass: "x-message-box",
-        },
+    const result = parseImportFile(await file.text());
+    if (result.kind !== "ok") {
+      ElMessage.error(
+        result.kind === "structure"
+          ? t("scada.invalidStructure")
+          : t("scada.jsonParseFailed", { error: result.message }),
       );
-    } catch {
       return;
     }
 
-    let success = 0;
-    let failed = 0;
-    for (const request of requests) {
-      try {
-        await projectApi.create(request);
-        success++;
-      } catch {
-        failed++;
-      }
+    const valid = validateImportedItems(result.items);
+    if (valid.length === 0) {
+      ElMessage.error(t("scada.noValidProjects"));
+      return;
     }
 
-    await loadProjects();
-
-    if (failed === 0) {
-      ElMessage.success(t("scada.projectsImported", { count: success }));
-    } else {
-      ElMessage.warning(t("scada.projectsImportPartial", { success, failed }));
+    if (valid.length < result.items.length) {
+      ElMessage.warning(
+        t("scada.importPartialInvalid", {
+          valid: valid.length,
+          invalid: result.items.length - valid.length,
+        }),
+      );
     }
-  } catch {
-    ElMessage.error(t("scada.invalidProjectsFile"));
+
+    parsedImportProjects.value = valid;
+    showImportDialog.value = true;
+  } catch (e) {
+    ElMessage.error(
+      t("scada.fileReadFailed", { error: getErrorMessage(e, "") }),
+    );
   } finally {
     input.value = "";
   }
 };
 
-/** 导出所有项目 */
+/** 确认导入选中项目（并行创建，结束后统一反馈） */
+const handleImportConfirm = async (indices: number[]) => {
+  const requests = indices.map((i) => parsedImportProjects.value[i]);
+  const results = await Promise.allSettled(
+    requests.map((request) => projectApi.create(request)),
+  );
+  const success = results.filter((r) => r.status === "fulfilled").length;
+  const failed = results.length - success;
+
+  await loadProjects();
+
+  if (failed === 0) {
+    ElMessage.success(t("scada.projectsImported", { count: success }));
+  } else {
+    ElMessage.warning(t("scada.projectsImportPartial", { success, failed }));
+  }
+};
+
+/** 打开导出选择弹窗 */
 const handleExport = () => {
   if (projects.value.length === 0) {
     ElMessage.warning(t("scada.noExportableProjects"));
     return;
   }
+  showExportDialog.value = true;
+};
 
-  const data = JSON.stringify(projects.value, null, 2);
-  const blob = new Blob([data], { type: "application/json" });
+/** 确认导出选中项目（弹窗确认按钮已保证至少选中一项） */
+const handleExportConfirm = (indices: number[]) => {
+  const selected = indices.map((i) => projects.value[i]);
+  const blob = new Blob([JSON.stringify(selected, null, 2)], {
+    type: "application/json",
+  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -445,9 +507,7 @@ const handleExport = () => {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 
-  ElMessage.success(
-    t("scada.projectsExported", { count: projects.value.length }),
-  );
+  ElMessage.success(t("scada.projectsExported", { count: selected.length }));
 };
 
 /** 格式化时间戳为本地时间字符串 */

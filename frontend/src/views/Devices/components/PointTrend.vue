@@ -12,36 +12,48 @@
         }}</el-tag>
       </div>
       <div class="header-right">
-        <el-select
-          v-model="pointStore.trendTimeRange"
-          style="width: 100px"
-          class="plain-select"
-        >
-          <el-option
-            v-for="opt in timeRangeOptions"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
-        <el-select
-          v-model="pointStore.trendAggregation"
-          style="width: 100px"
-          class="plain-select"
-        >
-          <el-option
-            v-for="opt in aggregationOptions"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
+        <div class="select-with-label">
+          <span class="select-label">{{ t("pointTrend.timeRange") }}</span>
+          <el-select
+            v-model="pointStore.trendTimeRange"
+            style="width: 100px"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
+          >
+            <el-option
+              v-for="opt in timeRangeOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </div>
+        <div class="select-with-label">
+          <span class="select-label">{{ t("pointTrend.aggregation") }}</span>
+          <el-select
+            v-model="pointStore.trendAggregation"
+            style="width: 100px"
+            class="scada-select"
+            popper-class="scada-select-dropdown"
+          >
+            <el-option
+              v-for="opt in aggregationOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </div>
         <el-button @click="loadData" :loading="pointStore.historyLoading">{{
           t("pointTrend.refresh")
         }}</el-button>
         <el-button @click="showConfig = !showConfig">
           <el-icon class="el-icon--left"><Setting /></el-icon>
           {{ t("pointTrend.config") }}
+        </el-button>
+        <el-button @click="handleDownloadExcel" :disabled="!trendData.length">
+          <el-icon class="el-icon--left"><Download /></el-icon>
+          {{ t("pointTrend.download") }}
         </el-button>
         <el-button @click="emit('close')" class="close-btn"
           >✕ {{ t("pointTrend.close") }}</el-button
@@ -250,7 +262,9 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import dayjs from "dayjs";
-import { Setting } from "@element-plus/icons-vue";
+import * as XLSX from "xlsx";
+import { Download, Setting } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
 
 /* ========== i18n / ECharts 注册 / Store ========== */
 const { t } = useI18n();
@@ -429,6 +443,44 @@ async function loadData() {
   if (!pointStore.selectedDeviceAsset) return;
   const hours = HOURS_MAP[pointStore.trendTimeRange] || 24;
   await pointStore.fetchHistoryReadings(pointStore.selectedDeviceAsset, hours);
+}
+
+/**
+ * 导出趋势数据为 Excel 文件。
+ */
+function handleDownloadExcel() {
+  const data = trendData.value;
+  const point = pointStore.selectedPoint;
+  if (!data.length || !point) return;
+
+  const isDigital = isDigitalPoint(point);
+  const rows = data.map((d) => ({
+    [t("pointTrend.timeColumn")]: dayjs(d.timestamp).format("YYYY-MM-DD HH:mm:ss"),
+    [t("pointTrend.valueColumn")]: isDigital
+      ? d.value === 1
+        ? t("pointTrend.on")
+        : t("pointTrend.off")
+      : d.value,
+    [t("pointTrend.unitColumn")]: point.unit || "",
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [
+    { wch: 22 },
+    { wch: 15 },
+    { wch: 10 },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, t("pointTrend.sheetName"));
+
+  const deviceName = pointStore.selectedDeviceAsset || "device";
+  const pointName = point.name || "point";
+  const timeStr = dayjs().format("YYYYMMDD-HHmmss");
+  const fileName = `xplay-trend-${deviceName}-${pointName}-${timeStr}.xlsx`;
+
+  XLSX.writeFile(wb, fileName);
+  ElMessage.success(t("pointTrend.downloadSuccess"));
 }
 
 /* ========== 图表 option 构建（拆分为纯函数，便于阅读） ========== */
@@ -619,13 +671,6 @@ const chartOption = computed(() => {
       top: "15%",
       containLabel: true,
     },
-    toolbox: {
-      feature: {
-        dataZoom: { yAxisIndex: "none" },
-        restore: {},
-        saveAsImage: {},
-      },
-    },
     dataZoom: dataZoomOption.value,
     xAxis: {
       type: "time",
@@ -780,6 +825,18 @@ onUnmounted(() => {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.select-with-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.select-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .header-right :deep(.el-button) {
@@ -997,18 +1054,6 @@ onUnmounted(() => {
 .empty-state p {
   margin: 0;
   font-size: 14px;
-}
-
-/* ========== 选择框样式 ========== */
-:deep(.plain-select .el-select__wrapper) {
-  box-shadow: none !important;
-  border: 1px solid var(--border-base) !important;
-  background-color: var(--bg-card) !important;
-  border-radius: 4px !important;
-}
-
-:deep(.plain-select .el-select__wrapper.is-focused) {
-  border-color: var(--color-primary) !important;
 }
 
 /* ========== 响应式 ========== */

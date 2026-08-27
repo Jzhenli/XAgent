@@ -12,16 +12,22 @@
     v-model:visible="isShowModal"
     @confirm="handleConfirm"
   />
+
+  <ConfigModal
+    v-model:visible="isShowConfigModal"
+    :param="configParam"
+  />
 </template>
 
 <script setup lang="ts">
 import { GraphicRender } from '@x-plateform/graphic-editor'
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { controlApi } from '@/api/control'
 import DataHandleManager from './DataHandleManager'
 import WriteValueModal from './modal/WriteValueModal.vue'
+import ConfigModal from './modal/ConfigModal.vue'
 
 const { t } = useI18n()
 
@@ -34,6 +40,8 @@ const graphicRenderItem = ref<InstanceType<typeof GraphicRender> | null>(null)
 
 const isShowModal = ref(false)
 const clickParam = ref<Record<string, any>>({})
+const isShowConfigModal = ref(false)
+const configParam = ref<Record<string, any>>({})
 
 const dataHandleManager = new DataHandleManager();
 
@@ -47,9 +55,10 @@ watch(
   { immediate: true },
 );
 
-onMounted(() => {
-  //console.log("onMounted", props.project);
-});
+onUnmounted(() => {
+  // 清除轮询定时器与回调引用，防止页面离开后定时器残留导致内存泄漏
+  dataHandleManager.dispose()
+})
 
 const parsedGraphics = computed(() => {
   let ret = {};
@@ -69,9 +78,11 @@ const graphicLoaded = () => {
 
 const itemclick = (params: any) => {
   if (params.action === 'setValue') {
-    console.log('itemclick', params)
     clickParam.value = params
     isShowModal.value = true
+  } else if (params.action === 'configPopup') {
+    configParam.value = params.param || {}
+    isShowConfigModal.value = true
   }
 };
 

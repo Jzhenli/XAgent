@@ -52,7 +52,7 @@ export function useDeviceIO() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `xagent-devices-${new Date().toISOString().slice(0, 10)}.yaml`
+    a.download = `xplay-devices-${new Date().toISOString().slice(0, 10)}.yaml`
     a.click()
     URL.revokeObjectURL(url)
     ElMessage.success(t('devices.export.success', { count: devices.length }))
@@ -81,7 +81,7 @@ export function useDeviceIO() {
         await ElMessageBox.confirm(
           t('devices.export.importConfirm', { count: devices.length }),
           t('devices.export.importConfirmTitle'),
-          { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel'), type: 'info' }
+          { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel'), type: 'info', customClass: 'x-message-box' }
         )
       } catch {
         return

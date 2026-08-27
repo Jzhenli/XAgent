@@ -180,8 +180,6 @@ const handleProjectChange = (val: string) => {
 </script>
 
 <style scoped>
-@import '../../../../style/scada-select.css';
-
 .config-section {
   margin-bottom: 16px;
   padding-bottom: 16px;

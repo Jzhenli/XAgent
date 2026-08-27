@@ -72,7 +72,7 @@ export const createInitialChannelForm = (): ChannelFormData => ({
   port: 1883,
   username: '',
   password: '',
-  client_id: `xagent_${Date.now()}`,
+  client_id: `xplay_${Date.now()}`,
   topic: 'data/upload',
   qos: 1,
   keepalive: 60,
