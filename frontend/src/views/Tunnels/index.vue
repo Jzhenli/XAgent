@@ -458,7 +458,6 @@ onMounted(async () => {
   display: flex;
   overflow: hidden;
   min-width: 0;
-  background: var(--bg-card);
   border-radius: 16px;
 }
 

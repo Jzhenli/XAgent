@@ -257,7 +257,7 @@
             <span>
               {{ channel.uploadRate }} {{ t("channels.itemsPerMin") }}
             </span>
-            <span>{{ channel.successRate }}%</span>
+            <!-- <span>{{ channel.successRate }}%</span> -->
           </div>
         </div>
         <div class="channel-item-actions" @click.stop>
