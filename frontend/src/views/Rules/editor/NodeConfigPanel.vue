@@ -785,7 +785,19 @@ const isDaySelected = (day: number) => {
 }
 
 .form-group input,
-.form-group select,
+.form-group select {
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  border-bottom: 1px solid var(--re-input-border);
+  border-radius: 0;
+  font-size: 13px;
+  background-color: transparent;
+  color: var(--text-primary);
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
 .form-group textarea {
   width: 100%;
   padding: 9px 12px;
@@ -799,7 +811,10 @@ const isDaySelected = (day: number) => {
 }
 
 .form-group input:hover,
-.form-group select:hover,
+.form-group select:hover {
+  border-bottom-color: var(--re-input-border-hover);
+}
+
 .form-group textarea:hover {
   border-color: var(--re-input-border-hover);
 }
@@ -810,7 +825,11 @@ const isDaySelected = (day: number) => {
 }
 
 .form-group input:focus,
-.form-group select:focus,
+.form-group select:focus {
+  outline: none;
+  border-bottom-color: var(--re-accent);
+}
+
 .form-group textarea:focus {
   outline: none;
   border-color: var(--re-accent);
