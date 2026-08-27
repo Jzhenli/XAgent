@@ -79,14 +79,11 @@ const getScheduleDisplay = computed(() => {
 }
 .rule-node:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25), 0 0 24px var(--node-schedule-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25), 0 0 10px var(--node-schedule-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 .rule-node.selected,
 :deep(.vue-flow__node.selected) .rule-node {
-  box-shadow:
-    0 0 0 2px var(--node-schedule-glow),
-    0 0 40px var(--node-schedule-glow),
-    0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 2px var(--node-schedule-glow), 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 .node-glow {
   position: absolute; inset: -3px; border-radius: 16px;
