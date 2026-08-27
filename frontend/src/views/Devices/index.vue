@@ -384,7 +384,7 @@ const {
   handleDeviceDiscoverySuccess,
   handleDeviceConfirmSuccess,
   handleBackToDiscovery,
-} = useDeviceDiscoveryFlow(showDeviceDialog);
+} = useDeviceDiscoveryFlow(showDeviceDialog, isEditing);
 
 // 点位管理 (Dialog状态、表单操作、CRUD、写入)
 const {
