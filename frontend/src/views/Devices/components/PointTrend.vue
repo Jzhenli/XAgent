@@ -28,22 +28,6 @@
             />
           </el-select>
         </div>
-        <div class="select-with-label">
-          <span class="select-label">{{ t("pointTrend.aggregation") }}</span>
-          <el-select
-            v-model="pointStore.trendAggregation"
-            style="width: 100px"
-            class="scada-select"
-            popper-class="scada-select-dropdown"
-          >
-            <el-option
-              v-for="opt in aggregationOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
-        </div>
         <el-button @click="loadData" :loading="pointStore.historyLoading">{{
           t("pointTrend.refresh")
         }}</el-button>
@@ -325,14 +309,6 @@ const timeRangeOptions = computed(() => [
   { value: "24h", label: t("dashboard.timeRange24h") },
   { value: "7d", label: t("dashboard.timeRange7d") },
   { value: "30d", label: t("pointTrend.timeRange30d") },
-]);
-
-const aggregationOptions = computed(() => [
-  { value: "none", label: t("pointTrend.originalData") },
-  { value: "1min", label: t("pointTrend.aggregation1min") },
-  { value: "5min", label: t("pointTrend.aggregation5min") },
-  { value: "15min", label: t("pointTrend.aggregation15min") },
-  { value: "1h", label: t("pointTrend.aggregation1h") },
 ]);
 
 /* ========== 配置面板开关 ========== */

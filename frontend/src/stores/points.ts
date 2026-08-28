@@ -99,7 +99,6 @@ export const usePointStore = defineStore('points', () => {
   const selectedPoint = ref<PointDisplay | null>(null)
   const selectedDeviceAsset = ref<string | null>(null)
   const trendTimeRange = ref<'1h' | '6h' | '24h' | '7d' | '30d'>('24h')
-  const trendAggregation = ref<'none' | '1min' | '5min' | '15min' | '1h'>('5min')
 
   const latestReadings = ref<Map<string, Reading>>(new Map())
   const historyReadings = ref<Reading[]>([])
@@ -378,10 +377,7 @@ export const usePointStore = defineStore('points', () => {
     const now = Date.now()
     const data: { time: string; timestamp: number; value: number; quality: string }[] = []
 
-    const interval = trendAggregation.value === 'none' ? 60000 :
-                     trendAggregation.value === '1min' ? 60000 :
-                     trendAggregation.value === '5min' ? 300000 :
-                     trendAggregation.value === '15min' ? 900000 : 3600000
+    const interval = 60000
 
     const count = (hours * 3600000) / interval
     const isDigital = point.type === 'digital' || point.standard_data_type === 'bool'
@@ -484,7 +480,6 @@ export const usePointStore = defineStore('points', () => {
     selectedPoint,
     selectedDeviceAsset,
     trendTimeRange,
-    trendAggregation,
     latestReadings,
     historyReadings,
     historyLoading,
