@@ -357,8 +357,7 @@ const handleItemPointChange = (index: number, pointName: string) => {
   box-shadow: none !important;
 }
 
-.form-group input::placeholder,
-.form-group select::placeholder {
+.form-group input::placeholder {
   color: var(--text-placeholder);
 }
 

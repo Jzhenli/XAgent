@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="config-section">
     <div class="section-title">{{ t("componentConfig.enumValueConfig") }}</div>
 
@@ -190,8 +190,7 @@ const handleColorChange = (field: ColorField, val: string | null) => {
   margin-bottom: 4px;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(34, 211, 238, 0.2);
@@ -201,13 +200,11 @@ const handleColorChange = (field: ColorField, val: string | null) => {
   color: var(--text-primary);
 }
 
-.form-group input::placeholder,
-.form-group select::placeholder {
+.form-group input::placeholder {
   color: var(--text-placeholder);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
 }

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="config-section">
     <div class="section-title">{{ t("componentConfig.textConfig") }}</div>
 
@@ -37,41 +37,28 @@
     <div class="form-row">
       <div class="form-group">
         <label>{{ t("componentConfig.fontWeight") }}</label>
-        <select
-          :value="config.fontWeight"
-          @change="
-            updateConfig(
-              'fontWeight',
-              ($event.target as HTMLSelectElement).value as 'normal' | 'bold',
-            )
-          "
+        <el-select
+          :model-value="config.fontWeight"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
+          @update:model-value="updateConfig('fontWeight', $event as 'normal' | 'bold')"
         >
-          <option value="normal">
-            {{ t("componentConfig.fontWeightNormal") }}
-          </option>
-          <option value="bold">
-            {{ t("componentConfig.fontWeightBold") }}
-          </option>
-        </select>
+          <el-option value="normal" :label="t('componentConfig.fontWeightNormal')" />
+          <el-option value="bold" :label="t('componentConfig.fontWeightBold')" />
+        </el-select>
       </div>
       <div class="form-group">
         <label>{{ t("componentConfig.textAlign") }}</label>
-        <select
-          :value="config.textAlign"
-          @change="
-            updateConfig(
-              'textAlign',
-              ($event.target as HTMLSelectElement).value as
-                | 'left'
-                | 'center'
-                | 'right',
-            )
-          "
+        <el-select
+          :model-value="config.textAlign"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
+          @update:model-value="updateConfig('textAlign', $event as 'left' | 'center' | 'right')"
         >
-          <option value="left">{{ t("componentConfig.alignLeft") }}</option>
-          <option value="center">{{ t("componentConfig.alignCenter") }}</option>
-          <option value="right">{{ t("componentConfig.alignRight") }}</option>
-        </select>
+          <el-option value="left" :label="t('componentConfig.alignLeft')" />
+          <el-option value="center" :label="t('componentConfig.alignCenter')" />
+          <el-option value="right" :label="t('componentConfig.alignRight')" />
+        </el-select>
       </div>
     </div>
     <div class="form-row">
@@ -176,8 +163,7 @@ const handleChange = (val: string | null) => {
   margin-bottom: 4px;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(34, 211, 238, 0.2);
@@ -187,13 +173,11 @@ const handleChange = (val: string | null) => {
   color: var(--text-primary);
 }
 
-.form-group input::placeholder,
-.form-group select::placeholder {
+.form-group input::placeholder {
   color: var(--text-placeholder);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
 }

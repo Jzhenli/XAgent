@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="config-section">
     <div class="section-title">{{ t('componentConfig.chartConfig') }}</div>
 
@@ -6,15 +6,17 @@
     <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
     <div class="form-group">
       <label>{{ t('componentConfig.timeRange') }}</label>
-      <select
-        :value="config.timeRange"
-        @change="updateConfig('timeRange', ($event.target as HTMLSelectElement).value as BarChartComponentConfig['timeRange'])"
+      <el-select
+        :model-value="config.timeRange"
+        class="scada-select"
+        popper-class="scada-select-dropdown"
+        @update:model-value="updateConfig('timeRange', $event as BarChartComponentConfig['timeRange'])"
       >
-        <option value="1h">{{ t('dashboard.timeRange1h') }}</option>
-        <option value="6h">{{ t('pointTrend.timeRange6h') }}</option>
-        <option value="24h">{{ t('dashboard.timeRange24h') }}</option>
-        <option value="7d">{{ t('dashboard.timeRange7d') }}</option>
-      </select>
+        <el-option value="1h" :label="t('dashboard.timeRange1h')" />
+        <el-option value="6h" :label="t('pointTrend.timeRange6h')" />
+        <el-option value="24h" :label="t('dashboard.timeRange24h')" />
+        <el-option value="7d" :label="t('dashboard.timeRange7d')" />
+      </el-select>
     </div>
     <div class="form-row">
       <div class="form-group form-group--switch">
@@ -225,8 +227,7 @@ const handleColorChange = (field: ColorField, val: string | null) => {
   margin-bottom: 4px;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(34, 211, 238, 0.2);
@@ -236,13 +237,11 @@ const handleColorChange = (field: ColorField, val: string | null) => {
   color: var(--text-primary);
 }
 
-.form-group input::placeholder,
-.form-group select::placeholder {
+.form-group input::placeholder {
   color: var(--text-placeholder);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
 }

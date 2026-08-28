@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="config-section">
     <div class="section-title">{{ t("componentConfig.gaugeConfig") }}</div>
 
@@ -105,19 +105,16 @@
     <div class="form-row">
       <div class="form-group">
         <label>{{ t("componentConfig.strokeLinecap") }}</label>
-        <select
-          :value="config.strokeLinecap"
-          @change="
-            updateConfig(
-              'strokeLinecap',
-              ($event.target as HTMLSelectElement).value as 'butt' | 'round' | 'square',
-            )
-          "
+        <el-select
+          :model-value="config.strokeLinecap"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
+          @update:model-value="updateConfig('strokeLinecap', $event as GaugeComponentConfig['strokeLinecap'])"
         >
-          <option value="butt">{{ t("componentConfig.strokeLinecapButt") }}</option>
-          <option value="round">{{ t("componentConfig.strokeLinecapRound") }}</option>
-          <option value="square">{{ t("componentConfig.strokeLinecapSquare") }}</option>
-        </select>
+          <el-option value="butt" :label="t('componentConfig.strokeLinecapButt')" />
+          <el-option value="round" :label="t('componentConfig.strokeLinecapRound')" />
+          <el-option value="square" :label="t('componentConfig.strokeLinecapSquare')" />
+        </el-select>
       </div>
     </div>
 
@@ -166,33 +163,27 @@
     <div class="form-row">
       <div class="form-group">
         <label>{{ t("componentConfig.fontWeight") }}</label>
-        <select
-          :value="config.fontWeight"
-          @change="
-            updateConfig(
-              'fontWeight',
-              ($event.target as HTMLSelectElement).value as 'normal' | 'bold',
-            )
-          "
+        <el-select
+          :model-value="config.fontWeight"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
+          @update:model-value="updateConfig('fontWeight', $event as GaugeComponentConfig['fontWeight'])"
         >
-          <option value="normal">{{ t("componentConfig.fontWeightNormal") }}</option>
-          <option value="bold">{{ t("componentConfig.fontWeightBold") }}</option>
-        </select>
+          <el-option value="normal" :label="t('componentConfig.fontWeightNormal')" />
+          <el-option value="bold" :label="t('componentConfig.fontWeightBold')" />
+        </el-select>
       </div>
       <div class="form-group">
         <label>{{ t("componentConfig.unitFontWeight") }}</label>
-        <select
-          :value="config.unitFontWeight"
-          @change="
-            updateConfig(
-              'unitFontWeight',
-              ($event.target as HTMLSelectElement).value as 'normal' | 'bold',
-            )
-          "
+        <el-select
+          :model-value="config.unitFontWeight"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
+          @update:model-value="updateConfig('unitFontWeight', $event as GaugeComponentConfig['unitFontWeight'])"
         >
-          <option value="normal">{{ t("componentConfig.fontWeightNormal") }}</option>
-          <option value="bold">{{ t("componentConfig.fontWeightBold") }}</option>
-        </select>
+          <el-option value="normal" :label="t('componentConfig.fontWeightNormal')" />
+          <el-option value="bold" :label="t('componentConfig.fontWeightBold')" />
+        </el-select>
       </div>
     </div>
 
@@ -345,8 +336,7 @@ const handleGradientChange = (index: number, val: string | null) => {
   margin-bottom: 4px;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(34, 211, 238, 0.2);
@@ -356,13 +346,11 @@ const handleGradientChange = (index: number, val: string | null) => {
   color: var(--text-primary);
 }
 
-.form-group input::placeholder,
-.form-group select::placeholder {
+.form-group input::placeholder {
   color: var(--text-placeholder);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
 }

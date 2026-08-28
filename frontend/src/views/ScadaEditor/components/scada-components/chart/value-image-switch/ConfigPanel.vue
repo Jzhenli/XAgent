@@ -64,11 +64,16 @@
     <div class="form-row">
       <div class="form-group">
         <label>{{ t('componentConfig.imageFit') }}</label>
-        <select :value="config.fit || 'contain'" @change="updateConfig('fit', ($event.target as HTMLSelectElement).value as ValueImageSwitchComponentConfig['fit'])">
-          <option value="contain">{{ t('componentConfig.fitContain') }}</option>
-          <option value="cover">{{ t('componentConfig.fitCover') }}</option>
-          <option value="fill">{{ t('componentConfig.fitFill') }}</option>
-        </select>
+        <el-select
+          :model-value="config.fit || 'contain'"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
+          @update:model-value="updateConfig('fit', $event as ValueImageSwitchComponentConfig['fit'])"
+        >
+          <el-option value="contain" :label="t('componentConfig.fitContain')" />
+          <el-option value="cover" :label="t('componentConfig.fitCover')" />
+          <el-option value="fill" :label="t('componentConfig.fitFill')" />
+        </el-select>
       </div>
       <div class="form-group">
         <label>{{ t('componentConfig.backgroundColor') }}</label>
@@ -224,8 +229,7 @@ const updateItemValue = (index: number, value: string) => {
   margin-bottom: 4px;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(34, 211, 238, 0.2);
@@ -239,8 +243,7 @@ const updateItemValue = (index: number, value: string) => {
   color: var(--text-placeholder);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
 }

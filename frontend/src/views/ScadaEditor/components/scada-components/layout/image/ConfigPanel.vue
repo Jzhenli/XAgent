@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="config-section">
     <div class="section-title">{{ t('componentConfig.imageConfig') }}</div>
 
@@ -31,11 +31,16 @@
     <div class="form-row">
       <div class="form-group">
         <label>{{ t('componentConfig.imageFit') }}</label>
-        <select :value="config.fit || 'contain'" @change="updateConfig('fit', ($event.target as HTMLSelectElement).value as ImageComponentConfig['fit'])">
-          <option value="contain">{{ t('componentConfig.fitContain') }}</option>
-          <option value="cover">{{ t('componentConfig.fitCover') }}</option>
-          <option value="fill">{{ t('componentConfig.fitFill') }}</option>
-        </select>
+        <el-select
+          :model-value="config.fit || 'contain'"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
+          @update:model-value="updateConfig('fit', $event as ImageComponentConfig['fit'])"
+        >
+          <el-option value="contain" :label="t('componentConfig.fitContain')" />
+          <el-option value="cover" :label="t('componentConfig.fitCover')" />
+          <el-option value="fill" :label="t('componentConfig.fitFill')" />
+        </el-select>
       </div>
       <div class="form-group">
         <label>{{ t('componentConfig.backgroundColor') }}</label>
@@ -136,8 +141,7 @@ const triggerImageUpload = () => {
   display: none;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(34, 211, 238, 0.2);
@@ -147,13 +151,11 @@ const triggerImageUpload = () => {
   color: var(--text-primary);
 }
 
-.form-group input::placeholder,
-.form-group select::placeholder {
+.form-group input::placeholder {
   color: var(--text-placeholder);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
 }
