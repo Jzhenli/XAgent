@@ -1,7 +1,6 @@
 """System API routes"""
 
 import time
-import sys
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 
@@ -11,7 +10,6 @@ from ...storage import StorageInterface, WriteBehindBuffer
 from ...statistics import StatisticsManager
 from ...utils.system_monitor import get_system_monitor
 from ...utils.constants import SystemDefaults
-
 
 router = APIRouter(tags=["System"])
 
@@ -49,20 +47,6 @@ async def get_stats(
             "last_flush": buffer_stats.last_flush.isoformat() if buffer_stats.last_flush else None
         }
     }
-
-@router.get("/api/check-device-model")
-def check_device_model():
-    if hasattr(sys, "getandroidapilevel") or sys.platform == "android":
-        try:
-            # read model name, ["BAC-4031-070","BAC-4041-100","BAC-4051-150"]
-            from android.os import Build
-            model_name = Build.MODEL.strip()
-            if model_name not in ["BAC-4031-070","BAC-4041-100","BAC-4051-150"]:
-                return {"status": "FAIL", "data": model_name}
-            return {"status": "OK", "data": model_name}
-        except:
-            return {"status": "FAIL", "data": "model_name failed"}
-    return {"status": "OK", "data": "non-android"}
 
 
 @router.get("/api/system/startup-status")
