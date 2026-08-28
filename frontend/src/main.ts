@@ -38,7 +38,15 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(pinia)
 app.use(router)
 app.use(i18n)
-app.use(ElementPlus, { locale: zhCn })
+app.use(ElementPlus, { 
+  locale: zhCn,
+  // 全局配置：优化触摸设备上的 tooltip 体验
+  // 减少 hideAfter 延迟，使 tooltip 在鼠标/触摸移出后快速消失
+  tooltip: {
+    hideAfter: 50,
+    showAfter: 100
+  }
+})
 
 /**
  * 全局初始化主题，确保独立布局路由（预览页 /graphic/:id/preview、/scada/:id/preview 等）

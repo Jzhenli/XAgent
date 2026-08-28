@@ -689,3 +689,26 @@ input[type="number"]::-webkit-inner-spin-button:active,
 input[type="number"]::-webkit-outer-spin-button:active {
   opacity: 1;
 }
+
+/* ==================== Tooltip 全局优化 ==================== */
+/* 优化触摸设备上的 tooltip 体验：减少过渡动画时间，使 tooltip 快速消失 */
+.el-tooltip__popper {
+  transition: opacity 0.05s ease, transform 0.05s ease !important;
+  animation-duration: 0.05s !important;
+}
+
+.el-tooltip__popper.fade-enter-active,
+.el-tooltip__popper.fade-leave-active {
+  transition: opacity 0.05s ease !important;
+}
+
+.el-tooltip__popper.fade-enter-from,
+.el-tooltip__popper.fade-leave-to {
+  opacity: 0;
+}
+
+.el-tooltip__popper.fade-enter-active,
+.el-tooltip__popper.fade-enter-from,
+.el-tooltip__popper.fade-enter-to {
+  animation-duration: 0.05s !important;
+}
