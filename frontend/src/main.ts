@@ -48,7 +48,7 @@ app.use(ElementPlus, { locale: zhCn })
  * 因此这里通过克隆 ElTooltip 并覆盖默认 props，再全局重新注册实现。
  *
  * - hideAfter: 50 —— 触发 mouseleave 后 50ms 即隐藏
- * - autoClose: 3000 —— 显示 3 秒后自动关闭（兜底）
+ * - autoClose: 2000 —— 显示 2 秒后自动关闭（兜底）
  *
  * autoClose 是关键：平板等触摸设备上，点击仅触发浏览器合成的 mouseenter，
  * 而 mouseleave 往往要等到点击其他元素才会触发；若用户点击后不动，
@@ -59,7 +59,7 @@ const GlobalTooltip = {
   props: {
     ...ElTooltip.props,
     hideAfter: { type: Number, default: 50 },
-    autoClose: { type: Number, default: 3000 },
+    autoClose: { type: Number, default: 2000 },
   },
 } as unknown as typeof ElTooltip
 app.component('ElTooltip', GlobalTooltip)
