@@ -343,7 +343,6 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
   position: relative;
   overflow: hidden;
   cursor: crosshair;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(34, 211, 238, 0.05);
   border-radius: 8px;
   border: 1px solid rgba(34, 211, 238, 0.15);
 }

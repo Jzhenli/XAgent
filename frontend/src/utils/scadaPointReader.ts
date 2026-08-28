@@ -38,7 +38,6 @@ const error = ref<string | null>(null)
 const historyReadings = ref<Reading[]>([])
 const historyLoading = ref(false)
 const trendTimeRange = ref<'1h' | '6h' | '24h' | '7d' | '30d'>('24h')
-const trendAggregation = ref<'none' | '1min' | '5min' | '15min' | '1h'>('5min')
 
 const writeProtectionMap = new Map<string, { value: any; expiresAt: number }>()
 const WRITE_PROTECTION_DURATION = 10000
@@ -258,10 +257,7 @@ export function useScadaPointReader(): ScadaPointReader {
     const now = Date.now()
     const data: { time: string; timestamp: number; value: number; quality: string }[] = []
 
-    const interval = trendAggregation.value === 'none' ? 60000 :
-                     trendAggregation.value === '1min' ? 60000 :
-                     trendAggregation.value === '5min' ? 300000 :
-                     trendAggregation.value === '15min' ? 900000 : 3600000
+    const interval = 60000
 
     const count = (hours * 3600000) / interval
     const isDigital = point.type === 'digital' || point.standard_data_type === 'bool'

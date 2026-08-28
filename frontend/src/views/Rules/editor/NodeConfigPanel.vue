@@ -117,11 +117,14 @@
 
           <div class="form-group">
             <label>{{ t('nodeConfig.executionTime') }}</label>
-            <input
+            <el-time-picker
               v-model="localData.scheduleTrigger.time"
-              type="time"
-              @input="updateData"
-            >
+              format="HH:mm"
+              value-format="HH:mm"
+              class="scada-time-picker"
+              popper-class="scada-select-dropdown"
+              @change="updateData"
+            />
           </div>
 
           <div v-if="localData.scheduleTrigger.frequency === 'weekly'" class="form-group">
@@ -144,19 +147,26 @@
         <template v-if="localData.scheduleTrigger.mode === 'once'">
           <div class="form-group">
             <label>{{ t('nodeConfig.executionTime') }}</label>
-            <input
+            <el-time-picker
               v-model="localData.scheduleTrigger.time"
-              type="time"
-              @input="updateData"
-            >
+              format="HH:mm"
+              value-format="HH:mm"
+              class="scada-time-picker"
+              popper-class="scada-select-dropdown"
+              @change="updateData"
+            />
           </div>
           <div class="form-group">
             <label>{{ t('nodeConfig.executionDate') }}</label>
-            <input
+            <el-date-picker
               v-model="localData.scheduleTrigger.startDate"
               type="date"
-              @input="updateData"
-            >
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
+              class="scada-date-picker"
+              popper-class="scada-select-dropdown"
+              @change="updateData"
+            />
           </div>
         </template>
 
@@ -183,19 +193,27 @@
         <div class="form-group">
           <label>{{ t('nodeConfig.effectiveDateRange') }}</label>
           <div class="date-range">
-            <input
+            <el-date-picker
               v-model="localData.scheduleTrigger.startDate"
               type="date"
-              @input="updateData"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
               :placeholder="t('nodeConfig.startDate')"
-            >
+              class="scada-date-picker"
+              popper-class="scada-select-dropdown"
+              @change="updateData"
+            />
             <span>{{ t('nodeConfig.to') }}</span>
-            <input
+            <el-date-picker
               v-model="localData.scheduleTrigger.endDate"
               type="date"
-              @input="updateData"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
               :placeholder="t('nodeConfig.endDate')"
-            >
+              class="scada-date-picker"
+              popper-class="scada-select-dropdown"
+              @change="updateData"
+            />
           </div>
         </div>
 
@@ -859,16 +877,66 @@ const isDaySelected = (day: number) => {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--re-accent) 20%, transparent), 0 0 12px color-mix(in srgb, var(--re-accent) 25%, transparent);
 }
 
-.form-group input[type="time"]::-webkit-calendar-picker-indicator,
-.form-group input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  filter: invert(0.7);
-  transition: filter 0.2s;
+/* ==================== Time Pickers & Date Pickers ==================== */
+.form-group :deep(.scada-time-picker),
+.form-group :deep(.scada-date-picker) {
+  width: 100%;
 }
 
-.form-group input[type="time"]::-webkit-calendar-picker-indicator:hover,
-.form-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  filter: invert(0.5);
+.form-group :deep(.scada-time-picker .el-input),
+.form-group :deep(.scada-date-picker .el-input) {
+  width: 100%;
+}
+
+.form-group :deep(.scada-time-picker .el-input__wrapper),
+.form-group :deep(.scada-date-picker .el-input__wrapper) {
+  padding: 8px 0;
+  border: none !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--re-input-border) !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  transition: border-color 0.2s;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.form-group :deep(.scada-time-picker .el-input__wrapper:hover),
+.form-group :deep(.scada-date-picker .el-input__wrapper:hover) {
+  border-bottom-color: var(--re-input-border-hover) !important;
+}
+
+.form-group :deep(.scada-time-picker .el-input__wrapper.is-focused),
+.form-group :deep(.scada-date-picker .el-input__wrapper.is-focused) {
+  border-bottom-color: var(--re-accent) !important;
+}
+
+/* Input text color & font */
+.form-group :deep(.scada-time-picker .el-input__inner),
+.form-group :deep(.scada-date-picker .el-input__inner) {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+/* Placeholder */
+.form-group :deep(.scada-time-picker .el-input__inner::placeholder),
+.form-group :deep(.scada-date-picker .el-input__inner::placeholder) {
+  color: var(--text-placeholder);
+}
+
+/* Suffix icon (clock / calendar) - visible in dark theme */
+.form-group :deep(.scada-time-picker .el-input__suffix),
+.form-group :deep(.scada-date-picker .el-input__suffix) {
+  color: var(--re-accent);
+}
+
+.form-group :deep(.scada-time-picker .el-input__suffix:hover),
+.form-group :deep(.scada-date-picker .el-input__suffix:hover) {
+  color: var(--re-accent-2);
 }
 
 .form-group textarea {
@@ -975,7 +1043,7 @@ const isDaySelected = (day: number) => {
   gap: 8px;
 }
 
-.date-range input {
+.date-range .scada-date-picker {
   flex: 1;
 }
 

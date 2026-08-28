@@ -129,20 +129,17 @@ const iconOptions = computed(() => {
   margin-bottom: 4px;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
   width: 100%;
   background-color: var(--scada-bg-elevated);
   color: var(--text-primary);
 }
 
-.form-group input::placeholder,
-.form-group select::placeholder {
+.form-group input::placeholder {
   color: var(--text-placeholder);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
 }

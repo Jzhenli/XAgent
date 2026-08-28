@@ -12,7 +12,7 @@
         }}</el-tag>
       </div>
       <div class="header-right">
-        <div class="select-with-label">
+        <!-- <div class="select-with-label">
           <span class="select-label">{{ t("pointTrend.timeRange") }}</span>
           <el-select
             v-model="pointStore.trendTimeRange"
@@ -27,23 +27,7 @@
               :value="opt.value"
             />
           </el-select>
-        </div>
-        <div class="select-with-label">
-          <span class="select-label">{{ t("pointTrend.aggregation") }}</span>
-          <el-select
-            v-model="pointStore.trendAggregation"
-            style="width: 100px"
-            class="scada-select"
-            popper-class="scada-select-dropdown"
-          >
-            <el-option
-              v-for="opt in aggregationOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
-        </div>
+        </div> -->
         <el-button @click="loadData" :loading="pointStore.historyLoading">{{
           t("pointTrend.refresh")
         }}</el-button>
@@ -91,7 +75,19 @@
     <div v-if="pointStore.selectedPoint" class="trend-content">
       <el-card shadow="never" class="search-result-card chart-card">
         <div class="chart-container">
-          <v-chart :option="chartOption" class="trend-chart" autoresize />
+          <!-- 延迟到容器布局完成后再挂载，避免抽屉打开当帧尺寸为 0 触发 ECharts 告警 -->
+          <v-chart
+            v-if="chartReady"
+            :option="chartOption"
+            class="trend-chart"
+            autoresize
+          />
+          <!-- 图表挂载前的占位 loading -->
+          <div v-else class="chart-loading">
+            <el-icon class="chart-loading__spinner">
+              <Loading />
+            </el-icon>
+          </div>
         </div>
       </el-card>
 
@@ -243,7 +239,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { usePointStore } from "@/stores/points";
 import { useThemeStore } from "@/stores/theme";
@@ -263,7 +259,7 @@ import {
 import VChart from "vue-echarts";
 import dayjs from "dayjs";
 import * as XLSX from "xlsx";
-import { Download, Setting } from "@element-plus/icons-vue";
+import { Download, Loading, Setting } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
 /* ========== i18n / ECharts 注册 / Store ========== */
@@ -327,14 +323,6 @@ const timeRangeOptions = computed(() => [
   { value: "30d", label: t("pointTrend.timeRange30d") },
 ]);
 
-const aggregationOptions = computed(() => [
-  { value: "none", label: t("pointTrend.originalData") },
-  { value: "1min", label: t("pointTrend.aggregation1min") },
-  { value: "5min", label: t("pointTrend.aggregation5min") },
-  { value: "15min", label: t("pointTrend.aggregation15min") },
-  { value: "1h", label: t("pointTrend.aggregation1h") },
-]);
-
 /* ========== 配置面板开关 ========== */
 const showConfig = ref(false);
 const autoRefresh = ref(true);
@@ -342,6 +330,13 @@ const refreshInterval = ref(30);
 const showMinMax = ref(true);
 const showAvgLine = ref(true);
 const showDataPoints = ref(false);
+
+/* ========== 图表挂载时机 ==========
+ * 组件随 el-drawer 打开而挂载，打开当帧容器 clientWidth/clientHeight 可能为 0，
+ * 此时初始化 ECharts 会触发 "Can't get DOM width or height" 告警。
+ * 故延迟到 nextTick + requestAnimationFrame（布局完成后）再挂载 v-chart。
+ */
+const chartReady = ref(false);
 
 /* ========== 主题感知的 splitLine 颜色 ==========
  * 深色主题下使用半透明白色，浅色主题下使用半透明黑色，保证可见性。
@@ -654,14 +649,9 @@ const chartOption = computed(() => {
       },
     },
     legend: {
-      data: isDigital
-        ? [seriesName]
-        : [
-            t("pointTrend.value"),
-            t("pointTrend.averageLabel"),
-            t("pointTrend.upperLimit"),
-            t("pointTrend.lowerLimit"),
-          ],
+      // 仅保留真实 series 名称；平均值/上下限是 markLine 名称，不属于 series，
+      // 写入 legend.data 会触发 "series not exists" 告警
+      data: [seriesName],
       bottom: 10,
     },
     grid: {
@@ -756,8 +746,16 @@ watch(
   () => props.deviceName,
   async (name) => {
     if (name && props.pointName) {
+      // 打开/切换点位：重置配置面板 & 图表挂载状态
+      showConfig.value = false;
+      chartReady.value = false;
       pointStore.selectPoint(name, props.pointName);
       await loadData();
+      // 等待数据更新后再挂载图表
+      await nextTick();
+      requestAnimationFrame(() => {
+        chartReady.value = true;
+      });
     }
   },
   { immediate: true },
@@ -938,6 +936,30 @@ onUnmounted(() => {
   flex: 1;
   width: 100%;
   min-height: 300px;
+  position: relative;
+}
+
+.chart-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-loading__spinner {
+  font-size: 40px;
+  color: var(--color-primary);
+  animation: chart-loading-spin 1s linear infinite;
+}
+
+@keyframes chart-loading-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .trend-chart {
