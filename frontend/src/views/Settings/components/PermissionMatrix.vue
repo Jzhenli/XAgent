@@ -195,6 +195,10 @@ const {
   user-select: none;
 }
 
+.scada-select {
+  width: 200px;
+}
+
 .action-btn.btn-primary {
   color: #fff;
   background: rgba(102, 102, 255, 1);

@@ -285,6 +285,7 @@ export function useUserManagement() {
         t('settings.delete_confirm'),
         {
           type: 'warning',
+          customClass: 'x-message-box',
           confirmButtonText: t('common.confirm'),
           cancelButtonText: t('common.cancel'),
         }
@@ -397,6 +398,7 @@ export function useUserManagement() {
         t('settings.delete_confirm'),
         {
           type: 'warning',
+          customClass: 'x-message-box',
           confirmButtonText: t('common.confirm'),
           cancelButtonText: t('common.cancel'),
         }
