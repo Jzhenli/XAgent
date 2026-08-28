@@ -26,24 +26,28 @@ export const useUserStore = defineStore('user', () => {
     return currentUserPermissions.value[resource]?.[action] ?? false
   }
 
-  async function login(username: string, password: string) {
+  type LoginResult = { success: boolean; errorCode?: string }
+
+  async function login(username: string, password: string): Promise<LoginResult> {
     _loadingCount.value++
     try {
-      const { data } = await userApi.login({ username, password })
-      if (data.success && data.user) {
-        currentUser.value = data.user
-        isAuthenticated.value = true
-        localStorage.setItem('xagent_user', JSON.stringify(data.user))
-        try {
-          await fetchRoles()
-        } catch {
-          // ignore
-        }
-        return true
+      const { data: hwData } = await userApi.checkHardware()
+      if (hwData.status !== 'OK') {
+        return { success: false, errorCode: 'HARDWARE_MISMATCH' }
       }
-      return false
+
+      const { data } = await userApi.login({ username, password })
+      if (!data.success || !data.user) {
+        return { success: false }
+      }
+
+      currentUser.value = data.user
+      isAuthenticated.value = true
+      localStorage.setItem('xagent_user', JSON.stringify(data.user))
+      await fetchRoles().catch(() => {})
+      return { success: true }
     } catch {
-      return false
+      return { success: false }
     } finally {
       _loadingCount.value--
     }

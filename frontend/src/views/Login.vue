@@ -181,14 +181,16 @@ async function handleLogin() {
 
   loading.value = true;
   try {
-    const success = await userStore.login(
+    const result = await userStore.login(
       loginForm.value.username,
       loginForm.value.password,
     );
-    if (success) {
+    if (result.success) {
       ElMessage.success(t("login.loginSuccess"));
       const redirect = (route.query.redirect as string) || "/dashboard";
       router.push(redirect);
+    } else if (result.errorCode === "HARDWARE_MISMATCH") {
+      ElMessage.error(t("login.hardwareNotReady"));
     } else {
       ElMessage.error(t("login.loginFailed"));
     }

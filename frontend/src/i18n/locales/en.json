@@ -96,6 +96,7 @@
     "loginSuccess": "Login successful",
     "loginFailed": "Login failed",
     "loginError": "Login error, please try again later",
+    "hardwareNotReady": "Hardware device mismatch, cannot login",
     "pleaseEnterCredentials": "Please enter username and password",
     "footer": "Adveco © 2024",
     "aboutUs": "About Us",

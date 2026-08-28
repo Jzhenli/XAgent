@@ -144,6 +144,10 @@ export const userApi = {
     })
   },
 
+  checkHardware() {
+    return api.get<{ status: string }>('/api/check-device-model')
+  },
+
   checkPermission(username: string, resource: string, action: string) {
     return api.get<{ username: string; resource: string; action: string; allowed: boolean }>('/api/users/permissions/check', {
       params: { username, resource, action },
