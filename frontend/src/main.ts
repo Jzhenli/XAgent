@@ -62,6 +62,8 @@ const GlobalTooltip = {
     autoClose: { type: Number, default: 2000 },
   },
 } as unknown as typeof ElTooltip
+// 先移除 ElementPlus 全量注册的 ElTooltip，再重新注册自定义版本，避免重复注册警告
+delete app._context.components['ElTooltip']
 app.component('ElTooltip', GlobalTooltip)
 
 /**
