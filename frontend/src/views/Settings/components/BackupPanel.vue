@@ -239,6 +239,7 @@ async function importBackup(uploadFile: UploadFile) {
       t('settings.backup.import_confirm_title'),
       {
         type: 'warning',
+        customClass: 'x-message-box',
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),
       }
@@ -274,6 +275,7 @@ async function deleteBackup(backup: ConfigBackup) {
       t('settings.delete_confirm'),
       {
         type: 'warning',
+        customClass: 'x-message-box',
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),
       }
@@ -296,6 +298,7 @@ async function restoreBackup(backup: ConfigBackup) {
       t('settings.backup.restore_confirm_title'),
       {
         type: 'warning',
+        customClass: 'x-message-box',
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),
       }
@@ -487,4 +490,9 @@ onMounted(loadBackupList)
     font-size: 16px;
   }
 }
+</style>
+
+<style>
+/* 引入 Settings 模块通用弹框样式（x-message-box 用于 ElMessageBox 确认框） */
+@import '../style/DialogCommon.css';
 </style>
