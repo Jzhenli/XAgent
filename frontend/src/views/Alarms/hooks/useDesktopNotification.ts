@@ -14,11 +14,11 @@ const LEVEL_TAG_MAP: Record<string, string> = {
   info: 'alert-level-info',
 }
 
-/** 级别优先级: critical > warning > info */
-const LEVEL_PRIORITY: Record<string, number> = {
-  critical: 3,
-  warning: 2,
-  info: 1,
+/** 各级别自动消失时长 (毫秒) */
+const AUTO_DISMISS_MS: Record<string, number> = {
+  critical: 6000,
+  warning: 6000,
+  info: 6000,
 }
 
 /** 已发送但未处理的告警 (按级别聚合) */
@@ -72,7 +72,8 @@ function saveNotifiedIds(ids: Set<string>) {
  * 通知策略:
  *  - 按级别聚合, 每个级别只显示 1 条通知 (critical / warning / info)
  *  - 同一级别多条告警合并计数, 点击可跳转告警列表
- *  - critical 不自动关闭, 其余级别超时自动关闭
+ *  - 所有级别均自动消失 (critical 30s / warning 15s / info 10s)
+ *  - 鼠标悬浮时暂停倒计时, 离开后重新计时
  *  - 支持桌面通知 + 站内通知双通道
  */
 export function useDesktopNotification() {
@@ -98,7 +99,99 @@ export function useDesktopNotification() {
     info: null,
   }
 
+  /** 各级别自动消失定时器 */
+  const dismissTimers: Record<string, ReturnType<typeof setTimeout> | null> = {
+    critical: null,
+    warning: null,
+    info: null,
+  }
+
+  /** 各级别鼠标悬浮状态 (悬浮时暂停倒计时) */
+  const hoverState: Record<string, boolean> = {
+    critical: false,
+    warning: false,
+    info: false,
+  }
+
+  /**
+   * 启动某级别的自动消失倒计时
+   */
+  function startDismissTimer(level: string) {
+    stopDismissTimer(level)
+    const duration = AUTO_DISMISS_MS[level]
+    dismissTimers[level] = setTimeout(() => {
+      dismissTimers[level] = null
+      if (!hoverState[level] && notificationInstances[level]) {
+        notificationInstances[level]!.close()
+      }
+    }, duration)
+  }
+
+  /**
+   * 停止某级别的自动消失倒计时
+   */
+  function stopDismissTimer(level: string) {
+    if (dismissTimers[level]) {
+      clearTimeout(dismissTimers[level]!)
+      dismissTimers[level] = null
+    }
+  }
+
+  /**
+   * 绑定悬浮暂停逻辑到通知 DOM
+   */
+  function bindHoverPause(level: string) {
+    // ElNotification 创建后, 等下一帧获取 DOM 绑定事件
+    setTimeout(() => {
+      const el = notificationInstances[level] as unknown as { $el?: HTMLElement }
+      if (!el || !el.$el) return
+
+      const element = el.$el
+      element.addEventListener('mouseenter', () => {
+        hoverState[level] = true
+        stopDismissTimer(level)
+      })
+      element.addEventListener('mouseleave', () => {
+        hoverState[level] = false
+        startDismissTimer(level)
+      })
+    }, 50)
+  }
+
   // ==================== 通知聚合与发送 ====================
+
+  /**
+   * 创建/重建站内通知 (内部方法)
+   */
+  function createNotification(
+    level: string,
+    title: string,
+    body: string,
+    type: 'error' | 'warning' | 'info',
+  ) {
+    const instance = ElNotification({
+      title,
+      message: body,
+      type,
+      duration: 0, // 由我们自己的定时器控制消失
+      showClose: true,
+      dangerouslyUseHTMLString: true,
+      onClick: () => navigateToAlerts(),
+      onClose: () => {
+        levelAggregates[level] = { count: 0, lastAlert: null, firstTime: 0 }
+        notificationInstances[level] = null
+        hoverState[level] = false
+        stopDismissTimer(level)
+      },
+    })
+    notificationInstances[level] = instance as { close: () => void }
+
+    // 绑定悬浮暂停
+    bindHoverPause(level)
+
+    // 启动自动消失倒计时
+    startDismissTimer(level)
+  }
 
   /**
    * 发送/更新站内聚合通知
@@ -132,48 +225,18 @@ export function useDesktopNotification() {
       ? `[${levelLabels[level]}] ${alert.ruleName}`
       : `[${levelLabels[level]}] ${alert.ruleName} (+${agg.count - 1})`
 
-    // 构建消息体: 显示告警详情 + 操作提示
     const body = buildNotificationBody(alert, agg)
 
     if (isNew) {
-      // 创建新通知
-      const instance = ElNotification({
-        title,
-        message: body,
-        type: typeMap[level],
-        duration: level === 'critical' ? 0 : 6000,
-        showClose: true,
-        dangerouslyUseHTMLString: true,
-        onClick: () => navigateToAlerts(),
-        onClose: () => {
-          // 关闭时重置该级别的聚合计数
-          levelAggregates[level] = { count: 0, lastAlert: null, firstTime: 0 }
-          notificationInstances[level] = null
-        },
-      })
-      notificationInstances[level] = instance as { close: () => void }
+      createNotification(level, title, body, typeMap[level])
     } else {
-      // 更新现有通知 (通过关闭旧的 + 创建新的实现更新)
+      // 更新: 关闭旧通知, 重建新通知 (重置倒计时)
       if (notificationInstances[level]) {
         notificationInstances[level]!.close()
         notificationInstances[level] = null
       }
-      // 延迟创建, 避免 DOM 冲突
       setTimeout(() => {
-        const instance = ElNotification({
-          title,
-          message: body,
-          type: typeMap[level],
-          duration: level === 'critical' ? 0 : 6000,
-          showClose: true,
-          dangerouslyUseHTMLString: true,
-          onClick: () => navigateToAlerts(),
-          onClose: () => {
-            levelAggregates[level] = { count: 0, lastAlert: null, firstTime: 0 }
-            notificationInstances[level] = null
-          },
-        })
-        notificationInstances[level] = instance as { close: () => void }
+        createNotification(level, title, body, typeMap[level])
       }, 100)
     }
   }
@@ -354,8 +417,9 @@ export function useDesktopNotification() {
 
   onUnmounted(() => {
     stopWatching()
-    // 清理所有未关闭的通知
+    // 清理所有定时器和未关闭的通知
     for (const level of Object.keys(notificationInstances)) {
+      stopDismissTimer(level)
       if (notificationInstances[level]) {
         notificationInstances[level]!.close()
         notificationInstances[level] = null
