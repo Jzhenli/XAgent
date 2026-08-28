@@ -161,6 +161,10 @@ onMounted(fetchLogs)
   color: var(--text-primary);
 }
 
+.scada-select {
+  width: 200px;
+}
+
 .settings-header-actions {
   display: flex;
   align-items: center;
