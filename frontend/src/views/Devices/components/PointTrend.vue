@@ -82,6 +82,12 @@
             class="trend-chart"
             autoresize
           />
+          <!-- 图表挂载前的占位 loading -->
+          <div v-else class="chart-loading">
+            <el-icon class="chart-loading__spinner">
+              <Loading />
+            </el-icon>
+          </div>
         </div>
       </el-card>
 
@@ -253,7 +259,7 @@ import {
 import VChart from "vue-echarts";
 import dayjs from "dayjs";
 import * as XLSX from "xlsx";
-import { Download, Setting } from "@element-plus/icons-vue";
+import { Download, Loading, Setting } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
 /* ========== i18n / ECharts 注册 / Store ========== */
@@ -930,6 +936,30 @@ onUnmounted(() => {
   flex: 1;
   width: 100%;
   min-height: 300px;
+  position: relative;
+}
+
+.chart-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-loading__spinner {
+  font-size: 40px;
+  color: var(--color-primary);
+  animation: chart-loading-spin 1s linear infinite;
+}
+
+@keyframes chart-loading-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .trend-chart {
