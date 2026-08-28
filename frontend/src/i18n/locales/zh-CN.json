@@ -96,6 +96,7 @@
     "loginSuccess": "登录成功",
     "loginFailed": "登录失败",
     "loginError": "登录异常，请稍后重试",
+    "hardwareNotReady": "硬件设备不匹配，无法登录",
     "pleaseEnterCredentials": "请输入用户名和密码",
     "footer": "Adveco © 2024",
     "aboutUs": "关于我们",

@@ -96,6 +96,7 @@
     "loginSuccess": "登入成功",
     "loginFailed": "登入失敗",
     "loginError": "登入異常，請稍後重試",
+    "hardwareNotReady": "硬體裝置不匹配，無法登入",
     "pleaseEnterCredentials": "請輸入使用者名稱和密碼",
     "footer": "Adveco © 2024",
     "aboutUs": "關於我們",
