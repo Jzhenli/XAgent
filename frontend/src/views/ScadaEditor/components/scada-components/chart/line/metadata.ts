@@ -23,7 +23,7 @@ const defaultConfig: LineChartComponentConfig = {
   showLegend: false,
   seriesItems: [
     {
-      name: '序列 1',
+      name: '',
       binding: null,
       lineColor: '#3498db',
       nodeFillColor: '#3498db',

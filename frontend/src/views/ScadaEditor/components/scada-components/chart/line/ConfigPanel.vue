@@ -37,7 +37,7 @@
           <div class="series-item-header-left">
             <span class="series-item-dot" :style="{ backgroundColor: item.lineColor }" />
             <span class="series-item-title">
-              {{ item.name || `${t('componentConfig.seriesItem')} ${index + 1}` }}
+              {{ getSeriesDisplayName(item, index) }}
             </span>
           </div>
           <span
@@ -51,7 +51,7 @@
           <label>{{ t('componentConfig.seriesName') }}</label>
           <input
             type="text"
-            :value="item.name"
+            :value="getSeriesDisplayName(item, index)"
             :placeholder="`${t('componentConfig.seriesItem')} ${index + 1}`"
             @change="updateSeriesItem(index, { name: ($event.target as HTMLInputElement).value })"
           />
@@ -265,6 +265,10 @@ const seriesItems = computed<LineChartSeriesItem[]>({
   set: (val) => updateConfig('seriesItems', val),
 })
 
+const getSeriesDisplayName = (item: LineChartSeriesItem, index: number) => {
+  return item.name?.trim() || `${t('componentConfig.seriesItem')} ${index + 1}`
+}
+
 const DEFAULT_SERIES_COLORS = [
   '#3498db',
   '#e74c3c',
@@ -288,7 +292,7 @@ const addSeriesItem = () => {
   const items = [...seriesItems.value]
   const colorIndex = items.length % DEFAULT_SERIES_COLORS.length
   const newItem: LineChartSeriesItem = {
-    name: `${t('componentConfig.seriesItem')} ${items.length + 1}`,
+    name: '',
     binding: null,
     lineColor: DEFAULT_SERIES_COLORS[colorIndex],
     nodeFillColor: DEFAULT_SERIES_COLORS[colorIndex],
