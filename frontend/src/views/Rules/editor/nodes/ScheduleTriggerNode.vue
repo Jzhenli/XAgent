@@ -7,7 +7,7 @@
       <div class="node-icon-wrap">
         <span class="node-icon">⏰</span>
       </div>
-      <span class="node-title">{{ node.data?.label || t('nodeViews.scheduleTrigger') }}</span>
+      <span class="node-title">{{ t('nodeViews.scheduleTrigger') }}</span>
     </div>
 
     <div class="node-body">
