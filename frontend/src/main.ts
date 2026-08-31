@@ -7,7 +7,6 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import ElementPlus, { ElTooltip } from 'element-plus'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import 'element-plus/dist/index.css'
-import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -38,7 +37,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(pinia)
 app.use(router)
 app.use(i18n)
-app.use(ElementPlus, { locale: zhCn })
+app.use(ElementPlus)
 
 /**
  * 全局 Tooltip 默认行为补丁（对所有 <el-tooltip> 生效，无需逐个组件修改）

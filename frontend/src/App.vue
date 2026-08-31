@@ -1,9 +1,12 @@
 <template>
-  <router-view />
+  <el-config-provider :locale="currentEpLocale">
+    <router-view />
+  </el-config-provider>
 </template>
 
 <script setup lang="ts">
-// App.vue 只作为路由容器，具体布局由各路由组件决定
+import { ElConfigProvider } from 'element-plus'
+import { currentEpLocale } from './i18n'
 </script>
 
 <style>
