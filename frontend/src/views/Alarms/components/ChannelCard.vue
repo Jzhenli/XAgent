@@ -9,7 +9,7 @@
         {{ channelIcon }}
       </div>
       <div class="channel-info">
-        <div class="channel-name">{{ channel.name }}</div>
+        <div class="channel-name">{{ t('notificationChannels.' + channel.type) || channel.name }}</div>
         <el-tag size="small" effect="plain" round>{{ channelTypeLabel }}</el-tag>
       </div>
       <el-switch
