@@ -151,7 +151,7 @@
               </el-avatar>
               <span v-if="!isMobile && !isTablet" class="user-name">
                 {{
-                  userStore.currentUser?.display_name ||
+                  getHeaderUserDisplayName(userStore.currentUser) ||
                   userStore.currentUser?.username ||
                   $t("common.notLoggedIn")
                 }}
@@ -169,7 +169,7 @@
                     "
                   >
                     {{
-                      userStore.currentUser?.role_display_name ||
+                      getHeaderRoleDisplayName(userStore.currentUser) ||
                       userStore.currentUser?.role_name
                     }}
                   </el-tag>
@@ -238,7 +238,38 @@ import "@x-plateform/graphic-editor/dist/index.css";
 import "@x-plateform-mono/common/dist/index.css";
 import { Icon } from "@/icon/index";
 
-const { t, locale } = useI18n();
+const { t, te, locale } = useI18n();
+
+/**
+ * 获取顶部栏当前用户的本地化显示名称（仅在原始值未被用户修改时翻译）。
+ * 通过 role_name 查找对应的 settings.role.builtin.{role_name}.user_display_name 键，
+ * 对比 zh-CN 标准参考值判断是否需要翻译。
+ */
+function getHeaderUserDisplayName(
+  user: { role_name?: string; display_name?: string } | null | undefined,
+): string | undefined {
+  if (!user?.role_name) return user?.display_name;
+  const key = `settings.role.builtin.${user.role_name}.user_display_name`;
+  if (!te(key)) return user.display_name;
+  const zhRef = t(key, {}, { locale: "zh-CN" });
+  if (user.display_name === zhRef) return t(key);
+  return user.display_name;
+}
+
+/**
+ * 获取顶部栏当前用户角色的本地化显示名称（仅在原始值未被用户修改时翻译）。
+ * 通过 role_name 查找对应的 settings.role.builtin.{role_name}.display_name 键。
+ */
+function getHeaderRoleDisplayName(
+  user: { role_name?: string; role_display_name?: string } | null | undefined,
+): string | undefined {
+  if (!user?.role_name) return user?.role_display_name;
+  const key = `settings.role.builtin.${user.role_name}.display_name`;
+  if (!te(key)) return user.role_display_name;
+  const zhRef = t(key, {}, { locale: "zh-CN" });
+  if (user.role_display_name === zhRef) return t(key);
+  return user.role_display_name;
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -660,9 +691,10 @@ onUnmounted(() => {
 
 .user-name {
   font-size: 14px;
+  line-height: 20px;
   color: var(--text-primary);
   font-weight: 500;
-  max-width: 120px;
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
