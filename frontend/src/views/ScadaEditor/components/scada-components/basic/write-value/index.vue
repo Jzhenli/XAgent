@@ -147,7 +147,7 @@ const handleSubmit = async () => {
 
   const result = await writeValue(target)
   if (result.success) {
-    ElMessage.success(t('scada.writeValueDialog.success'))
+    //ElMessage.success(t('scada.writeValueDialog.success'))
   } else {
     ElMessage.error(result.message || t('scada.writeValueDialog.failed'))
   }

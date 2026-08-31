@@ -127,7 +127,7 @@ const handlePointerUp = async () => {
 
   const result = await writeValue(currentValue.value)
   if (result.success) {
-    ElMessage.success(t('scadaComponents.sliderWriteSuccess'))
+    //ElMessage.success(t('scadaComponents.sliderWriteSuccess'))
   } else {
     currentValue.value = dragStartValue.value
     ElMessage.error(result.message)

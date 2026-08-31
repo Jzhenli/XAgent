@@ -86,7 +86,7 @@ const handleToggle = async () => {
     try {
       const res = await writeValue(targetValue)
       if (res.success) {
-        ElMessage.success(t('scadaComponents.commandSent'))
+        //ElMessage.success(t('scadaComponents.commandSent'))
       } else {
         currentValue.value = originalValue
         ElMessage.error(res.message)

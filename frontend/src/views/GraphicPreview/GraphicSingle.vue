@@ -98,7 +98,7 @@ const handleConfirm = async (value: number) => {
     )
 
     if (result.status === 'ACCEPTED' || result.status === 'COMPLETED') {
-      ElMessage.success(t('scada.writeValueDialog.success'))
+      //ElMessage.success(t('scada.writeValueDialog.success'))
     } else {
       ElMessage.warning(`${t('scada.writeValueDialog.result')} ${result.message}`)
     }

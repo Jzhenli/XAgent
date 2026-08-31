@@ -214,7 +214,7 @@ const handleSelectMode = async (mode: ModeItem) => {
   try {
     const res = await writeValue(mode.value);
     if (res.success) {
-      ElMessage.success(t("scadaComponents.commandSent"));
+      //ElMessage.success(t("scadaComponents.commandSent"));
     } else {
       ElMessage.error(res.message);
     }

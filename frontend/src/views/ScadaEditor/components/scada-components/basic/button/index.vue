@@ -70,7 +70,7 @@ const handleClick = async () => {
   try {
     const result = await writeValue(buttonConfig.value?.writeValue)
     if (result.success) {
-      ElMessage.success(t('scadaComponents.commandSent'))
+      //ElMessage.success(t('scadaComponents.commandSent'))
     } else {
       ElMessage.error(result.message)
     }
