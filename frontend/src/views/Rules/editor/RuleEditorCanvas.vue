@@ -182,7 +182,7 @@ import { useRuleStore } from '@/stores/rules'
 import { useThemeStore } from '@/stores/theme'
 import { Icon } from '@/icon'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const props = defineProps<{
   /** 规则 ID，传入时表示编辑已有规则 */
@@ -217,6 +217,21 @@ const edges = ref<RuleEdge[]>([])
 const selectedNodeId = ref<string | null>(null)
 const ruleName = ref(t('ruleEditor.defaultRuleName'))
 const ruleDescription = ref('')
+
+/** ruleName 是否仍为默认值（用于语言切换时判断是否需要自动更新） */
+const isDefaultRuleName = ref(true)
+
+/** 监听语言切换：当规则名还是默认值时，自动更新为当前语言 */
+watch(locale, () => {
+  if (isDefaultRuleName.value) {
+    ruleName.value = t('ruleEditor.defaultRuleName')
+  }
+})
+
+/** 监听 ruleName 变化：判断是否还是默认值（支持用户改回默认值的场景） */
+watch(ruleName, (val) => {
+  isDefaultRuleName.value = val === t('ruleEditor.defaultRuleName')
+})
 const saving = ref(false)
 const loading = ref(false)
 

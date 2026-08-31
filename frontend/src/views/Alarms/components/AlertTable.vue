@@ -59,7 +59,7 @@
       <el-table-column prop="triggeredAt" :label="t('alerts.triggeredAt')" width="170" />
 
       <!-- 操作 -->
-      <el-table-column :label="t('common.actions')" width="220" fixed="right" align="center">
+      <el-table-column :label="t('common.actions')" width="300" fixed="right" align="center">
         <template #default="{ row }">
           <div class="action-buttons">
             <el-button
