@@ -81,7 +81,7 @@
 
       <!-- 角色列表 -->
       <el-tab-pane :label="$t('settings.role.list_title')" name="roles">
-          <el-table :data="userStore.roles" stripe :border="false">
+          <el-table :data="localRoles" stripe :border="false">
             <el-table-column
               prop="name"
               :label="$t('settings.role.name')"
@@ -189,7 +189,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/users'
 import { useUserManagement } from '../composables/useUserManagement'
@@ -198,6 +199,42 @@ import RoleDialog from './RoleDialog.vue'
 import PasswordDialog from './PasswordDialog.vue'
 
 const userStore = useUserStore()
+const { te, t } = useI18n()
+
+/**
+ * 获取角色的本地化显示名称（仅在原始值未被用户修改时翻译）
+ * 通过对比后端值与 zh-CN 标准参考值来判断是否为用户修改后的自定义值。
+ */
+function getRoleDisplayName(row: { name: string; display_name: string }): string {
+  const key = `settings.role.builtin.${row.name}.display_name`
+  if (!te(key)) return row.display_name
+  // 用 zh-CN locale 拿标准中文参考值
+  const zhRef = t(key, {}, { locale: 'zh-CN' })
+  // 后端值与标准中文一致 → 是原始值，做翻译
+  if (row.display_name === zhRef) return t(key)
+  // 不一致 → 用户改过，直接返回
+  return row.display_name
+}
+
+/**
+ * 获取角色的本地化描述（仅在原始值未被用户修改时翻译）
+ */
+function getRoleDescription(row: { name: string; description: string }): string {
+  const key = `settings.role.builtin.${row.name}.description`
+  if (!te(key)) return row.description
+  const zhRef = t(key, {}, { locale: 'zh-CN' })
+  if (row.description === zhRef) return t(key)
+  return row.description
+}
+
+/** 角色列表本地化副本：在渲染时对内置角色的 display_name/description 做一次翻译 */
+const localRoles = computed(() =>
+  userStore.roles.map(r => ({
+    ...r,
+    display_name: getRoleDisplayName(r),
+    description: getRoleDescription(r),
+  }))
+)
 
 /** 当前激活的标签页：'users' | 'roles' */
 const activeTab = ref<'users' | 'roles'>('users')

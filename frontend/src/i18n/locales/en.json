@@ -701,7 +701,21 @@
       "create_success": "Role Created Successfully",
       "system_cannot_delete": "System role cannot be deleted",
       "delete_confirm_msg": "Confirm to delete this role?",
-      "delete_success": "Role Deleted Successfully"
+      "delete_success": "Role Deleted Successfully",
+      "builtin": {
+        "admin": {
+          "display_name": "Administrator",
+          "description": "System administrator with full access"
+        },
+        "operator": {
+          "display_name": "Operator",
+          "description": "Operator, can view and operate devices and rules"
+        },
+        "viewer": {
+          "display_name": "Viewer",
+          "description": "Read-only user, can only view module data"
+        }
+      }
     },
     "status": {
       "_value": "Status",

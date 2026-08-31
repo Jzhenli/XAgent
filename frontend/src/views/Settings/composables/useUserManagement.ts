@@ -52,8 +52,32 @@ const STATUS_TAG_TYPE: Record<UserStatus, 'success' | 'info' | 'danger'> = {
  * 统一管理三个弹窗的显示状态及表单数据。
  */
 export function useUserManagement() {
-  const { t, locale } = useI18n()
+  const { t, te, locale } = useI18n()
   const userStore = useUserStore()
+
+  // ==================== 内置角色本地化辅助 ====================
+
+  /**
+   * 获取内置角色的本地化 display_name（仅在原始值未被用户修改时翻译）
+   */
+  function getBuiltinRoleDisplayName(name: string, displayName: string): string {
+    const key = `settings.role.builtin.${name}.display_name`
+    if (!te(key)) return displayName
+    const zhRef = t(key, {}, { locale: 'zh-CN' })
+    if (displayName === zhRef) return t(key)
+    return displayName
+  }
+
+  /**
+   * 获取内置角色的本地化 description（仅在原始值未被用户修改时翻译）
+   */
+  function getBuiltinRoleDescription(name: string, description: string): string {
+    const key = `settings.role.builtin.${name}.description`
+    if (!te(key)) return description
+    const zhRef = t(key, {}, { locale: 'zh-CN' })
+    if (description === zhRef) return t(key)
+    return description
+  }
 
   // ==================== 用户弹窗状态 ====================
 
@@ -99,9 +123,12 @@ export function useUserManagement() {
 
   // ==================== 计算属性 ====================
 
-  /** 角色下拉选项：供用户表单中的角色选择器使用 */
+  /** 角色下拉选项：供用户表单中的角色选择器使用，显示本地化后的名称 */
   const roleOptions = computed(() =>
-    userStore.roles.map(r => ({ label: r.display_name, value: r.name }))
+    userStore.roles.map(r => ({
+      label: getBuiltinRoleDisplayName(r.name, r.display_name),
+      value: r.name,
+    }))
   )
 
   // ==================== 工具函数 ====================
@@ -338,7 +365,7 @@ export function useUserManagement() {
   }
 
   /**
-   * 打开编辑角色弹窗，将已有角色数据回填至表单。
+   * 打开编辑角色弹窗，将已有角色数据回填至表单（内置角色的 display_name/description 做本地化翻译）。
    * @param role - 待编辑的角色
    */
   function openEditRoleDialog(role: RoleInfo) {
@@ -346,8 +373,8 @@ export function useUserManagement() {
     editingRoleName.value = role.name
     roleForm.value = {
       name: role.name,
-      display_name: role.display_name,
-      description: role.description || '',
+      display_name: getBuiltinRoleDisplayName(role.name, role.display_name),
+      description: getBuiltinRoleDescription(role.name, role.description || ''),
     }
     roleDialogVisible.value = true
   }

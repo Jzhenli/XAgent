@@ -701,7 +701,21 @@
       "create_success": "角色建立成功",
       "system_cannot_delete": "系統角色無法刪除",
       "delete_confirm_msg": "確認刪除此角色？",
-      "delete_success": "角色刪除成功"
+      "delete_success": "角色刪除成功",
+      "builtin": {
+        "admin": {
+          "display_name": "管理員",
+          "description": "系統管理員，擁有所有權限"
+        },
+        "operator": {
+          "display_name": "操作員",
+          "description": "操作員，可查看和操作設備與規則"
+        },
+        "viewer": {
+          "display_name": "只讀使用者",
+          "description": "只讀使用者，僅可查看各模組資料"
+        }
+      }
     },
     "status": {
       "_value": "狀態",
