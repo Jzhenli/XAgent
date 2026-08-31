@@ -82,7 +82,7 @@ const emit = defineEmits<{
   (e: "update:timeRange", value: string): void;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const themeStore = useThemeStore();
 const systemStore = useSystemStore();
 
@@ -237,6 +237,15 @@ watch(
     dataChartOption.value = newOption;
   },
 );
+
+/** 语言切换时重建图表配置（刷新 series.name 等翻译文本，保留已有数据） */
+watch(locale, () => {
+  const isDark = themeStore.isDark();
+  const newOption = buildChartOption(isDark);
+  newOption.series[0].data = dataChartOption.value.series[0].data;
+  newOption.xAxis.data = dataChartOption.value.xAxis.data;
+  dataChartOption.value = newOption;
+});
 
 /** 父组件触发刷新时重新拉取数据 */
 watch(
