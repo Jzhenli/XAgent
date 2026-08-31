@@ -705,15 +705,18 @@
       "builtin": {
         "admin": {
           "display_name": "管理員",
-          "description": "系統管理員，擁有所有權限"
+          "description": "系統管理員，擁有所有權限",
+          "user_display_name": "系統管理員"
         },
         "operator": {
           "display_name": "操作員",
-          "description": "操作員，可查看和操作設備與規則"
+          "description": "操作員，可查看和操作設備與規則",
+          "user_display_name": "操作員"
         },
         "viewer": {
           "display_name": "只讀使用者",
-          "description": "只讀使用者，僅可查看各模組資料"
+          "description": "只讀使用者，僅可查看各模組資料",
+          "user_display_name": "只讀使用者"
         }
       }
     },

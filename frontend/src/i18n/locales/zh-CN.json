@@ -705,15 +705,18 @@
       "builtin": {
         "admin": {
           "display_name": "管理员",
-          "description": "系统管理员，拥有所有权限"
+          "description": "系统管理员，拥有所有权限",
+          "user_display_name": "系统管理员"
         },
         "operator": {
           "display_name": "操作员",
-          "description": "操作员，可查看和操作设备与规则"
+          "description": "操作员，可查看和操作设备与规则",
+          "user_display_name": "操作员"
         },
         "viewer": {
           "display_name": "只读用户",
-          "description": "只读用户，仅可查看各模块数据"
+          "description": "只读用户，仅可查看各模块数据",
+          "user_display_name": "只读用户"
         }
       }
     },

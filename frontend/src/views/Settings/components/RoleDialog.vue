@@ -6,7 +6,7 @@
     destroy-on-close
     class="x-dialog role-dialog"
   >
-    <el-form label-width="90px" label-position="left">
+    <el-form label-width="120px" label-position="left">
       <el-form-item :label="$t('settings.role.name')" v-if="!editingRoleName">
         <el-input
           v-model="form.name"

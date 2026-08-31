@@ -5,7 +5,7 @@
       <el-tabs v-model="activeTab" class="user-management-tabs">
         <!-- 用户列表 -->
         <el-tab-pane :label="$t('settings.user.list_title')" name="users">
-          <el-table :data="userStore.users" stripe :border="false" v-loading="userStore.loading">
+          <el-table :data="localUsers" stripe :border="false" v-loading="userStore.loading">
             <el-table-column
               prop="username"
               :label="$t('settings.user.username')"
@@ -41,7 +41,7 @@
             </el-table-column>
             <el-table-column
               :label="$t('settings.actions_label')"
-              width="180"
+              width="300"
               fixed="right"
               align="center"
             >
@@ -189,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/users'
@@ -227,6 +227,18 @@ function getRoleDescription(row: { name: string; description: string }): string 
   return row.description
 }
 
+/**
+ * 获取用户的本地化显示名称（仅在原始值未被用户修改时翻译）
+ * 通过 role_name 查找对应的内置用户显示名翻译键。
+ */
+function getUserDisplayName(row: { role_name: string; display_name: string }): string {
+  const key = `settings.role.builtin.${row.role_name}.user_display_name`
+  if (!te(key)) return row.display_name
+  const zhRef = t(key, {}, { locale: 'zh-CN' })
+  if (row.display_name === zhRef) return t(key)
+  return row.display_name
+}
+
 /** 角色列表本地化副本：在渲染时对内置角色的 display_name/description 做一次翻译 */
 const localRoles = computed(() =>
   userStore.roles.map(r => ({
@@ -235,6 +247,22 @@ const localRoles = computed(() =>
     description: getRoleDescription(r),
   }))
 )
+
+/** 用户列表本地化副本：在渲染时对用户 display_name 和 role_display_name 做一次翻译 */
+const localUsers = computed(() =>
+  userStore.users.map(u => ({
+    ...u,
+    display_name: getUserDisplayName(u),
+    role_display_name: getRoleDisplayName({
+      name: u.role_name,
+      display_name: u.role_display_name || '',
+    }),
+  }))
+)
+
+onMounted(() => {
+  console.log(userStore.users)
+})
 
 /** 当前激活的标签页：'users' | 'roles' */
 const activeTab = ref<'users' | 'roles'>('users')

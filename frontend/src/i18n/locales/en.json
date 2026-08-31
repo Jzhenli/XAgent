@@ -705,15 +705,18 @@
       "builtin": {
         "admin": {
           "display_name": "Administrator",
-          "description": "System administrator with full access"
+          "description": "System administrator with full access",
+          "user_display_name": "System Administrator"
         },
         "operator": {
           "display_name": "Operator",
-          "description": "Operator, can view and operate devices and rules"
+          "description": "Operator, can view and operate devices and rules",
+          "user_display_name": "Operator"
         },
         "viewer": {
           "display_name": "Viewer",
-          "description": "Read-only user, can only view module data"
+          "description": "Read-only user, can only view module data",
+          "user_display_name": "Viewer"
         }
       }
     },

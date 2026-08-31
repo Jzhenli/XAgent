@@ -1,6 +1,6 @@
 <template>
   <el-dialog v-model="dialogVisible" :title="$t('settings.password.title')" width="min(400px, 90vw)" destroy-on-close class="x-dialog password-dialog">
-    <el-form label-width="80px" label-position="left">
+    <el-form label-width="120px" label-position="left">
       <el-form-item :label="$t('settings.password.new_password')">
         <el-input v-model="form.new_password" type="password" show-password :placeholder="$t('settings.password.new_password_placeholder')" />
       </el-form-item>

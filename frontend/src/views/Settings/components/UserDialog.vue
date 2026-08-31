@@ -6,7 +6,7 @@
     destroy-on-close
     class="x-dialog user-dialog"
   >
-    <el-form label-width="90px" label-position="left">
+    <el-form label-width="120px" label-position="left">
       <el-form-item :label="$t('settings.user.username')" v-if="!editingUserId">
         <el-input
           v-model="form.username"

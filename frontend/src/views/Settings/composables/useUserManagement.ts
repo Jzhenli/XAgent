@@ -79,6 +79,18 @@ export function useUserManagement() {
     return description
   }
 
+  /**
+   * 获取内置用户的本地化 display_name（仅在原始值未被用户修改时翻译）
+   * 通过角色名查找对应的内置用户显示名翻译键。
+   */
+  function getBuiltinUserDisplayName(roleName: string, displayName: string): string {
+    const key = `settings.role.builtin.${roleName}.user_display_name`
+    if (!te(key)) return displayName
+    const zhRef = t(key, {}, { locale: 'zh-CN' })
+    if (displayName === zhRef) return t(key)
+    return displayName
+  }
+
   // ==================== 用户弹窗状态 ====================
 
   /** 用户弹窗可见性 */
@@ -262,7 +274,7 @@ export function useUserManagement() {
     userForm.value = {
       username: user.username,
       password: '',
-      display_name: user.display_name || '',
+      display_name: getBuiltinUserDisplayName(user.role_name, user.display_name || ''),
       email: user.email || '',
       role_name: user.role_name,
       status: (user.status as UserStatus) || 'active',
