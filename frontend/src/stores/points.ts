@@ -74,6 +74,9 @@ function buildReadingMap(readings: any[]): Map<string, ReadingData> {
 const WRITE_PROTECTION_DURATION = 10000
 const writeProtectionMap = new Map<string, { value: any; expiresAt: number }>()
 
+/** 按 asset 去重的延迟回读定时器：连续写值时同一设备只保留最后一次回读 */
+const pendingRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
 /**
  * 应用写值保护：保护期内返回保护值，过期则清理保护记录并返回 fallback
  * @param asset 设备 asset
@@ -197,6 +200,23 @@ export const usePointStore = defineStore('points', () => {
 
   async function fetchLatestReadings(_asset: string) {
     // No longer needed - data is merged in fetchDevicePoints/fetchDevicesWithPoints
+  }
+
+  /**
+   * 调度延迟回读（按 asset 去重）：连续写值时同一设备只保留最后一次回读，
+   * 避免多个定时器集中触发造成请求风暴
+   * @param asset 设备 asset
+   */
+  function scheduleDelayedFetchDevicePoints(asset: string, delayMs = 2000) {
+    const existing = pendingRefreshTimers.get(asset)
+    if (existing) clearTimeout(existing)
+
+    const timer = setTimeout(() => {
+      pendingRefreshTimers.delete(asset)
+      void fetchDevicePoints(asset)
+    }, delayMs)
+
+    pendingRefreshTimers.set(asset, timer)
   }
 
   async function fetchAllLatestReadings() {
@@ -460,7 +480,7 @@ export const usePointStore = defineStore('points', () => {
           }
         }
 
-        setTimeout(() => fetchDevicePoints(deviceAsset), 2000)
+        scheduleDelayedFetchDevicePoints(deviceAsset)
         return {
           success: true,
           message: i18n.global.t('writePoint.cmdSent', { id: response.command_id.slice(0, 8) })

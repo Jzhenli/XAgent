@@ -94,6 +94,8 @@ const inputStyle = computed(() => ({
 const isEditing = ref(false)
 const inputValue = ref('')
 const inputRef = ref<HTMLInputElement | null>(null)
+/** 写值请求进行中标志：防止写值未完成时新写值请求并发 */
+const writing = ref(false)
 
 const showEditor = computed(() => showInputMode.value && (isEditing.value || !!props.editing))
 
@@ -137,6 +139,9 @@ const parseValue = (raw: string): number | string => {
 
 const handleSubmit = async () => {
   if (props.editing) return
+  // 写值请求进行中时忽略本次提交，避免连续点击产生并发写请求
+  if (writing.value) return
+
   const target = parseValue(inputValue.value)
   isEditing.value = false
 
@@ -145,11 +150,16 @@ const handleSubmit = async () => {
     return
   }
 
-  const result = await writeValue(target)
-  if (result.success) {
-    //ElMessage.success(t('scada.writeValueDialog.success'))
-  } else {
-    ElMessage.error(result.message || t('scada.writeValueDialog.failed'))
+  writing.value = true
+  try {
+    const result = await writeValue(target)
+    if (result.success) {
+      //ElMessage.success(t('scada.writeValueDialog.success'))
+    } else {
+      ElMessage.error(result.message || t('scada.writeValueDialog.failed'))
+    }
+  } finally {
+    writing.value = false
   }
 }
 

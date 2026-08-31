@@ -73,6 +73,8 @@ const thumbStyle = computed(() => {
 
 const handleToggle = async () => {
   if (props.editing) return
+  // 写值请求进行中时忽略点击，避免连续点击产生并发写请求
+  if (writing.value) return
 
   const targetValue = currentValue.value ? offValue.value : onValue.value
   const writeTarget = switchConfig.value?.writePoint || binding.value

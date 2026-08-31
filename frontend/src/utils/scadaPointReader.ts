@@ -43,8 +43,8 @@ const trendTimeRange = ref<'1h' | '6h' | '24h' | '7d' | '30d'>('24h')
 const writeProtectionMap = new Map<string, { value: any; expiresAt: number }>()
 const WRITE_PROTECTION_DURATION = 10000
 
-/** 写值成功后的延迟回读定时器（clearDevices 时需要清除，避免离开页面后仍触发请求） */
-let writeFollowUpTimer: ReturnType<typeof setTimeout> | null = null
+/** 按 asset 去重的延迟回读定时器：连续写值时同一设备只保留最后一次回读，且多设备互不覆盖（clearDevices 时需要清除，避免离开页面后仍触发请求） */
+const pendingFollowUpTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
 /**
  * 将后端读数数据转换为以 asset 为 key 的 Map
@@ -344,14 +344,14 @@ export function useScadaPointReader(): ScadaPointReader {
           }
         }
 
-        // 复用同一回读定时器，连续写值时只保留最后一次回读
-        if (writeFollowUpTimer) {
-          clearTimeout(writeFollowUpTimer)
-        }
-        writeFollowUpTimer = setTimeout(() => {
-          writeFollowUpTimer = null
+        // 复用同一 asset 的回读定时器：连续写值时只保留最后一次回读
+        const existing = pendingFollowUpTimers.get(deviceAsset)
+        if (existing) clearTimeout(existing)
+        const timer = setTimeout(() => {
+          pendingFollowUpTimers.delete(deviceAsset)
           void fetchDevicePoints(deviceAsset)
         }, 2000)
+        pendingFollowUpTimers.set(deviceAsset, timer)
         return {
           success: true,
           message: i18n.global.t('writePoint.cmdSent', { id: response.command_id.slice(0, 8) })
@@ -386,10 +386,10 @@ export function useScadaPointReader(): ScadaPointReader {
    * 清空所有设备数据与状态
    */
   function clearDevices(): void {
-    if (writeFollowUpTimer) {
-      clearTimeout(writeFollowUpTimer)
-      writeFollowUpTimer = null
+    for (const timer of pendingFollowUpTimers.values()) {
+      clearTimeout(timer)
     }
+    pendingFollowUpTimers.clear()
     writeProtectionMap.clear()
     devices.value = []
     historyReadings.value = []

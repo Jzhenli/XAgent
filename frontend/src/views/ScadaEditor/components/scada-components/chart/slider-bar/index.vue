@@ -122,6 +122,8 @@ const writePointValue = async (
 // ─── 显示值：拖拽中 > 拖拽结果 > 绑定点位 > 模拟值 ──────────
 const draggingIndex = ref<number | null>(null)
 const dragValues = reactive<Record<number, number>>({})
+/** 写值请求进行中标志：防止写值未完成时新写值请求并发 */
+const writing = ref(false)
 
 const displayValue = (item: SliderBarItemConfig, index: number): number => {
   if (draggingIndex.value === index && dragValues[index] !== undefined) {
@@ -219,12 +221,20 @@ const handlePointerUp = async () => {
     return
   }
 
-  const result = await writePointValue(binding, dragValues[index])
-  if (result.success) {
-    ElMessage.success(t('scadaComponents.sliderWriteSuccess'))
-  } else {
-    delete dragValues[index]
-    ElMessage.error(result.message)
+  // 写值请求进行中时忽略本次提交，避免连续操作产生并发写请求
+  if (writing.value) return
+
+  writing.value = true
+  try {
+    const result = await writePointValue(binding, dragValues[index])
+    if (result.success) {
+      ElMessage.success(t('scadaComponents.sliderWriteSuccess'))
+    } else {
+      delete dragValues[index]
+      ElMessage.error(result.message)
+    }
+  } finally {
+    writing.value = false
   }
 }
 

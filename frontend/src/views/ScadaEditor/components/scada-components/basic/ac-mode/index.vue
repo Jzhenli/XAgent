@@ -199,8 +199,8 @@ const modeList = computed<ModeItem[]>(() => {
  * @param mode 选中的模式项
  */
 const handleSelectMode = async (mode: ModeItem) => {
-  // 编辑态直接拦截
-  if (props.editing) return;
+  // 编辑态或下发中直接拦截，避免连续点击产生并发写请求
+  if (props.editing || isOperating.value) return;
 
   // 无绑定点位，仅本地更新值
   if (!bindingInfo.value) {

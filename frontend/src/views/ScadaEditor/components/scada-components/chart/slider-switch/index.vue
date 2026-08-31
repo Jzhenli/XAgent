@@ -130,6 +130,8 @@ const valueStyle = computed(() => ({
 const trackRef = ref<HTMLDivElement | null>(null)
 const isDragging = ref(false)
 const dragStartValue = ref(0)
+/** 写值请求进行中标志：防止写值未完成时新写值请求并发 */
+const writing = ref(false)
 
 /** 移除拖拽期间挂载的 window 监听（pointerup/pointercancel/卸载时统一调用） */
 const stopDragListeners = () => {
@@ -172,12 +174,20 @@ const handlePointerUp = async () => {
     return
   }
 
-  const result = await writeValue(currentValue.value)
-  if (result.success) {
-    ElMessage.success(t('scadaComponents.sliderWriteSuccess'))
-  } else {
-    currentValue.value = dragStartValue.value
-    ElMessage.error(result.message)
+  // 写值请求进行中时忽略本次提交，避免连续操作产生并发写请求
+  if (writing.value) return
+
+  writing.value = true
+  try {
+    const result = await writeValue(currentValue.value)
+    if (result.success) {
+      ElMessage.success(t('scadaComponents.sliderWriteSuccess'))
+    } else {
+      currentValue.value = dragStartValue.value
+      ElMessage.error(result.message)
+    }
+  } finally {
+    writing.value = false
   }
 }
 

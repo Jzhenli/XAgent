@@ -253,6 +253,9 @@ const clampValue = (raw: number): number => Math.min(max.value, Math.max(min.val
  * 应用数值变更：编辑模式更新模拟值，运行模式写入点位
  */
 const applyValueChange = async (raw: number) => {
+  // 写值请求进行中时忽略本次变更，避免连续点击产生并发写请求
+  if (writing.value) return
+
   const newValue = clampValue(raw)
   const previous = currentValue.value ?? fallbackValue.value ?? min.value
 

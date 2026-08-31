@@ -58,6 +58,8 @@ const buttonStyle = computed(() => {
 // 点击按钮时直接写入配置值
 const handleClick = async () => {
   if (props.editing) return
+  // 写值请求进行中时忽略点击，避免连续点击产生并发写请求
+  if (writing.value) return
 
   // 必须存在绑定目标才能写入
   const target = binding.value || buttonConfig.value?.writePoint || null
