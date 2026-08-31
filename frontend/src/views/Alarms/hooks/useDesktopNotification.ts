@@ -258,7 +258,7 @@ export function useDesktopNotification() {
     }
     html += `<div style="display:flex;gap:8px;margin-top:8px">`
     html += `<button class="alert-notification-action" data-action="navigate" style="background:none;border:0;color:var(--el-color-primary);cursor:pointer;padding:0;font-size:13px">`
-    html += t('alerts.viewInAlerts')
+    html += t('alerts.channel.viewInAlerts')
     html += `</button>`
     html += `</div>`
     html += `<div style="font-size:11px;opacity:0.5;margin-top:4px">${timeStr}</div>`
