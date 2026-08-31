@@ -540,7 +540,7 @@ const availableChannels = computed(() => {
     .filter(channel => channel.enabled && SUPPORTED_NOTIFICATION_CHANNELS.includes(channel.type as SupportedNotificationChannel))
     .map(channel => ({
       value: channel.type as SupportedNotificationChannel,
-      label: channel.name,
+      label: t('notificationChannels.' + channel.type) || channel.name,
       disabled: false
     }))
 })
