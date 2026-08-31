@@ -1540,6 +1540,11 @@
       "actionMissingTarget": "動作節點「{label}」缺少目標裝置",
       "actionMissingOperation": "動作節點「{label}」缺少操作類型",
       "notificationMissingChannel": "通知節點「{label}」缺少通知渠道"
+    },
+    "notification": {
+      "titleTriggered": "{ruleName} 觸發通知",
+      "messageTriggered": "規則 {ruleName} 已觸發",
+      "messageAction": "執行 {asset}.{operation}"
     }
   },
   "ruleNodes": {

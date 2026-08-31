@@ -8,6 +8,7 @@ import type {
   RuleNotificationConfig
 } from '@/api/types'
 import { graphToExpression, graphToExpressions } from './ruleConverter'
+import i18n from '@/i18n'
 
 const VISUAL_GRAPH_KEY = '_visual_graph'
 
@@ -370,17 +371,18 @@ export function graphToBackendCreate(
 
   if (notifConfig) {
     notification = {
-      title: `${name} 触发通知`,
-      message: notifConfig.channel_type === 'email'
-        ? `规则 ${name} 已触发`
-        : `规则 ${name} 已触发`,
+      title: i18n.global.t('ruleEditor.notification.titleTriggered', { ruleName: name }),
+      message: i18n.global.t('ruleEditor.notification.messageTriggered', { ruleName: name }),
       level: notifConfig.level,
       recipients: notifConfig.recipients,
     }
   } else if (actionConfig) {
     notification = {
-      title: `${name} 触发通知`,
-      message: `执行 ${actionConfig.target_asset}.${actionConfig.operation}`,
+      title: i18n.global.t('ruleEditor.notification.titleTriggered', { ruleName: name }),
+      message: i18n.global.t('ruleEditor.notification.messageAction', {
+        asset: actionConfig.target_asset,
+        operation: actionConfig.operation,
+      }),
       level: 'warning',
     }
   }

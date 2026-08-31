@@ -1540,6 +1540,11 @@
       "actionMissingTarget": "Action node \"{label}\" is missing target device",
       "actionMissingOperation": "Action node \"{label}\" is missing operation type",
       "notificationMissingChannel": "Notification node \"{label}\" is missing notification channel"
+    },
+    "notification": {
+      "titleTriggered": "{ruleName} Notification",
+      "messageTriggered": "Rule {ruleName} triggered",
+      "messageAction": "Execute {asset}.{operation}"
     }
   },
   "ruleNodes": {
