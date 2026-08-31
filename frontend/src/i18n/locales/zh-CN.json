@@ -2127,5 +2127,13 @@
   "close": "关闭",
   "saved": "已保存",
   "a": "A",
-  "input": "输入"
+  "input": "输入",
+  "writePoint": {
+    "deviceNotFound": "设备 {asset} 不存在",
+    "pointNotFound": "点位 {name} 不存在",
+    "pointNotWritable": "点位 {name} 不可写",
+    "cmdSent": "写值命令已下发 (命令ID: {id})",
+    "statusAbnormal": "命令状态异常: {status}",
+    "failed": "写值失败"
+  }
 }

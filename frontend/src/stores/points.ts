@@ -7,6 +7,7 @@ import type { Reading, StandardPoint } from '@/api/data'
 import type { DeviceConfig, PointConfig } from '@/api/types'
 import { parseStandardPoints, mapPointToDisplay, mapDeviceWithPoints } from '@/utils/pointMapping'
 import type { ReadingData } from '@/utils/pointMapping'
+import i18n from '@/i18n'
 
 export interface PointDisplay {
   name: string
@@ -415,16 +416,16 @@ export const usePointStore = defineStore('points', () => {
   async function writePoint(deviceAsset: string, pointName: string, value: number | boolean | string): Promise<{ success: boolean; message: string }> {
     const device = devices.value.find(d => d.asset === deviceAsset)
     if (!device) {
-      return { success: false, message: `设备 ${deviceAsset} 不存在` }
+      return { success: false, message: i18n.global.t('writePoint.deviceNotFound', { asset: deviceAsset }) }
     }
 
     const point = device.points.find(p => p.name === pointName)
     if (!point) {
-      return { success: false, message: `点位 ${pointName} 不存在` }
+      return { success: false, message: i18n.global.t('writePoint.pointNotFound', { name: pointName }) }
     }
 
     if (!point.writable) {
-      return { success: false, message: `点位 ${pointName} 不可写` }
+      return { success: false, message: i18n.global.t('writePoint.pointNotWritable', { name: pointName }) }
     }
 
     try {
@@ -462,13 +463,13 @@ export const usePointStore = defineStore('points', () => {
         setTimeout(() => fetchDevicePoints(deviceAsset), 2000)
         return {
           success: true,
-          message: `写值命令已下发 (命令ID: ${response.command_id.slice(0, 8)}...)`
+          message: i18n.global.t('writePoint.cmdSent', { id: response.command_id.slice(0, 8) })
         }
       }
 
-      return { success: false, message: `命令状态异常: ${response.status}` }
+      return { success: false, message: i18n.global.t('writePoint.statusAbnormal', { status: response.status }) }
     } catch (e: unknown) {
-      const detail = (e as any)?.response?.data?.detail || (e instanceof Error ? e.message : '写值失败')
+      const detail = (e as any)?.response?.data?.detail || (e instanceof Error ? e.message : i18n.global.t('writePoint.failed'))
       return { success: false, message: detail }
     }
   }

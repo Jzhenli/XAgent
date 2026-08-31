@@ -2112,5 +2112,13 @@
   "close": "Close",
   "saved": "Saved",
   "a": "A",
-  "input": "Input"
+  "input": "Input",
+  "writePoint": {
+    "deviceNotFound": "Device {asset} not found",
+    "pointNotFound": "Point {name} not found",
+    "pointNotWritable": "Point {name} is not writable",
+    "cmdSent": "Write command sent (ID: {id})",
+    "statusAbnormal": "Command status abnormal: {status}",
+    "failed": "Write failed"
+  }
 }
