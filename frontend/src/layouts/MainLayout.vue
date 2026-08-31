@@ -237,6 +237,7 @@ import { ElMessage } from "element-plus";
 import "@x-plateform/graphic-editor/dist/index.css";
 import "@x-plateform-mono/common/dist/index.css";
 import { Icon } from "@/icon/index";
+import { i18nScope } from '@x-plateform-mono/common'
 
 const { t, te, locale } = useI18n();
 
@@ -307,6 +308,8 @@ const currentLanguageLabel = computed(() => {
 function handleLanguageChange(lang: string) {
   locale.value = lang as "zh-CN" | "en" | "zh-TW";
   localStorage.setItem("locale", lang);
+
+  i18nScope.change(lang)
   ElMessage.success(t("common.languageChanged"));
 }
 

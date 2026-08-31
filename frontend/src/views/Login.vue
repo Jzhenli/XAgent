@@ -111,6 +111,7 @@ import { useI18n } from "vue-i18n";
 import { Switch } from "@element-plus/icons-vue";
 import AboutUsDialog from "@/components/AboutUsDialog.vue";
 import packageInfo from "../../package.json";
+import { i18nScope } from '@x-plateform-mono/common'
 
 /** 路由实例 */
 const router = useRouter();
@@ -164,6 +165,8 @@ const currentLanguageLabel = computed(() => {
  */
 function handleLanguageChange(lang: string) {
   locale.value = lang as "zh-CN" | "en" | "zh-TW";
+
+  i18nScope.change(lang)
   localStorage.setItem("locale", lang);
 }
 

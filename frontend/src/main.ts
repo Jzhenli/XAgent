@@ -26,6 +26,10 @@ import i18n from './i18n'
 import { useThemeStore } from './stores/theme'
 import './style.css'
 
+import { i18nScope } from '@x-plateform-mono/common'
+
+i18nScope.change('zh-CN')
+
 const app = createApp(App)
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
