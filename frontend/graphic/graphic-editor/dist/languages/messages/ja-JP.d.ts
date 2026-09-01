@@ -499,5 +499,6 @@ declare const _default: {
     "3778": string;
     "3779": string;
     "3780": string;
+    "3781": string;
 };
 export default _default;

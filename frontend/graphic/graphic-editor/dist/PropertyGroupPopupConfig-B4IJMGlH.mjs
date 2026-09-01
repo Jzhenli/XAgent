@@ -1,5 +1,5 @@
 import { defineComponent as M, ref as B, computed as w, watch as S, onMounted as Z, openBlock as r, createElementBlock as f, Fragment as D, renderList as O, createElementVNode as c, toDisplayString as m, unref as o, createVNode as g, createCommentVNode as $, createBlock as L } from "vue";
-import { t as a, b as _, a as R, c as x, s as V, d as ee, e as ne, f as oe } from "./index-D3sYETh7.mjs";
+import { t as a, b as _, a as R, c as x, s as V, d as ee, e as ne, f as oe } from "./index-BzYccUqU.mjs";
 import { XIconCpnt as ae, SelectSingle as N } from "@x-plateform-mono/common";
 import { g as te } from "./http-Dp9t8gnt.mjs";
 const le = { class: "point-bindings-render" }, ie = { class: "binding-item-header" }, se = { class: "binding-item-title" }, ue = { class: "binding-item-body" }, ce = { class: "binding-row" }, re = { class: "binding-row" }, pe = { class: "binding-label" }, de = { class: "binding-row" }, ge = { class: "binding-label" }, fe = { class: "binding-row" }, ve = { class: "binding-label" }, he = { class: "binding-row" }, be = { class: "binding-row" }, me = {

@@ -2336,7 +2336,8 @@ const loader = void 0, zhCN = {}, enUS = {}, paragraphs = {
   数字标签: 3777,
   开关: 3778,
   数字输入: 3779,
-  数值: 3780
+  数值: 3780,
+  状态传感器: 3781
 }, component = void 0, transform = void 0, languages = [{ name: "zh-CN", title: "Chinese (Simplified)", nativeTitle: "简体中文", active: !0, default: !0 }, { name: "en-US", title: "English (United States)", nativeTitle: "English (United States)" }, { name: "zh-TW", title: "Chinese (Traditional - Taiwan)", nativeTitle: "繁體中文(臺灣)" }, { name: "km-KH", title: "高棉语", nativeTitle: "ខ្មែរ" }, { name: "ja-JP", title: "Japanese", nativeTitle: "日本語" }, { name: "ko-KR", title: "Korean", nativeTitle: "한국어" }], library = !0, debug = !1, settings = {
   languages,
   library,
@@ -2841,14 +2842,15 @@ const loader = void 0, zhCN = {}, enUS = {}, paragraphs = {
   3777: "数字标签",
   3778: "开关",
   3779: "数字输入",
-  3780: "数值"
+  3780: "数值",
+  3781: "状态传感器"
 }, messages$1 = {
   "zh-CN": defaultMessages,
-  "zh-TW": () => import("./zh-TW-4js1zlen.mjs"),
-  "en-US": () => import("./en-US-B9KEO_vf.mjs"),
-  "km-KH": () => import("./km-KH-D0QMBuki.mjs"),
-  "ja-JP": () => import("./ja-JP-AG9SZ9Ib.mjs"),
-  "ko-KR": () => import("./ko-KR-DgsqIp5V.mjs")
+  "zh-TW": () => import("./zh-TW-CZZ9YCh6.mjs"),
+  "en-US": () => import("./en-US-0qmhKmI8.mjs"),
+  "km-KH": () => import("./km-KH-TBeluDK4.mjs"),
+  "ja-JP": () => import("./ja-JP-CPoE4toL.mjs"),
+  "ko-KR": () => import("./ko-KR-qRBQCyFn.mjs")
 };
 settings.library = !1;
 const i18nScope = new ot({
@@ -5315,7 +5317,7 @@ const _hoisted_1$q = { class: "property-group-panel-title" }, _hoisted_2$m = { c
       ])
     ]));
   }
-}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-D9MoTy1X.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-BVB0t5Vi.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-BfFwFQFT.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-CAEb4cZF.mjs"));
+}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-J45fSujg.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-BkdrTBk_.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-BvEHeJvz.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-B4IJMGlH.mjs"));
 var propertyGroupRenderType = /* @__PURE__ */ ((l) => (l.normal = "normal", l.binding = "binding", l.listBinding = "listBinding", l.alignItems = "alignItems", l.orderItems = "orderItems", l.bindingDashboard = "bindingDashboard", l.propertyGroupBackground = "propertyGroupBackground", l.propertyGroupText = "propertyGroupText", l.propertyGroupPositionSize = "propertyGroupPositionSize", l.propertyGroupViewPosition = "propertyGroupViewPosition", l.animationConfigGroup = "animationConfigGroup", l.iconPropertyConfig = "iconPropertyConfig", l.GlowEffectConfig = "GlowEffectConfig", l.popupConfigGroup = "popupConfigGroup", l))(propertyGroupRenderType || {}), brushTypes = /* @__PURE__ */ ((l) => (l.backgroundStyle = "backgroundStyle", l.textStyle = "textStyle", l.shadingColor = "shadingColor", l.iconStyle = "iconStyle", l))(brushTypes || {});
 const brushPropertiesMap = /* @__PURE__ */ new Map([
   ["backgroundStyle", [
@@ -60364,7 +60366,7 @@ class ElectricCoil extends BaseDevice {
     type: propertyGroupRenderType.binding,
     items: [{
       name: "Stage1Value",
-      label: "状态传感器1",
+      label: t("状态传感器") + "1",
       type: shapePropertyRenderType.bindingValue,
       opt: {
         animationAvail: !0,
@@ -60375,7 +60377,7 @@ class ElectricCoil extends BaseDevice {
       }
     }, {
       name: "Stage2Value",
-      label: "状态传感器2",
+      label: t("状态传感器") + "2",
       type: shapePropertyRenderType.bindingValue,
       opt: {
         animationAvail: !0,
@@ -60386,7 +60388,7 @@ class ElectricCoil extends BaseDevice {
       }
     }, {
       name: "Stage3Value",
-      label: "状态传感器3",
+      label: t("状态传感器") + "3",
       type: shapePropertyRenderType.bindingValue,
       opt: {
         animationAvail: !0,
@@ -60397,7 +60399,7 @@ class ElectricCoil extends BaseDevice {
       }
     }, {
       name: "Stage4Value",
-      label: "状态传感器4",
+      label: t("状态传感器") + "4",
       type: shapePropertyRenderType.bindingValue,
       opt: {
         animationAvail: !0,
@@ -60408,7 +60410,7 @@ class ElectricCoil extends BaseDevice {
       }
     }, {
       name: "Stage5Value",
-      label: "状态传感器5",
+      label: t("状态传感器") + "5",
       type: shapePropertyRenderType.bindingValue,
       opt: {
         animationAvail: !0,
@@ -60419,7 +60421,7 @@ class ElectricCoil extends BaseDevice {
       }
     }, {
       name: "Stage6Value",
-      label: "状态传感器6",
+      label: t("状态传感器") + "6",
       type: shapePropertyRenderType.bindingValue,
       opt: {
         animationAvail: !0,
@@ -60430,7 +60432,7 @@ class ElectricCoil extends BaseDevice {
       }
     }, {
       name: "Stage7Value",
-      label: "状态传感器7",
+      label: t("状态传感器") + "7",
       type: shapePropertyRenderType.bindingValue,
       opt: {
         animationAvail: !0,
@@ -60441,7 +60443,7 @@ class ElectricCoil extends BaseDevice {
       }
     }, {
       name: "Stage8Value",
-      label: "状态传感器8",
+      label: t("状态传感器") + "8",
       type: shapePropertyRenderType.bindingValue,
       opt: {
         animationAvail: !0,
@@ -72322,13 +72324,6 @@ const _hoisted_1$6 = { style: { position: "absolute", inset: "0", overflow: "hid
     }), (xt, Ht) => (openBlock(), createElementBlock("div", _hoisted_1$3, [
       createElementVNode("span", _hoisted_2$2, toDisplayString(l.graphicData?.name), 1),
       createElementVNode("div", null, [
-        createVNode$1(unref(XIconCpnt), {
-          name: "show",
-          onClick: d,
-          title: yt.value ? unref(t)("图形预览") : unref(t)("面板预览"),
-          size: 32,
-          style: { "vertical-align": "middle", "margin-right": "20px", cursor: "pointer" }
-        }, null, 8, ["title"]),
         createVNode$1(unref(XIconCpnt), {
           name: "save",
           onClick: f,
