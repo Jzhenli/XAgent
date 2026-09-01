@@ -18,6 +18,8 @@ export interface ScadaPointReader {
   error: Ref<string | null>
   historyReadings: Ref<Reading[]>
   historyLoading: Ref<boolean>
+  /** 历史缓存版本号：每次 appendLatestReadingToHistory 成功追加后递增 */
+  historyVersion: Ref<number>
   allPoints: ComputedRef<(ScadaPointDisplay & { deviceAsset: string; deviceName: string })[]>
   fetchDevicesWithPoints: () => Promise<void>
   fetchDevicePoints: (asset: string) => Promise<void>
@@ -47,6 +49,8 @@ const historyReadingsMap = new Map<string, Reading[]>()
 const latestReadingMap = new Map<string, Reading>()
 const historyLoading = ref(false)
 const trendTimeRange = ref<'1h' | '6h' | '24h' | '7d' | '30d'>('24h')
+/** 历史缓存版本号：每次 appendLatestReadingToHistory 成功追加后递增，图表组件可监听此 ref 触发增量刷新 */
+const historyVersion = ref(0)
 
 const writeProtectionMap = new Map<string, { value: any; expiresAt: number }>()
 const WRITE_PROTECTION_DURATION = 10000
@@ -253,6 +257,8 @@ export function useScadaPointReader(): ScadaPointReader {
 
     historyReadingsMap.set(asset, updated)
     historyReadings.value = updated
+    // 通知所有监听者历史缓存已更新
+    historyVersion.value++
     return true
   }
 
@@ -461,6 +467,7 @@ export function useScadaPointReader(): ScadaPointReader {
     error,
     historyReadings,
     historyLoading,
+    historyVersion,
     allPoints,
     fetchDevicesWithPoints,
     fetchDevicePoints,

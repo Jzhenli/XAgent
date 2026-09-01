@@ -67,6 +67,8 @@ export function useScadaBarChart(
   const containerRef = ref<HTMLDivElement | null>(null)
   let chartInstance: EChartsType | null = null
   let resizeObserver: ResizeObserver | null = null
+  /** 是否已完成首次完整 option 渲染：true 后数据刷新用 merge 模式仅更新 series */
+  let hasInitialized = false
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // 历史数据加载
@@ -150,6 +152,19 @@ export function useScadaBarChart(
     },
   )
 
+  /** 监听历史缓存版本号：上层统一追加最新读数后递增，触发图表增量刷新
+   * （vant 预览模式下由 5s 设备轮询驱动，编辑器内预览时仍靠组件自身 30s 轮询） */
+  if (injectedReader) {
+    watch(
+      () => injectedReader!.historyVersion.value,
+      () => {
+        if (!scada.isEditing.value) {
+          updateChartOption()
+        }
+      },
+    )
+  }
+
   watch(
     () => scada.isEditing.value,
     (isEditing) => {
@@ -232,7 +247,7 @@ export function useScadaBarChart(
   watch(
     () => chartConfig.value,
     () => {
-      updateChartOption()
+      updateChartOption(true)
     },
     { deep: true },
   )
@@ -357,7 +372,11 @@ export function useScadaBarChart(
     ]
   }
 
-  const updateChartOption = () => {
+  /**
+   * 更新图表 option
+   * @param full true=完整重建（配置变更/首次渲染）；false=仅增量更新 xAxis + series 数据
+   */
+  const updateChartOption = (full = false) => {
     if (!chartInstance) return
 
     const cfg = chartConfig.value
@@ -365,14 +384,29 @@ export function useScadaBarChart(
     const xAxisData = buildXAxisData(data, cfg)
     const values = data.map((d) => d.value)
 
-    const option: EChartsOption = {
-      grid: buildGrid(),
-      xAxis: buildXAxisOption(cfg, xAxisData),
-      yAxis: buildYAxisOption(cfg),
-      series: buildSeriesOption(cfg, values),
+    if (data.length === 0) {
+      chartInstance.clear()
+      hasInitialized = false
+      return
     }
 
-    chartInstance.setOption(option, true)
+    if (full || !hasInitialized) {
+      // 首次渲染 / 配置变更：完整 option + notMerge
+      const option: EChartsOption = {
+        grid: buildGrid(),
+        xAxis: buildXAxisOption(cfg, xAxisData),
+        yAxis: buildYAxisOption(cfg),
+        series: buildSeriesOption(cfg, values),
+      }
+      chartInstance.setOption(option, true)
+      hasInitialized = true
+    } else {
+      // 数据刷新：merge 模式仅更新 xAxis.data + series
+      chartInstance.setOption({
+        xAxis: { data: xAxisData },
+        series: buildSeriesOption(cfg, values),
+      })
+    }
   }
 
   return {
