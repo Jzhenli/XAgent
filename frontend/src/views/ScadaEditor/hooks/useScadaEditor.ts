@@ -179,20 +179,8 @@ export function useScadaEditor() {
   const { t } = useI18n()
   const undo = useScadaUndo()
 
-  /** 加载指定项目对应的面板数据 */
-  async function loadPanel(projectId: string): Promise<ScadaPanel | null> {
-    let project: Project | null = null
-    try {
-      project = await projectApi.get(projectId)
-    } catch (e) {
-      console.error('Failed to fetch project:', e)
-    }
-
-    if (!project) {
-      console.error('Project not found:', projectId)
-      return null
-    }
-
+  /** 内部公共函数：将 Project 数据应用到编辑器状态 */
+  function applyProjectData(project: Project): ScadaPanel | null {
     const panel = parseProjectData(project.data)
     if (!panel) {
       console.error('Failed to deserialize panel data:', project.data)
@@ -206,7 +194,7 @@ export function useScadaEditor() {
     panel.createdAt = project.createdAt
     panel.updatedAt = project.updatedAt
 
-    currentPanelId.value = projectId
+    currentPanelId.value = project.id
     sourcePanel.value = panel
     draftPanel.value = null
     isDirty.value = false
@@ -216,6 +204,28 @@ export function useScadaEditor() {
     undo.clearHistory()
 
     return panel
+  }
+
+  /** 从网络加载指定项目对应的面板数据 */
+  async function loadPanel(projectId: string): Promise<ScadaPanel | null> {
+    let project: Project | null = null
+    try {
+      project = await projectApi.get(projectId)
+    } catch (e) {
+      console.error('Failed to fetch project:', e)
+    }
+
+    if (!project) {
+      console.error('Project not found:', projectId)
+      return null
+    }
+
+    return applyProjectData(project)
+  }
+
+  /** 从缓存/已获取的 Project 对象加载面板（跳过网络请求） */
+  function loadPanelFromProject(project: Project): ScadaPanel | null {
+    return applyProjectData(project)
   }
 
   /** 保存当前面板到项目接口 */
@@ -697,6 +707,7 @@ export function useScadaEditor() {
     selectedComponent,
     // 面板操作
     loadPanel,
+    loadPanelFromProject,
     savePanel,
     discardDraft,
     selectPanel,
