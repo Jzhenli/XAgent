@@ -12,7 +12,8 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="110px"
+      label-width="150px"
+      label-position="left"
       class="system-config-form"
     >
       <el-divider content-position="left">{{ t('alerts.smtpServer') }}</el-divider>
