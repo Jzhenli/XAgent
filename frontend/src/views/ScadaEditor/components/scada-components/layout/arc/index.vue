@@ -9,12 +9,12 @@
       <marker
         v-if="showArrowEnd"
         id="arc-arrow-end"
-        :refX="arrowEndRefX"
-        :refY="arrowEndRefY"
+        :refX="arrowSize"
+        :refY="arrowSize / 2"
         markerUnits="userSpaceOnUse"
         :markerWidth="arrowSize"
         :markerHeight="arrowSize"
-        :orient="arrowEndAngle"
+        orient="auto"
       >
         <polygon
           :points="`0 0, ${arrowSize} ${arrowSize / 2}, 0 ${arrowSize}`"
@@ -24,12 +24,12 @@
       <marker
         v-if="showArrowStart"
         id="arc-arrow-start"
-        :refX="arrowStartRefX"
-        :refY="arrowStartRefY"
+        :refX="arrowSize"
+        :refY="arrowSize / 2"
         markerUnits="userSpaceOnUse"
         :markerWidth="arrowSize"
         :markerHeight="arrowSize"
-        :orient="arrowStartAngle"
+        orient="auto-start-reverse"
       >
         <polygon
           :points="`0 0, ${arrowSize} ${arrowSize / 2}, 0 ${arrowSize}`"
@@ -104,28 +104,6 @@ const arcPath = computed(() => {
 
   return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} ${sweepFlag} ${end.x} ${end.y}`
 })
-
-// Arrow endpoint calculations
-const endPoint = computed(() => polarToCartesian(endAngle.value, radius.value))
-const startPoint = computed(() => polarToCartesian(startAngle.value, radius.value))
-
-const arrowEndAngle = computed(() => {
-  const rad = (endAngle.value * Math.PI) / 180
-  const tangentAngle = rad + Math.PI / 2
-  return (tangentAngle * 180) / Math.PI
-})
-
-const arrowStartAngle = computed(() => {
-  const rad = (startAngle.value * Math.PI) / 180
-  const tangentAngle = rad - Math.PI / 2
-  return (tangentAngle * 180) / Math.PI
-})
-
-const arrowEndRefX = computed(() => endPoint.value.x)
-const arrowEndRefY = computed(() => endPoint.value.y - arrowSize.value / 2)
-
-const arrowStartRefX = computed(() => startPoint.value.x)
-const arrowStartRefY = computed(() => startPoint.value.y - arrowSize.value / 2)
 </script>
 
 <style scoped>

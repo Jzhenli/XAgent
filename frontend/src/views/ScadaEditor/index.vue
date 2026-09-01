@@ -472,15 +472,12 @@ const handleImportFileChange = async (event: Event) => {
   justify-content: space-between;
   align-items: center;
   padding: 10px 24px;
-  background: rgba(15, 23, 42, 0.85);
-  color: #fff;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
+  background: var(--bg-header);
+  color: var(--text-primary);
+  flex-shrink: 0;
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(34, 211, 238, 0.3);
+  border-bottom: var(--scada-border-glow);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .preview-title {
