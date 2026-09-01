@@ -104,7 +104,7 @@ class KNXPlugin(SouthPluginBase):
                 "point_timeout": {"type": "number", "default": 3.0, "title": "点位超时(秒)"},
                 "point_retries": {"type": "integer", "default": 2, "title": "点位重试次数"},
                 "sync_mode": {"type": "string", "default": "smart", "enum": ["passive", "always", "smart"], "title": "同步模式"},
-                "sync_interval": {"type": "number", "default": 60, "title": "同步间隔(秒)"},
+                "sync_interval": {"type": "number", "default": 60, "title": "同步间隔(分钟)，smart模式下超过该时间未更新的点位才主动sync"},
                 "max_concurrent_syncs": {"type": "integer", "default": 5, "title": "最大并发同步数"},
             },
         }
@@ -121,6 +121,8 @@ class KNXPlugin(SouthPluginBase):
     HEARTBEAT_RETRY_INTERVAL = 0.3
     POINT_TIMEOUT = 3.0
     POINT_RETRIES = 2
+    # 连续心跳失败达到该次数才判定连接失效并重建，避免偶发超时就销毁连接
+    MAX_HEARTBEAT_FAILURES = 3
     POINT_RETRY_INTERVAL = 0.5
     
     DEFAULT_SYNC_MODE = "smart"
@@ -176,12 +178,16 @@ class KNXPlugin(SouthPluginBase):
         
         self._semaphore: Optional[asyncio.Semaphore] = None
         self._last_telegram_time: Dict[str, float] = {}
+
+        self._connect_lock = asyncio.Lock()
+        self._heartbeat_fail_count = 0
+        self._last_conn_state: Optional[str] = None
         
         if not self._points:
             logger.warning(f"No points configured for KNX device {self._asset_name}")
     
-    async def _on_device_updated(self, device: Any) -> None:
-        """xknx设备状态更新回调，用于维护_last_telegram_time"""
+    def _on_device_updated(self, device: Any) -> None:
+        """xknx设备状态更新回调（同步），用于维护_last_telegram_time"""
         device_name = device.name
         if device_name in self._devices:
             self._last_telegram_time[device_name] = time.time()
@@ -191,72 +197,83 @@ class KNXPlugin(SouthPluginBase):
         if not _check_knx_available():
             logger.error("xknx is not installed. Install it with: pip install xknx")
             return False
-        
-        try:
-            logger.info(f"Connecting to KNX gateway {self._gateway_ip}:{self._gateway_port}...")
-            
-            if self._connection_type.lower() == "routing":
-                xknx_logger = logging.getLogger('xknx.cemi')
-                xknx_logger.setLevel(logging.ERROR)
-                logger.info("ROUTING mode: adjusted xknx.cemi log level to ERROR to suppress expected warnings")
-            
-            if _ConnectionConfig is None:
-                logger.error("ConnectionConfig is not available")
-                return False
-            
-            connection_type = self._get_connection_type()
-            
-            connection_config = _ConnectionConfig(
-                connection_type=connection_type,
-                gateway_ip=self._gateway_ip,
-                gateway_port=self._gateway_port,
-                local_ip=self._local_ip if self._local_ip else None,
-                route_back=self._route_back,
-                auto_reconnect=True,
-                auto_reconnect_wait=self._reconnect_interval
-            )
-            
-            if _XKNX is None:
-                logger.error("XKNX is not available")
-                return False
-            
-            self._xknx = _XKNX(
-                connection_config=connection_config,
-                device_updated_cb=self._on_device_updated
-            )
-            
-            await self._xknx.start()
-            
-            self._connected = True
-            self._device_online = False
-            self._offline_counter = 0
-            
-            await self._setup_devices()
-            
-            logger.info(f"Connected to KNX gateway {self._gateway_ip}:{self._gateway_port}")
-            logger.info("Waiting for first heartbeat to confirm device online status...")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Error connecting to KNX gateway: {e}")
-            self._connected = False
-            self._device_online = False
-            self._offline_counter = 0
-            
-            if self._xknx:
-                try:
-                    await self._xknx.stop()
-                except Exception:
-                    logger.debug("Error stopping xknx during connect failure", exc_info=True)
-                finally:
-                    self._xknx = None
-            
+
+        # 防止 poll() 与写命令并发触发重建，导致两个 XKNX 实例同时 start
+        async with self._connect_lock:
+            # 关键修复：重建前必须先释放旧实例，否则旧隧道槽位会泄漏，
+            # 网关最多 4 个 tunnel 连接很快被占满（表现为 client 端口频繁变化而后端连不上）。
+            if self._xknx is not None:
+                logger.warning(
+                    "Releasing existing KNX connection before reconnect to avoid "
+                    "exhausting gateway tunnelling slots"
+                )
+                await self._teardown_xknx()
+
             try:
-                await self._create_offline_reading()
-            except Exception:
-                logger.debug("Error creating offline reading during connect failure", exc_info=True)
-            
-            return False
+                logger.info(f"Connecting to KNX gateway {self._gateway_ip}:{self._gateway_port}...")
+
+                if self._connection_type.lower() == "routing":
+                    xknx_logger = logging.getLogger('xknx.cemi')
+                    xknx_logger.setLevel(logging.ERROR)
+                    logger.info("ROUTING mode: adjusted xknx.cemi log level to ERROR to suppress expected warnings")
+
+                if _ConnectionConfig is None:
+                    logger.error("ConnectionConfig is not available")
+                    return False
+
+                connection_type = self._get_connection_type()
+
+                connection_config = _ConnectionConfig(
+                    connection_type=connection_type,
+                    gateway_ip=self._gateway_ip,
+                    gateway_port=self._gateway_port,
+                    local_ip=self._local_ip if self._local_ip else None,
+                    route_back=self._route_back,
+                    auto_reconnect=True,
+                    auto_reconnect_wait=self._reconnect_interval
+                )
+
+                if _XKNX is None:
+                    logger.error("XKNX is not available")
+                    return False
+
+                self._xknx = _XKNX(
+                    connection_config=connection_config,
+                    device_updated_cb=self._on_device_updated
+                )
+
+                await self._xknx.start()
+
+                self._connected = True
+                self._device_online = False
+                self._offline_counter = 0
+
+                await self._setup_devices()
+
+                logger.info(f"Connected to KNX gateway {self._gateway_ip}:{self._gateway_port}")
+                logger.info("Waiting for first heartbeat to confirm device online status...")
+                return True
+
+            except Exception as e:
+                logger.error(f"Error connecting to KNX gateway: {e}")
+                self._connected = False
+                self._device_online = False
+                self._offline_counter = 0
+
+                if self._xknx:
+                    try:
+                        await self._xknx.stop()
+                    except Exception:
+                        logger.debug("Error stopping xknx during connect failure", exc_info=True)
+                    finally:
+                        self._xknx = None
+
+                try:
+                    await self._create_offline_reading()
+                except Exception:
+                    logger.debug("Error creating offline reading during connect failure", exc_info=True)
+
+                return False
     
     def _get_connection_type(self) -> Optional[Any]:
         """将配置字符串转换为ConnectionType枚举
@@ -308,35 +325,37 @@ class KNXPlugin(SouthPluginBase):
                     f"gateway_ip '{self._gateway_ip}' will be used for discovery only"
                 )
     
+    async def _teardown_xknx(self) -> None:
+        """停止并释放当前 XKNX 实例。
+
+        xknx 的 stop() 会经 knxip_interface -> Tunnel.disconnect() 向网关发送
+        DISCONNECT_REQUEST，真正释放网关的 tunnelling 槽位。先清空引用再 stop，
+        避免 stop 抛异常时残留引用，也防止重入。
+        """
+        xknx = self._xknx
+        self._xknx = None
+        self._connected = False
+        self._device_online = False
+        self._offline_counter = 0
+        self._heartbeat_fail_count = 0
+        self._last_conn_state = None
+        self._devices.clear()
+        self._write_devices.clear()
+
+        if xknx is None:
+            return
+        try:
+            await xknx.stop()
+        except Exception:
+            logger.debug("Error stopping xknx instance", exc_info=True)
+
     async def _handle_connection_lost(self) -> None:
         """处理连接丢失 - 停止xknx并标记设备离线"""
-        self._device_online = False
-        self._connected = False
-        
-        if self._xknx:
-            try:
-                await self._xknx.stop()
-            except Exception:
-                logger.debug("Error stopping xknx during connection loss", exc_info=True)
-            finally:
-                self._xknx = None
-        
         logger.warning(f"KNX device {self._asset_name} connection lost")
-    
+        await self._teardown_xknx()
+
     async def disconnect(self) -> None:
-        if self._xknx:
-            try:
-                await self._xknx.stop()
-            except Exception as e:
-                logger.error(f"Error disconnecting from KNX gateway: {e}")
-            finally:
-                self._xknx = None
-                self._connected = False
-                self._device_online = False
-                self._offline_counter = 0
-                self._devices.clear()
-                self._write_devices.clear()
-        
+        await self._teardown_xknx()
         logger.info(f"Disconnected from KNX gateway {self._gateway_ip}:{self._gateway_port}")
     
     async def _setup_devices(self) -> None:
@@ -429,27 +448,32 @@ class KNXPlugin(SouthPluginBase):
             return None
         
         device = self._construct_device(
-            device_class_name, name, read_ga, write_ga, dpt_value, writable_config
+            device_class_name, name, read_ga, write_ga, dpt_value, writable_config, writable
         )
         
         if device:
-            self._xknx.devices.add(device)
+            # xknx >=3.x 使用 Devices.async_add (同步方法); 旧版为 add
+            try:
+                self._xknx.devices.async_add(device)
+            except AttributeError:
+                self._xknx.devices.add(device)
         
         return device
     
     def _construct_device(
-        self, 
-        device_class_name: str, 
-        name: str, 
-        read_ga: Any, 
+        self,
+        device_class_name: str,
+        name: str,
+        read_ga: Any,
         write_ga: Any,
         dpt_value: Any = 1,
-        writable_config: Dict[str, Any] = None
+        writable_config: Dict[str, Any] = None,
+        writable: bool = False
     ) -> Any:
         """根据设备类名构造xknx设备对象"""
         if writable_config is None:
             writable_config = {}
-        
+
         constructors = {
             "Switch": lambda: _Switch(
                 self._xknx, name=name,
@@ -461,7 +485,9 @@ class KNXPlugin(SouthPluginBase):
             ),
             "Climate": lambda: _Climate(
                 self._xknx, name=name,
-                group_address_temperature=read_ga
+                group_address_temperature=read_ga,
+                # 仅可写点才传 target 写地址，避免非可写点把 target 退化成测量地址导致重复读/误写
+                group_address_target_temperature=write_ga if writable else None
             ),
             "Light": lambda: self._create_light_device(
                 name, read_ga, write_ga, writable_config
@@ -508,37 +534,58 @@ class KNXPlugin(SouthPluginBase):
                 group_address_switch_state=read_ga
             )
     
+    async def _get_connection_state(self) -> Optional[str]:
+        """安全读取 xknx 连接状态名称（CONNECTED/CONNECTING/DISCONNECTED）。"""
+        if not self._xknx:
+            return None
+        try:
+            state = self._xknx.connection_manager.state
+            name = state.name if state is not None else None
+            self._last_conn_state = name
+            return name
+        except Exception:
+            return self._last_conn_state
+
+    async def _reconnect_with_backoff(self) -> bool:
+        """仅在连接对象层面未建立时重建，并做间隔节流。
+
+        _device_online 仅表示"尚未收到数据"，不应触发重建；链路恢复交由
+        xknx 内建的 auto_reconnect 处理，避免插件层反复新建实例导致端口 churn
+        与网关槽位泄漏。
+        """
+        if self._connected and self._xknx:
+            return True
+        now = time.time()
+        if now - self._last_reconnect_time < self._reconnect_interval:
+            return False
+        self._last_reconnect_time = now
+        self._offline_counter += 1
+        logger.info(f"Attempting reconnect to KNX gateway (attempt {self._offline_counter})")
+        return await self.connect()
+
     async def poll(self) -> List[Reading]:
         poll_start = time.time()
-        
-        if not self._connected or not self._xknx:
-            logger.warning("KNX client not connected, attempting reconnect...")
-            if not await self.connect():
-                return await self._create_offline_reading()
-        
+
+        # 仅在连接对象层面未建立时才重建连接（含节流）
+        if not await self._reconnect_with_backoff():
+            return await self._create_offline_reading()
+
+        # xknx 正在自动重连中：本轮跳过，不干扰其内部恢复
+        if await self._get_connection_state() == "CONNECTING":
+            logger.debug("KNX connection is reconnecting internally, skipping this poll cycle")
+            return await self._create_offline_reading()
+
         if not self._point_order:
             logger.warning("No points configured")
             return []
-        
-        if not self._device_online:
-            self._offline_counter += 1
-            now = time.time()
-            elapsed = now - self._last_reconnect_time
-            if elapsed >= self._reconnect_interval:
-                self._last_reconnect_time = now
-                logger.info(f"Attempting reconnect (counter={self._offline_counter})")
-                if not await self.connect():
-                    logger.warning("Reconnect attempt failed")
-            else:
-                logger.debug(f"Device offline, will attempt heartbeat (counter={self._offline_counter})")
-        
+
         heartbeat_point = self._point_order[0]
         heartbeat_device_info = self._devices.get(heartbeat_point)
-        
+
         if not heartbeat_device_info:
             logger.error(f"Heartbeat point {heartbeat_point} not found")
             return []
-        
+
         heartbeat_success = await self._read_with_retry(
             heartbeat_device_info["device"],
             heartbeat_device_info["data_type"],
@@ -546,13 +593,24 @@ class KNXPlugin(SouthPluginBase):
             self._heartbeat_retries,
             self.HEARTBEAT_RETRY_INTERVAL
         )
-        
+
         if heartbeat_success is None:
+            self._heartbeat_fail_count += 1
+            if self._heartbeat_fail_count < self.MAX_HEARTBEAT_FAILURES:
+                logger.warning(
+                    f"Heartbeat failed ({self._heartbeat_fail_count}/"
+                    f"{self.MAX_HEARTBEAT_FAILURES}), keeping connection"
+                )
+                return await self._create_offline_reading()
+            logger.error(
+                f"Heartbeat failed {self.MAX_HEARTBEAT_FAILURES} times, rebuilding KNX connection"
+            )
             await self._handle_connection_lost()
             return await self._create_offline_reading()
-        
+
         self._device_online = True
         self._offline_counter = 0
+        self._heartbeat_fail_count = 0
         logger.debug(f"Heartbeat point {heartbeat_point} success, device online")
         
         remaining_points = self._point_order[1:]
@@ -634,10 +692,17 @@ class KNXPlugin(SouthPluginBase):
             if _XknxConnectionState is None:
                 return None
             conn_state = self._xknx.connection_manager.state
-            if conn_state != _XknxConnectionState.CONNECTED:
-                logger.warning(f"KNX not connected (state={conn_state.name}), cannot read device {device.name}")
+            if conn_state == _XknxConnectionState.CONNECTED:
+                self._last_conn_state = conn_state.name
+            elif conn_state == _XknxConnectionState.DISCONNECTED:
+                # 真正断开才判定连接丢失；CONNECTING 由 xknx 内建 auto_reconnect 恢复
+                logger.warning(f"KNX disconnected (state={conn_state.name}), cannot read device {device.name}")
                 self._connected = False
                 self._device_online = False
+                return None
+            else:
+                # CONNECTING：xknx 正在自动重连，本轮读取跳过，不干扰恢复
+                logger.debug(f"KNX reconnecting (state={conn_state.name}), skip read device {device.name}")
                 return None
             
             logger.debug(f"Reading device {device.name}, data_type={data_type}")
@@ -690,14 +755,56 @@ class KNXPlugin(SouthPluginBase):
             logger.error(f"Error extracting device value for {data_type}: {e}")
             return None
     
+    @staticmethod
+    def _percent_to_knx(v: float) -> int:
+        """百分比(0-100) → KNX 亮度(0-255)"""
+        return max(0, min(255, round(float(v) * 255 / 100)))
+
+    @staticmethod
+    def _knx_to_percent(v: int) -> float:
+        """KNX 亮度(0-255) → 百分比(0-100)"""
+        if v is None:
+            return None
+        return round(float(v) * 100 / 255, 1)
+
+    @staticmethod
+    def _parse_rgb(value: Any) -> tuple:
+        """将多种 RGB 表示解析为 (r,g,b) 元组：
+        - dict: {"r":..,"g":..,"b":..}
+        - 字符串: "r,g,b" / '((r,g,b),None)' 等
+        - tuple/list: (r,g,b)
+        """
+        if isinstance(value, (tuple, list)):
+            return tuple(int(c) for c in value[:3])
+        if isinstance(value, dict):
+            return int(value.get("r")), int(value.get("g")), int(value.get("b"))
+        if isinstance(value, str):
+            s = value.strip()
+            # 兼容 "((r, g, b), None)" 这类 xknx 原始表示
+            if s.startswith("("):
+                # 取最外层元组的第一个元素的三个数字
+                inner = s.split(")", 1)[0].lstrip("(").strip("(")
+                nums = [float(x) for x in inner.replace(" ", "").split(",") if x]
+                return tuple(int(x) for x in nums[:3])
+            nums = [float(x) for x in s.replace(" ", "").split(",") if x]
+            return tuple(int(x) for x in nums[:3])
+        raise ValueError(f"Unsupported RGB value: {value!r}")
+
     def _extract_special_value(self, device: Any, data_type: str, value_attr: str) -> Any:
         """处理特殊值提取（resolve_state等）"""
-        if value_attr == "resolve":
-            if data_type in ("percent", "brightness"):
+        if value_attr == "temperature":
+            # #1 Climate.temperature 是 RemoteValueTemp 实例，真实数值在 .value 上
+            temp = getattr(device, 'temperature', None)
+            if temp is not None and hasattr(temp, 'value'):
+                return temp.value
+            return None
+        elif value_attr == "resolve":
+            if data_type in ("percent", "brightness", "dimming"):
+                # #3 xknx 亮度为 0–255，按百分比语义对外暴露需换算
                 brightness = getattr(device, 'current_brightness', None)
                 if brightness is not None:
-                    return brightness
-            
+                    return self._knx_to_percent(brightness)
+
             if hasattr(device, 'resolve_state'):
                 result = device.resolve_state()
                 if asyncio.iscoroutine(result):
@@ -706,8 +813,14 @@ class KNXPlugin(SouthPluginBase):
                 return result
             return getattr(device, 'state', None)
         elif value_attr == "current_color":
+            # #5 读时规范序列化为 {"r":..,"g":..,"b":..}，与写路径对称
             color = getattr(device, 'current_color', None)
-            return str(color) if color else None
+            if not color:
+                return None
+            rgb = color[0]
+            if not rgb:
+                return None
+            return {"r": rgb[0], "g": rgb[1], "b": rgb[2]}
         else:
             return getattr(device, value_attr, None)
     
@@ -813,7 +926,8 @@ class KNXPlugin(SouthPluginBase):
                     return True
             elif data_type in ("percent", "brightness", "dimming"):
                 if hasattr(device, 'set_brightness'):
-                    await device.set_brightness(int(value))
+                    # #3 对外百分比(0-100) → KNX 亮度(0-255)
+                    await device.set_brightness(self._percent_to_knx(value))
                     return True
             elif data_type == "blinds":
                 if hasattr(device, 'set_position'):
@@ -821,11 +935,14 @@ class KNXPlugin(SouthPluginBase):
                     return True
             elif data_type == "color_rgb":
                 if hasattr(device, 'set_color'):
-                    await device.set_color(value)
+                    # #5 写时解析多种 RGB 表示
+                    rgb = value if isinstance(value, (tuple, list)) else self._parse_rgb(value)
+                    await device.set_color(tuple(int(c) for c in rgb))
                     return True
             elif data_type == "temperature":
-                if hasattr(device, 'set_setpoint'):
-                    await device.set_setpoint(float(value))
+                if hasattr(device, 'set_target_temperature'):
+                    # #2 xknx Climate 用 set_target_temperature（无 set_setpoint）
+                    await device.set_target_temperature(float(value))
                     return True
             
             logger.warning(f"No write method available for data type {data_type} on device {device.name}")
@@ -941,6 +1058,7 @@ class KNXPlugin(SouthPluginBase):
             return {}
         
         now = time.time()
+        # sync_interval 单位为分钟，转换为秒作为阈值
         sync_threshold = self._sync_interval * 60
         
         points_to_sync = []

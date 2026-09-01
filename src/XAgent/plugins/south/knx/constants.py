@@ -13,20 +13,22 @@ DATA_TYPE_MAPPING = {
         "value_attr": "state",
         "value_type": "property",
         "dpt": 1,
-        "data_type": "bool"
+        "data_type": "bool",
+        "writable_device_class": "Switch"
     },
     "bool": {
         "device_class": "BinarySensor",
         "value_attr": "state",
         "value_type": "property",
         "dpt": 1,
-        "data_type": "bool"
+        "data_type": "bool",
+        "writable_device_class": "Switch"
     },
     "temperature": {
         "device_class": "Climate",
         "value_attr": "temperature",
-        "value_type": "property",
-        "dpt": 9,
+        "value_type": "special",
+        "dpt": "9.001",
         "data_type": "float",
         "unit": "°C"
     },
@@ -58,8 +60,8 @@ DATA_TYPE_MAPPING = {
     },
     "dimming": {
         "device_class": "Light",
-        "value_attr": "current_brightness",
-        "value_type": "property",
+        "value_attr": "resolve",
+        "value_type": "special",
         "dpt": "5.001",
         "data_type": "int",
         "unit": "%",
@@ -82,8 +84,8 @@ DATA_TYPE_MAPPING = {
     "color_rgb": {
         "device_class": "Light",
         "value_attr": "current_color",
-        "value_type": "property",
-        "dpt": 232,
+        "value_type": "special",
+        "dpt": "232.600",
         "data_type": "string",
         "writable_config": {
             "use_color": True,
@@ -94,28 +96,28 @@ DATA_TYPE_MAPPING = {
         "device_class": "Sensor",
         "value_attr": "resolve",
         "value_type": "special",
-        "dpt": 16,
+        "dpt": "16.001",
         "data_type": "string"
     },
     "float": {
         "device_class": "Sensor",
         "value_attr": "resolve",
         "value_type": "special",
-        "dpt": 9,
+        "dpt": "9.001",
         "data_type": "float"
     },
     "scene": {
         "device_class": "Sensor",
         "value_attr": "resolve",
         "value_type": "special",
-        "dpt": 18,
+        "dpt": "18.001",
         "data_type": "int"
     },
     "humidity": {
         "device_class": "Sensor",
         "value_attr": "resolve",
         "value_type": "special",
-        "dpt": 9,
+        "dpt": "9.007",
         "data_type": "float",
         "unit": "%"
     },
@@ -123,7 +125,7 @@ DATA_TYPE_MAPPING = {
         "device_class": "Sensor",
         "value_attr": "resolve",
         "value_type": "special",
-        "dpt": 9,
+        "dpt": "9.008",
         "data_type": "float",
         "unit": "ppm"
     },
@@ -131,7 +133,7 @@ DATA_TYPE_MAPPING = {
         "device_class": "Sensor",
         "value_attr": "resolve",
         "value_type": "special",
-        "dpt": 9,
+        "dpt": "9.020",
         "data_type": "float",
         "unit": "V"
     },
@@ -139,7 +141,7 @@ DATA_TYPE_MAPPING = {
         "device_class": "Sensor",
         "value_attr": "resolve",
         "value_type": "special",
-        "dpt": 9,
+        "dpt": "9.021",
         "data_type": "float",
         "unit": "A"
     },
@@ -147,7 +149,7 @@ DATA_TYPE_MAPPING = {
         "device_class": "Sensor",
         "value_attr": "resolve",
         "value_type": "special",
-        "dpt": 9,
+        "dpt": "9.024",
         "data_type": "float",
         "unit": "W"
     },
@@ -155,7 +157,7 @@ DATA_TYPE_MAPPING = {
         "device_class": "Sensor",
         "value_attr": "resolve",
         "value_type": "special",
-        "dpt": 9,
+        "dpt": "13.013",
         "data_type": "float",
         "unit": "kWh"
     },
