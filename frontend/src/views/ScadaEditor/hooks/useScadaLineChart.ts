@@ -201,15 +201,24 @@ export function useScadaLineChart(
     const deviceIds = collectDeviceIds()
     if (deviceIds.length === 0) return
 
-    if (injectedReader) {
-      let changed = false
-      for (const id of deviceIds) {
-        if (injectedReader.appendLatestReadingToHistory(id)) {
-          changed = true
-        }
-      }
-      if (changed) updateChartOption()
+    // 无注入 reader（如编辑器内预览）时回退全量加载，保持原有行为
+    if (!injectedReader) {
+      await loadHistoryData()
+      return
     }
+
+    // 存在无历史基线的设备（首次加载失败等）时回退全量加载，兼作失败重试
+    if (deviceIds.some((id) => !injectedReader.hasHistoryReadings(id))) {
+      await loadHistoryData()
+      return
+    }
+
+    for (const id of deviceIds) {
+      injectedReader.appendLatestReadingToHistory(id)
+    }
+    // 无条件刷新：同面板多图表共享同一设备的历史缓存，
+    // 先执行的去重追加会使后续图表的追加返回 false，若按返回值判断会漏刷新
+    updateChartOption()
   }
 
   const { start: startHistoryPolling, stop: stopHistoryPolling } = usePolling(appendHistoryData, {
@@ -218,23 +227,20 @@ export function useScadaLineChart(
     paused: scada.isEditing.value,
   })
 
-  /** 监听 devices 数据源变化：子组件挂载时 devices 可能尚未就绪（父页面轮询晚于子组件 mount），
-   * 绑定点位就绪后需重新触发数据加载，否则图表将保持空白 */
-  watch(
-    devicesSource,
-    () => {
-      if (scada.isEditing.value) return
-
-      const items = ensureSeriesItems(chartConfig.value)
-      const hasBound = items.some(
-        (item) => item.binding && resolveBoundPoint(item.binding) !== null,
-      )
-      if (hasBound) {
-        void loadHistoryData()
-      }
-    },
-    { deep: true },
+  /** 是否存在已解析的绑定点位（设备数据就绪信号） */
+  const hasResolvedBound = computed(() =>
+    ensureSeriesItems(chartConfig.value).some(
+      (item) => !!item.binding && resolveBoundPoint(item.binding) !== null,
+    ),
   )
+
+  /** 监听绑定点位解析状态从无到有：设备数据就绪时触发一次全量加载
+   * （不能用 deep watch 监听 devices：轮询每 5 秒替换设备数据会反复触发全量拉取） */
+  watch(hasResolvedBound, (has, had) => {
+    if (!scada.isEditing.value && has && !had) {
+      void loadHistoryData()
+    }
+  })
 
   watch(
     () => scada.isEditing.value,

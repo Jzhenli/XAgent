@@ -114,10 +114,22 @@ export function useScadaBarChart(
   const appendHistoryData = async () => {
     if (scada.isEditing.value || !binding.value) return
 
-    if (injectedReader) {
-      const changed = injectedReader.appendLatestReadingToHistory(binding.value.deviceId)
-      if (changed) updateChartOption()
+    // 无注入 reader（如编辑器内预览）时回退全量加载，保持原有行为
+    if (!injectedReader) {
+      await loadHistoryData()
+      return
     }
+
+    // 无历史基线（首次加载失败等）时回退全量加载，兼作失败重试
+    if (!injectedReader.hasHistoryReadings(binding.value.deviceId)) {
+      await loadHistoryData()
+      return
+    }
+
+    injectedReader.appendLatestReadingToHistory(binding.value.deviceId)
+    // 无条件刷新：同面板多图表共享同一设备的历史缓存，
+    // 先执行的去重追加会使后续图表的追加返回 false，若按返回值判断会漏刷新
+    updateChartOption()
   }
 
   const { start: startHistoryPolling, stop: stopHistoryPolling } = usePolling(appendHistoryData, {

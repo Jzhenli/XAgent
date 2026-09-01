@@ -25,6 +25,8 @@ export interface ScadaPointReader {
   fetchHistoryReadings: (asset: string, hours?: number) => Promise<Reading[]>
   /** 将 fetchDevicePoints 拿到的最新 Reading 追加到该 asset 的历史缓存，返回是否有新增 */
   appendLatestReadingToHistory: (asset: string) => boolean
+  /** 该 asset 是否已有全量历史缓存（作为增量追加的前置条件） */
+  hasHistoryReadings: (asset: string) => boolean
   getPointTrendData: (pointName: string, asset?: string) => { time: string; timestamp: number; value: number; quality: string }[]
   generateTrendData: (point: ScadaPointDisplay, hours?: number) => { time: string; timestamp: number; value: number; quality: string }[]
   writePoint: (deviceAsset: string, pointName: string, value: number | boolean | string) => Promise<{ success: boolean; message: string }>
@@ -237,10 +239,12 @@ export function useScadaPointReader(): ScadaPointReader {
     const latest = latestReadingMap.get(asset)
     if (!latest) return false
 
-    const existing = historyReadingsMap.get(asset) ?? []
+    const existing = historyReadingsMap.get(asset)
+    // 无全量历史基线时跳过：避免空缓存时只追加单条数据，应等待全量加载成功
+    if (!existing || existing.length === 0) return false
 
-    // 去重：已有相同 timestamp 或更新的 reading 则跳过
-    const lastTs = existing.length > 0 ? existing[existing.length - 1].timestamp : -1
+    // 去重：历史接口返回顺序不保证升序，需与缓存中的最大 timestamp 比较
+    const lastTs = existing.reduce((max, r) => Math.max(max, r.timestamp), -1)
     if (latest.timestamp <= lastTs) return false
 
     const updated = [...existing, latest]
@@ -250,6 +254,14 @@ export function useScadaPointReader(): ScadaPointReader {
     historyReadingsMap.set(asset, updated)
     historyReadings.value = updated
     return true
+  }
+
+  /**
+   * 判断指定 asset 是否已有全量历史缓存
+   * @param asset 设备 asset
+   */
+  function hasHistoryReadings(asset: string): boolean {
+    return (historyReadingsMap.get(asset)?.length ?? 0) > 0
   }
 
   /**
@@ -455,6 +467,7 @@ export function useScadaPointReader(): ScadaPointReader {
     refreshDevices,
     fetchHistoryReadings,
     appendLatestReadingToHistory,
+    hasHistoryReadings,
     getPointTrendData,
     generateTrendData,
     writePoint,
