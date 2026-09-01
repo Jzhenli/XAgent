@@ -50,12 +50,12 @@
             {{ channel.config.desktopEnabled ? t('alerts.enabled') : t('alerts.disabled') }}
           </span>
         </div>
-        <div class="config-item">
+        <!-- <div class="config-item">
           <span class="label">{{ t('alerts.sound') }}:</span>
           <span class="value" :class="{ enabled: channel.config.soundEnabled }">
             {{ channel.config.soundEnabled ? t('alerts.enabled') : t('alerts.disabled') }}
           </span>
-        </div>
+        </div> -->
         <div v-if="channel.config.quietHoursEnabled" class="config-item">
           <span class="label">{{ t('alerts.doNotDisturb') }}:</span>
           <span class="value">{{ channel.config.quietHoursStart }} - {{ channel.config.quietHoursEnd }}</span>
