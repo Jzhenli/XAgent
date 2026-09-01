@@ -42,7 +42,7 @@ const isEditing = ref(true)
 /** 画布缩放比例 */
 const zoom = ref(1)
 /** 是否显示画布网格 */
-const showGrid = ref(true)
+const showGrid = ref(false)
 /** 是否处于全屏预览状态 */
 const isFullscreenPreview = ref(false)
 /** 面板是否存在未保存的修改 */
