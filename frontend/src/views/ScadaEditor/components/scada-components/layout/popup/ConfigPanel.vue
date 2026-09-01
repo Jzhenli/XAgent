@@ -104,7 +104,7 @@
       <textarea
         :value="config.popupContent"
         rows="4"
-        :placeholder="config.useHtml ? '<p>支持 HTML 内容</p>' : '支持纯文本内容'"
+        :placeholder="config.useHtml ? t('componentConfig.popupContentHtmlPlaceholder') : t('componentConfig.popupContentTextPlaceholder')"
         @input="updateConfig('popupContent', ($event.target as HTMLTextAreaElement).value)"
       />
     </div>

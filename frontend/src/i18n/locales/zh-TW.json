@@ -1894,7 +1894,9 @@
     "popupContent": "彈框內容",
     "popupWidth": "彈框寬度",
     "useHtml": "使用 HTML 渲染",
-    "maskColor": "遮罩顏色"
+    "maskColor": "遮罩顏色",
+    "popupContentHtmlPlaceholder": "支援 HTML 內容，如 <p>範例</p>",
+    "popupContentTextPlaceholder": "支援純文字內容"
   },
   "scadaComponentCategories": {
     "gauge": "儀表",

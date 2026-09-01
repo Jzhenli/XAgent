@@ -10,7 +10,7 @@ const defaultConfig: PopupComponentConfig = {
   triggerText: '点击打开',
   triggerIcon: '',
   popupTitle: '标题',
-  popupContent: '<p>这是弹框内容，支持自定义 HTML。</p>',
+  popupContent: '<p> HTML </p>',
   useHtml: true,
   popupWidth: 400,
   maskColor: 'rgba(0, 0, 0, 0.5)',

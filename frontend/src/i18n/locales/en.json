@@ -1880,7 +1880,23 @@
     "selectProjectPlaceholder": "Select a project",
     "pleaseEnterTargetUrl": "Please enter target URL",
     "pleaseSelectProject": "Please select a target project",
-    "noProjects": "No projects"
+    "noProjects": "No projects",
+    "popupConfig": "Popup Config",
+    "triggerSection": "Trigger Button",
+    "triggerText": "Button Text",
+    "triggerIcon": "Button Icon",
+    "triggerFontColor": "Button Text Color",
+    "triggerBackgroundColor": "Button Background Color",
+    "triggerBorderColor": "Button Border Color",
+    "triggerBorderRadius": "Button Border Radius",
+    "popupSection": "Popup Settings",
+    "popupTitle": "Popup Title",
+    "popupContent": "Popup Content",
+    "popupWidth": "Popup Width",
+    "useHtml": "Render as HTML",
+    "maskColor": "Mask Color",
+    "popupContentHtmlPlaceholder": "Supports HTML content, e.g. <p>Hello</p>",
+    "popupContentTextPlaceholder": "Supports plain text content"
   },
   "scadaComponentCategories": {
     "gauge": "Gauges",
@@ -1913,7 +1929,8 @@
     "arc": "Arc",
     "icon": "Icon",
     "valueImageSwitch": "Value Image Switch",
-    "navButton": "Navigation Button"
+    "navButton": "Navigation Button",
+    "popup": "Popup"
   },
   "ruleNodeCategories": {
     "trigger": "Triggers",
