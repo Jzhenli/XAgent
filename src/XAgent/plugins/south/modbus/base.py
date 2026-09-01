@@ -63,6 +63,12 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
         self._last_heartbeat_time = 0
         self._last_reconnect_time: float = 0.0
 
+        # 瞬断容忍：连续 N 次连接/心跳检测失败才判定为离线并发 offline reading，
+        # 容忍期内返回 []（保留上一轮状态），避免 pymodbus 后台重连期间前端闪烁 offline。
+        self._transient_fail_count = 0
+        self.MAX_TRANSIENT_FAILURES = 3
+        self._connection_transient = False
+
         self._read_groups: List[Dict[str, Any]] = []
         self._group_points()
 
@@ -106,6 +112,15 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
             return False
 
         try:
+            # 重建连接前先释放旧 client，避免 socket/串口句柄泄漏
+            # （瞬断后 _handle_disconnected 会复用本方法重建 client，旧引用被直接覆盖）
+            if self._client is not None:
+                try:
+                    await self._disconnect_client(self._client)
+                except Exception as e:
+                    logger.debug(f"Error closing previous client for {self._asset_name}: {e}")
+                self._client = None
+
             self._client = self._create_client()
             await self._connect_client(self._client)
 
@@ -155,6 +170,10 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
         logger.debug(f"poll() called for device {self._asset_name}")
 
         if not await self._check_connection():
+            # 瞬断容忍期内：保留上一轮状态，不发 offline（避免前端闪烁）
+            if self._connection_transient:
+                logger.debug("poll: transient disconnect, skipping (pymodbus reconnecting)")
+                return []
             logger.debug("poll: connection check failed, creating offline reading")
             readings = await self._create_offline_reading()
             poll_duration = time.time() - poll_start
@@ -163,6 +182,10 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
 
         if self._heartbeat_address is not None:
             if not await self._check_heartbeat():
+                # 瞬断容忍期内：保留上一轮状态，不发 offline（避免前端闪烁）
+                if self._connection_transient:
+                    logger.debug("poll: transient heartbeat loss, skipping (pymodbus reconnecting)")
+                    return []
                 logger.debug("poll: heartbeat check failed, creating offline reading")
                 readings = await self._create_offline_reading()
                 poll_duration = time.time() - poll_start
@@ -196,15 +219,32 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
         logger.debug(f"_check_connection: client={self._client is not None}, is_connected={self.is_connected}")
 
         if not self._client:
-            logger.debug("_check_connection: no client, calling _handle_disconnected")
+            self._connection_transient = False
             return await self._handle_disconnected()
 
-        if not self.is_connected:
-            logger.debug("_check_connection: not connected, calling _handle_disconnected")
-            return await self._handle_disconnected()
+        if self.is_connected:
+            # 连接恢复：清零瞬断计数
+            self._transient_fail_count = 0
+            self._connection_transient = False
+            logger.debug("_check_connection: connection OK")
+            return True
 
-        logger.debug("_check_connection: connection OK")
-        return True
+        # connected=False 但 client 对象仍在：pymodbus 内建重连在后台进行，
+        # 视为瞬断，进入容忍窗口（不发 offline、不重建 client）。
+        self._transient_fail_count += 1
+        if self._transient_fail_count < self.MAX_TRANSIENT_FAILURES:
+            self._connection_transient = True
+            logger.debug(
+                f"_check_connection: transient disconnect "
+                f"({self._transient_fail_count}/{self.MAX_TRANSIENT_FAILURES}), "
+                f"pymodbus reconnecting in background"
+            )
+            return False
+
+        # 容忍耗尽：确认真断，走原有重连+offline 逻辑
+        self._connection_transient = False
+        logger.debug("_check_connection: disconnect persisted, rebuilding connection")
+        return await self._handle_disconnected()
 
     async def _handle_disconnected(self) -> bool:
         self._offline_counter += 1
@@ -248,10 +288,12 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
             if result.isError():
                 logger.warning(f"Heartbeat failed for {self._asset_name}: {result}")
                 self._device_online = False
-                return False
+                return self._register_transient_failure()
 
             self._last_heartbeat_time = time.time()
             self._device_online = True
+            self._transient_fail_count = 0
+            self._connection_transient = False
             return True
 
         except asyncio.CancelledError:
@@ -262,12 +304,25 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
             logger.warning(f"Heartbeat timeout for {self._asset_name} "
                           f"(address={self._heartbeat_address}, timeout={self._heartbeat_timeout}s)")
             self._device_online = False
-            return False
+            return self._register_transient_failure()
         except Exception as e:
             logger.error(f"Heartbeat error for {self._asset_name}: {e}")
             self._connected = False
             self._device_online = False
+            return self._register_transient_failure()
+
+    def _register_transient_failure(self) -> bool:
+        """记录一次瞬断失败，判断是否仍在容忍窗口内。
+
+        返回 True 表示已确认真断（调用方应发 offline reading），
+        返回 False 表示仍在瞬断容忍期（调用方应返回 []，不发 offline）。
+        """
+        self._transient_fail_count += 1
+        if self._transient_fail_count < self.MAX_TRANSIENT_FAILURES:
+            self._connection_transient = True
             return False
+        self._connection_transient = False
+        return True
 
     async def _poll_with_batch(self) -> List[Reading]:
         if not self._read_groups:

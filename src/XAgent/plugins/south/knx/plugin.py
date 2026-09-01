@@ -76,8 +76,9 @@ class KNXPlugin(SouthPluginBase):
     - tunneling: UDP隧道模式，需要gateway_ip
     - tunneling_tcp: TCP隧道模式，需要gateway_ip
     - routing: 路由模式，使用多播通信，不占用连接槽
-    - tunneling_tcp_secure: 安全TCP隧道模式
-    - routing_secure: 安全路由模式
+
+    注：secure 模式（tunneling_tcp_secure / routing_secure）尚未实现安全凭据配置，
+    暂从可选值中移除，避免用户选择后必然因缺少凭据而连接失败。
     
     注意：
     - 当指定gateway_ip时，automatic模式可能只尝试TUNNELING
@@ -96,7 +97,7 @@ class KNXPlugin(SouthPluginBase):
                 "gateway_port": {"type": "integer", "default": 3671, "title": "网关端口"},
                 "local_ip": {"type": ["string", "null"], "default": None, "title": "本地IP地址"},
                 "route_back": {"type": "boolean", "default": False, "title": "路由回传"},
-                "connection_type": {"type": "string", "default": "automatic", "enum": ["automatic", "tunneling", "tunneling_tcp", "routing", "tunneling_tcp_secure", "routing_secure"], "title": "连接模式"},
+                "connection_type": {"type": "string", "default": "automatic", "enum": ["automatic", "tunneling", "tunneling_tcp", "routing"], "title": "连接模式"},
                 "interval": {"type": "number", "default": 5, "title": "轮询间隔(秒)"},
                 "reconnect_interval": {"type": "number", "default": 5, "title": "重连间隔(秒)"},
                 "heartbeat_timeout": {"type": "number", "default": 2.0, "title": "心跳超时(秒)"},
@@ -290,8 +291,6 @@ class KNXPlugin(SouthPluginBase):
             "tunneling": _ConnectionType.TUNNELING,
             "tunneling_tcp": _ConnectionType.TUNNELING_TCP,
             "routing": _ConnectionType.ROUTING,
-            "tunneling_tcp_secure": _ConnectionType.TUNNELING_TCP_SECURE,
-            "routing_secure": _ConnectionType.ROUTING_SECURE,
         }
         
         conn_type_str = self._connection_type.lower().strip()
@@ -312,13 +311,13 @@ class KNXPlugin(SouthPluginBase):
         Args:
             conn_type_str: 连接类型字符串
         """
-        if conn_type_str in ("tunneling", "tunneling_tcp", "tunneling_tcp_secure"):
+        if conn_type_str in ("tunneling", "tunneling_tcp"):
             if not self._gateway_ip:
                 logger.warning(
                     f"Connection type '{conn_type_str}' requires gateway_ip, "
                     f"but no gateway_ip is configured"
                 )
-        elif conn_type_str in ("routing", "routing_secure"):
+        elif conn_type_str in ("routing",):
             if self._gateway_ip:
                 logger.info(
                     f"Connection type '{conn_type_str}' uses multicast, "
@@ -570,10 +569,12 @@ class KNXPlugin(SouthPluginBase):
         if not await self._reconnect_with_backoff():
             return await self._create_offline_reading()
 
-        # xknx 正在自动重连中：本轮跳过，不干扰其内部恢复
+        # xknx 正在自动重连中：本轮跳过，不干扰其内部恢复。
+        # 注意：重连中是"暂无新数据"，并非"设备离线"，不能发离线读数，
+        # 否则前端会把设备从 online 闪一下 offline 再跳回 online（误告警）。
         if await self._get_connection_state() == "CONNECTING":
             logger.debug("KNX connection is reconnecting internally, skipping this poll cycle")
-            return await self._create_offline_reading()
+            return []
 
         if not self._point_order:
             logger.warning("No points configured")
@@ -601,7 +602,10 @@ class KNXPlugin(SouthPluginBase):
                     f"Heartbeat failed ({self._heartbeat_fail_count}/"
                     f"{self.MAX_HEARTBEAT_FAILURES}), keeping connection"
                 )
-                return await self._create_offline_reading()
+                # 容忍期内保留上一轮状态，不发 offline reading——
+                # 否则瞬断(DISCONNECTED/CONNECTING)期间的抖动会让前端闪烁 offline，
+                # 与 MAX_HEARTBEAT_FAILURES 的容忍设计自相矛盾（同 #11 CONNECTING 分支）。
+                return []
             logger.error(
                 f"Heartbeat failed {self.MAX_HEARTBEAT_FAILURES} times, rebuilding KNX connection"
             )
