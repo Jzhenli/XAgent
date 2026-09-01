@@ -162,10 +162,14 @@ function buildExpressionFromConditions(
     }
   }
 
-  if (logicNodes.length > 0 && parts.length > 1) {
+  if (logicNodes.length > 0 && parts.length > 0) {
     const logicOp = logicNodes[0].data?.logic?.operator || 'and'
     if (logicOp === 'not') {
       return `not (${parts.join(' and ')})`
+    }
+    if (parts.length === 1) {
+      // 单个条件时，AND/OR 直接返回条件本身，NOT 已在上面处理
+      return parts[0]
     }
     return parts.join(` ${logicOp} `)
   }
