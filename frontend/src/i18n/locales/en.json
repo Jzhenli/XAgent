@@ -51,7 +51,9 @@
     "read": "Read",
     "description": "Description",
     "tags": "Tags",
-    "config": "Config"
+    "config": "Config",
+    "error": "Operation failed",
+    "success": "Operation succeeded"
   },
   "layout": {
     "dashboard": "Dashboard",

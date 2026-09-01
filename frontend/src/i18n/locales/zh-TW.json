@@ -51,7 +51,9 @@
     "read": "讀",
     "description": "描述",
     "tags": "標籤",
-    "config": "設定"
+    "config": "設定",
+    "error": "操作失敗",
+    "success": "操作成功"
   },
   "layout": {
     "dashboard": "監控面板",
