@@ -75,6 +75,9 @@ const { stop: stopPolling } = useScadaPolling({ interval: 5000 });
 const activeTab = ref(0);
 const panels = ref<Project[]>([]);
 
+/** 面板缓存：panelId → Project（含 data 字段），进入页面时一次 list 全部存入，离开时随组件回收 */
+const panelCache = new Map<string, Project>();
+
 /** 预览适配容器：按面板适配模式计算容器、布局框、缩放层样式 */
 const adaptContainerRef = ref<HTMLElement | null>(null);
 const {
@@ -95,7 +98,14 @@ const currentPanel = computed(() => panels.value[activeTab.value] ?? null);
 const fetchPanels = async () => {
   try {
     const res = await projectApi.list();
-    panels.value = (res.items ?? []).sort((a, b) => a.createdAt - b.createdAt);
+    const sorted = (res.items ?? []).sort((a, b) => a.createdAt - b.createdAt);
+    panels.value = sorted;
+
+    // 把 list 返回的所有项目存入缓存，后续 loadCurrentPanel 直接从缓存取
+    panelCache.clear();
+    for (const p of sorted) {
+      panelCache.set(p.id, p);
+    }
   } catch {
     ElMessage.error("加载面板列表失败");
   }
@@ -119,7 +129,8 @@ const loadCurrentPanel = async () => {
       const id = pendingPanelId;
       pendingPanelId = null;
       if (scada.currentPanelId.value !== id) {
-        await scada.loadPanel(id);
+        // list 接口保证返回完整 data：直接从缓存加载，零网络延迟
+        scada.loadPanelFromProject(panelCache.get(id)!);
       }
     }
   } finally {
@@ -168,6 +179,7 @@ onUnmounted(() => {
   document.body.classList.remove("vant-fullscreen");
 
   stopPolling();
+  panelCache.clear(); // 离开 vant 页面时清空面板缓存，释放内存
 });
 
 watch(activeTab, async () => {

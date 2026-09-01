@@ -9,6 +9,7 @@
         <el-color-picker
           :model-value="config.strokeColor"
           show-alpha
+          @active-change="(val: string | null) => { latestStrokeColor = val || '' }"
           @change="handleStrokeColorChange"
         />
       </div>
