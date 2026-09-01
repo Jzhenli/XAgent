@@ -79,9 +79,9 @@ export function useScadaBarChart(
     return pointStore.fetchHistoryReadings(asset, hours)
   }
 
-  const getPointTrendData = (pointName: string): LineChartDataPoint[] => {
+  const getPointTrendData = (pointName: string, asset?: string): LineChartDataPoint[] => {
     if (injectedReader) {
-      return injectedReader.getPointTrendData(pointName)
+      return injectedReader.getPointTrendData(pointName, asset)
     }
     return pointStore.getPointTrendData(pointName)
   }
@@ -112,6 +112,18 @@ export function useScadaBarChart(
     immediate: false,
     paused: scada.isEditing.value,
   })
+
+  /** 监听 boundPoint 变化：子组件挂载时 devices 可能尚未就绪（父页面轮询晚于子组件 mount），
+   * 绑定点位就绪后需重新触发数据加载，否则图表将保持空白 */
+  watch(
+    boundPoint,
+    (newBound, oldBound) => {
+      if (scada.isEditing.value) return
+      if (newBound && !oldBound) {
+        void loadHistoryData()
+      }
+    },
+  )
 
   watch(
     () => scada.isEditing.value,
@@ -242,7 +254,7 @@ export function useScadaBarChart(
     }
 
     if (boundPoint.value) {
-      const realData = getPointTrendData(boundPoint.value.name)
+      const realData = getPointTrendData(boundPoint.value.name, binding.value?.deviceId)
       if (realData.length > 0) {
         return realData
       }

@@ -23,7 +23,7 @@ export interface ScadaPointReader {
   fetchDevicePoints: (asset: string) => Promise<void>
   refreshDevices: (assets: string[]) => Promise<void>
   fetchHistoryReadings: (asset: string, hours?: number) => Promise<Reading[]>
-  getPointTrendData: (pointName: string) => { time: string; timestamp: number; value: number; quality: string }[]
+  getPointTrendData: (pointName: string, asset?: string) => { time: string; timestamp: number; value: number; quality: string }[]
   generateTrendData: (point: ScadaPointDisplay, hours?: number) => { time: string; timestamp: number; value: number; quality: string }[]
   writePoint: (deviceAsset: string, pointName: string, value: number | boolean | string) => Promise<{ success: boolean; message: string }>
   getDevicePoints: (deviceAsset: string) => ScadaPointDisplay[]
@@ -37,6 +37,8 @@ const devices = ref<ScadaDeviceWithPoints[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const historyReadings = ref<Reading[]>([])
+/** 按 asset 隔离的历史读数缓存：多设备同时查询时避免相互覆盖 */
+const historyReadingsMap = new Map<string, Reading[]>()
 const historyLoading = ref(false)
 const trendTimeRange = ref<'1h' | '6h' | '24h' | '7d' | '30d'>('24h')
 
@@ -202,6 +204,7 @@ export function useScadaPointReader(): ScadaPointReader {
       const endTime = Date.now() / 1000
       const startTime = endTime - hours * 3600
       const response = await dataApi.getHistoryReadings(asset, startTime, endTime, 1000)
+      historyReadingsMap.set(asset, response.readings)
       historyReadings.value = response.readings
       return response.readings
     } catch (e: unknown) {
@@ -215,11 +218,16 @@ export function useScadaPointReader(): ScadaPointReader {
   /**
    * 从历史读数中提取指定点位的趋势数据
    * @param pointName 点位名
+   * @param asset 设备 asset；传入时从对应设备的缓存读取，否则合并所有设备缓存
    */
-  function getPointTrendData(pointName: string): { time: string; timestamp: number; value: number; quality: string }[] {
+  function getPointTrendData(pointName: string, asset?: string): { time: string; timestamp: number; value: number; quality: string }[] {
     const data: { time: string; timestamp: number; value: number; quality: string }[] = []
 
-    for (const reading of historyReadings.value) {
+    const readings = asset
+      ? (historyReadingsMap.get(asset) ?? [])
+      : Array.from(historyReadingsMap.values()).flat()
+
+    for (const reading of readings) {
       const standardPoint = reading.standard_points?.find(
         (p: StandardPoint) => (p.name || p.point_name) === pointName
       )
@@ -393,6 +401,7 @@ export function useScadaPointReader(): ScadaPointReader {
     writeProtectionMap.clear()
     devices.value = []
     historyReadings.value = []
+    historyReadingsMap.clear()
     error.value = null
   }
 

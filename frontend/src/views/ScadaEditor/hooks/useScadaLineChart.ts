@@ -102,9 +102,9 @@ export function useScadaLineChart(
     return pointStore.fetchHistoryReadings(asset, hours)
   }
 
-  const getPointTrendData = (pointName: string): LineChartDataPoint[] => {
+  const getPointTrendData = (pointName: string, asset?: string): LineChartDataPoint[] => {
     if (injectedReader) {
-      return injectedReader.getPointTrendData(pointName)
+      return injectedReader.getPointTrendData(pointName, asset)
     }
     return pointStore.getPointTrendData(pointName)
   }
@@ -116,10 +116,14 @@ export function useScadaLineChart(
     return pointStore.generateTrendData(point, hours)
   }
 
+  /** 统一的设备数据源：优先使用注入的 reader，否则回退到全局 store */
+  const devicesSource = computed(() =>
+    injectedReader ? injectedReader.devices.value : pointStore.devices,
+  )
+
   const resolveBoundPoint = (bind: PointBinding | null): any | null => {
     if (!bind) return null
-    const devices = injectedReader ? injectedReader.devices.value : pointStore.devices
-    const device = devices.find(
+    const device = devicesSource.value.find(
       (d: any) => d.asset === bind.deviceId || d.name === bind.deviceId,
     )
     if (!device) return null
@@ -145,7 +149,7 @@ export function useScadaLineChart(
           hours,
         )
       } else if (bound) {
-        const realData = getPointTrendData(bound.name)
+        const realData = getPointTrendData(bound.name, item.binding?.deviceId)
         if (realData.length > 0) {
           data = realData
         } else {
@@ -192,6 +196,24 @@ export function useScadaLineChart(
     immediate: false,
     paused: scada.isEditing.value,
   })
+
+  /** 监听 devices 数据源变化：子组件挂载时 devices 可能尚未就绪（父页面轮询晚于子组件 mount），
+   * 绑定点位就绪后需重新触发数据加载，否则图表将保持空白 */
+  watch(
+    devicesSource,
+    () => {
+      if (scada.isEditing.value) return
+
+      const items = ensureSeriesItems(chartConfig.value)
+      const hasBound = items.some(
+        (item) => item.binding && resolveBoundPoint(item.binding) !== null,
+      )
+      if (hasBound) {
+        void loadHistoryData()
+      }
+    },
+    { deep: true },
+  )
 
   watch(
     () => scada.isEditing.value,
