@@ -339,7 +339,7 @@ onMounted(async () => {
 }
 
 .toolbar-filter {
-  width: 120px;
+  width: 150px;
 }
 
 .stat-item {

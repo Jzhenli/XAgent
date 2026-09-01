@@ -7,8 +7,8 @@ const defaultConfig: EnumValueComponentConfig = {
   height: 40,
   value: 1,
   enumItems: [
-    { text: '一级', value: 1 },
-    { text: '二级', value: 2 },
+    { text: '1', value: 1 },
+    { text: '2', value: 2 },
   ],
   fontSize: 24,
   fontColor: '#000000',
