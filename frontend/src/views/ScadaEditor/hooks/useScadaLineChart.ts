@@ -191,7 +191,28 @@ export function useScadaLineChart(
     }
   }
 
-  const { start: startHistoryPolling, stop: stopHistoryPolling } = usePolling(loadHistoryData, {
+  /**
+   * 增量追加最新 Reading 到历史缓存（复用 fetchDevicePoints 已拿到的数据）
+   * 用于 30 秒轮询，避免每轮拉 1000 条全量历史
+   */
+  const appendHistoryData = async () => {
+    if (scada.isEditing.value) return
+
+    const deviceIds = collectDeviceIds()
+    if (deviceIds.length === 0) return
+
+    if (injectedReader) {
+      let changed = false
+      for (const id of deviceIds) {
+        if (injectedReader.appendLatestReadingToHistory(id)) {
+          changed = true
+        }
+      }
+      if (changed) updateChartOption()
+    }
+  }
+
+  const { start: startHistoryPolling, stop: stopHistoryPolling } = usePolling(appendHistoryData, {
     interval: 30000,
     immediate: false,
     paused: scada.isEditing.value,
