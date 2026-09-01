@@ -16,8 +16,13 @@
       </div>
     </div>
 
+    <div v-if="isInitializing" class="loading-state">
+      <el-icon class="loading-spin" :size="28"><Loading /></el-icon>
+      <span>{{ t('common.loading') }}</span>
+    </div>
+
     <div
-      v-if="panels.length > 0"
+      v-else-if="panels.length > 0"
       class="slide-wrapper"
       @touchstart.passive="onTouchStart"
       @touchmove.passive="onTouchMove"
@@ -46,13 +51,14 @@
     </div>
 
     <div v-else class="empty-state">
-      <span>无面板</span>
+      <span>{{ t('vant.noPanel') }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { useScadaEditor } from "@/views/ScadaEditor/hooks/useScadaEditor";
@@ -60,13 +66,14 @@ import { useScadaAdapt } from "@/views/ScadaEditor/hooks/useScadaAdapt";
 import { useScadaPolling } from "@/views/ScadaEditor/hooks/useScadaBinding";
 import { projectApi } from "@/api/projects";
 import type { Project } from "@/types/project";
-import { ArrowLeft } from "@element-plus/icons-vue";
+import { ArrowLeft, Loading } from "@element-plus/icons-vue";
 import ScadaCanvas from "@/views/ScadaEditor/components/ScadaCanvas.vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
 import { useSwipe } from "./composables/useSwipe";
 import { useKeyboardShortcuts } from "./composables/useKeyboardShortcuts";
 
 const router = useRouter();
+const { t } = useI18n();
 const scada = useScadaEditor();
 
 /** 启动当前面板绑定设备的周期性数据刷新，返回 stop 用于组件卸载时清理 */
@@ -74,6 +81,7 @@ const { stop: stopPolling } = useScadaPolling({ interval: 5000 });
 
 const activeTab = ref(0);
 const panels = ref<Project[]>([]);
+const isInitializing = ref(true);
 
 /** 面板缓存：panelId → Project（含 data 字段），进入页面时一次 list 全部存入，离开时随组件回收 */
 const panelCache = new Map<string, Project>();
@@ -89,7 +97,7 @@ const {
 const tabs = computed(() =>
   panels.value.map((panel) => ({
     key: panel.id,
-    name: panel.name || "无面板",
+    name: panel.name || t('vant.noPanel'),
   })),
 );
 
@@ -107,7 +115,7 @@ const fetchPanels = async () => {
       panelCache.set(p.id, p);
     }
   } catch {
-    ElMessage.error("加载面板列表失败");
+    ElMessage.error(t('vant.loadPanelsFailed'));
   }
 };
 
@@ -165,7 +173,11 @@ onMounted(async () => {
   scada.zoom.value = 1;
   document.body.classList.add("vant-fullscreen");
 
-  await fetchPanels();
+  try {
+    await fetchPanels();
+  } finally {
+    isInitializing.value = false;
+  }
 
   if (panels.value.length > 0) {
     activeTab.value = 0;
@@ -278,6 +290,27 @@ watch(activeTab, async () => {
 
 .adapt-canvas-scale {
   transform-origin: top left;
+}
+
+.loading-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.loading-spin {
+  animation: vant-loading-spin 1s linear infinite;
+}
+
+@keyframes vant-loading-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .empty-state {

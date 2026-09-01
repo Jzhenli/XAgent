@@ -2137,5 +2137,9 @@
     "cmdSent": "寫值指令已下發 (指令ID: {id})",
     "statusAbnormal": "指令狀態異常: {status}",
     "failed": "寫值失敗"
+  },
+  "vant": {
+    "noPanel": "無面板",
+    "loadPanelsFailed": "載入面板列表失敗"
   }
 }

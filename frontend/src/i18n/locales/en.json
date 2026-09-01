@@ -2137,5 +2137,9 @@
     "cmdSent": "Write command sent (ID: {id})",
     "statusAbnormal": "Command status abnormal: {status}",
     "failed": "Write failed"
+  },
+  "vant": {
+    "noPanel": "No Panels",
+    "loadPanelsFailed": "Failed to load panel list"
   }
 }

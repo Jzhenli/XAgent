@@ -2137,5 +2137,9 @@
     "cmdSent": "写值命令已下发 (命令ID: {id})",
     "statusAbnormal": "命令状态异常: {status}",
     "failed": "写值失败"
+  },
+  "vant": {
+    "noPanel": "无面板",
+    "loadPanelsFailed": "加载面板列表失败"
   }
 }
