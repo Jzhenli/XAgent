@@ -18,12 +18,18 @@ export interface ScadaPointReader {
   error: Ref<string | null>
   historyReadings: Ref<Reading[]>
   historyLoading: Ref<boolean>
+  /** 历史缓存版本号：每次 appendLatestReadingToHistory 成功追加后递增 */
+  historyVersion: Ref<number>
   allPoints: ComputedRef<(ScadaPointDisplay & { deviceAsset: string; deviceName: string })[]>
   fetchDevicesWithPoints: () => Promise<void>
   fetchDevicePoints: (asset: string) => Promise<void>
   refreshDevices: (assets: string[]) => Promise<void>
   fetchHistoryReadings: (asset: string, hours?: number) => Promise<Reading[]>
-  getPointTrendData: (pointName: string) => { time: string; timestamp: number; value: number; quality: string }[]
+  /** 将 fetchDevicePoints 拿到的最新 Reading 追加到该 asset 的历史缓存，返回是否有新增 */
+  appendLatestReadingToHistory: (asset: string) => boolean
+  /** 该 asset 是否已有全量历史缓存（作为增量追加的前置条件） */
+  hasHistoryReadings: (asset: string) => boolean
+  getPointTrendData: (pointName: string, asset?: string) => { time: string; timestamp: number; value: number; quality: string }[]
   generateTrendData: (point: ScadaPointDisplay, hours?: number) => { time: string; timestamp: number; value: number; quality: string }[]
   writePoint: (deviceAsset: string, pointName: string, value: number | boolean | string) => Promise<{ success: boolean; message: string }>
   getDevicePoints: (deviceAsset: string) => ScadaPointDisplay[]
@@ -37,8 +43,14 @@ const devices = ref<ScadaDeviceWithPoints[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const historyReadings = ref<Reading[]>([])
+/** 按 asset 隔离的历史读数缓存：多设备同时查询时避免相互覆盖 */
+const historyReadingsMap = new Map<string, Reading[]>()
+/** 按 asset 缓存 fetchDevicePoints 拿到的最新 Reading：供增量追加历史数据使用 */
+const latestReadingMap = new Map<string, Reading>()
 const historyLoading = ref(false)
 const trendTimeRange = ref<'1h' | '6h' | '24h' | '7d' | '30d'>('24h')
+/** 历史缓存版本号：每次 appendLatestReadingToHistory 成功追加后递增，图表组件可监听此 ref 触发增量刷新 */
+const historyVersion = ref(0)
 
 const writeProtectionMap = new Map<string, { value: any; expiresAt: number }>()
 const WRITE_PROTECTION_DURATION = 10000
@@ -141,6 +153,11 @@ export function useScadaPointReader(): ScadaPointReader {
       const points = pointsResult.status === 'fulfilled' ? pointsResult.value : []
       const readings = readingsResult.status === 'fulfilled' ? readingsResult.value.readings : []
 
+      // 保存最新 Reading 到缓存，供增量追加历史数据使用
+      if (readings.length > 0) {
+        latestReadingMap.set(asset, readings[0])
+      }
+
       let readingData: ReadingData | undefined
       if (readings.length > 0) {
         const reading = readings[0]
@@ -202,6 +219,7 @@ export function useScadaPointReader(): ScadaPointReader {
       const endTime = Date.now() / 1000
       const startTime = endTime - hours * 3600
       const response = await dataApi.getHistoryReadings(asset, startTime, endTime, 1000)
+      historyReadingsMap.set(asset, response.readings)
       historyReadings.value = response.readings
       return response.readings
     } catch (e: unknown) {
@@ -212,14 +230,59 @@ export function useScadaPointReader(): ScadaPointReader {
     }
   }
 
+  /** 历史缓存最大条数 */
+  const MAX_HISTORY_SIZE = 1000
+
+  /**
+   * 将 fetchDevicePoints 拿到的最新 Reading 追加到指定 asset 的历史缓存
+   * 自动按 timestamp 去重、排序、截断到 MAX_HISTORY_SIZE 条
+   * @param asset 设备 asset
+   * @returns 是否有新增数据被追加
+   */
+  function appendLatestReadingToHistory(asset: string): boolean {
+    const latest = latestReadingMap.get(asset)
+    if (!latest) return false
+
+    const existing = historyReadingsMap.get(asset)
+    // 无全量历史基线时跳过：避免空缓存时只追加单条数据，应等待全量加载成功
+    if (!existing || existing.length === 0) return false
+
+    // 去重：历史接口返回顺序不保证升序，需与缓存中的最大 timestamp 比较
+    const lastTs = existing.reduce((max, r) => Math.max(max, r.timestamp), -1)
+    if (latest.timestamp <= lastTs) return false
+
+    const updated = [...existing, latest]
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .slice(-MAX_HISTORY_SIZE)
+
+    historyReadingsMap.set(asset, updated)
+    historyReadings.value = updated
+    // 通知所有监听者历史缓存已更新
+    historyVersion.value++
+    return true
+  }
+
+  /**
+   * 判断指定 asset 是否已有全量历史缓存
+   * @param asset 设备 asset
+   */
+  function hasHistoryReadings(asset: string): boolean {
+    return (historyReadingsMap.get(asset)?.length ?? 0) > 0
+  }
+
   /**
    * 从历史读数中提取指定点位的趋势数据
    * @param pointName 点位名
+   * @param asset 设备 asset；传入时从对应设备的缓存读取，否则合并所有设备缓存
    */
-  function getPointTrendData(pointName: string): { time: string; timestamp: number; value: number; quality: string }[] {
+  function getPointTrendData(pointName: string, asset?: string): { time: string; timestamp: number; value: number; quality: string }[] {
     const data: { time: string; timestamp: number; value: number; quality: string }[] = []
 
-    for (const reading of historyReadings.value) {
+    const readings = asset
+      ? (historyReadingsMap.get(asset) ?? [])
+      : Array.from(historyReadingsMap.values()).flat()
+
+    for (const reading of readings) {
       const standardPoint = reading.standard_points?.find(
         (p: StandardPoint) => (p.name || p.point_name) === pointName
       )
@@ -393,6 +456,8 @@ export function useScadaPointReader(): ScadaPointReader {
     writeProtectionMap.clear()
     devices.value = []
     historyReadings.value = []
+    historyReadingsMap.clear()
+    latestReadingMap.clear()
     error.value = null
   }
 
@@ -402,11 +467,14 @@ export function useScadaPointReader(): ScadaPointReader {
     error,
     historyReadings,
     historyLoading,
+    historyVersion,
     allPoints,
     fetchDevicesWithPoints,
     fetchDevicePoints,
     refreshDevices,
     fetchHistoryReadings,
+    appendLatestReadingToHistory,
+    hasHistoryReadings,
     getPointTrendData,
     generateTrendData,
     writePoint,

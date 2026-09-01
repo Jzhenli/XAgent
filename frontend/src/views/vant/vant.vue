@@ -16,64 +16,80 @@
       </div>
     </div>
 
+    <div v-if="isInitializing" class="loading-state">
+      <el-icon class="loading-spin" :size="28"><Loading /></el-icon>
+      <span>{{ t('common.loading') }}</span>
+    </div>
+
     <div
-      v-if="panels.length > 0"
+      v-else-if="panels.length > 0"
       class="slide-wrapper"
-      @touchstart.passive="onTouchStart"
+      @touchstart.passive="handleTouchStart"
       @touchmove.passive="onTouchMove"
-      @touchend.passive="onTouchEnd"
+      @touchend.passive="handleTouchEnd"
+      @touchcancel.passive="handleTouchCancel"
     >
       <div
         ref="adaptContainerRef"
         class="slide-page"
         :style="currentPanel?.type === 'Dashboard' ? adaptContainerStyle : undefined"
       >
-        <div
-          v-if="currentPanel?.type === 'Dashboard'"
-          class="adapt-canvas-frame"
-          :style="adaptFrameStyle"
-        >
-          <div class="adapt-canvas-scale" :style="adaptScaleStyle">
-            <ScadaCanvas :key="`dashboard-${currentPanel.id}`" />
+        <template v-if="isPanelRendered">
+          <div
+            v-if="currentPanel?.type === 'Dashboard'"
+            class="adapt-canvas-frame"
+            :style="adaptFrameStyle"
+          >
+            <div class="adapt-canvas-scale" :style="adaptScaleStyle">
+              <ScadaCanvas :key="`dashboard-${currentPanel.id}`" />
+            </div>
           </div>
-        </div>
-        <GraphicSingle
-          v-else
-          :project="currentPanel"
-          :key="`graphic-${currentPanel.id}`"
-        />
+          <GraphicSingle
+            v-else
+            :project="currentPanel"
+            :key="`graphic-${currentPanel.id}`"
+          />
+        </template>
       </div>
     </div>
 
     <div v-else class="empty-state">
-      <span>无面板</span>
+      <span>{{ t('vant.noPanel') }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, provide, nextTick } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { useScadaEditor } from "@/views/ScadaEditor/hooks/useScadaEditor";
 import { useScadaAdapt } from "@/views/ScadaEditor/hooks/useScadaAdapt";
 import { useScadaPolling } from "@/views/ScadaEditor/hooks/useScadaBinding";
+import { useScadaPointReader, ScadaPointReaderKey } from "@/utils/scadaPointReader";
 import { projectApi } from "@/api/projects";
 import type { Project } from "@/types/project";
-import { ArrowLeft } from "@element-plus/icons-vue";
+import { ArrowLeft, Loading } from "@element-plus/icons-vue";
 import ScadaCanvas from "@/views/ScadaEditor/components/ScadaCanvas.vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
 import { useSwipe } from "./composables/useSwipe";
 import { useKeyboardShortcuts } from "./composables/useKeyboardShortcuts";
 
 const router = useRouter();
+const { t } = useI18n();
 const scada = useScadaEditor();
 
+/** ScadaPointReader：provide 给子组件（折线图/柱状图等）统一使用，历史缓存按 asset 隔离 */
+const pointReader = useScadaPointReader();
+provide(ScadaPointReaderKey, pointReader);
+
 /** 启动当前面板绑定设备的周期性数据刷新，返回 stop 用于组件卸载时清理 */
-const { stop: stopPolling } = useScadaPolling({ interval: 5000 });
+const { stop: stopPolling, pause: pausePolling, resume: resumePolling } = useScadaPolling({ interval: 5000, reader: pointReader });
 
 const activeTab = ref(0);
 const panels = ref<Project[]>([]);
+const isInitializing = ref(true);
 
 /** 面板缓存：panelId → Project（含 data 字段），进入页面时一次 list 全部存入，离开时随组件回收 */
 const panelCache = new Map<string, Project>();
@@ -89,11 +105,22 @@ const {
 const tabs = computed(() =>
   panels.value.map((panel) => ({
     key: panel.id,
-    name: panel.name || "无面板",
+    name: panel.name || t('vant.noPanel'),
   })),
 );
 
 const currentPanel = computed(() => panels.value[activeTab.value] ?? null);
+
+/** 已渲染（挂载）的面板 ID：切换时先卸载旧面板内容，下一帧再挂载新面板 */
+const renderedPanelId = ref<string | null>(null);
+
+/** 面板内容渲染条件：目标面板已加载完成才挂载，切换期间保持卸载态 */
+const isPanelRendered = computed(
+  () => currentPanel.value !== null && currentPanel.value.id === renderedPanelId.value,
+);
+
+/** 等待下一帧：把“卸载旧面板”与“挂载新面板”拆到不同帧，避免单帧长任务造成滑动卡顿 */
+const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 const fetchPanels = async () => {
   try {
@@ -107,7 +134,7 @@ const fetchPanels = async () => {
       panelCache.set(p.id, p);
     }
   } catch {
-    ElMessage.error("加载面板列表失败");
+    ElMessage.error(t('vant.loadPanelsFailed'));
   }
 };
 
@@ -123,18 +150,27 @@ const loadCurrentPanel = async () => {
   if (isLoadingPanel) return;
 
   isLoadingPanel = true;
+  // 切换期间暂停轮询：挂载过程中数据回包触发的整页重渲染会加剧掉帧
+  pausePolling();
   try {
     // 串行加载并合并连续切换：保证最后一次加载最终生效
     while (pendingPanelId !== null) {
       const id = pendingPanelId;
       pendingPanelId = null;
-      if (scada.currentPanelId.value !== id) {
-        // list 接口保证返回完整 data：直接从缓存加载，零网络延迟
+      if (renderedPanelId.value !== id) {
+        // 第一帧：卸载旧面板内容（快）
+        renderedPanelId.value = null;
+        await nextFrame();
+        // 下一帧：list 接口保证返回完整 data，直接从缓存加载，零网络延迟
         scada.loadPanelFromProject(panelCache.get(id)!);
+        renderedPanelId.value = id;
+        // 等待 Vue 完成 DOM 更新，确保面板完全挂载后再恢复轮询
+        await nextTick();
       }
     }
   } finally {
     isLoadingPanel = false;
+    resumePolling();
   }
 };
 
@@ -153,6 +189,26 @@ const { onTouchStart, onTouchMove, onTouchEnd } = useSwipe(
   () => switchTab(-1),
 );
 
+/** 手势开始：暂停轮询，避免数据回包触发的重渲染与手指滑动争抢主线程 */
+const handleTouchStart = (e: TouchEvent) => {
+  pausePolling();
+  onTouchStart(e);
+};
+
+/** 手势结束：未触发面板切换时立即恢复轮询；发生切换则由 loadCurrentPanel 挂载完成后恢复 */
+const handleTouchEnd = () => {
+  const prevTab = activeTab.value;
+  onTouchEnd();
+  if (activeTab.value === prevTab) {
+    resumePolling();
+  }
+};
+
+/** 手势被系统接管（如滚动打断）时不判定滑动，仅恢复轮询，避免暂停状态泄漏 */
+const handleTouchCancel = () => {
+  resumePolling();
+};
+
 useKeyboardShortcuts({
   Escape: exit,
   ArrowLeft: () => switchTab(-1),
@@ -165,7 +221,11 @@ onMounted(async () => {
   scada.zoom.value = 1;
   document.body.classList.add("vant-fullscreen");
 
-  await fetchPanels();
+  try {
+    await fetchPanels();
+  } finally {
+    isInitializing.value = false;
+  }
 
   if (panels.value.length > 0) {
     activeTab.value = 0;
@@ -179,6 +239,7 @@ onUnmounted(() => {
   document.body.classList.remove("vant-fullscreen");
 
   stopPolling();
+  pointReader.clearDevices(); // 离开 vant 页面时清空 historyReadingsMap + latestReadingMap
   panelCache.clear(); // 离开 vant 页面时清空面板缓存，释放内存
 });
 
@@ -278,6 +339,27 @@ watch(activeTab, async () => {
 
 .adapt-canvas-scale {
   transform-origin: top left;
+}
+
+.loading-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.loading-spin {
+  animation: vant-loading-spin 1s linear infinite;
+}
+
+@keyframes vant-loading-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .empty-state {

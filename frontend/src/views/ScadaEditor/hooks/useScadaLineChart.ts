@@ -90,6 +90,8 @@ export function useScadaLineChart(
   const containerRef = ref<HTMLDivElement | null>(null)
   let chartInstance: EChartsType | null = null
   let resizeObserver: ResizeObserver | null = null
+  /** 是否已完成首次完整 option 渲染：true 后数据刷新用 merge 模式仅更新 series */
+  let hasInitialized = false
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // 数据加载工具
@@ -102,9 +104,9 @@ export function useScadaLineChart(
     return pointStore.fetchHistoryReadings(asset, hours)
   }
 
-  const getPointTrendData = (pointName: string): LineChartDataPoint[] => {
+  const getPointTrendData = (pointName: string, asset?: string): LineChartDataPoint[] => {
     if (injectedReader) {
-      return injectedReader.getPointTrendData(pointName)
+      return injectedReader.getPointTrendData(pointName, asset)
     }
     return pointStore.getPointTrendData(pointName)
   }
@@ -116,10 +118,14 @@ export function useScadaLineChart(
     return pointStore.generateTrendData(point, hours)
   }
 
+  /** 统一的设备数据源：优先使用注入的 reader，否则回退到全局 store */
+  const devicesSource = computed(() =>
+    injectedReader ? injectedReader.devices.value : pointStore.devices,
+  )
+
   const resolveBoundPoint = (bind: PointBinding | null): any | null => {
     if (!bind) return null
-    const devices = injectedReader ? injectedReader.devices.value : pointStore.devices
-    const device = devices.find(
+    const device = devicesSource.value.find(
       (d: any) => d.asset === bind.deviceId || d.name === bind.deviceId,
     )
     if (!device) return null
@@ -145,7 +151,7 @@ export function useScadaLineChart(
           hours,
         )
       } else if (bound) {
-        const realData = getPointTrendData(bound.name)
+        const realData = getPointTrendData(bound.name, item.binding?.deviceId)
         if (realData.length > 0) {
           data = realData
         } else {
@@ -187,11 +193,69 @@ export function useScadaLineChart(
     }
   }
 
-  const { start: startHistoryPolling, stop: stopHistoryPolling } = usePolling(loadHistoryData, {
+  /**
+   * 增量追加最新 Reading 到历史缓存（复用 fetchDevicePoints 已拿到的数据）
+   * 用于 30 秒轮询，避免每轮拉 1000 条全量历史
+   */
+  const appendHistoryData = async () => {
+    if (scada.isEditing.value) return
+
+    const deviceIds = collectDeviceIds()
+    if (deviceIds.length === 0) return
+
+    // 无注入 reader（如编辑器内预览）时回退全量加载，保持原有行为
+    if (!injectedReader) {
+      await loadHistoryData()
+      return
+    }
+
+    // 存在无历史基线的设备（首次加载失败等）时回退全量加载，兼作失败重试
+    if (deviceIds.some((id) => !injectedReader.hasHistoryReadings(id))) {
+      await loadHistoryData()
+      return
+    }
+
+    for (const id of deviceIds) {
+      injectedReader.appendLatestReadingToHistory(id)
+    }
+    // 无条件刷新：同面板多图表共享同一设备的历史缓存，
+    // 先执行的去重追加会使后续图表的追加返回 false，若按返回值判断会漏刷新
+    updateChartOption()
+  }
+
+  const { start: startHistoryPolling, stop: stopHistoryPolling } = usePolling(appendHistoryData, {
     interval: 30000,
     immediate: false,
     paused: scada.isEditing.value,
   })
+
+  /** 是否存在已解析的绑定点位（设备数据就绪信号） */
+  const hasResolvedBound = computed(() =>
+    ensureSeriesItems(chartConfig.value).some(
+      (item) => !!item.binding && resolveBoundPoint(item.binding) !== null,
+    ),
+  )
+
+  /** 监听绑定点位解析状态从无到有：设备数据就绪时触发一次全量加载
+   * （不能用 deep watch 监听 devices：轮询每 5 秒替换设备数据会反复触发全量拉取） */
+  watch(hasResolvedBound, (has, had) => {
+    if (!scada.isEditing.value && has && !had) {
+      void loadHistoryData()
+    }
+  })
+
+  /** 监听历史缓存版本号：上层统一追加最新读数后递增，触发图表增量刷新
+   * （vant 预览模式下由 5s 设备轮询驱动，编辑器内预览时仍靠组件自身 30s 轮询） */
+  if (injectedReader) {
+    watch(
+      () => injectedReader!.historyVersion.value,
+      () => {
+        if (!scada.isEditing.value) {
+          updateChartOption()
+        }
+      },
+    )
+  }
 
   watch(
     () => scada.isEditing.value,
@@ -220,7 +284,7 @@ export function useScadaLineChart(
       if (!scada.isEditing.value) {
         void loadHistoryData()
       } else {
-        updateChartOption()
+        updateChartOption(true)
       }
     },
     { deep: true },
@@ -273,7 +337,7 @@ export function useScadaLineChart(
   watch(
     () => chartConfig.value,
     () => {
-      updateChartOption()
+      updateChartOption(true)
     },
     { deep: true },
   )
@@ -438,7 +502,11 @@ export function useScadaLineChart(
     })
   }
 
-  const updateChartOption = () => {
+  /**
+   * 更新图表 option
+   * @param full true=完整重建（配置变更/首次渲染）；false=仅增量更新 xAxis + series 数据
+   */
+  const updateChartOption = (full = false) => {
     if (!chartInstance) return
 
     const cfg = chartConfig.value
@@ -447,27 +515,37 @@ export function useScadaLineChart(
 
     if (!hasData) {
       chartInstance.clear()
+      hasInitialized = false
       return
     }
 
     const xAxisData = buildXAxisData(allSeries, cfg)
-    const showLegend = !!cfg.showLegend
 
-    const option: EChartsOption = {
-      grid: buildGrid(showLegend),
-      xAxis: buildXAxisOption(cfg, xAxisData),
-      yAxis: buildYAxisOption(cfg),
-      legend: buildLegendOption(cfg, allSeries),
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'line',
+    if (full || !hasInitialized) {
+      // 首次渲染 / 配置变更：完整 option + notMerge，确保 grid/yAxis/legend 等静态配置正确
+      const showLegend = !!cfg.showLegend
+      const option: EChartsOption = {
+        grid: buildGrid(showLegend),
+        xAxis: buildXAxisOption(cfg, xAxisData),
+        yAxis: buildYAxisOption(cfg),
+        legend: buildLegendOption(cfg, allSeries),
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'line',
+          },
         },
-      },
-      series: buildSeriesOption(cfg, allSeries),
+        series: buildSeriesOption(cfg, allSeries),
+      }
+      chartInstance.setOption(option, true)
+      hasInitialized = true
+    } else {
+      // 数据刷新：merge 模式仅更新 xAxis.data + series，避免重复重建静态配置
+      chartInstance.setOption({
+        xAxis: { data: xAxisData },
+        series: buildSeriesOption(cfg, allSeries),
+      })
     }
-
-    chartInstance.setOption(option, true)
   }
 
   return {

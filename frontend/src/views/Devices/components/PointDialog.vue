@@ -13,7 +13,7 @@
         ref="formRef"
         :model="form"
         :rules="pointFormRules"
-        label-width="100px"
+        label-width="130px"
         label-position="left"
       >
         <!-- 基础信息 -->

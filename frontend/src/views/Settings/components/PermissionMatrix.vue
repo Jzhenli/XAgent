@@ -11,7 +11,7 @@
           <el-option
             v-for="role in userStore.permissionMatrix?.roles || []"
             :key="role.name"
-            :label="role.display_name"
+            :label="getRoleLabel(role)"
             :value="role.name"
           />
         </el-select>
@@ -137,11 +137,28 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { Edit, Check, Close } from "@element-plus/icons-vue";
 import { useUserStore } from "@/stores/users";
 import { usePermissionMatrix } from "../composables/usePermissionMatrix";
 
+const { t, te } = useI18n();
 const userStore = useUserStore();
+
+/**
+ * 获取角色的本地化显示名称：若为内置角色且 display_name 未被用户修改，则翻译；
+ * 否则保留后端返回的原始值（用户自定义角色或已被用户改名的内置角色）。
+ */
+function getRoleLabel(role: { name: string; display_name?: string }): string {
+  const key = `settings.role.builtin.${role.name}.display_name`;
+  if (te(key)) {
+    const zhRef = t(key, {}, { locale: "zh-CN" });
+    if (role.display_name === zhRef) {
+      return t(key);
+    }
+  }
+  return role.display_name ?? role.name;
+}
 
 const {
   activePermissionRole,

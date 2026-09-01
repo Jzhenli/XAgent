@@ -2,10 +2,10 @@
   <el-dialog
     v-model="visible"
     :title="$t('scada.newProject')"
-    width="500px"
+    width="600px"
     class="x-dialog"
   >
-    <el-form label-width="80px">
+    <el-form label-width="150px" label-position="left">
       <el-form-item :label="$t('scada.projectName')" required>
         <el-input v-model="name" :placeholder="$t('scada.enterProjectName')" />
       </el-form-item>

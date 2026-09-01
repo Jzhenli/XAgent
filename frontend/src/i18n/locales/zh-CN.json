@@ -51,7 +51,9 @@
     "read": "读",
     "description": "描述",
     "tags": "标签",
-    "config": "配置"
+    "config": "配置",
+    "error": "操作失败",
+    "success": "操作成功"
   },
   "layout": {
     "dashboard": "监控面板",
@@ -2137,5 +2139,9 @@
     "cmdSent": "写值命令已下发 (命令ID: {id})",
     "statusAbnormal": "命令状态异常: {status}",
     "failed": "写值失败"
+  },
+  "vant": {
+    "noPanel": "无面板",
+    "loadPanelsFailed": "加载面板列表失败"
   }
 }

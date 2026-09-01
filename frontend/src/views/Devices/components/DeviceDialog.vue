@@ -12,7 +12,7 @@
       ref="formRefInternal"
       :model="form"
       :rules="deviceFormRules"
-      label-width="100px"
+      label-width="130px"
       label-position="left"
     >
       <!-- 基础信息 -->

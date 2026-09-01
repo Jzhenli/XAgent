@@ -131,7 +131,7 @@ const e = {
   2408: "Chiller",
   2409: "Boiler",
   2410: "Water pump",
-  2411: "valve",
+  2411: "Valve",
   2412: "Ventilation Duct",
   2413: "Duct mounted sensor",
   2414: "Air coil",
@@ -498,7 +498,8 @@ const e = {
   3777: "Number Label",
   3778: "Switch",
   3779: "Number Input",
-  3780: "Numeric Value"
+  3780: "Numeric Value",
+  3781: "Status Sensor"
 };
 export {
   e as default

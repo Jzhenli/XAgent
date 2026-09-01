@@ -105,12 +105,15 @@ export function graphToExpression(nodes: RuleNode[]): string {
   })
   
   if (conditionExprs.length > 0) {
-    if (logicNodes.length > 0 && conditionExprs.length > 1) {
+    if (logicNodes.length > 0 && conditionExprs.length > 0) {
       const logicNode = logicNodes[0]
       const op = logicNode.data?.logic?.operator || 'and'
       
       if (op === 'not') {
         parts.push(`not (${conditionExprs.join(' and ')})`)
+      } else if (conditionExprs.length === 1) {
+        // 单个条件时，AND/OR 直接返回条件本身
+        parts.push(conditionExprs[0])
       } else {
         parts.push(conditionExprs.join(` ${op} `))
       }

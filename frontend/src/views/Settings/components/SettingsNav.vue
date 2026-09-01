@@ -137,6 +137,9 @@ function handleSelect(key: string) {
   border-right: none;
   background: transparent;
   color: var(--text-primary);
+  --el-menu-text-color: var(--text-primary);
+  --el-menu-hover-text-color: var(--text-primary);
+  --el-menu-active-color: #ffffff;
 }
 
 .settings-sidebar .el-menu-item {
@@ -147,7 +150,7 @@ function handleSelect(key: string) {
 .settings-sidebar .el-menu-item:hover,
 .settings-sidebar .el-menu-item.is-active {
   background: rgba(102, 102, 255, 1);
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .settings-tabs {

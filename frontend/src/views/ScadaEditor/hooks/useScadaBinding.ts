@@ -108,11 +108,12 @@ export function useScadaBinding(
     }
   }
 
-  // 监听绑定点位引用及当前值变化，自动更新显示值
-  // （不用 deep watch：轮询每次整体替换 devices 数组，deep 会遍历每个点位对象，
-  //   画布组件数量多时每轮轮询产生大量无意义深度比较）
+  // 监听绑定点位引用变化（组件绑定的设备/点位变了）
+  watch(boundPoint, updateCurrentValue)
+  // 监听点位当前值变化（原始值比较，只有值真正变了才触发；
+  //   devices 整体替换时 boundPoint computed 返回的 currentValue 若未变化则不触发）
   watch(
-    () => [boundPoint.value, boundPoint.value?.currentValue] as const,
+    () => boundPoint.value?.currentValue,
     updateCurrentValue
   )
   watch(() => scada.isEditing.value, updateCurrentValue)
@@ -243,9 +244,17 @@ export function useScadaPolling(options: UseScadaPollingOptions = {}) {
       effectiveReader ? effectiveReader.fetchDevicePoints(asset) : pointStore.fetchDevicePoints(asset)
 
     await Promise.allSettled(targets.map(fetcher))
+
+    // 追加最新读数到历史缓存（appendLatestReadingToHistory 内部有去重+基线检查，
+    // 无历史基线时自动跳过，成功追加后 historyVersion 自动递增触发图表增量刷新）
+    if (effectiveReader) {
+      for (const asset of targets) {
+        effectiveReader.appendLatestReadingToHistory(asset)
+      }
+    }
   }
 
-  const { start, stop, isRunning } = usePolling(refreshBoundDevices, {
+  const { start, stop, isRunning, pause, resume } = usePolling(refreshBoundDevices, {
     interval,
     immediate
   })
@@ -280,6 +289,10 @@ export function useScadaPolling(options: UseScadaPollingOptions = {}) {
     isRunning,
     start,
     stop,
+    /** 暂停轮询（不重置计时器，仅跳过任务执行）：手势/面板切换期间避免数据回包触发重渲染 */
+    pause,
+    /** 恢复轮询 */
+    resume,
     refreshBoundDevices
   }
 }
