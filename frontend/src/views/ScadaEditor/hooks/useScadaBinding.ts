@@ -245,7 +245,7 @@ export function useScadaPolling(options: UseScadaPollingOptions = {}) {
     await Promise.allSettled(targets.map(fetcher))
   }
 
-  const { start, stop, isRunning } = usePolling(refreshBoundDevices, {
+  const { start, stop, isRunning, pause, resume } = usePolling(refreshBoundDevices, {
     interval,
     immediate
   })
@@ -280,6 +280,10 @@ export function useScadaPolling(options: UseScadaPollingOptions = {}) {
     isRunning,
     start,
     stop,
+    /** 暂停轮询（不重置计时器，仅跳过任务执行）：手势/面板切换期间避免数据回包触发重渲染 */
+    pause,
+    /** 恢复轮询 */
+    resume,
     refreshBoundDevices
   }
 }

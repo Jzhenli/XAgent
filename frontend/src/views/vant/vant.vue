@@ -24,29 +24,32 @@
     <div
       v-else-if="panels.length > 0"
       class="slide-wrapper"
-      @touchstart.passive="onTouchStart"
+      @touchstart.passive="handleTouchStart"
       @touchmove.passive="onTouchMove"
-      @touchend.passive="onTouchEnd"
+      @touchend.passive="handleTouchEnd"
+      @touchcancel.passive="handleTouchCancel"
     >
       <div
         ref="adaptContainerRef"
         class="slide-page"
         :style="currentPanel?.type === 'Dashboard' ? adaptContainerStyle : undefined"
       >
-        <div
-          v-if="currentPanel?.type === 'Dashboard'"
-          class="adapt-canvas-frame"
-          :style="adaptFrameStyle"
-        >
-          <div class="adapt-canvas-scale" :style="adaptScaleStyle">
-            <ScadaCanvas :key="`dashboard-${currentPanel.id}`" />
+        <template v-if="isPanelRendered">
+          <div
+            v-if="currentPanel?.type === 'Dashboard'"
+            class="adapt-canvas-frame"
+            :style="adaptFrameStyle"
+          >
+            <div class="adapt-canvas-scale" :style="adaptScaleStyle">
+              <ScadaCanvas :key="`dashboard-${currentPanel.id}`" />
+            </div>
           </div>
-        </div>
-        <GraphicSingle
-          v-else
-          :project="currentPanel"
-          :key="`graphic-${currentPanel.id}`"
-        />
+          <GraphicSingle
+            v-else
+            :project="currentPanel"
+            :key="`graphic-${currentPanel.id}`"
+          />
+        </template>
       </div>
     </div>
 
@@ -57,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, provide } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, provide, nextTick } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
@@ -82,7 +85,7 @@ const pointReader = useScadaPointReader();
 provide(ScadaPointReaderKey, pointReader);
 
 /** 启动当前面板绑定设备的周期性数据刷新，返回 stop 用于组件卸载时清理 */
-const { stop: stopPolling } = useScadaPolling({ interval: 5000, reader: pointReader });
+const { stop: stopPolling, pause: pausePolling, resume: resumePolling } = useScadaPolling({ interval: 5000, reader: pointReader });
 
 const activeTab = ref(0);
 const panels = ref<Project[]>([]);
@@ -107,6 +110,17 @@ const tabs = computed(() =>
 );
 
 const currentPanel = computed(() => panels.value[activeTab.value] ?? null);
+
+/** 已渲染（挂载）的面板 ID：切换时先卸载旧面板内容，下一帧再挂载新面板 */
+const renderedPanelId = ref<string | null>(null);
+
+/** 面板内容渲染条件：目标面板已加载完成才挂载，切换期间保持卸载态 */
+const isPanelRendered = computed(
+  () => currentPanel.value !== null && currentPanel.value.id === renderedPanelId.value,
+);
+
+/** 等待下一帧：把“卸载旧面板”与“挂载新面板”拆到不同帧，避免单帧长任务造成滑动卡顿 */
+const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 const fetchPanels = async () => {
   try {
@@ -136,18 +150,27 @@ const loadCurrentPanel = async () => {
   if (isLoadingPanel) return;
 
   isLoadingPanel = true;
+  // 切换期间暂停轮询：挂载过程中数据回包触发的整页重渲染会加剧掉帧
+  pausePolling();
   try {
     // 串行加载并合并连续切换：保证最后一次加载最终生效
     while (pendingPanelId !== null) {
       const id = pendingPanelId;
       pendingPanelId = null;
-      if (scada.currentPanelId.value !== id) {
-        // list 接口保证返回完整 data：直接从缓存加载，零网络延迟
+      if (renderedPanelId.value !== id) {
+        // 第一帧：卸载旧面板内容（快）
+        renderedPanelId.value = null;
+        await nextFrame();
+        // 下一帧：list 接口保证返回完整 data，直接从缓存加载，零网络延迟
         scada.loadPanelFromProject(panelCache.get(id)!);
+        renderedPanelId.value = id;
+        // 等待 Vue 完成 DOM 更新，确保面板完全挂载后再恢复轮询
+        await nextTick();
       }
     }
   } finally {
     isLoadingPanel = false;
+    resumePolling();
   }
 };
 
@@ -165,6 +188,26 @@ const { onTouchStart, onTouchMove, onTouchEnd } = useSwipe(
   () => switchTab(1),
   () => switchTab(-1),
 );
+
+/** 手势开始：暂停轮询，避免数据回包触发的重渲染与手指滑动争抢主线程 */
+const handleTouchStart = (e: TouchEvent) => {
+  pausePolling();
+  onTouchStart(e);
+};
+
+/** 手势结束：未触发面板切换时立即恢复轮询；发生切换则由 loadCurrentPanel 挂载完成后恢复 */
+const handleTouchEnd = () => {
+  const prevTab = activeTab.value;
+  onTouchEnd();
+  if (activeTab.value === prevTab) {
+    resumePolling();
+  }
+};
+
+/** 手势被系统接管（如滚动打断）时不判定滑动，仅恢复轮询，避免暂停状态泄漏 */
+const handleTouchCancel = () => {
+  resumePolling();
+};
 
 useKeyboardShortcuts({
   Escape: exit,
