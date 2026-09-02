@@ -53,10 +53,30 @@ function mapAlertFromApi(a: AlertResponse): Alert {
   }
 }
 
+/**
+ * 判断两次拉取的告警列表是否一致
+ * 告警记录除 status 外不可变, 仅比较 id + status 即可
+ */
+function isSameAlerts(next: Alert[], prev: Alert[]): boolean {
+  if (next.length !== prev.length) return false
+  for (let i = 0; i < next.length; i++) {
+    if (next[i].id !== prev[i].id || next[i].status !== prev[i].status) return false
+  }
+  return true
+}
+
 export const useAlertStore = defineStore('alerts', () => {
   const alerts = ref<Alert[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  /**
+   * 每次成功拉取自增
+   * 供通知 hook 感知"一次拉取完成", 不依赖 alerts 数组引用变化
+   * (配合 fetchAlerts 的数据比对跳过赋值, 引用可能在数据不变时不更新)
+   */
+  const fetchVersion = ref(0)
+  let hasFetchedOnce = false
 
   // 动态获取通知渠道（从后端API）
   const channels = ref<NotificationChannel[]>([])
@@ -69,8 +89,8 @@ export const useAlertStore = defineStore('alerts', () => {
   function startPolling(intervalMs: number = 5000) {
     if (pollingTimer) return
     pollingActive.value = true
-    // 首次加载显示 loading 遮罩，后续轮询静默刷新
-    void fetchAlerts(true)
+    // 仅本会话首次拉取显示 loading 遮罩, 后续轮询/标签页恢复时静默刷新
+    void fetchAlerts(!hasFetchedOnce)
     pollingTimer = setInterval(() => {
       if (!fetchInFlight) {
         void fetchAlerts()
@@ -105,7 +125,13 @@ export const useAlertStore = defineStore('alerts', () => {
     error.value = null
     try {
       const res = await ruleApi.listAlerts()
-      alerts.value = res.alerts.map(mapAlertFromApi)
+      const mapped = res.alerts.map(mapAlertFromApi)
+      // 数据无变化时跳过赋值, 避免每次轮询触发全量响应式更新导致订阅组件反复重渲染
+      if (!isSameAlerts(mapped, alerts.value)) {
+        alerts.value = mapped
+      }
+      hasFetchedOnce = true
+      fetchVersion.value++
     } catch (e: any) {
       error.value = e.message || '获取告警记录失败'
       console.error('Failed to fetch alerts:', e)
@@ -429,6 +455,7 @@ export const useAlertStore = defineStore('alerts', () => {
     pendingAlerts,
     criticalAlerts,
     pollingActive,
+    fetchVersion,
     fetchAlerts,
     fetchChannels,
     startPolling,
