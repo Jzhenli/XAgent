@@ -25,14 +25,13 @@
       v-else-if="panels.length > 0"
       class="slide-wrapper"
       @touchstart.passive="handleTouchStart"
-      @touchmove.passive="handleTouchMove"
+      @touchmove.passive="onTouchMove"
       @touchend.passive="handleTouchEnd"
       @touchcancel.passive="handleTouchCancel"
     >
       <div
         ref="adaptContainerRef"
         class="slide-page"
-        :class="{ 'is-settling': isSettling }"
         :style="currentPanel?.type === 'Dashboard' ? adaptContainerStyle : undefined"
       >
         <template v-if="isPanelRendered">
@@ -95,7 +94,7 @@ const isInitializing = ref(true);
 /** 面板缓存：panelId → Project（含 data 字段），进入页面时一次 list 全部存入，离开时随组件回收 */
 const panelCache = new Map<string, Project>();
 
-/** 预览适配容器：按面板适配模式计算容器、布局框、缩放层样式；同时作为滑动动画的 transform 载体 */
+/** 预览适配容器：按面板适配模式计算容器、布局框、缩放层样式 */
 const adaptContainerRef = ref<HTMLElement | null>(null);
 const {
   containerStyle: adaptContainerStyle,
@@ -192,164 +191,30 @@ const switchTab = (dir: -1 | 1) => {
 const exit = () => router.push({ name: "ScadaList" });
 
 // ============== 滑动手势检测 ==============
-/** 最近一次水平滑动方向：-1 = 右滑（上一页），1 = 左滑（下一页），null = 未判定 */
-let lastSwipeDir: -1 | 1 | null = null;
-
 const { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel } = useSwipe(
   50,
-  () => { lastSwipeDir = 1; switchTab(1); },
-  () => { lastSwipeDir = -1; switchTab(-1); },
+  () => switchTab(1),
+  () => switchTab(-1),
 );
 
-// ============== 滑动视觉动画 ==============
-/** settling 阶段开启 CSS transition；触摸期间保持 false → transform 直接跟手无过渡 */
-const isSettling = ref(false);
-
-/** 触摸起点 X：vant.vue 自己维护，高频写入用普通变量绕过响应式代理 */
-let _touchStartX = 0;
-let _touchActive = false;
-
-/**
- * 手指跟位移：直接写 DOM style 绕过 Vue 响应式，60~120fps 高频路径上避免 setter 开销
- * - 首尾面板超界时施加 0.25 橡皮筋阻尼
- */
-const applyFingerDelta = (deltaX: number) => {
-  const el = adaptContainerRef.value;
-  if (!el) return;
-
-  let effective = deltaX;
-  // 边界阻尼：在第一/最后一页向超界方向滑动时，位移按 25% 生效
-  if ((activeTab.value === 0 && deltaX > 0) ||
-      (activeTab.value === panels.value.length - 1 && deltaX < 0)) {
-    effective = deltaX * 0.25;
-  }
-  // translate3d 触发 GPU 合成层，避免主线程重绘
-  el.style.transform = `translate3d(${effective}px, 0, 0)`;
-};
-
-/** 清空 transform inline style，让 CSS 类或 Vue style 接管 */
-const clearTransform = () => {
-  const el = adaptContainerRef.value;
-  if (el) el.style.transform = "";
-};
-
-/**
- * settling 结束后的清理：transitionend 是事件触发，不受 Vue 响应式管理
- */
-let _settlingCleanup: (() => void) | null = null;
-
-const animateSpringBack = () => {
-  const el = adaptContainerRef.value;
-  if (!el) return;
-
-  isSettling.value = true;
-  el.style.transform = "translate3d(0, 0, 0)";
-
-  _settlingCleanup = () => {
-    isSettling.value = false;
-    clearTransform();
-    _settlingCleanup = null;
-  };
-  // transitionend 只触发一次，cleanup 后主动解除避免悬挂引用
-  const onEnd = () => { el.removeEventListener("transitionend", onEnd); _settlingCleanup?.(); };
-  el.addEventListener("transitionend", onEnd);
-};
-
-/**
- * 切换动画：旧页滑出 → 内容在屏幕外静默交换 → 新页从对侧滑入
- * 方向由 lastSwipeDir 或 activeTab 与 prevTab 的差推断
- */
-const animateSwitch = (dir: -1 | 1) => {
-  const el = adaptContainerRef.value;
-  if (!el) return;
-
-  const wrapper = el.parentElement;
-  const width = wrapper?.clientWidth ?? window.innerWidth;
-
-  isSettling.value = true;
-
-  // 第一阶段：旧页滑出
-  const exitX = dir === 1 ? -width : width; // dir=1 → 左滑 → 旧页向左飞出
-  el.style.transform = `translate3d(${exitX}px, 0, 0)`;
-
-  const onExitEnd = () => {
-    el.removeEventListener("transitionend", onExitEnd);
-
-    // 在屏幕外静默交换内容：此时用户看不到面板
-    // activeTab 已由 useSwipe 回调更新，watch 会触发 loadCurrentPanel
-    // 但 loadCurrentPanel 内有 nextFrame 等待，我们在此同步让其先执行完卸载
-    const prev = activeTab.value; // 已是新值
-    // 等当前内容彻底卸载 + 新内容挂载完成
-    nextFrame().then(() => nextTick()).then(() => {
-      if (isUnmounted) return;
-
-      // 第二阶段：新页从对侧滑入
-      const enterX = dir === 1 ? width : -width; // 新页从右侧进入
-      el.style.transform = `translate3d(${enterX}px, 0, 0)`;
-      // 强制 reflow，让浏览器感知起始位置，否则 transform 变化会被合并跳过动画
-      void el.offsetWidth;
-      el.style.transform = "translate3d(0, 0, 0)";
-
-      const onEnterEnd = () => {
-        el.removeEventListener("transitionend", onEnterEnd);
-        isSettling.value = false;
-        clearTransform();
-      };
-      el.addEventListener("transitionend", onEnterEnd);
-    });
-  };
-  el.addEventListener("transitionend", onExitEnd);
-};
-
-// ============== 触摸事件入口 ==============
 /** 手势开始：暂停轮询，避免数据回包触发的重渲染与手指滑动争抢主线程 */
 const handleTouchStart = (e: TouchEvent) => {
-  // settling 中被新触摸打断：清掉上一轮动画回调，防止旧 transitionend 污染新状态
-  if (_settlingCleanup) {
-    _settlingCleanup();
-  }
   pausePolling();
-  _touchStartX = e.touches[0].clientX;
-  _touchActive = true;
-  lastSwipeDir = null;
   onTouchStart(e);
 };
 
-/** 手势移动：同时更新视觉层（跟手 transform）和手势检测 */
-const handleTouchMove = (e: TouchEvent) => {
-  if (!_touchActive) return;
-  const deltaX = e.touches[0].clientX - _touchStartX;
-  // 视觉层：直接 DOM 写入，不经过 Vue 响应式
-  applyFingerDelta(deltaX);
-  // 手势检测：内部状态更新
-  onTouchMove(e);
-};
-
-/** 手势结束：先让 useSwipe 判定是否切换，再驱动 settle 动画 */
+/** 手势结束：未触发面板切换时立即恢复轮询；发生切换则由 loadCurrentPanel 挂载完成后恢复 */
 const handleTouchEnd = (e: TouchEvent) => {
-  _touchActive = false;
   const prevTab = activeTab.value;
   onTouchEnd(e);
-
-  const switched = activeTab.value !== prevTab;
-  if (switched) {
-    const dir = lastSwipeDir ?? (activeTab.value > prevTab ? 1 : -1);
-    animateSwitch(dir);
-    // 切换期间由 animateSwitch 末尾恢复轮询
-  } else {
-    animateSpringBack();
+  if (activeTab.value === prevTab) {
     resumePolling();
   }
 };
 
-/** 手势被系统接管（如滚动打断）时不判定滑动，重置视觉 + 恢复轮询 */
+/** 手势被系统接管（如滚动打断）时不判定滑动，重置手势状态并恢复轮询，避免暂停状态泄漏 */
 const handleTouchCancel = () => {
-  if (_touchActive) {
-    _touchActive = false;
-    onTouchCancel();
-    clearTransform();
-    isSettling.value = false;
-  }
+  onTouchCancel();
   resumePolling();
 };
 
@@ -480,7 +345,6 @@ watch(activeTab, async () => {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  touch-action: pan-y;
 }
 
 .slide-page {
@@ -491,13 +355,6 @@ watch(activeTab, async () => {
   justify-content: center;
   overflow: hidden;
   background: #000;
-  /* 触摸期间无 transition → transform 直接跟手；settling 阶段由下面类开启过渡 */
-  will-change: transform;
-}
-
-/* 仅 settling 阶段启用 CSS transition，触摸期间 transform 立即生效 */
-.slide-page.is-settling {
-  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* 适配画布布局框：禁止 flex 收缩，保证滚动模式下的布局尺寸正确 */
