@@ -24,7 +24,7 @@ export interface ScadaPointReader {
   fetchDevicesWithPoints: () => Promise<void>
   fetchDevicePoints: (asset: string) => Promise<void>
   refreshDevices: (assets: string[]) => Promise<void>
-  fetchHistoryReadings: (asset: string, hours?: number) => Promise<Reading[]>
+  fetchHistoryReadings: (asset: string, hours?: number, limit?: number) => Promise<Reading[]>
   /** 将 fetchDevicePoints 拿到的最新 Reading 追加到该 asset 的历史缓存，返回是否有新增 */
   appendLatestReadingToHistory: (asset: string) => boolean
   /** 该 asset 是否已有全量历史缓存（作为增量追加的前置条件） */
@@ -212,13 +212,13 @@ export function useScadaPointReader(): ScadaPointReader {
    * @param asset 设备 asset
    * @param hours 查询小时数，默认 24
    */
-  async function fetchHistoryReadings(asset: string, hours: number = 24): Promise<Reading[]> {
+  async function fetchHistoryReadings(asset: string, hours: number = 24, limit: number = 1000): Promise<Reading[]> {
     historyLoading.value = true
 
     try {
       const endTime = Date.now() / 1000
       const startTime = endTime - hours * 3600
-      const response = await dataApi.getHistoryReadings(asset, startTime, endTime, 1000)
+      const response = await dataApi.getHistoryReadings(asset, startTime, endTime, limit)
       historyReadingsMap.set(asset, response.readings)
       historyReadings.value = response.readings
       return response.readings
