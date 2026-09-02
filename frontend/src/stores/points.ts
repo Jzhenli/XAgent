@@ -273,13 +273,13 @@ export const usePointStore = defineStore('points', () => {
    * @param asset 设备 asset
    * @param hours 查询小时数，默认 24
    */
-  async function fetchHistoryReadings(asset: string, hours: number = 24) {
+  async function fetchHistoryReadings(asset: string, hours: number = 24, limit: number = 1000) {
     historyLoading.value = true
 
     try {
       const endTime = Date.now() / 1000
       const startTime = endTime - hours * 3600
-      const response = await dataApi.getHistoryReadings(asset, startTime, endTime, 1000)
+      const response = await dataApi.getHistoryReadings(asset, startTime, endTime, limit)
       historyReadings.value = response.readings
       return response.readings
     } catch (e: unknown) {

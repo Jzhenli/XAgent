@@ -24,7 +24,7 @@ export interface ScadaPointReader {
   fetchDevicesWithPoints: () => Promise<void>
   fetchDevicePoints: (asset: string) => Promise<void>
   refreshDevices: (assets: string[]) => Promise<void>
-  fetchHistoryReadings: (asset: string, hours?: number) => Promise<Reading[]>
+  fetchHistoryReadings: (asset: string, hours?: number, limit?: number) => Promise<Reading[]>
   /** 将 fetchDevicePoints 拿到的最新 Reading 追加到该 asset 的历史缓存，返回是否有新增 */
   appendLatestReadingToHistory: (asset: string) => boolean
   /** 该 asset 是否已有全量历史缓存（作为增量追加的前置条件） */
@@ -57,6 +57,15 @@ const WRITE_PROTECTION_DURATION = 10000
 
 /** 按 asset 去重的延迟回读定时器：连续写值时同一设备只保留最后一次回读，且多设备互不覆盖（clearDevices 时需要清除，避免离开页面后仍触发请求） */
 const pendingFollowUpTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
+/**
+ * in-flight 请求去重：相同参数的并发调用共享同一个网络请求
+ * - inflightDeviceFetches: fetchDevicePoints 正在进行中的 Promise，key = asset
+ * - inflightHistoryFetches: fetchHistoryReadings 正在进行中的 Promise，key = asset:hours:limit
+ * 请求完成后（无论成功/失败）自动从 Map 中移除，不阻塞后续请求
+ */
+const inflightDeviceFetches = new Map<string, Promise<void>>()
+const inflightHistoryFetches = new Map<string, Promise<Reading[]>>()
 
 /**
  * 将后端读数数据转换为以 asset 为 key 的 Map
@@ -141,9 +150,23 @@ export function useScadaPointReader(): ScadaPointReader {
 
   /**
    * 获取指定设备的点位并合并最新读数
+   * 同一 asset 的并发调用共享同一个网络请求（in-flight 去重）
    * @param asset 设备 asset
    */
   async function fetchDevicePoints(asset: string): Promise<void> {
+    // 正在进行中的相同请求 → 直接复用
+    const existing = inflightDeviceFetches.get(asset)
+    if (existing) return existing
+
+    const promise = doFetchDevicePoints(asset).finally(() => {
+      inflightDeviceFetches.delete(asset)
+    })
+    inflightDeviceFetches.set(asset, promise)
+    return promise
+  }
+
+  /** fetchDevicePoints 的实际实现（不含去重逻辑） */
+  async function doFetchDevicePoints(asset: string): Promise<void> {
     try {
       const [pointsResult, readingsResult] = await Promise.allSettled([
         deviceApi.listPoints(asset),
@@ -209,16 +232,32 @@ export function useScadaPointReader(): ScadaPointReader {
 
   /**
    * 获取指定设备的历史读数
+   * 同一 asset + hours + limit 的并发调用共享同一个网络请求（in-flight 去重）
    * @param asset 设备 asset
    * @param hours 查询小时数，默认 24
+   * @param limit 返回条数上限，默认 1000
    */
-  async function fetchHistoryReadings(asset: string, hours: number = 24): Promise<Reading[]> {
+  async function fetchHistoryReadings(asset: string, hours: number = 24, limit: number = 1000): Promise<Reading[]> {
+    const key = `${asset}:${hours}:${limit}`
+    // 正在进行中的相同请求 → 直接复用
+    const existing = inflightHistoryFetches.get(key)
+    if (existing) return existing
+
+    const promise = doFetchHistoryReadings(asset, hours, limit).finally(() => {
+      inflightHistoryFetches.delete(key)
+    })
+    inflightHistoryFetches.set(key, promise)
+    return promise
+  }
+
+  /** fetchHistoryReadings 的实际实现（不含去重逻辑） */
+  async function doFetchHistoryReadings(asset: string, hours: number, limit: number): Promise<Reading[]> {
     historyLoading.value = true
 
     try {
       const endTime = Date.now() / 1000
       const startTime = endTime - hours * 3600
-      const response = await dataApi.getHistoryReadings(asset, startTime, endTime, 1000)
+      const response = await dataApi.getHistoryReadings(asset, startTime, endTime, limit)
       historyReadingsMap.set(asset, response.readings)
       historyReadings.value = response.readings
       return response.readings
@@ -459,6 +498,8 @@ export function useScadaPointReader(): ScadaPointReader {
     historyReadingsMap.clear()
     latestReadingMap.clear()
     error.value = null
+    inflightDeviceFetches.clear()
+    inflightHistoryFetches.clear()
   }
 
   return {

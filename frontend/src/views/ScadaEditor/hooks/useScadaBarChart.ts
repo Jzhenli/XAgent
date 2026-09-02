@@ -76,9 +76,9 @@ export function useScadaBarChart(
 
   const fetchHistoryReadings = async (asset: string, hours: number = 24) => {
     if (injectedReader) {
-      return injectedReader.fetchHistoryReadings(asset, hours)
+      return injectedReader.fetchHistoryReadings(asset, hours, 100)
     }
-    return pointStore.fetchHistoryReadings(asset, hours)
+    return pointStore.fetchHistoryReadings(asset, hours, 100)
   }
 
   const getPointTrendData = (pointName: string, asset?: string): LineChartDataPoint[] => {

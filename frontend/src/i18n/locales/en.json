@@ -869,6 +869,7 @@
       "download_failed": "Download Failed",
       "import_confirm": "Confirm to import backup?",
       "import_confirm_title": "Confirm Import",
+      "import_success": "Import successful. Please restart to take effect",
       "import_failed": "Import Failed",
       "delete_confirm_msg": "Confirm to delete this backup?",
       "delete_success": "Backup Deleted Successfully",
