@@ -186,8 +186,20 @@ export function useScadaBinding(
 function extractBoundAssets(components: ScadaComponent[]): string[] {
   const assets = new Set<string>()
   for (const component of components) {
+    // 1. 顶层 binding（适用于柱状图、数值组件、指示灯等）
     if (component.binding?.deviceId) {
       assets.add(component.binding.deviceId)
+    }
+    // 2. 折线图 seriesItems 内部 binding（适用于 chart-line 的多序列绑定）
+    const cfg = component.config as unknown as Record<string, unknown>
+    const seriesItems = cfg?.seriesItems
+    if (Array.isArray(seriesItems)) {
+      for (const item of seriesItems) {
+        const bind = (item as Record<string, any>)?.binding
+        if (bind?.deviceId) {
+          assets.add(bind.deviceId)
+        }
+      }
     }
   }
   return Array.from(assets)
