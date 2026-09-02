@@ -82,9 +82,17 @@ export const getComponentTemplate = (type: ComponentType) => {
   return meta && { type: meta.type, ...meta.template }
 }
 
+// ─── 临时屏蔽列表：组件库面板不显示，但已有面板上的组件仍可正常渲染 ──
+// 恢复时从中移除对应 type 即可
+const HIDDEN_COMPONENTS: ReadonlySet<string> = new Set<string>([
+  'slider-switch', 'slider-bar',
+])
+
 /** 获取所有组件模板列表（用于组件库面板） */
 export const getAllTemplates = () =>
-  Object.values(componentMetaRegistry).map(({ type, template }) => ({ type, ...template }))
+  Object.values(componentMetaRegistry)
+    .filter(meta => !HIDDEN_COMPONENTS.has(meta.type))
+    .map(({ type, template }) => ({ type, ...template }))
 
 /** 组件模板列表（数组形式，向后兼容） */
 export const COMPONENT_TEMPLATES = getAllTemplates()
