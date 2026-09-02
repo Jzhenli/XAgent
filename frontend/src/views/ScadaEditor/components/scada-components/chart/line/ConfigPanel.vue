@@ -4,7 +4,7 @@
 
     <!-- 数据 -->
     <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
-    <div class="form-group">
+    <!-- <div class="form-group">
       <label>{{ t('componentConfig.timeRange') }}</label>
       <el-select
         :model-value="config.timeRange"
@@ -17,7 +17,7 @@
         <el-option value="24h" :label="t('dashboard.timeRange24h')" />
         <el-option value="7d" :label="t('dashboard.timeRange7d')" />
       </el-select>
-    </div>
+    </div> -->
     <div class="form-row">
       <div class="form-group form-group--switch">
         <label>{{ t('componentConfig.showLegend') }}</label>
