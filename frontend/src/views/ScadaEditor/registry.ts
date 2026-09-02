@@ -85,7 +85,7 @@ export const getComponentTemplate = (type: ComponentType) => {
 // ─── 临时屏蔽列表：组件库面板不显示，但已有面板上的组件仍可正常渲染 ──
 // 恢复时从中移除对应 type 即可
 const HIDDEN_COMPONENTS: ReadonlySet<string> = new Set<string>([
-  'slider-switch', 'slider-bar',
+  
 ])
 
 /** 获取所有组件模板列表（用于组件库面板） */

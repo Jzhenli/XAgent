@@ -201,6 +201,16 @@ function extractBoundAssets(components: ScadaComponent[]): string[] {
         }
       }
     }
+    // 3. slider-bar items 内部 binding（适用于滑块式柱状图的多柱点位绑定）
+    const items = cfg?.items
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        const bind = (item as Record<string, any>)?.binding
+        if (bind?.deviceId) {
+          assets.add(bind.deviceId)
+        }
+      }
+    }
   }
   return Array.from(assets)
 }
