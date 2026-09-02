@@ -424,9 +424,35 @@ class DeviceAutoDiscoveryService:
             # 临时创建 Application 实例（设备发现专用）
             # 临时实例，发现完成后立即关闭
             # 使用标准端口 47808，确保最大兼容性
+            # BACnet 规范要求 DeviceObject 必须提供最小必填属性。
+            # 缺省会触发 who_is() 内部响应 I-Am 时构造 IAmRequest 失败：
+            #   AttributeError: maxAPDULengthAccepted is a required element of IAmRequest
+            # 因为本地实例收到 Who-Is 广播后也会回复 I-Am，需要从这些字段取值。
             device_object = DeviceObject(
                 objectName="XAgent Discovery Client",
                 objectIdentifier=("device", 0),  # 设备ID为0，表示发现客户端
+                # —— 最小必填属性（BACnet 规范）——
+                systemStatus="operational",
+                vendorName="XAgent",
+                vendorIdentifier=0,
+                modelName="XAgent Discovery Client",
+                firmwareRevision="0.1",
+                applicationSoftwareVersion="0.1",
+                protocolVersion=1,
+                protocolRevision=22,  # BACnet revision 22 (ASHRAE 135-2020)
+                # 位串使用整数位索引（bacpypes3 BitString 要求）
+                # ServicesSupported: readProperty=12, iAm=26, whoIs=34
+                protocolServicesSupported=[12, 26, 34],
+                # ObjectTypesSupported: analogInput=0, analogOutput=1,
+                #   binaryInput=3, binaryOutput=4, device=8
+                protocolObjectTypesSupported=[0, 1, 3, 4, 8],
+                objectList=[("device", 0)],
+                maxApduLengthAccepted=1476,  # 标准 BACnet/IP APDU 长度
+                segmentationSupported="noSegmentation",
+                apduTimeout=3000,
+                numberOfApduRetries=3,
+                deviceAddressBinding=[],
+                databaseRevision=1,
             )
             
             # 创建临时的 BACnet/IP 应用实例（使用端口 47808）
