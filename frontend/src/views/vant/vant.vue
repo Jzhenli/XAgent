@@ -1,7 +1,7 @@
 <template>
   <div class="vant-container">
-    <div class="exit-button">
-      <el-button :icon="ArrowLeft" circle size="small" @click="exit" />
+    <div class="floating-back" @click="exit">
+      <el-icon :size="20"><ArrowLeft /></el-icon>
     </div>
 
     <div class="floating-tab-bar">
@@ -257,11 +257,26 @@ watch(activeTab, async () => {
   background: #000;
 }
 
-.exit-button {
-  position: fixed;
+.floating-back {
+  position: absolute;
   top: 16px;
   left: 16px;
-  z-index: 10001;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.floating-back:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .floating-tab-bar {
@@ -271,7 +286,6 @@ watch(activeTab, async () => {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  padding: 4px;
   background: #1a1a2e;
   border-radius: 24px;
   z-index: 10000;
