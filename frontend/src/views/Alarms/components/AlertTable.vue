@@ -2,6 +2,7 @@
   <div class="alert-table-wrapper">
     <el-table
       :data="alerts"
+      row-key="id"
       style="width: 100%"
       v-loading="loading"
       class="alert-table"
@@ -181,9 +182,9 @@ const getStatusTag = (status: AlertStatus) =>
   opacity: 0.6;
 }
 
-/* 空状态背景修复 */
+/* 空状态背景透明 */
 .alert-table :deep(.el-empty) {
-  background: var(--bg-card);
+  background: transparent;
 }
 
 .alert-table :deep(.el-empty__description p) {

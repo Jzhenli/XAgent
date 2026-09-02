@@ -77,7 +77,7 @@
           @update:search-query="searchQuery = $event"
           @update:level-filter="levelFilter = $event"
           @update:status-filter="statusFilter = $event"
-          @refresh="alertStore.fetchAlerts()"
+          @refresh="alertStore.fetchAlerts(true)"
           @clear-all="handleClearAll"
         />
 

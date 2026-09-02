@@ -69,7 +69,8 @@ export const useAlertStore = defineStore('alerts', () => {
   function startPolling(intervalMs: number = 5000) {
     if (pollingTimer) return
     pollingActive.value = true
-    void fetchAlerts()
+    // 首次加载显示 loading 遮罩，后续轮询静默刷新
+    void fetchAlerts(true)
     pollingTimer = setInterval(() => {
       if (!fetchInFlight) {
         void fetchAlerts()
@@ -93,10 +94,14 @@ export const useAlertStore = defineStore('alerts', () => {
     alerts.value.filter(a => a.level === 'critical' && a.status === 'new').length
   )
 
-  async function fetchAlerts() {
+  /**
+   * 获取告警列表
+   * @param showLoading 是否显示 loading 遮罩（首次加载或手动刷新时传 true，轮询时保持静默）
+   */
+  async function fetchAlerts(showLoading = false) {
     if (fetchInFlight) return
     fetchInFlight = true
-    loading.value = true
+    if (showLoading) loading.value = true
     error.value = null
     try {
       const res = await ruleApi.listAlerts()
@@ -105,7 +110,7 @@ export const useAlertStore = defineStore('alerts', () => {
       error.value = e.message || '获取告警记录失败'
       console.error('Failed to fetch alerts:', e)
     } finally {
-      loading.value = false
+      if (showLoading) loading.value = false
       fetchInFlight = false
     }
   }
