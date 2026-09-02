@@ -133,13 +133,12 @@ export function graphToExpression(nodes: RuleNode[]): string {
   return parts.join(' -> ')
 }
 
-export function graphToExpressions(nodes: RuleNode[], edges: RuleEdge[] = []): string[] {
+/**
+ * 将图按连通分量拆分为独立的规则链（忽略连线方向）
+ * 单条规则内画出的多条互不相连的 "触发→条件→动作" 链会被拆分为多个分组
+ */
+export function groupNodesIntoChains(nodes: RuleNode[], edges: RuleEdge[] = []): RuleNode[][] {
   if (nodes.length === 0) return []
-
-  if (edges.length === 0) {
-    const combined = graphToExpression(nodes)
-    return combined ? [combined] : []
-  }
 
   const nodeMap = new Map(nodes.map(n => [n.id, n]))
 
@@ -178,6 +177,14 @@ export function graphToExpressions(nodes: RuleNode[], edges: RuleEdge[] = []): s
       groups.push(groupNodes)
     }
   }
+
+  return groups
+}
+
+export function graphToExpressions(nodes: RuleNode[], edges: RuleEdge[] = []): string[] {
+  if (nodes.length === 0) return []
+
+  const groups = groupNodesIntoChains(nodes, edges)
 
   if (groups.length <= 1) {
     const combined = graphToExpression(nodes)

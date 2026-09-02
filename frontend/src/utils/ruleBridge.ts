@@ -7,7 +7,7 @@ import type {
   RuleDataSubscription,
   RuleNotificationConfig
 } from '@/api/types'
-import { graphToExpression, graphToExpressions } from './ruleConverter'
+import { graphToExpression, graphToExpressions, groupNodesIntoChains } from './ruleConverter'
 import i18n from '@/i18n'
 
 const VISUAL_GRAPH_KEY = '_visual_graph'
@@ -145,36 +145,94 @@ export function backendToViewItem(rule: RuleResponse): RuleViewItem {
   }
 }
 
-function buildExpressionFromConditions(
-  conditionNodes: RuleNode[],
-  logicNodes: RuleNode[]
-): string {
-  const parts: string[] = []
+/** 通知级别权重（用于多通知节点聚合时取最高级别） */
+const NOTIFICATION_LEVEL_ORDER: Record<string, number> = {
+  info: 0,
+  warning: 1,
+  error: 2,
+  critical: 3,
+}
 
-  for (const node of conditionNodes) {
+/** 生成表达式中的字符串字面量（转义反斜杠与双引号） */
+function quoteLiteral(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
+/**
+ * 构建单条链的数据触发守卫
+ * 后端按 "资产 + 点位" 逐个求值表达式，守卫确保每条链只被自己的触发数据激活，
+ * 避免多链场景下其他链的点位数据误触发本链
+ */
+function buildChainGuard(triggerNodes: RuleNode[]): string | null {
+  const guards: string[] = []
+  for (const node of triggerNodes) {
+    const trigger = node.data?.trigger
+    if (!trigger?.source || !trigger.field) continue
+    guards.push(
+      `asset == ${quoteLiteral(trigger.source)} and point == ${quoteLiteral(trigger.field)}`
+    )
+  }
+  if (guards.length === 0) return null
+  return guards.length === 1 ? guards[0] : `(${guards.join(' or ')})`
+}
+
+/**
+ * 构建单条链的条件表达式
+ * 条件字段与链内触发字段一致时使用 `value` 变量（后端求值上下文保证其存在），
+ * 否则保留字段名（跨字段条件后端本身不支持，维持原行为）
+ */
+function buildChainConditions(chain: RuleNode[], triggerFields: Set<string>): string | null {
+  const parts: string[] = []
+  for (const node of chain) {
+    if (node.type !== 'condition') continue
     const cond = node.data?.condition
     if (!cond?.field) continue
 
+    const variable = triggerFields.has(cond.field) ? 'value' : cond.field
     if (cond.operator === 'regex') {
-      parts.push(`${cond.field} =~ "${cond.value}"`)
+      parts.push(`${variable} =~ "${cond.value}"`)
     } else {
-      parts.push(`${cond.field} ${cond.operator} ${cond.value}`)
+      parts.push(`${variable} ${cond.operator} ${cond.value}`)
     }
   }
+  if (parts.length === 0) return null
 
-  if (logicNodes.length > 0 && parts.length > 0) {
-    const logicOp = logicNodes[0].data?.logic?.operator || 'and'
-    if (logicOp === 'not') {
-      return `not (${parts.join(' and ')})`
-    }
-    if (parts.length === 1) {
-      // 单个条件时，AND/OR 直接返回条件本身，NOT 已在上面处理
-      return parts[0]
-    }
-    return parts.join(` ${logicOp} `)
+  const logicOp = chain.find(n => n.type === 'logic')?.data?.logic?.operator || 'and'
+  if (logicOp === 'not') {
+    return `not (${parts.join(' and ')})`
+  }
+  if (parts.length === 1) {
+    return parts[0]
+  }
+  return `(${parts.join(` ${logicOp} `)})`
+}
+
+/**
+ * 构建链感知的组合表达式（后端单规则仅支持一个 expression）
+ * 单条规则包含多条独立规则链时，每条链生成带触发守卫的子表达式并以 or 连接：
+ * 任一条链的数据到达且条件满足即触发规则；无条件链为 "数据到达即触发"。
+ * 依赖后端表达式引擎的短路求值，保证未激活链的变量不会被求值。
+ * 返回 null 表示图中不存在带有效数据触发器的链。
+ */
+function buildCombinedExpression(chains: RuleNode[][]): string | null {
+  const chainExprs: string[] = []
+
+  for (const chain of chains) {
+    const triggerNodes = chain.filter(n => n.type === 'trigger')
+    // 无数据触发器的链不会产生数据订阅，条件无法被求值，跳过
+    const guard = buildChainGuard(triggerNodes)
+    if (!guard) continue
+
+    const triggerFields = new Set(
+      triggerNodes
+        .map(n => n.data?.trigger?.field)
+        .filter((f): f is string => Boolean(f))
+    )
+    const conditions = buildChainConditions(chain, triggerFields)
+    chainExprs.push(conditions ? `${guard} and ${conditions}` : guard)
   }
 
-  return parts.join(' and ')
+  return chainExprs.length > 0 ? chainExprs.join(' or ') : null
 }
 
 function buildScheduleConfig(scheduleNodes: RuleNode[]): Record<string, any> {
@@ -235,34 +293,38 @@ function buildScheduleConfig(scheduleNodes: RuleNode[]): Record<string, any> {
   }
 }
 
-function buildActionChannelConfig(actionNodes: RuleNode[]): ActionChannelConfig | null {
-  if (actionNodes.length === 0) return null
-
-  const action = actionNodes[0].data?.action
-  if (!action) return null
-
-  return {
-    target_service: action.targetService || action.target_asset || '',
-    target_asset: action.target_asset || '',
-    operation: action.operation || 'write_setpoint',
-    point: action.parameters?.point || '',
-    value: action.parameters?.value,
-    parameters: action.parameters || {},
-    delay: action.delay || 0,
+/** 提取所有动作节点的通道配置（多链场景下每条链的动作都保留） */
+function buildActionChannelConfigs(actionNodes: RuleNode[]): ActionChannelConfig[] {
+  const configs: ActionChannelConfig[] = []
+  for (const node of actionNodes) {
+    const action = node.data?.action
+    if (!action) continue
+    configs.push({
+      target_service: action.targetService || action.target_asset || '',
+      target_asset: action.target_asset || '',
+      operation: action.operation || 'write_setpoint',
+      point: action.parameters?.point || '',
+      value: action.parameters?.value,
+      parameters: action.parameters || {},
+      delay: action.delay || 0,
+    })
   }
+  return configs
 }
 
-function buildNotificationChannelConfig(notificationNodes: RuleNode[]): NotificationChannelConfig | null {
-  if (notificationNodes.length === 0) return null
-
-  const notif = notificationNodes[0].data?.notification
-  if (!notif) return null
-
-  return {
-    channel_type: notif.channel_type || 'system',
-    level: notif.level || 'warning',
-    recipients: [],
+/** 提取所有通知节点的通道配置（多链场景下每条链的通知都保留） */
+function buildNotificationChannelConfigs(notificationNodes: RuleNode[]): NotificationChannelConfig[] {
+  const configs: NotificationChannelConfig[] = []
+  for (const node of notificationNodes) {
+    const notif = node.data?.notification
+    if (!notif) continue
+    configs.push({
+      channel_type: notif.channel_type || 'system',
+      level: notif.level || 'warning',
+      recipients: [],
+    })
   }
+  return configs
 }
 
 function serializeGraph(nodes: RuleNode[], edges: RuleEdge[]) {
@@ -312,6 +374,12 @@ export function graphToBackendCreate(
 
   const isScheduleRule = scheduleTriggerNodes.length > 0 && triggerNodes.length === 0
 
+  /** 按连通分量拆分规则链：单条规则内可能包含多条独立的 "触发→条件→动作" 链 */
+  const chains = groupNodesIntoChains(nodes, edges)
+  /** 整图为单条链且仅一个条件、无逻辑节点时，才能安全映射为 threshold_rule */
+  const isSingleThresholdChain =
+    chains.length === 1 && conditionNodes.length === 1 && logicNodes.length === 0
+
   let plugin: RulePluginConfig
 
   if (isScheduleRule) {
@@ -323,7 +391,7 @@ export function graphToBackendCreate(
         [VISUAL_GRAPH_KEY]: graphData,
       },
     }
-  } else if (conditionNodes.length === 1 && logicNodes.length === 0) {
+  } else if (isSingleThresholdChain) {
     const cond = conditionNodes[0].data?.condition
     if (!cond) {
       plugin = {
@@ -346,46 +414,59 @@ export function graphToBackendCreate(
         },
       }
     }
-  } else if (conditionNodes.length > 0) {
-    const expression = buildExpressionFromConditions(conditionNodes, logicNodes)
-    plugin = {
-      name: 'expression_rule',
-      config: {
-        expression,
-        duration: 0,
-        [VISUAL_GRAPH_KEY]: graphData,
-      },
-    }
   } else {
-    plugin = {
-      name: scheduleTriggerNodes.length > 0 ? 'schedule_rule' : 'threshold_rule',
-      config: {
-        trigger_type: 'interval',
-        interval: 60,
-        expression: 'true',
-        duration: 0,
-        [VISUAL_GRAPH_KEY]: graphData,
-      },
+    // 多链 / 多条件 / 带逻辑节点：生成链感知的组合表达式
+    // 每条链带触发守卫（asset + point），链间用 or 连接，任一链满足即触发
+    const expression = buildCombinedExpression(chains)
+    if (expression) {
+      plugin = {
+        name: 'expression_rule',
+        config: {
+          expression,
+          duration: 0,
+          [VISUAL_GRAPH_KEY]: graphData,
+        },
+      }
+    } else {
+      plugin = {
+        name: scheduleTriggerNodes.length > 0 ? 'schedule_rule' : 'threshold_rule',
+        config: {
+          trigger_type: 'interval',
+          interval: 60,
+          expression: 'true',
+          duration: 0,
+          [VISUAL_GRAPH_KEY]: graphData,
+        },
+      }
     }
   }
 
   let notification: RuleNotificationConfig | undefined
-  const actionConfig = buildActionChannelConfig(actionNodes)
-  const notifConfig = buildNotificationChannelConfig(notificationNodes)
+  const actionConfigs = buildActionChannelConfigs(actionNodes)
+  const notifConfigs = buildNotificationChannelConfigs(notificationNodes)
 
-  if (notifConfig) {
+  if (notifConfigs.length > 0) {
+    // 多个通知节点：级别取最高，通知渠道全部绑定（去重）
+    const highestLevel = notifConfigs.reduce<NotificationChannelConfig['level']>(
+      (max, c) =>
+        (NOTIFICATION_LEVEL_ORDER[c.level] ?? 0) >= (NOTIFICATION_LEVEL_ORDER[max] ?? 0)
+          ? c.level
+          : max,
+      'info'
+    )
     notification = {
       title: i18n.global.t('ruleEditor.notification.titleTriggered', { ruleName: name }),
       message: i18n.global.t('ruleEditor.notification.messageTriggered', { ruleName: name }),
-      level: notifConfig.level,
-      recipients: notifConfig.recipients,
+      level: highestLevel,
+      recipients: [],
     }
-  } else if (actionConfig) {
+  } else if (actionConfigs.length > 0) {
+    // 聚合所有动作节点信息，避免多链场景下只反映第一个动作
     notification = {
       title: i18n.global.t('ruleEditor.notification.titleTriggered', { ruleName: name }),
       message: i18n.global.t('ruleEditor.notification.messageAction', {
-        asset: actionConfig.target_asset,
-        operation: actionConfig.operation,
+        asset: actionConfigs.map(c => c.target_asset).filter(Boolean).join(', '),
+        operation: actionConfigs.map(c => c.operation).filter(Boolean).join(', '),
       }),
       level: 'warning',
     }
@@ -394,11 +475,8 @@ export function graphToBackendCreate(
   const ruleId = existingId || `rule-${Date.now()}`
   const channelIds: string[] = []
 
-  if (notifConfig) {
-    // 使用固定的通知渠道ID，而不是动态创建
-    // system类型 → system-notification
-    // email类型 → email-notification
-    // webhook类型 → webhook-notification
+  // 使用固定的通知渠道 ID：system → system-notification / email → email-notification / webhook → webhook-notification
+  for (const notifConfig of notifConfigs) {
     const defaultChannelId = `${notifConfig.channel_type}-notification`
     if (!channelIds.includes(defaultChannelId)) {
       channelIds.push(defaultChannelId)
