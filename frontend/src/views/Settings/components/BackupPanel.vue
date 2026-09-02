@@ -253,7 +253,7 @@ async function importBackup(uploadFile: UploadFile) {
     importLoading.value = true
     const res = await configApi.importConfig(file, true)
     if (res.success) {
-      ElMessage.success(res.message)
+      ElMessage.success(t('settings.backup.import_success'))
       await loadBackupList()
     } else {
       ElMessage.error(res.error || t('settings.backup.import_failed'))

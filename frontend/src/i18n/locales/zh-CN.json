@@ -869,6 +869,7 @@
       "download_failed": "下载失败",
       "import_confirm": "确认导入备份?",
       "import_confirm_title": "确认导入",
+      "import_success": "导入成功，重启后方可生效",
       "import_failed": "导入失败",
       "delete_confirm_msg": "确认删除此备份?",
       "delete_success": "备份删除成功",
