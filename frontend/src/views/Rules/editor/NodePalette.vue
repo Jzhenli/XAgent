@@ -55,15 +55,20 @@ const onDragStart = (type: NodeType, event: DragEvent) => {
   emit('dragStart', type, event)
 }
 
+/** 临时隐藏逻辑节点：过滤掉 logic，后续放开时移除 filter 即可 */
+const HIDDEN_NODE_TYPES: NodeType[] = ['logic']
+
 const categories = computed(() => {
   const cats: Record<string, typeof NODE_TEMPLATES> = {}
-  NODE_TEMPLATES.forEach(template => {
-    const catKey = template.category
-    if (!cats[catKey]) {
-      cats[catKey] = []
-    }
-    cats[catKey].push(template)
-  })
+  NODE_TEMPLATES
+    .filter(template => !HIDDEN_NODE_TYPES.includes(template.type))
+    .forEach(template => {
+      const catKey = template.category
+      if (!cats[catKey]) {
+        cats[catKey] = []
+      }
+      cats[catKey].push(template)
+    })
   return cats
 })
 
