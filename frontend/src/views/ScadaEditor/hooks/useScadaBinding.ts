@@ -271,17 +271,14 @@ export function useScadaPolling(options: UseScadaPollingOptions = {}) {
     immediate
   })
 
-  // 编辑模式切换时自动暂停/恢复，并在退出编辑模式时立即刷新一次数据
+  // 编辑模式切换时自动暂停/恢复；退出编辑模式时 start() 的 immediate 会自动执行一次刷新
   watch(
     () => scada.isEditing.value,
-    (editing, wasEditing) => {
+    (editing) => {
       if (editing) {
         stop()
       } else {
         start()
-        if (wasEditing) {
-          void refreshBoundDevices()
-        }
       }
     }
   )

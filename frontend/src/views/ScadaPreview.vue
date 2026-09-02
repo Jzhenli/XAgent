@@ -65,10 +65,11 @@ const currentPanel = computed(() => scada.currentPanel)
 onMounted(async () => {
   const panelId = route.params.id as string
   if (panelId) {
-    scada.isEditing.value = false
     scada.isFullscreenPreview.value = true
+    // 必须在 loadPanel 前设置：确保 boundAssets watch 触发时 refreshBoundDevices 不被 isEditing 短路
+    scada.isEditing.value = false
     await scada.loadPanel(panelId)
-    await refreshBoundDevices()
+    // loadPanel 后 boundAssets 变化 → boundAssets watch 自动触发 refreshBoundDevices
   }
 })
 
@@ -76,7 +77,7 @@ onMounted(async () => {
 watch(() => route.params.id, async (newId) => {
   if (newId && newId !== scada.currentPanelId.value) {
     await scada.loadPanel(newId as string)
-    await refreshBoundDevices()
+    // loadPanel 后 boundAssets 变化 → boundAssets watch 自动触发 refreshBoundDevices
   }
 })
 
