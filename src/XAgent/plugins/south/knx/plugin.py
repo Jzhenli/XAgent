@@ -180,6 +180,15 @@ class KNXPlugin(SouthPluginBase):
         self._semaphore: Optional[asyncio.Semaphore] = None
         self._last_telegram_time: Dict[str, float] = {}
 
+        # K1：链路活跃度判定。路由模式下 xknx 不会关闭 IP_MULTICAST_LOOP，
+        # 自己发出的帧会被自己收回（自回环），直接采样 cemi 计数会恒为"在线"。
+        # 故用 telegram_received_cb 按源地址过滤自回环，只统计外部入站帧。
+        self._external_inbound_count: int = 0
+        # K1 窗口法：计数器单调递增（不重置），每轮 poll 记录基线，
+        # 心跳失败时比较"本轮间隔内新增的外部入站帧"，避免只在 poll 执行那几毫秒采样而漏掉总线流量。
+        self._probe_baseline: int = 0
+        self._own_ia: Any = None
+
         self._connect_lock = asyncio.Lock()
         self._heartbeat_fail_count = 0
         self._last_conn_state: Optional[str] = None
@@ -193,6 +202,21 @@ class KNXPlugin(SouthPluginBase):
         if device_name in self._devices:
             self._last_telegram_time[device_name] = time.time()
             logger.debug(f"Device {device_name} updated via telegram")
+
+    def _on_telegram(self, telegram: Any) -> None:
+        """K1 链路活跃度回调（同步）：统计"外部"入站帧。
+
+        路由模式下 xknx 不会关闭 IP_MULTICAST_LOOP，本机发出的帧会被自己收回，
+        形成自回环，若直接据此判定总线活跃会恒为在线（假阳性）。
+        这里按源地址过滤掉本机 IA，只统计来自其它设备的外部入站帧，
+        作为链路真实活跃度的辅助信号。
+        """
+        try:
+            src = getattr(telegram, "source_address", None)
+            if src is not None and self._own_ia is not None and src != self._own_ia:
+                self._external_inbound_count += 1
+        except Exception:
+            pass
     
     async def connect(self) -> bool:
         if not _check_knx_available():
@@ -240,10 +264,24 @@ class KNXPlugin(SouthPluginBase):
 
                 self._xknx = _XKNX(
                     connection_config=connection_config,
-                    device_updated_cb=self._on_device_updated
+                    device_updated_cb=self._on_device_updated,
+                    telegram_received_cb=self._on_telegram,
                 )
 
                 await self._xknx.start()
+
+                # 捕获本机 IA，供 _on_telegram 过滤自回环
+                try:
+                    self._own_ia = self._xknx.current_address
+                except Exception:
+                    self._own_ia = None
+                if self._own_ia is None:
+                    # 路由模式下若取不到本机 IA，自回环无法被过滤，K1 外部入站信号将失效，
+                    # 此时心跳失败仍会走"无外部入站"分支（等于原行为），仅作告警以便排查。
+                    logger.warning(
+                        "KNX current_address is None; cannot filter self-loopback, "
+                        "K1 external-inbound link signal disabled"
+                    )
 
                 self._connected = True
                 self._device_online = False
@@ -576,6 +614,9 @@ class KNXPlugin(SouthPluginBase):
             logger.debug("KNX connection is reconnecting internally, skipping this poll cycle")
             return []
 
+        # K1：窗口基线（计数器单调递增，此处只记录基线，不归零）
+        self._probe_baseline = self._external_inbound_count
+
         if not self._point_order:
             logger.warning("No points configured")
             return []
@@ -597,17 +638,26 @@ class KNXPlugin(SouthPluginBase):
 
         if heartbeat_success is None:
             self._heartbeat_fail_count += 1
+            # K1：本轮间隔内新增的外部入站帧——区分"链路真死"与"仅本设备静默"
+            link_alive = (self._external_inbound_count - self._probe_baseline) > 0
             if self._heartbeat_fail_count < self.MAX_HEARTBEAT_FAILURES:
                 logger.warning(
                     f"Heartbeat failed ({self._heartbeat_fail_count}/"
                     f"{self.MAX_HEARTBEAT_FAILURES}), keeping connection"
                 )
-                # 容忍期内保留上一轮状态，不发 offline reading——
-                # 否则瞬断(DISCONNECTED/CONNECTING)期间的抖动会让前端闪烁 offline，
-                # 与 MAX_HEARTBEAT_FAILURES 的容忍设计自相矛盾（同 #11 CONNECTING 分支）。
+                # 容忍期内保留上一轮状态，不发 offline reading（避免前端闪烁 offline，
+                # 与 MAX_HEARTBEAT_FAILURES 的容忍设计自相矛盾）。
+                return []
+            # 超出容忍：区分链路真死与仅本设备静默
+            if link_alive:
+                logger.warning(
+                    f"Heartbeat failed {self.MAX_HEARTBEAT_FAILURES} times but external "
+                    f"inbound seen this window; link is alive (device may be silent), keeping connection"
+                )
                 return []
             logger.error(
-                f"Heartbeat failed {self.MAX_HEARTBEAT_FAILURES} times, rebuilding KNX connection"
+                f"Heartbeat failed {self.MAX_HEARTBEAT_FAILURES} times and no external "
+                f"inbound this window, rebuilding KNX connection"
             )
             await self._handle_connection_lost()
             return await self._create_offline_reading()

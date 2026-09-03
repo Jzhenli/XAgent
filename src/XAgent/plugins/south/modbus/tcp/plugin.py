@@ -69,20 +69,25 @@ class ModbusTcpPlugin(ModbusBasePlugin):
         self._host = config.get("host", "127.0.0.1")
         self._port = config.get("port", DEFAULT_PORT)
         super().__init__(config, storage, event_bus)
+        self._use_bus_lock = False
 
     @classmethod
     def _check_modbus_available(cls) -> bool:
         return _check_modbus_tcp_available()
 
-    def _create_client(self) -> Any:
+    async def _create_client(self) -> Any:
         return _AsyncModbusTcpClient(
             host=self._host,
             port=self._port,
             timeout=self._timeout,
-            retries=2,
+            retries=0,
             reconnect_delay=1,
             reconnect_delay_max=10,
         )
+
+    def _build_session_key(self) -> tuple:
+        # 同一 host:port 的设备共享一条 TCP 连接；TCP 用 MBAP 事务 ID 多路复用，无需总线锁
+        return (self._host, self._port)
 
     async def _connect_client(self, client: Any) -> None:
         await client.connect()

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import time
 import warnings
 from typing import Callable, Dict, List, Optional, Set
 from dataclasses import dataclass, field
@@ -10,6 +11,10 @@ from datetime import datetime
 import uuid
 
 logger = logging.getLogger(__name__)
+
+# 失败日志收敛：持久失败的任务（如采集断连）若每次都打完整堆栈会刷屏。
+# 完整 ERROR(含 exc_info) 最多每 FAILURE_LOG_INTERVAL 秒输出一次，其余降级为单行 WARNING。
+FAILURE_LOG_INTERVAL = 300.0
 
 
 class TaskType(str, Enum):
@@ -43,6 +48,7 @@ class ScheduledTask:
     next_run: Optional[datetime] = None
     error_count: int = 0
     max_errors: int = 3
+    last_full_error_log: float = 0.0  # 上次输出完整堆栈的 monotonic 时间(秒)，用于失败日志收敛
     _task: Optional[asyncio.Task] = None
 
 
@@ -140,6 +146,25 @@ class Scheduler:
         for task_id in task_ids:
             await self.stop_task(task_id)
 
+    def _log_task_failure(
+        self, task: ScheduledTask, summary: str, exc: Optional[BaseException] = None
+    ) -> None:
+        """告警收敛：同一任务持续失败时，完整 ERROR(含堆栈) 最多每 FAILURE_LOG_INTERVAL 秒输出一次，
+        其余失败降级为单行 WARNING，避免刷屏；距上次完整日志已超过阈值时仍给完整堆栈便于排障。
+        """
+        now = time.monotonic()
+        if now - task.last_full_error_log >= FAILURE_LOG_INTERVAL:
+            if exc is not None:
+                logger.error(summary, exc_info=exc)
+            else:
+                logger.error(summary)
+            task.last_full_error_log = now
+        else:
+            logger.warning(
+                f"{summary} (suppressed; {task.error_count} consecutive failures, "
+                f"full traceback every {int(FAILURE_LOG_INTERVAL)}s)"
+            )
+
     async def _run_once(self, task: ScheduledTask):
         async with self._semaphore:
             try:
@@ -164,7 +189,7 @@ class Scheduler:
             except asyncio.TimeoutError:
                 task.error_count += 1
                 task.status = TaskStatus.FAILED
-                logger.error(f"Task timeout: {task.name}")
+                self._log_task_failure(task, f"Task timeout: {task.name}")
             except asyncio.CancelledError:
                 task.status = TaskStatus.CANCELLED
                 logger.info(f"Task cancelled: {task.name}")
@@ -172,24 +197,40 @@ class Scheduler:
             except Exception as e:
                 task.error_count += 1
                 task.status = TaskStatus.FAILED
-                logger.error(f"Task failed: {task.name}, error: {e}", exc_info=True)
+                self._log_task_failure(
+                    task, f"Task failed: {task.name}, error: {e}", exc=e
+                )
             finally:
                 self._running_tasks.discard(task.task_id)
 
     async def _run_periodic(self, task: ScheduledTask):
         if task.initial_delay > 0:
             await asyncio.sleep(task.initial_delay)
-        
-        while self._running and task.error_count < task.max_errors:
+
+        # 退避基数：避免与采集间隔叠加过长；至少不低于任务硬超时
+        backoff = (task.interval if (task.interval and task.interval > 0) else 0) or max(self.task_timeout, 5)
+
+        while self._running:
             await self._run_once(task)
-            
+
+            if not self._running:
+                break
+
+            # Q9 修复：原行为在 max_errors 次错误后永久取消任务（一次网络抖动即永久停采集）。
+            # 改为退避后持续重试 + 持续告警，不再取消任务。
+            if task.max_errors > 0 and task.error_count >= task.max_errors:
+                logger.error(
+                    f"Task {task.name} reached max_errors ({task.max_errors}); "
+                    f"backing off {backoff}s and retrying (collection will NOT be stopped)"
+                )
+                await asyncio.sleep(backoff)
+                task.error_count = 0
+                continue
+
             if task.interval and task.interval > 0:
                 await asyncio.sleep(task.interval)
             else:
                 break
-        
-        if task.error_count >= task.max_errors:
-            logger.error(f"Task {task.name} exceeded max errors, stopping")
 
     def get_task(self, task_id: str) -> Optional[ScheduledTask]:
         return self._tasks.get(task_id)

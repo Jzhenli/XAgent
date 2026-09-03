@@ -93,12 +93,13 @@ class ModbusRtuPlugin(ModbusBasePlugin):
         self._stopbits = config.get("stopbits", DEFAULT_STOPBITS)
         self._bytesize = config.get("bytesize", DEFAULT_BYTESIZE)
         super().__init__(config, storage, event_bus)
+        self._use_bus_lock = True
 
     @classmethod
     def _check_modbus_available(cls) -> bool:
         return _check_modbus_rtu_available()
 
-    def _create_client(self) -> Any:
+    async def _create_client(self) -> Any:
         return _AsyncModbusSerialClient(
             port=self._serial_port,
             baudrate=self._baudrate,
@@ -106,8 +107,12 @@ class ModbusRtuPlugin(ModbusBasePlugin):
             stopbits=self._stopbits,
             bytesize=self._bytesize,
             timeout=self._timeout,
-            retries=2,
+            retries=0,
         )
+
+    def _build_session_key(self) -> tuple:
+        # 同一串口（含全部通信参数）的设备共享一个 client；RTU 需总线锁串行化访问
+        return (self._serial_port, self._baudrate, self._parity, self._stopbits, self._bytesize)
 
     async def _connect_client(self, client: Any) -> None:
         await client.connect()

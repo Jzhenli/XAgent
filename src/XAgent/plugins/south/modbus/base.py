@@ -12,6 +12,7 @@ from XAgent.xcore.storage.interface import Reading
 from XAgent.xcore.transform import StandardDataPoint
 from .converter import ModbusConverter
 from .constants import DEFAULT_SLAVE_ID, DEFAULT_TIMEOUT, DEFAULT_RECONNECT_INTERVAL, DEFAULT_MAX_GAP
+from .session import ModbusSessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,13 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
         self._points: List[Dict[str, Any]] = config.get("points", [])
         self._client: Optional[Any] = None
 
+        # 连接收敛：共享会话（同一连接 Key 只建一个 client）
+        self._session = None
+        self._instance_id = id(self)
+        self._poll_budget = float(config.get("poll_timeout_budget", 10))
+        self._breaker_threshold = int(config.get("breaker_threshold", 2))
+        self._poll_budget_deadline = 0.0
+
         self._offline_counter = 0
         self._last_heartbeat_time = 0
         self._last_reconnect_time: float = 0.0
@@ -76,9 +84,20 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
             logger.warning(f"No points configured for Modbus device {self._asset_name}")
 
     @abstractmethod
-    def _create_client(self) -> Any:
+    async def _create_client(self) -> Any:
         """创建协议专有的客户端实例（不执行连接）"""
         pass
+
+    @abstractmethod
+    def _build_session_key(self) -> tuple:
+        """返回会话收敛 Key（相同 Key 共享一个 client）"""
+        pass
+
+    async def _make_client(self) -> Any:
+        """会话工厂：创建并连接 client（供 ModbusSessionManager 调用）"""
+        client = await self._create_client()
+        await self._connect_client(client)
+        return client
 
     @abstractmethod
     async def _connect_client(self, client: Any) -> None:
@@ -112,19 +131,18 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
             return False
 
         try:
-            # 重建连接前先释放旧 client，避免 socket/串口句柄泄漏
-            # （瞬断后 _handle_disconnected 会复用本方法重建 client，旧引用被直接覆盖）
-            if self._client is not None:
-                try:
-                    await self._disconnect_client(self._client)
-                except Exception as e:
-                    logger.debug(f"Error closing previous client for {self._asset_name}: {e}")
-                self._client = None
+            # 连接收敛：通过 SessionManager 复用同一 Key 的共享 client（幂等）
+            self._session = await ModbusSessionManager.acquire(
+                self._instance_id,
+                self._build_session_key(),
+                self._make_client,
+                self._disconnect_client,
+                use_bus_lock=getattr(self, "_use_bus_lock", True),
+                breaker_threshold=self._breaker_threshold,
+            )
+            self._client = self._session.client
 
-            self._client = self._create_client()
-            await self._connect_client(self._client)
-
-            if self._is_client_connected(self._client):
+            if self._client is not None and self._is_client_connected(self._client):
                 self._connected = True
                 self._device_online = True
                 self._offline_counter = 0
@@ -132,20 +150,41 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
                 return True
             else:
                 logger.error(f"Failed to connect to Modbus device: {self._asset_name}")
+                # 连接已建立但 is_connected 为 False：必须释放共享会话，否则：
+                # 1) 残留 holder / 共享 client 永不关闭；
+                # 2) 后续 connect() 重试时 acquire 复用旧会话且 client 非 None，
+                #    ensure_client 不会重建，导致一直复用坏连接而永远无法恢复。
+                try:
+                    await ModbusSessionManager.release(
+                        self._instance_id, self._build_session_key()
+                    )
+                except Exception:
+                    pass
+                self._session = None
+                self._client = None
+                self._connected = False
                 return False
 
         except Exception as e:
             logger.error(f"Error connecting to Modbus device: {e}")
+            try:
+                await ModbusSessionManager.release(self._instance_id, self._build_session_key())
+            except Exception:
+                pass
+            self._session = None
+            self._client = None
             self._connected = False
             return False
 
     async def disconnect(self) -> None:
-        if self._client:
+        if self._session is not None:
+            # 仅释放本 holder；最后一个 holder 释放时才真正关闭共享 client
             try:
-                await self._disconnect_client(self._client)
+                await ModbusSessionManager.release(self._instance_id, self._build_session_key())
             except Exception as e:
                 logger.error(f"Error disconnecting from Modbus device: {e}")
             finally:
+                self._session = None
                 self._client = None
                 self._connected = False
 
@@ -166,6 +205,7 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
         第三层：批量数据采集
         """
         poll_start = time.time()
+        self._poll_budget_deadline = poll_start + self._poll_budget
 
         logger.debug(f"poll() called for device {self._asset_name}")
 
@@ -271,17 +311,27 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
         if self.event_bus:
             await self.publish_readings([reading])
 
+    async def _with_bus_lock(self, coro_factory):
+        """RTU 需要总线锁串行化（防跨实例串扰）；TCP 无锁（MBAP 多路复用）。"""
+        if self._session is not None and self._session.bus_lock is not None:
+            async with self._session.bus_lock:
+                return await coro_factory()
+        return await coro_factory()
+
     async def _check_heartbeat(self) -> bool:
         if self._client is None:
             return False
 
         try:
-            result = await asyncio.wait_for(
-                self._client.read_holding_registers(
+            async def _op():
+                return await self._client.read_holding_registers(
                     address=self._heartbeat_address,
                     count=1,
                     device_id=self._slave_id
-                ),
+                )
+
+            result = await asyncio.wait_for(
+                self._with_bus_lock(_op),
                 timeout=self._heartbeat_timeout
             )
 
@@ -330,7 +380,14 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
 
         raw_data = {}
 
-        for group in self._read_groups:
+        for idx, group in enumerate(self._read_groups):
+            # 单轮超时预算：避免某分组长时间阻塞（死从站）拖垮整个 30s 调度硬限
+            if self._poll_budget_deadline and time.time() > self._poll_budget_deadline:
+                logger.warning(
+                    f"poll budget exceeded for {self._asset_name}; "
+                    f"skipping {len(self._read_groups) - idx} remaining group(s)"
+                )
+                break
             group_data = await self._read_group(group)
             raw_data.update(group_data)
 
@@ -370,46 +427,83 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
                     result_data[point_name] = None
             return result_data
 
+        # 从站熔断：避免反复请求已死从站，防止 pymodbus 累计失败触发 connection_lost()
+        # 关闭共享连接、拖垮同总线上所有设备（阈值 2 < pymodbus 的 count_until_disconnect=retries+3）
+        breaker = self._session.get_breaker(self._slave_id) if self._session else None
+        if breaker is not None and breaker.is_open():
+            logger.warning(
+                f"Circuit breaker OPEN for {self._asset_name} slave {self._slave_id}; "
+                f"skipping group @ {start_addr} (device unavailable, not offline)"
+            )
+            for point_config in points_config:
+                point_name = point_config.get("name")
+                if point_name:
+                    result_data[point_name] = None
+            return result_data
+
+        def _fill_none():
+            for point_config in points_config:
+                point_name = point_config.get("name")
+                if point_name:
+                    result_data[point_name] = None
+
         try:
-            if register_type == "coil":
-                result = await self._client.read_coils(
-                    address=start_addr,
-                    count=count,
-                    device_id=self._slave_id
-                )
-            elif register_type == "discrete_input":
-                result = await self._client.read_discrete_inputs(
-                    address=start_addr,
-                    count=count,
-                    device_id=self._slave_id
-                )
-            elif register_type == "holding":
-                result = await self._client.read_holding_registers(
-                    address=start_addr,
-                    count=count,
-                    device_id=self._slave_id
-                )
-            elif register_type == "input":
-                result = await self._client.read_input_registers(
-                    address=start_addr,
-                    count=count,
-                    device_id=self._slave_id
-                )
+            async def _do_read():
+                if register_type == "coil":
+                    return await self._client.read_coils(
+                        address=start_addr, count=count, device_id=self._slave_id)
+                elif register_type == "discrete_input":
+                    return await self._client.read_discrete_inputs(
+                        address=start_addr, count=count, device_id=self._slave_id)
+                elif register_type == "holding":
+                    return await self._client.read_holding_registers(
+                        address=start_addr, count=count, device_id=self._slave_id)
+                elif register_type == "input":
+                    return await self._client.read_input_registers(
+                        address=start_addr, count=count, device_id=self._slave_id)
+                else:
+                    logger.warning(f"Unknown register type: {register_type}")
+                    return None
+
+            # RTU 需要总线锁串行化；TCP 无锁（MBAP 多路复用）
+            if self._session is not None and self._session.bus_lock is not None:
+                async with self._session.bus_lock:
+                    result = await _do_read()
             else:
-                logger.warning(f"Unknown register type: {register_type}")
-                for point_config in points_config:
-                    point_name = point_config.get("name")
-                    if point_name:
-                        result_data[point_name] = None
+                result = await _do_read()
+
+            if result is None:
+                logger.warning(f"Unknown register type produced no result @ {start_addr}")
+                _fill_none()
+                if breaker is not None:
+                    breaker.record_failure()
                 return result_data
 
             if result.isError():
                 logger.error(f"Error reading group at address {start_addr}: {result}")
-                for point_config in points_config:
-                    point_name = point_config.get("name")
-                    if point_name:
-                        result_data[point_name] = None
+                _fill_none()
+                if breaker is not None:
+                    breaker.record_failure()
                 return result_data
+
+            # 陈旧响应防御：pymodbus 3.15 在取消/超时后会把 response_future 替换，
+            # 晚到的旧响应可能落到新请求上。校验功能码与请求一致可显著降低概率。
+            expected_fc = {"coil": 1, "discrete_input": 2, "holding": 3, "input": 4}.get(register_type)
+            fc = getattr(result, "function_code", None)
+            # 仅当功能码字段存在且不一致时才判为陈旧响应；字段缺失（个别 pymodbus 版本/封装）
+            # 时不应误判，否则会把所有正常读数判为 stale 而全部丢点。
+            if expected_fc is not None and fc is not None and fc != expected_fc:
+                logger.warning(
+                    f"Stale/corrupt response for {self._asset_name} @ {start_addr}: "
+                    f"function_code={getattr(result, 'function_code', None)} expected={expected_fc}"
+                )
+                _fill_none()
+                if breaker is not None:
+                    breaker.record_failure()
+                return result_data
+
+            if breaker is not None:
+                breaker.record_success()
 
             if register_type in ("coil", "discrete_input"):
                 bits = result.bits[:count]
@@ -420,32 +514,26 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
 
         except asyncio.CancelledError:
             logger.warning(f"Read operation cancelled at address {start_addr}")
-            for point_config in points_config:
-                point_name = point_config.get("name")
-                if point_name:
-                    result_data[point_name] = None
+            _fill_none()
             raise
         except asyncio.TimeoutError:
             logger.error(f"Timeout reading group at address {start_addr}")
-            for point_config in points_config:
-                point_name = point_config.get("name")
-                if point_name:
-                    result_data[point_name] = None
+            _fill_none()
+            if breaker is not None:
+                breaker.record_failure()
             return result_data
         except _ModbusException as e:
             logger.error(f"Modbus error reading group at address {start_addr}: {e}")
             self._connected = False
-            for point_config in points_config:
-                point_name = point_config.get("name")
-                if point_name:
-                    result_data[point_name] = None
+            _fill_none()
+            if breaker is not None:
+                breaker.record_failure()
             return result_data
         except Exception as e:
             logger.error(f"Unexpected error reading group at address {start_addr}: {e}")
-            for point_config in points_config:
-                point_name = point_config.get("name")
-                if point_name:
-                    result_data[point_name] = None
+            _fill_none()
+            if breaker is not None:
+                breaker.record_failure()
             return result_data
 
     def _group_points(self) -> None:
@@ -577,81 +665,85 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
         if not self.is_connected or not self._client:
             raise _ConnectionException("Not connected to Modbus device")
 
-        result = await self._client.read_coils(
-            address=address,
-            count=count,
-            device_id=self._slave_id
-        )
+        async def _op():
+            result = await self._client.read_coils(
+                address=address,
+                count=count,
+                device_id=self._slave_id
+            )
+            if result.isError():
+                raise _ModbusException(f"Error reading coils: {result}")
+            return result.bits[:count]
 
-        if result.isError():
-            raise _ModbusException(f"Error reading coils: {result}")
-
-        return result.bits[:count]
+        return await self._with_bus_lock(_op)
 
     async def read_discrete_inputs(self, address: int, count: int) -> List[bool]:
         if not self.is_connected or not self._client:
             raise _ConnectionException("Not connected to Modbus device")
 
-        result = await self._client.read_discrete_inputs(
-            address=address,
-            count=count,
-            device_id=self._slave_id
-        )
+        async def _op():
+            result = await self._client.read_discrete_inputs(
+                address=address,
+                count=count,
+                device_id=self._slave_id
+            )
+            if result.isError():
+                raise _ModbusException(f"Error reading discrete inputs: {result}")
+            return result.bits[:count]
 
-        if result.isError():
-            raise _ModbusException(f"Error reading discrete inputs: {result}")
-
-        return result.bits[:count]
+        return await self._with_bus_lock(_op)
 
     async def read_holding_registers(self, address: int, count: int) -> List[int]:
         if not self.is_connected or not self._client:
             raise _ConnectionException("Not connected to Modbus device")
 
-        result = await self._client.read_holding_registers(
-            address=address,
-            count=count,
-            device_id=self._slave_id
-        )
+        async def _op():
+            result = await self._client.read_holding_registers(
+                address=address,
+                count=count,
+                device_id=self._slave_id
+            )
+            if result.isError():
+                raise _ModbusException(f"Error reading holding registers: {result}")
+            return result.registers
 
-        if result.isError():
-            raise _ModbusException(f"Error reading holding registers: {result}")
-
-        return result.registers
+        return await self._with_bus_lock(_op)
 
     async def read_input_registers(self, address: int, count: int) -> List[int]:
         if not self.is_connected or not self._client:
             raise _ConnectionException("Not connected to Modbus device")
 
-        result = await self._client.read_input_registers(
-            address=address,
-            count=count,
-            device_id=self._slave_id
-        )
+        async def _op():
+            result = await self._client.read_input_registers(
+                address=address,
+                count=count,
+                device_id=self._slave_id
+            )
+            if result.isError():
+                raise _ModbusException(f"Error reading input registers: {result}")
+            return result.registers
 
-        if result.isError():
-            raise _ModbusException(f"Error reading input registers: {result}")
-
-        return result.registers
+        return await self._with_bus_lock(_op)
 
     async def write_single_coil(self, address: int, value: bool) -> bool:
         if not self.is_connected or not self._client:
             logger.error("Not connected to Modbus device")
             return False
 
-        try:
+        async def _op():
             result = await self._client.write_coil(
                 address=address,
                 value=value,
                 device_id=self._slave_id
             )
-
             if result.isError():
                 logger.error(f"Error writing coil at address {address}: {result}")
                 return False
-
             logger.info(f"Successfully wrote coil at address {address}: {value}")
             return True
 
+        try:
+            return await self._with_bus_lock(_op)
         except Exception as e:
             logger.error(f"Error writing coil: {e}")
             return False
@@ -661,20 +753,20 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
             logger.error("Not connected to Modbus device")
             return False
 
-        try:
+        async def _op():
             result = await self._client.write_register(
                 address=address,
                 value=value,
                 device_id=self._slave_id
             )
-
             if result.isError():
                 logger.error(f"Error writing register at address {address}: {result}")
                 return False
-
             logger.info(f"Successfully wrote value {value} to address {address}")
             return True
 
+        try:
+            return await self._with_bus_lock(_op)
         except Exception as e:
             logger.error(f"Error writing register: {e}")
             return False
@@ -826,20 +918,20 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
             logger.error("Not connected to Modbus device")
             return False
 
-        try:
+        async def _op():
             result = await self._client.write_registers(
                 address=address,
                 values=values,
                 device_id=self._slave_id
             )
-
             if result.isError():
                 logger.error(f"Error writing registers at address {address}: {result}")
                 return False
-
             logger.info(f"Successfully wrote values {values} to address {address}")
             return True
 
+        try:
+            return await self._with_bus_lock(_op)
         except Exception as e:
             logger.error(f"Error writing registers: {e}")
             return False
