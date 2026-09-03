@@ -97,9 +97,10 @@ export function useScadaLineChart(
   // 数据加载工具
   // ═══════════════════════════════════════════════════════════════════════════════
 
-  const fetchHistoryReadings = async (asset: string, hours: number = 24) => {
+  /** 拉取点位历史：reader 模式写入点位自身的 historyCache；无 reader（编辑器内预览）回退 store 资产级加载 */
+  const fetchPointHistory = async (asset: string, pointName: string, hours: number = 24) => {
     if (injectedReader) {
-      return injectedReader.fetchHistoryReadings(asset, hours, 100)
+      return injectedReader.fetchPointHistory(asset, pointName, hours)
     }
     return pointStore.fetchHistoryReadings(asset, hours, 100)
   }
@@ -118,14 +119,13 @@ export function useScadaLineChart(
     return pointStore.generateTrendData(point, hours)
   }
 
-  /** 统一的设备数据源：优先使用注入的 reader，否则回退到全局 store */
-  const devicesSource = computed(() =>
-    injectedReader ? injectedReader.devices.value : pointStore.devices,
-  )
-
+  /** 统一的点位解析：优先走 reader 的 O(1) Map 索引，否则回退全局 store 线性查找 */
   const resolveBoundPoint = (bind: PointBinding | null): any | null => {
     if (!bind) return null
-    const device = devicesSource.value.find(
+    if (injectedReader) {
+      return injectedReader.resolvePoint(bind.deviceId, bind.pointName)
+    }
+    const device = pointStore.devices.find(
       (d: any) => d.asset === bind.deviceId || d.name === bind.deviceId,
     )
     if (!device) return null
@@ -163,15 +163,19 @@ export function useScadaLineChart(
     })
   }
 
-  const collectDeviceIds = (): string[] => {
-    const ids = new Set<string>()
-    const items = ensureSeriesItems(chartConfig.value)
-    items.forEach((item) => {
-      if (item.binding?.deviceId) {
-        ids.add(item.binding.deviceId)
-      }
-    })
-    return Array.from(ids)
+  /** 收集去重后的绑定对（deviceId + pointName）：历史缓存挂在点位上，需逐点位加载 */
+  const collectBindings = (): PointBinding[] => {
+    const seen = new Set<string>()
+    const bindings: PointBinding[] = []
+    for (const item of ensureSeriesItems(chartConfig.value)) {
+      const bind = item.binding
+      if (!bind?.deviceId || !bind.pointName) continue
+      const key = `${bind.deviceId}:${bind.pointName}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      bindings.push(bind)
+    }
+    return bindings
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -181,12 +185,14 @@ export function useScadaLineChart(
   const loadHistoryData = async () => {
     if (scada.isEditing.value) return
 
-    const deviceIds = collectDeviceIds()
-    if (deviceIds.length === 0) return
+    const bindings = collectBindings()
+    if (bindings.length === 0) return
 
     try {
       const hours = hoursMap[chartConfig.value?.timeRange || '24h'] || 24
-      await Promise.allSettled(deviceIds.map((id) => fetchHistoryReadings(id, hours)))
+      await Promise.allSettled(
+        bindings.map((b) => fetchPointHistory(b.deviceId, b.pointName, hours)),
+      )
       updateChartOption()
     } catch (e) {
       console.error('[useScadaLineChart] Failed to load history data:', e)
@@ -194,14 +200,11 @@ export function useScadaLineChart(
   }
 
   /**
-   * 增量追加最新 Reading 到历史缓存（复用 fetchDevicePoints 已拿到的数据）
-   * 用于 30 秒轮询，避免每轮拉 1000 条全量历史
+   * 30 秒兜底轮询：reader 模式下增量追加由设备轮询在 fetchDevicePoints 内部完成
+   * （historyVersion 递增触发刷新），此处仅负责失败重试与无 reader 的编辑器内预览回退
    */
   const appendHistoryData = async () => {
     if (scada.isEditing.value) return
-
-    const deviceIds = collectDeviceIds()
-    if (deviceIds.length === 0) return
 
     // 无注入 reader（如编辑器内预览）时回退全量加载，保持原有行为
     if (!injectedReader) {
@@ -209,18 +212,10 @@ export function useScadaLineChart(
       return
     }
 
-    // 存在无历史基线的设备（首次加载失败等）时回退全量加载，兼作失败重试
-    if (deviceIds.some((id) => !injectedReader.hasHistoryReadings(id))) {
+    // 存在未加载历史基线的绑定点位（首次加载失败等）时回退全量加载，兼作失败重试
+    if (collectBindings().some((b) => !injectedReader!.hasPointHistory(b.deviceId, b.pointName))) {
       await loadHistoryData()
-      return
     }
-
-    for (const id of deviceIds) {
-      injectedReader.appendLatestReadingToHistory(id)
-    }
-    // 无条件刷新：同面板多图表共享同一设备的历史缓存，
-    // 先执行的去重追加会使后续图表的追加返回 false，若按返回值判断会漏刷新
-    updateChartOption()
   }
 
   const { start: startHistoryPolling, stop: stopHistoryPolling } = usePolling(appendHistoryData, {
@@ -229,17 +224,24 @@ export function useScadaLineChart(
     paused: scada.isEditing.value,
   })
 
-  /** 是否存在已解析的绑定点位（设备数据就绪信号） */
-  const hasResolvedBound = computed(() =>
-    ensureSeriesItems(chartConfig.value).some(
-      (item) => !!item.binding && resolveBoundPoint(item.binding) !== null,
-    ),
-  )
+  /** 已就绪（设备数据已解析）但尚无历史缓存的绑定对 key 集合
+   * 用逗号拼接字符串作 watch 源：轮询每轮重建设备对象但历史已跨轮携带，值不变则不触发，
+   * 避免退化为"每轮轮询都全量拉取" */
+  const pendingHistoryKey = computed(() => {
+    if (!injectedReader || scada.isEditing.value) return ''
+    return collectBindings()
+      .filter(
+        (b) => resolveBoundPoint(b) !== null && !injectedReader!.hasPointHistory(b.deviceId, b.pointName),
+      )
+      .map((b) => `${b.deviceId}:${b.pointName}`)
+      .join(',')
+  })
 
-  /** 监听绑定点位解析状态从无到有：设备数据就绪时触发一次全量加载
-   * （不能用 deep watch 监听 devices：轮询每 5 秒替换设备数据会反复触发全量拉取） */
-  watch(hasResolvedBound, (has, had) => {
-    if (!scada.isEditing.value && has && !had) {
+  /** 监听"就绪但无历史"的绑定对集合变化即补载历史
+   * 覆盖跨设备盲区：历史回包早于设备就绪时写入被静默跳过，若只在"就绪信号从无到有"时
+   * 触发重载，后续就绪的设备将无信号可用，对应序列会以模拟随机数兜底渲染直到 30s 兜底轮询 */
+  watch(pendingHistoryKey, (key) => {
+    if (key) {
       void loadHistoryData()
     }
   })
@@ -511,18 +513,11 @@ export function useScadaLineChart(
 
     const cfg = chartConfig.value
     const allSeries = resolveAllSeries()
-    const hasData = allSeries.some((s) => s.data.length > 0)
-
-    if (!hasData) {
-      chartInstance.clear()
-      hasInitialized = false
-      return
-    }
-
     const xAxisData = buildXAxisData(allSeries, cfg)
 
+    // 首次渲染 / 配置变更：完整 option + notMerge，确保 grid/yAxis/legend 等静态配置正确；
+    // 数据为空时仍渲染坐标轴与图例骨架（series 传空数据），避免进入预览页面时一片空白
     if (full || !hasInitialized) {
-      // 首次渲染 / 配置变更：完整 option + notMerge，确保 grid/yAxis/legend 等静态配置正确
       const showLegend = !!cfg.showLegend
       const option: EChartsOption = {
         grid: buildGrid(showLegend),

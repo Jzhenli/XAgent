@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted, provide } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
@@ -42,19 +42,44 @@ import { projectApi } from "@/api/projects";
 import { ArrowLeft } from "@element-plus/icons-vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
 import type { Project } from "@/types/project";
+import { useScadaEditor } from "@/views/ScadaEditor/hooks/useScadaEditor";
+import { useScadaPolling } from "@/views/ScadaEditor/hooks/useScadaBinding";
+import { useScadaPointReader, ScadaPointReaderKey } from "@/utils/scadaPointReader";
+import { useSystemStore } from "@/stores/system";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const scada = useScadaEditor();
+const systemStore = useSystemStore();
+
+const pointReader = useScadaPointReader();
+provide(ScadaPointReaderKey, pointReader);
+
+// graphic 面板无 scada 组件，boundAssets 恒为空；轮询目标实际来自
+// DataHandleManager 向 reader 注册的需求设备（useScadaPolling 内部取并集）
+const { stop: stopPolling } = useScadaPolling({
+  interval: systemStore.visualizationConfig.pollingInterval,
+  reader: pointReader,
+});
 
 const loading = ref(false);
 const error = ref("");
 const currentPanel = ref<Project | null>(null);
 
 onMounted(async () => {
+  // isEditing 默认 true 会短路 refreshBoundDevices，预览态需显式关闭
+  scada.isEditing.value = false;
   await loadPanelData();
 });
 
+onUnmounted(() => {
+  scada.isEditing.value = true;
+  stopPolling();
+  pointReader.clearDevices();
+});
+
+/** 加载路由参数指定 id 的 Graphic 面板数据（仅面板结构，点位值由轮询链路负责） */
 const loadPanelData = async () => {
   const panelId = route.params.id as string;
   if (!panelId) {

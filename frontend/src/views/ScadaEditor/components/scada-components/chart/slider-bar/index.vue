@@ -41,8 +41,9 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { PointBinding, ScadaComponent, SliderBarComponentConfig, SliderBarItemConfig } from '@/types/scada'
 import { useScadaEditor } from '@/views/ScadaEditor/hooks/useScadaEditor'
-import { usePointStore, type PointDisplay } from '@/stores/points'
+import { usePointStore } from '@/stores/points'
 import { ScadaPointReaderKey, type ScadaPointReader } from '@/utils/scadaPointReader'
+import type { BoundPoint } from '@/views/ScadaEditor/hooks/useScadaBinding'
 
 const props = defineProps<{
   component: ScadaComponent
@@ -93,11 +94,12 @@ const yTicks = computed(() => {
 })
 
 // ─── 每柱独立点位绑定：解析与写入 ───────────────────────────
-const devices = computed(() => (injectedReader ? injectedReader.devices.value : pointStore.devices))
-
-const resolvePoint = (binding: PointBinding | null): PointDisplay | null => {
+const resolvePoint = (binding: PointBinding | null): BoundPoint | null => {
   if (!binding) return null
-  const device = devices.value.find(
+  if (injectedReader) {
+    return injectedReader.resolvePoint(binding.deviceId, binding.pointName)
+  }
+  const device = pointStore.devices.find(
     d => d.asset === binding.deviceId || d.name === binding.deviceId,
   )
   if (!device) return null

@@ -66,6 +66,7 @@ const dialogVisible = ref(false)
 const inputValue = ref<number | null>(null)
 const inputValueStr = ref<string>('')
 
+// 同步字符串输入为数值：空串/非法数字时置 null，确认按钮随之禁用
 watch(inputValueStr, (val) => {
   if (val === '' || val === null) {
     inputValue.value = null

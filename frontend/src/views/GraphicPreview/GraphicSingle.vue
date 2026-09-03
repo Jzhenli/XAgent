@@ -1,10 +1,8 @@
 <template>
   <GraphicRender
-    ref="graphicRenderItem"
     v-if="graphicData != null"
     :manager="dataHandleManager"
     :graphicData="parsedGraphics"
-    @graphicLoaded="graphicLoaded"
     @itemClick="itemclick"
   ></GraphicRender>
 
@@ -21,13 +19,14 @@
 
 <script setup lang="ts">
 import { GraphicRender } from '@x-plateform/graphic-editor'
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { controlApi } from '@/api/control'
 import DataHandleManager from './DataHandleManager'
 import WriteValueModal from './modal/WriteValueModal.vue'
 import ConfigModal from './modal/ConfigModal.vue'
+import { useScadaPointReader, ScadaPointReaderKey } from '@/utils/scadaPointReader'
 
 const { t } = useI18n()
 
@@ -36,14 +35,15 @@ const props = defineProps<{
 }>()
 
 const graphicData = ref<any | null>(null)
-const graphicRenderItem = ref<InstanceType<typeof GraphicRender> | null>(null)
 
 const isShowModal = ref(false)
 const clickParam = ref<Record<string, any>>({})
 const isShowConfigModal = ref(false)
 const configParam = ref<Record<string, any>>({})
 
-const dataHandleManager = new DataHandleManager();
+// inject 优先（页面 provide），fallback 直连读值中枢单例（独立使用场景）
+const reader = inject(ScadaPointReaderKey, null) ?? useScadaPointReader()
+const dataHandleManager = new DataHandleManager(reader);
 
 watch(
   () => props.project,
@@ -56,7 +56,7 @@ watch(
 );
 
 onUnmounted(() => {
-  // 清除轮询定时器与回调引用，防止页面离开后定时器残留导致内存泄漏
+  // 停止点位订阅并注销设备需求，防止页面离开后回调残留导致内存泄漏
   dataHandleManager.dispose()
 })
 
@@ -72,10 +72,6 @@ const parsedGraphics = computed(() => {
   return ret;
 });
 
-const graphicLoaded = () => {
-  //graphicRenderItem.value?.zoomFit()
-};
-
 const itemclick = (params: any) => {
   if (params.action === 'setValue') {
     clickParam.value = params
@@ -87,29 +83,25 @@ const itemclick = (params: any) => {
 };
 
 const handleConfirm = async (value: number) => {
-  const params = clickParam.value
+  const { pointRef, pointName } = clickParam.value.param;
+  // pointRef 格式："asset,point,service"（GraphicRender 弹窗参数约定）
+  const [targetAsset, , targetService] = pointRef.split(',');
 
   try {
     const result = await controlApi.writeSetpoint(
-      params.param.pointRef.split(',')[2],
-      params.param.pointRef.split(',')[0],
-      params.param.pointName,
+      targetService,
+      targetAsset,
+      pointName,
       value
-    )
+    );
 
-    if (result.status === 'ACCEPTED' || result.status === 'COMPLETED') {
-      //ElMessage.success(t('scada.writeValueDialog.success'))
-    } else {
-      ElMessage.warning(`${t('scada.writeValueDialog.result')} ${result.message}`)
+    if (result.status !== 'ACCEPTED' && result.status !== 'COMPLETED') {
+      ElMessage.warning(`${t('scada.writeValueDialog.result')} ${result.message}`);
     }
   } catch (error) {
     console.error('Write value failed:', error)
     ElMessage.error(t('scada.writeValueDialog.failed'))
   }
-};
-
-const handleCancel = () => {
-  isShowModal.value = false;
 };
 </script>
 

@@ -71,6 +71,7 @@ import { useScadaPolling } from "@/views/ScadaEditor/hooks/useScadaBinding";
 import { useScadaPointReader, ScadaPointReaderKey } from "@/utils/scadaPointReader";
 import { projectApi } from "@/api/projects";
 import type { Project } from "@/types/project";
+import { useSystemStore } from "@/stores/system";
 import { ArrowLeft, Loading } from "@element-plus/icons-vue";
 import ScadaCanvas from "@/views/ScadaEditor/components/ScadaCanvas.vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
@@ -80,13 +81,17 @@ import { useKeyboardShortcuts } from "./composables/useKeyboardShortcuts";
 const router = useRouter();
 const { t } = useI18n();
 const scada = useScadaEditor();
+const systemStore = useSystemStore();
 
 /** ScadaPointReader：provide 给子组件（折线图/柱状图等）统一使用，历史缓存按 asset 隔离 */
 const pointReader = useScadaPointReader();
 provide(ScadaPointReaderKey, pointReader);
 
 /** 启动当前面板绑定设备的周期性数据刷新，返回 stop 用于组件卸载时清理 */
-const { stop: stopPolling, pause: pausePolling, resume: resumePolling } = useScadaPolling({ interval: 5000, reader: pointReader });
+const { stop: stopPolling, pause: pausePolling, resume: resumePolling } = useScadaPolling({
+  interval: systemStore.visualizationConfig.pollingInterval,
+  reader: pointReader,
+});
 
 const activeTab = ref(0);
 const panels = ref<Project[]>([]);
@@ -384,7 +389,7 @@ onUnmounted(() => {
   document.body.classList.remove("vant-fullscreen");
 
   stopPolling();
-  pointReader.clearDevices(); // 离开 vant 页面时清空 historyReadingsMap + latestReadingMap
+  pointReader.clearDevices(); // 离开 vant 页面时清空读值中枢全部缓存（实时值/历史/骨架/去重表）
   panelCache.clear(); // 离开 vant 页面时清空面板缓存，释放内存
 });
 
