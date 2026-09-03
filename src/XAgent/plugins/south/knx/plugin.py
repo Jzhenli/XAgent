@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import time
+from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 
 from XAgent.xcore.plugins.south import SouthPluginBase
@@ -10,6 +11,7 @@ from XAgent.xcore.storage.interface import Reading
 from XAgent.xcore.transform import StandardDataPoint
 from .converter import KNXConverter
 from .constants import DATA_TYPE_MAPPING
+from .session import KNXSessionManager, build_session_key
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +99,7 @@ class KNXPlugin(SouthPluginBase):
                 "gateway_port": {"type": "integer", "default": 3671, "title": "网关端口"},
                 "local_ip": {"type": ["string", "null"], "default": None, "title": "本地IP地址"},
                 "route_back": {"type": "boolean", "default": False, "title": "路由回传"},
+                "enable_session_sharing": {"type": "boolean", "default": True, "title": "KNX 会话收敛（多设备共享同一 XKNX 连接，K2/K3）"},
                 "connection_type": {"type": "string", "default": "automatic", "enum": ["automatic", "tunneling", "tunneling_tcp", "routing"], "title": "连接模式"},
                 "interval": {"type": "number", "default": 5, "title": "轮询间隔(秒)"},
                 "reconnect_interval": {"type": "number", "default": 5, "title": "重连间隔(秒)"},
@@ -192,16 +195,29 @@ class KNXPlugin(SouthPluginBase):
         self._connect_lock = asyncio.Lock()
         self._heartbeat_fail_count = 0
         self._last_conn_state: Optional[str] = None
-        
+
+        # K2/K3：共享会话收敛。enable_session_sharing=False 回退到每设备独占 XKNX。
+        self._enable_session_sharing = config.get("enable_session_sharing", True)
+        self._session_key: Optional[tuple] = None
+        self._instance_id = str(id(self))
+        self._connected = False
+        # 难题 1：xknx 设备名全局唯一（asset_name::point_name），避免共享会话下同名冲突/串数据
+        self._xknx_name_to_point: Dict[str, str] = {}
+
         if not self._points:
             logger.warning(f"No points configured for KNX device {self._asset_name}")
     
     def _on_device_updated(self, device: Any) -> None:
-        """xknx设备状态更新回调（同步），用于维护_last_telegram_time"""
-        device_name = device.name
-        if device_name in self._devices:
-            self._last_telegram_time[device_name] = time.time()
-            logger.debug(f"Device {device_name} updated via telegram")
+        """xknx设备状态更新回调（同步），用于维护_last_telegram_time。
+
+        共享会话下多台设备的 xknx 设备名统一为 asset_name::point_name，
+        此处通过映射反查本插件的点名，过滤掉其它共享实例的设备更新。
+        """
+        xknx_name = device.name
+        point = self._xknx_name_to_point.get(xknx_name)
+        if point is not None:
+            self._last_telegram_time[point] = time.time()
+            logger.debug(f"Device {xknx_name} updated via telegram")
 
     def _on_telegram(self, telegram: Any) -> None:
         """K1 链路活跃度回调（同步）：统计"外部"入站帧。
@@ -217,7 +233,67 @@ class KNXPlugin(SouthPluginBase):
                 self._external_inbound_count += 1
         except Exception:
             pass
-    
+
+    # ----- K2/K3 共享会话支撑方法 -----
+    def _build_connection_config(self):
+        """构造 xknx ConnectionConfig（共享/独占模式共用）。"""
+        if _ConnectionConfig is None:
+            logger.error("ConnectionConfig is not available")
+            return None
+        return _ConnectionConfig(
+            connection_type=self._get_connection_type(),
+            gateway_ip=self._gateway_ip,
+            gateway_port=self._gateway_port,
+            local_ip=self._local_ip if self._local_ip else None,
+            route_back=self._route_back,
+            auto_reconnect=True,
+            auto_reconnect_wait=self._reconnect_interval
+        )
+
+    def _build_session_key(self):
+        """构造会话收敛 key：同一网关/多播组的设备共享一个 XKNX 实例。"""
+        return build_session_key(
+            self._connection_type, self._gateway_ip, self._gateway_port,
+            self._local_ip, self._route_back,
+        )
+
+    def _make_factory(self):
+        """返回无参协程工厂：创建一个「已 start」的 XKNX（不含回调，回调由会话管理器注册）。"""
+        connection_config = self._build_connection_config()
+
+        async def _factory():
+            if _XKNX is None:
+                raise RuntimeError("XKNX is not available")
+            xknx = _XKNX(connection_config=connection_config)
+            await xknx.start()
+            return xknx
+
+        return _factory
+
+    async def _rebuild_self(self, xknx) -> None:
+        """共享会话重建后被会话管理器调用：把本插件重新绑定到新 XKNX 并重建设备映射。"""
+        self._xknx = xknx
+        try:
+            self._own_ia = xknx.current_address
+        except Exception:
+            self._own_ia = None
+        self._connected = True
+        self._device_online = False
+        self._offline_counter = 0
+        self._heartbeat_fail_count = 0
+        await self._setup_devices()
+
+    @asynccontextmanager
+    async def _session_read_guard(self):
+        """读路径守卫：共享会话关闭/重建期间进行中的读等待，避免读写已 stop 的 XKNX。"""
+        if self._enable_session_sharing and self._session_key is not None:
+            session = KNXSessionManager.get_session(self._session_key)
+            if session is not None and session.xknx is not None:
+                async with session.read_guard():
+                    yield
+                return
+        yield
+
     async def connect(self) -> bool:
         if not _check_knx_available():
             logger.error("xknx is not installed. Install it with: pip install xknx")
@@ -225,9 +301,21 @@ class KNXPlugin(SouthPluginBase):
 
         # 防止 poll() 与写命令并发触发重建，导致两个 XKNX 实例同时 start
         async with self._connect_lock:
-            # 关键修复：重建前必须先释放旧实例，否则旧隧道槽位会泄漏，
-            # 网关最多 4 个 tunnel 连接很快被占满（表现为 client 端口频繁变化而后端连不上）。
+            # 已持有连接：共享会话下不要单方面 teardown，按状态决定复用或重建
             if self._xknx is not None:
+                if self._enable_session_sharing and self._session_key is not None:
+                    state = await self._get_connection_state()
+                    if state != "DISCONNECTED":
+                        return True
+                    # 共享会话已断开：由会话管理器统一重建，不要单方面停止（会拖垮其它设备）
+                    logger.warning("Shared KNX session disconnected; rebuilding before reconnect")
+                    try:
+                        await KNXSessionManager.rebuild_session(self._session_key, self._make_factory())
+                    except Exception:
+                        logger.error("Failed to rebuild shared KNX session", exc_info=True)
+                        return False
+                    return self._xknx is not None
+                # 独占模式：释放旧实例后再重建（避免隧道槽位泄漏）
                 logger.warning(
                     "Releasing existing KNX connection before reconnect to avoid "
                     "exhausting gateway tunnelling slots"
@@ -242,33 +330,31 @@ class KNXPlugin(SouthPluginBase):
                     xknx_logger.setLevel(logging.ERROR)
                     logger.info("ROUTING mode: adjusted xknx.cemi log level to ERROR to suppress expected warnings")
 
-                if _ConnectionConfig is None:
-                    logger.error("ConnectionConfig is not available")
+                connection_config = self._build_connection_config()
+                if connection_config is None:
                     return False
 
-                connection_type = self._get_connection_type()
-
-                connection_config = _ConnectionConfig(
-                    connection_type=connection_type,
-                    gateway_ip=self._gateway_ip,
-                    gateway_port=self._gateway_port,
-                    local_ip=self._local_ip if self._local_ip else None,
-                    route_back=self._route_back,
-                    auto_reconnect=True,
-                    auto_reconnect_wait=self._reconnect_interval
-                )
-
-                if _XKNX is None:
-                    logger.error("XKNX is not available")
-                    return False
-
-                self._xknx = _XKNX(
-                    connection_config=connection_config,
-                    device_updated_cb=self._on_device_updated,
-                    telegram_received_cb=self._on_telegram,
-                )
-
-                await self._xknx.start()
+                if self._enable_session_sharing:
+                    if _XKNX is None:
+                        logger.error("XKNX is not available")
+                        return False
+                    # K2/K3：按网关/多播组共享单个 XKNX，引用计数归零才真正 stop
+                    key = self._build_session_key()
+                    self._session_key = key
+                    self._xknx = await KNXSessionManager.acquire(
+                        self._instance_id, key, self._make_factory(),
+                        self._on_device_updated, self._on_telegram, self._rebuild_self,
+                    )
+                else:
+                    if _XKNX is None:
+                        logger.error("XKNX is not available")
+                        return False
+                    self._xknx = _XKNX(
+                        connection_config=connection_config,
+                        device_updated_cb=self._on_device_updated,
+                        telegram_received_cb=self._on_telegram,
+                    )
+                    await self._xknx.start()
 
                 # 捕获本机 IA，供 _on_telegram 过滤自回环
                 try:
@@ -299,7 +385,15 @@ class KNXPlugin(SouthPluginBase):
                 self._device_online = False
                 self._offline_counter = 0
 
-                if self._xknx:
+                # 共享会话下连接失败时释放引用，避免会话泄漏
+                if self._enable_session_sharing and self._session_key is not None:
+                    try:
+                        await KNXSessionManager.release(self._instance_id, self._session_key)
+                    except Exception:
+                        logger.debug("Error releasing shared KNX session", exc_info=True)
+                    self._session_key = None
+
+                if self._xknx is not None:
                     try:
                         await self._xknx.stop()
                     except Exception:
@@ -387,22 +481,49 @@ class KNXPlugin(SouthPluginBase):
             logger.debug("Error stopping xknx instance", exc_info=True)
 
     async def _handle_connection_lost(self) -> None:
-        """处理连接丢失 - 停止xknx并标记设备离线"""
+        """处理连接丢失。
+
+        共享会话下，链路失效影响所有共享该 XKNX 的设备，不能单方面 teardown，
+        由会话持有者统一 rebuild（重建 XKNX 并 re-setup 所有 holder）。
+        独占模式保持原行为：停止本实例 XKNX。
+        """
         logger.warning(f"KNX device {self._asset_name} connection lost")
+        if self._enable_session_sharing and self._session_key is not None:
+            try:
+                await KNXSessionManager.rebuild_session(self._session_key, self._make_factory())
+                return
+            except Exception:
+                logger.error("Shared KNX session rebuild failed", exc_info=True)
         await self._teardown_xknx()
 
     async def disconnect(self) -> None:
+        if self._enable_session_sharing and self._session_key is not None and self._xknx is not None:
+            # 仅释放本实例引用；引用计数归零时才真正停止共享 XKNX
+            # （难题2：单设备卸载不能拖垮仍在用的共享会话）
+            await KNXSessionManager.release(self._instance_id, self._session_key)
+            self._session_key = None
+            self._xknx = None
+            self._connected = False
+            self._device_online = False
+            self._offline_counter = 0
+            self._heartbeat_fail_count = 0
+            self._devices.clear()
+            self._write_devices.clear()
+            self._xknx_name_to_point.clear()
+            logger.info(f"Released shared KNX session for {self._asset_name}")
+            return
         await self._teardown_xknx()
         logger.info(f"Disconnected from KNX gateway {self._gateway_ip}:{self._gateway_port}")
     
     async def _setup_devices(self) -> None:
         if not self._xknx or not self._points:
             return
-        
+
         self._devices.clear()
         self._write_devices.clear()
         self._point_order.clear()
-        
+        self._xknx_name_to_point.clear()
+
         for point in self._points:
             point_name = point.get("name")
             group_address = self._get_point_config(point, "group_address")
@@ -410,20 +531,30 @@ class KNXPlugin(SouthPluginBase):
             control_address = self._get_point_config(point, "control_address")
             data_type = point.get("data_type", "switch")
             writable = self._get_point_config(point, "writable", False)
-            
+
             read_address = status_address or group_address
             write_address = control_address or group_address
-            
+
             if not point_name:
                 continue
-            
+
             if not read_address and not write_address:
                 logger.warning(f"No address configured for point {point_name}")
                 continue
-            
+
+            # K2 难题1：共享会话下 xknx 设备名须全局唯一，避免同名设备串数据
+            xknx_name = f"{self._asset_name}::{point_name}"
+            self._xknx_name_to_point[xknx_name] = point_name
+            # 幂等：同名设备已存在于共享 XKNX（如本插件断连后重连，旧实例未清）则先移除，
+            # 否则 xknx.Devices.async_add 仅 append，会出现重复设备导致串数据/冗余处理。
+            if xknx_name in self._xknx.devices:
+                try:
+                    self._xknx.devices.async_remove(self._xknx.devices[xknx_name])
+                except Exception:
+                    logger.debug("Failed to remove existing xknx device %s", xknx_name, exc_info=True)
             try:
                 device = await self._create_device(
-                    point_name, 
+                    xknx_name,
                     read_address,
                     write_address,
                     data_type,
@@ -760,13 +891,16 @@ class KNXPlugin(SouthPluginBase):
                 return None
             
             logger.debug(f"Reading device {device.name}, data_type={data_type}")
-            
-            if hasattr(device, 'sync'):
-                logger.debug(f"Calling sync on device {device.name}")
-                await device.sync(wait_for_result=True)
-                logger.debug(f"Sync completed for device {device.name}")
-            
-            value = self._extract_device_value(device, data_type)
+
+            # 共享会话下用读守卫包裹实际读写，避免会话正在 teardown/rebuild 时
+            # 对已被 stop 的 XKNX 做 device.sync() 引发异常或脏数据。
+            async with self._session_read_guard():
+                if hasattr(device, 'sync'):
+                    logger.debug(f"Calling sync on device {device.name}")
+                    await device.sync(wait_for_result=True)
+                    logger.debug(f"Sync completed for device {device.name}")
+
+                value = self._extract_device_value(device, data_type)
             if value is None:
                 logger.warning(f"Could not read value from device {device.name}")
             return value
