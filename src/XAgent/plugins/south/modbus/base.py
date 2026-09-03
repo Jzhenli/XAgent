@@ -322,6 +322,15 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
         if self._client is None:
             return False
 
+        # M1 第3层：若本从站已熔断，则不真实发心跳请求，避免反复请求递减 pymodbus
+        # 的 count_until_disconnect 计数、触发 connection_lost() 关闭共享连接并拖垮
+        # 同总线上所有设备。本设备按不可达离线（不发起请求）；熔断恢复后自动重新探测。
+        if self._session is not None:
+            hb_breaker = self._session.get_breaker(self._slave_id)
+            if hb_breaker is not None and hb_breaker.is_open():
+                self._device_online = False
+                return False
+
         try:
             async def _op():
                 return await self._client.read_holding_registers(
@@ -387,6 +396,12 @@ class ModbusBasePlugin(SouthPluginBase, ModbusPluginMixin):
                     f"poll budget exceeded for {self._asset_name}; "
                     f"skipping {len(self._read_groups) - idx} remaining group(s)"
                 )
+                # 未处理分组按文档 M1 第4层要求标记 quality=bad，避免静默丢点。
+                # 若首分组即超预算使 raw_data 为空，convert_data 会因 not raw_data 整轮
+                # 返回空列表，故此处显式把剩余分组的测点以 None 填入，交由 converter 标 bad。
+                for remaining_group in self._read_groups[idx:]:
+                    for point_name in remaining_group:
+                        raw_data.setdefault(point_name, None)
                 break
             group_data = await self._read_group(group)
             raw_data.update(group_data)

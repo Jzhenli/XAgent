@@ -1103,42 +1103,45 @@ class KNXPlugin(SouthPluginBase):
         
         logger.debug(f"Writing to device: data_type={data_type}, value={value!r}, value_type={type(value).__name__}")
         
-        try:
-            if data_type in ("switch", "binary", "bool"):
-                if hasattr(device, 'set_on') and hasattr(device, 'set_off'):
-                    logger.debug(f"Bool write: value={value!r}, bool(value)={bool(value)}")
-                    if value:
-                        await device.set_on()
-                    else:
-                        await device.set_off()
-                    return True
-            elif data_type in ("percent", "brightness", "dimming"):
-                if hasattr(device, 'set_brightness'):
-                    # #3 对外百分比(0-100) → KNX 亮度(0-255)
-                    await device.set_brightness(self._percent_to_knx(value))
-                    return True
-            elif data_type == "blinds":
-                if hasattr(device, 'set_position'):
-                    await device.set_position(int(value))
-                    return True
-            elif data_type == "color_rgb":
-                if hasattr(device, 'set_color'):
-                    # #5 写时解析多种 RGB 表示
-                    rgb = value if isinstance(value, (tuple, list)) else self._parse_rgb(value)
-                    await device.set_color(tuple(int(c) for c in rgb))
-                    return True
-            elif data_type == "temperature":
-                if hasattr(device, 'set_target_temperature'):
-                    # #2 xknx Climate 用 set_target_temperature（无 set_setpoint）
-                    await device.set_target_temperature(float(value))
-                    return True
-            
-            logger.warning(f"No write method available for data type {data_type} on device {device.name}")
-            return False
-            
-        except Exception as e:
-            logger.error(f"Error writing device value: {e}")
-            return False
+        # 与读路径对称：用会话守卫包裹写操作，避免共享会话正在 teardown/rebuild 时
+        # 对已被 stop 的 XKNX 发出写命令而抛异常或产生脏数据（文档 K2 要求读写均守卫）。
+        async with self._session_read_guard():
+            try:
+                if data_type in ("switch", "binary", "bool"):
+                    if hasattr(device, 'set_on') and hasattr(device, 'set_off'):
+                        logger.debug(f"Bool write: value={value!r}, bool(value)={bool(value)}")
+                        if value:
+                            await device.set_on()
+                        else:
+                            await device.set_off()
+                        return True
+                elif data_type in ("percent", "brightness", "dimming"):
+                    if hasattr(device, 'set_brightness'):
+                        # #3 对外百分比(0-100) → KNX 亮度(0-255)
+                        await device.set_brightness(self._percent_to_knx(value))
+                        return True
+                elif data_type == "blinds":
+                    if hasattr(device, 'set_position'):
+                        await device.set_position(int(value))
+                        return True
+                elif data_type == "color_rgb":
+                    if hasattr(device, 'set_color'):
+                        # #5 写时解析多种 RGB 表示
+                        rgb = value if isinstance(value, (tuple, list)) else self._parse_rgb(value)
+                        await device.set_color(tuple(int(c) for c in rgb))
+                        return True
+                elif data_type == "temperature":
+                    if hasattr(device, 'set_target_temperature'):
+                        # #2 xknx Climate 用 set_target_temperature（无 set_setpoint）
+                        await device.set_target_temperature(float(value))
+                        return True
+                
+                logger.warning(f"No write method available for data type {data_type} on device {device.name}")
+                return False
+                
+            except Exception as e:
+                logger.error(f"Error writing device value: {e}")
+                return False
     
     async def _read_states_passive(self, point_names: List[str]) -> Dict[str, Any]:
         """
