@@ -121,23 +121,40 @@ const writePointValue = async (
   }
 }
 
-// ─── 显示值：拖拽中 > 拖拽结果 > 绑定点位 > 模拟值 ──────────
+// ─── 响应式点位解析：始终追踪 devices 变化 ──────────────────
+/** 每柱绑定点位的实时解析结果（reader 路径访问 deviceIndex.value，确保轮询后自动触发） */
+const boundPoints = computed(() =>
+  items.value.map((item) => (item.binding ? resolvePoint(item.binding) : null)),
+)
+
+// ─── 显示值：拖拽中 > 点位实时值 > 模拟值 ─────────────────
 const draggingIndex = ref<number | null>(null)
 const dragValues = reactive<Record<number, number>>({})
 /** 写值请求进行中标志：防止写值未完成时新写值请求并发 */
 const writing = ref(false)
 
-const displayValue = (item: SliderBarItemConfig, index: number): number => {
-  if (draggingIndex.value === index && dragValues[index] !== undefined) {
-    return dragValues[index]
-  }
-  if (!scada.isEditing.value && item.binding && dragValues[index] === undefined) {
-    const point = resolvePoint(item.binding)
-    if (point && typeof point.currentValue === 'number') {
-      return point.currentValue
+/** 每柱当前显示值的 computed 数组：始终依赖 boundPoints，不会因拖拽跳过 resolvePoint */
+const displayValues = computed(() =>
+  items.value.map((item, index) => {
+    // 拖拽中：优先显示拖动值
+    if (draggingIndex.value === index && dragValues[index] !== undefined) {
+      return dragValues[index]
     }
-  }
-  return dragValues[index] ?? item.value ?? min.value
+    // 非编辑模式 + 已绑定：取点位实时值
+    if (!scada.isEditing.value && item.binding) {
+      const point = boundPoints.value[index]
+      if (point && typeof point.currentValue === 'number') {
+        return point.currentValue
+      }
+    }
+    // 兜底：item 配置值或 min
+    return item.value ?? min.value
+  }),
+)
+
+const displayValue = (item: SliderBarItemConfig, index: number): number => {
+  void item // 参数保留供 fillStyle/valueLabelStyle 签名兼容
+  return displayValues.value[index]
 }
 
 const percentOf = (item: SliderBarItemConfig, index: number): number => {
@@ -230,6 +247,7 @@ const handlePointerUp = async () => {
   try {
     const result = await writePointValue(binding, dragValues[index])
     if (result.success) {
+      delete dragValues[index]
       ElMessage.success(t('scadaComponents.sliderWriteSuccess'))
     } else {
       delete dragValues[index]
