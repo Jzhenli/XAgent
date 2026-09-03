@@ -142,7 +142,8 @@ export default class DataHandleManager extends DataManager {
             console.error(`Error executing callback for point ${pointName}`, err)
           }
         }
-      }
+      },
+      { immediate: true }
     )
   }
 }
