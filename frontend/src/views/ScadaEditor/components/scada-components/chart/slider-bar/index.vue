@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, onUnmounted, reactive, ref } from 'vue'
+import { computed, inject, onUnmounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { PointBinding, ScadaComponent, SliderBarComponentConfig, SliderBarItemConfig } from '@/types/scada'
@@ -136,8 +136,9 @@ const writing = ref(false)
 /** 每柱当前显示值的 computed 数组：始终依赖 boundPoints，不会因拖拽跳过 resolvePoint */
 const displayValues = computed(() =>
   items.value.map((item, index) => {
-    // 拖拽中：优先显示拖动值
-    if (draggingIndex.value === index && dragValues[index] !== undefined) {
+    // 有拖动值（拖拽中或写值待确认）：优先显示拖动值
+    // 不再依赖 draggingIndex，dragValues 存在即视为待确认状态
+    if (dragValues[index] !== undefined) {
       return dragValues[index]
     }
     // 非编辑模式 + 已绑定：取点位实时值
@@ -231,7 +232,10 @@ const handlePointerUp = async () => {
   if (index === null) return
   const item = items.value[index]
   const binding = item?.binding
-  if (!binding) return
+  if (!binding) {
+    delete dragValues[index]
+    return
+  }
 
   const point = resolvePoint(binding)
   if (point && !point.writable) {
@@ -240,19 +244,28 @@ const handlePointerUp = async () => {
     return
   }
 
-  // 写值请求进行中时忽略本次提交，避免连续操作产生并发写请求
-  if (writing.value) return
+  // 写值请求进行中时放弃本次提交，清除 dragValues 回退到实时值
+  if (writing.value) {
+    delete dragValues[index]
+    return
+  }
 
+  const targetValue = dragValues[index]
   writing.value = true
   try {
-    const result = await writePointValue(binding, dragValues[index])
+    const result = await writePointValue(binding, targetValue)
     if (result.success) {
-      delete dragValues[index]
+      // 写值成功：保留 dragValues[index] 显示目标值，等待 watch 检测到
+      // point.currentValue 更新到目标值后再清除，避免闪回旧值
       ElMessage.success(t('scadaComponents.sliderWriteSuccess'))
     } else {
+      // 写值失败：立即清除 dragValues，恢复实时值显示
       delete dragValues[index]
       ElMessage.error(result.message)
     }
+  } catch (e) {
+    delete dragValues[index]
+    console.error('[SliderBar] Write point error:', e)
   } finally {
     writing.value = false
   }
@@ -268,6 +281,27 @@ const updateFromEvent = (index: number, event: PointerEvent) => {
   // 只取整数值，不写小数
   dragValues[index] = Math.round(rawValue)
 }
+
+/** 监听点位实时值更新：当 point.currentValue 追平 dragValues 后清除 dragValues，
+ * 让 displayValues 自然过渡到实时值，实现拖拽写值的无缝衔接 */
+watch(
+  boundPoints,
+  (newPoints) => {
+    for (const indexStr of Object.keys(dragValues)) {
+      const index = Number(indexStr)
+      const point = newPoints[index]
+      const expected = dragValues[index]
+      if (
+        point
+        && typeof point.currentValue === 'number'
+        && Math.abs(point.currentValue - expected) < 0.001
+      ) {
+        delete dragValues[index]
+      }
+    }
+  },
+  { deep: true },
+)
 
 /** 兜底：拖拽中组件被卸载时移除 window 监听 */
 onUnmounted(stopDragListeners)
