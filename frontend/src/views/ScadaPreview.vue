@@ -55,7 +55,7 @@ const {
 provide(ScadaPointReaderKey, pointReader)
 
 /** 启动当前面板绑定设备的周期性数据刷新，返回 stop 用于组件卸载时清理 */
-const { refreshBoundDevices, stop: stopPolling } = useScadaPolling({ 
+const { stop: stopPolling } = useScadaPolling({
   interval: systemStore.visualizationConfig.pollingInterval,
   reader: pointReader
 })

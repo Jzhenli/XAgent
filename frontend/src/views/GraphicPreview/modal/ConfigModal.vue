@@ -124,7 +124,7 @@ import { useI18n } from "vue-i18n";
 import { controlApi } from "@/api/control";
 import { deviceApi } from "@/api/devices";
 import { parseStandardPoints } from "@/utils/pointMapping";
-import type { ConfigPopupParam, PopupPointBinding } from "@/types/configPopup";
+import type { ConfigPopupParam, PopupPointBinding, PointInfo } from "@/types/configPopup";
 
 const { t } = useI18n();
 
@@ -141,27 +141,19 @@ const dialogVisible = ref(false);
 
 const DEFAULT_WIDTH = 500;
 const DEFAULT_HEIGHT = 400;
+/** 弹窗高度中非内容区域预留：头部 48px + 上下内边距 24px */
+const RESERVED_HEIGHT = 48 + 24;
 
 const popupWidth = computed(() => Number(props.param?.popupWidth) || 0);
 const popupHeight = computed(() => Number(props.param?.popupHeight) || 0);
 
-const dialogWidth = computed(() => {
-  return popupWidth.value > DEFAULT_WIDTH
-    ? `${popupWidth.value}px`
-    : `${DEFAULT_WIDTH}px`;
-});
+/** 弹窗尺寸：配置值低于默认尺寸时按默认尺寸展示 */
+const dialogWidth = computed(() => `${Math.max(popupWidth.value, DEFAULT_WIDTH)}px`);
+const dialogHeight = computed(() => `${Math.max(popupHeight.value, DEFAULT_HEIGHT)}px`);
 
-const dialogHeight = computed(() => {
-  return popupHeight.value > DEFAULT_HEIGHT
-    ? `${popupHeight.value}px`
-    : `${DEFAULT_HEIGHT}px`;
-});
-
-const bodyStyle = computed(() => {
-  const h =
-    popupHeight.value > DEFAULT_HEIGHT ? popupHeight.value : DEFAULT_HEIGHT;
-  return { maxHeight: `${h - 48 - 24}px` };
-});
+const bodyStyle = computed(() => ({
+  maxHeight: `${Math.max(popupHeight.value, DEFAULT_HEIGHT) - RESERVED_HEIGHT}px`,
+}));
 
 const inputValues = ref<Map<string, string>>(new Map());
 
@@ -177,6 +169,7 @@ const switchStates = ref<Map<string, "on" | "off">>(new Map());
 
 const getSwitchState = (id: string) => switchStates.value.get(id) ?? "off";
 
+/** 将所有设备最新读数展开为 "asset:pointName → value" 索引，standard_points 优先于原始 data */
 const buildValueMap = (devices: any[]) => {
   const valueMap = new Map<string, any>();
 
@@ -200,6 +193,7 @@ const buildValueMap = (devices: any[]) => {
   return valueMap;
 };
 
+/** 按绑定项解析当前值：开关模式归一化为 on/off，其余转为字符串 */
 const resolveValue = (item: PopupPointBinding, valueMap: Map<string, any>) => {
   const { pointInfo } = item;
   if (!pointInfo) return null;
@@ -217,6 +211,7 @@ const resolveValue = (item: PopupPointBinding, valueMap: Map<string, any>) => {
   return String(value);
 };
 
+/** 弹窗打开时一次性拉取全部设备最新值并填充各绑定项（不走读值中枢轮询链路） */
 const loadPointValues = async () => {
   const bindings = props.param?.popupPointBindings;
   if (!bindings || bindings.length === 0) return;
@@ -242,39 +237,40 @@ const loadPointValues = async () => {
   }
 };
 
-const handleSwitchClick = async (
-  item: PopupPointBinding,
-  state: 'on' | 'off'
-) => {
-  switchStates.value.set(item.id, state)
-
-  const { pointInfo } = item
-  if (!pointInfo) return
-
-  const value = state === 'on' ? 1 : 0
-  const targetService = pointInfo.service || pointInfo.deviceId
-  const targetAsset = pointInfo.deviceId
-  const point = pointInfo.pointName || pointInfo.pointId
+/** 向绑定点位写入值并按结果提示（开关联动与数字键盘确认共用） */
+const writePointValue = async (pointInfo: PointInfo, value: number) => {
+  const targetService = pointInfo.service || pointInfo.deviceId;
+  const point = pointInfo.pointName || pointInfo.pointId;
 
   try {
     const result = await controlApi.writeSetpoint(
       targetService,
-      targetAsset,
+      pointInfo.deviceId,
       point,
       value
-    )
+    );
 
     if (result.status === "ACCEPTED" || result.status === "COMPLETED") {
       ElMessage.success(t("scada.writeValueDialog.success"));
     } else {
-      ElMessage.warning(
-        `${t("scada.writeValueDialog.result")} ${result.message}`,
-      );
+      ElMessage.warning(`${t("scada.writeValueDialog.result")} ${result.message}`);
     }
   } catch (error) {
     console.error("Write value failed:", error);
     ElMessage.error(t("scada.writeValueDialog.failed"));
   }
+};
+
+const handleSwitchClick = async (
+  item: PopupPointBinding,
+  state: 'on' | 'off'
+) => {
+  // 先更新 UI 状态再写值，交互即时反馈
+  switchStates.value.set(item.id, state);
+
+  if (!item.pointInfo) return;
+
+  await writePointValue(item.pointInfo, state === 'on' ? 1 : 0);
 };
 
 watch(
@@ -362,28 +358,7 @@ const handleKeypadConfirm = async () => {
   const { pointInfo } = item;
   if (!pointInfo) return;
 
-  const targetService = pointInfo.service || pointInfo.deviceId;
-  const targetAsset = pointInfo.deviceId;
-  const point = pointInfo.pointName || pointInfo.pointId;
-
-  try {
-    const result = await controlApi.writeSetpoint(
-      targetService,
-      targetAsset,
-      point,
-      numValue
-    );
-
-    if (result.status === "ACCEPTED" || result.status === "COMPLETED") {
-      ElMessage.success(t("scada.writeValueDialog.success"));
-    } else {
-      ElMessage.warning(`${t("scada.writeValueDialog.result")} ${result.message}`);
-    }
-  } catch (error) {
-    console.error("Write value failed:", error);
-    ElMessage.error(t("scada.writeValueDialog.failed"));
-  }
-
+  await writePointValue(pointInfo, numValue);
   closeKeypad();
 };
 </script>

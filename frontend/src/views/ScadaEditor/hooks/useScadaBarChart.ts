@@ -74,9 +74,10 @@ export function useScadaBarChart(
   // 历史数据加载
   // ═══════════════════════════════════════════════════════════════════════════════
 
-  const fetchHistoryReadings = async (asset: string, hours: number = 24) => {
+  /** 拉取点位历史：reader 模式写入点位自身的 historyCache；无 reader（编辑器内预览）回退 store 资产级加载 */
+  const fetchPointHistory = async (asset: string, pointName: string, hours: number = 24) => {
     if (injectedReader) {
-      return injectedReader.fetchHistoryReadings(asset, hours, 100)
+      return injectedReader.fetchPointHistory(asset, pointName, hours)
     }
     return pointStore.fetchHistoryReadings(asset, hours, 100)
   }
@@ -99,10 +100,10 @@ export function useScadaBarChart(
     if (scada.isEditing.value || !binding.value) return
 
     try {
-      const deviceId = binding.value.deviceId
+      const { deviceId, pointName } = binding.value
       const hours = hoursMap[chartConfig.value?.timeRange || '24h'] || 24
 
-      await fetchHistoryReadings(deviceId, hours)
+      await fetchPointHistory(deviceId, pointName, hours)
       updateChartOption()
     } catch (e) {
       console.error('[useScadaBarChart] Failed to load history data:', e)
@@ -110,8 +111,8 @@ export function useScadaBarChart(
   }
 
   /**
-   * 增量追加最新 Reading 到历史缓存（复用 fetchDevicePoints 已拿到的数据）
-   * 用于 30 秒轮询，避免每轮拉 1000 条全量历史
+   * 30 秒兜底轮询：reader 模式下增量追加由设备轮询在 fetchDevicePoints 内部完成
+   * （historyVersion 递增触发刷新），此处仅负责失败重试与无 reader 的编辑器内预览回退
    */
   const appendHistoryData = async () => {
     if (scada.isEditing.value || !binding.value) return
@@ -122,16 +123,11 @@ export function useScadaBarChart(
       return
     }
 
-    // 无历史基线（首次加载失败等）时回退全量加载，兼作失败重试
-    if (!injectedReader.hasHistoryReadings(binding.value.deviceId)) {
+    // 绑定点位无历史基线（首次加载失败等）时回退全量加载，兼作失败重试
+    const { deviceId, pointName } = binding.value
+    if (!injectedReader.hasPointHistory(deviceId, pointName)) {
       await loadHistoryData()
-      return
     }
-
-    injectedReader.appendLatestReadingToHistory(binding.value.deviceId)
-    // 无条件刷新：同面板多图表共享同一设备的历史缓存，
-    // 先执行的去重追加会使后续图表的追加返回 false，若按返回值判断会漏刷新
-    updateChartOption()
   }
 
   const { start: startHistoryPolling, stop: stopHistoryPolling } = usePolling(appendHistoryData, {
@@ -384,14 +380,9 @@ export function useScadaBarChart(
     const xAxisData = buildXAxisData(data, cfg)
     const values = data.map((d) => d.value)
 
-    if (data.length === 0) {
-      chartInstance.clear()
-      hasInitialized = false
-      return
-    }
-
+    // 首次渲染 / 配置变更：完整 option + notMerge；
+    // 数据为空时仍渲染坐标轴骨架（series 传空数据），避免进入预览页面时一片空白
     if (full || !hasInitialized) {
-      // 首次渲染 / 配置变更：完整 option + notMerge
       const option: EChartsOption = {
         grid: buildGrid(),
         xAxis: buildXAxisOption(cfg, xAxisData),

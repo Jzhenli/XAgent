@@ -1,3 +1,14 @@
+/**
+ * 原平台数据管理器存根基类（本地库逻辑已下线）
+ *
+ * 保留原因：外部包 @x-plateform/graphic-editor 的 GraphicRender 组件持有
+ * manager 引用并可能调用以下方法（setDataModels / setModelBindings /
+ * getTrendRef / on / off / dispatch 等），本类作为契约兼容层将它们全部
+ * 实现为无副作用的空操作，保证 GraphicRender 正常运行。
+ *
+ * 真实的后端点位读值逻辑由子类 DataHandleManager 实现：
+ * setPointBindings / dispose 之外的方法请勿添加业务实现。
+ */
 export default class DataManager {
   currentSpaceRef: string = ''
 
@@ -7,9 +18,7 @@ export default class DataManager {
 
   interval: number | null = null
 
-  setDataModels(list: any[]) {
-    //console.log('setDataModels', list)
-  }
+  setDataModels(list: any[]) {}
 
   spaceEquipmentsPromise: Promise<any[]> = Promise.resolve([])
 
@@ -19,32 +28,24 @@ export default class DataManager {
       ((value: any, type?: any, translatedText?: string) => void) | undefined
     ][]
   ): Promise<any[]> {
-    console.log('setPointBindings', list)
     return []
   }
 
-  setCurrentSpace(spaceRef?: string) {
-    console.log('setCurrentSpace', spaceRef)
-  }
+  setCurrentSpace(spaceRef?: string) {}
 
   async getCurrentSpaceEquipmentByName(name: string, templateRef: string) {
-    console.log('getCurrentSpaceEquipmentByName', name, templateRef)
     return undefined
   }
 
-  setModelBindings(list: any[]) {
-    console.log('setModelBindings', list)
-  }
+  setModelBindings(list: any[]) {}
 
   pointTrendCache: Map<string, Promise<string>> = new Map()
 
   async getTrendRefByPointRef(pointRef: string) {
-    console.log('getTrendRefByPointRef', pointRef)
     return ''
   }
 
   async getTrendRef(list: (any | undefined)[]) {
-    console.log('getTrendRef', list)
     return []
   }
 
@@ -52,7 +53,6 @@ export default class DataManager {
     list: (any | undefined)[],
     chartCondition: { jMode: number; dMode: number; startDate: Date; endDate: Date }
   ) {
-    console.log('getTrendResult', list, chartCondition)
     return []
   }
 
@@ -60,7 +60,6 @@ export default class DataManager {
     new Map()
 
   async getEquipmentByDataModelBinding(binding: any) {
-    console.log('getEquipmentByDataModelBinding', binding)
     return undefined
   }
 
@@ -76,33 +75,25 @@ export default class DataManager {
     | 'equipmentPointUnbind'
     | 'equipmentPointBindingLost'
   > {
-    console.log('validateBinding', binding)
     return undefined
   }
 
   async validatePoint(pointRef: string) {
-    console.log('validatePoint', pointRef)
     return true
   }
 
   async getEquipmentByRef(modelRef: string): Promise<any | undefined> {
-    console.log('getEquipmentByRef', modelRef)
     return undefined
   }
 
   _eventCallback = new Map<String, any[]>()
 
   on(eventName: string, callback: any) {
-    console.log('on', eventName, callback)
     return () => {}
   }
-  off(eventName: string, callback?: any) {
-    console.log('off', eventName, callback)
-  }
+  off(eventName: string, callback?: any) {}
 
-  dispatch(eventName: string, event?: any, ...args: any[]) {
-    console.log('dispatch', eventName, event, ...args)
-  }
+  dispatch(eventName: string, event?: any, ...args: any[]) {}
 
   dispose() {}
 }
