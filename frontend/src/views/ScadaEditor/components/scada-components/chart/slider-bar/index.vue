@@ -11,6 +11,7 @@
             class="sbc-track"
             :style="{ width: `${barWidth}px` }"
             @pointerdown="handlePointerDown(index, $event)"
+            @touchmove.passive="handleTouchMove(index, $event)"
           >
             <!-- 未激活轨道：透明 -->
             <div class="sbc-rail" />
@@ -187,6 +188,16 @@ const stopDragListeners = () => {
   window.removeEventListener('pointermove', handlePointerMove)
   window.removeEventListener('pointerup', handlePointerUp)
   window.removeEventListener('pointercancel', handlePointerCancel)
+}
+
+/**
+ * 拖拽期间阻断 touchmove 冒泡：vant 页面的翻页滑动由上层 touch 事件监听实现，
+ * touch-action: none 只能阻止浏览器原生手势，无法阻止 JS 层监听器，必须显式阻断。
+ * touchstart/touchend 不拦截：保证上层 pausePolling/resumePolling 严格配对
+ */
+const handleTouchMove = (index: number, event: TouchEvent) => {
+  if (draggingIndex.value !== index) return
+  event.stopPropagation()
 }
 
 const handlePointerDown = (index: number, event: PointerEvent) => {
