@@ -291,7 +291,7 @@ function openAboutDialog() {
 }
 
 const aboutVersions = computed(() => [
-  { labelKey: "layout.softwareVersion", value: "3.0.3" },
+  { labelKey: "layout.softwareVersion", value: "3.0.4" },
 ]);
 
 const languageOptions = [
