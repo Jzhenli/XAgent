@@ -126,8 +126,8 @@ jobs:
             
             # 1. 换国内镜像源并安装工具链 (带重试)
             # 教育网联合镜像站（https://mirrors.cernet.edu.cn/）目录结构与官方一致，仅替换主机名即可
+            # debian-security 不镜像：实测镜像站该路径 404（官方帮助页亦建议直连 security.debian.org 以免同步延迟）
             sed -i 's|deb.debian.org|mirrors.cernet.edu.cn|g' /etc/apt/sources.list
-            sed -i 's|security.debian.org|mirrors.cernet.edu.cn|g' /etc/apt/sources.list
             
             for i in 1 2 3; do
               apt-get update -qq && \
