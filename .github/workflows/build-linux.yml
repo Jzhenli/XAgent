@@ -124,13 +124,20 @@ jobs:
           run: |
             set -e
             
-            # 1. 换国内镜像源并安装工具链 (带重试)
-            # 教育网联合镜像站（https://mirrors.cernet.edu.cn/）：main/updates 换源提速
-            # bullseye 已于 2026-08-31 结束 LTS，security 存档正向 archive.debian.org 迁移：
-            # security.debian.org 索引仍在但 pool 文件已被清理，实测 perl/glibc/git 等包 404。
-            # CI 构建工具链无需安全更新，直接删除 security 源，仅用 main/updates
-            sed -i 's|deb.debian.org|mirrors.cernet.edu.cn|g' /etc/apt/sources.list
-            sed -i '/debian-security/d' /etc/apt/sources.list
+            # 1. 安装工具链 (带重试)
+            # bullseye 已于 2026-08-31 结束 LTS，常规源已不可用：
+            #   - security.debian.org 的 bullseye-security 索引在而 pool 已清理（下载 404）
+            #   - 镜像站残存的 main/updates 版本低于镜像内已装的安全更新版本（依赖死锁 held broken packages）
+            #   - archive.debian.org 尚未迁入 bullseye-security
+            # 因此改用 snapshot.debian.org 在 EOL 前的冻结快照（2026-08-15）：
+            # 索引与 pool 完全自洽、含全部安全更新，构建环境（glibc 2.31）保持不变且永不再变
+            cat > /etc/apt/sources.list <<'EOF'
+            deb http://snapshot.debian.org/archive/debian/20260815T000000Z bullseye main contrib non-free
+            deb http://snapshot.debian.org/archive/debian/20260815T000000Z bullseye-updates main contrib non-free
+            deb http://snapshot.debian.org/archive/debian-security/20260815T000000Z bullseye-security main contrib non-free
+            EOF
+            # 冻结快照的 Release 已过 Valid-Until，必须关闭过期检查，否则 apt-get update 报错
+            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99-snapshot-frozen
             
             for i in 1 2 3; do
               apt-get update -qq && \
