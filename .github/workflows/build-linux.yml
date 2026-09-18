@@ -125,8 +125,9 @@ jobs:
             set -e
             
             # 1. 换国内镜像源并安装工具链 (带重试)
-            sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list
-            sed -i 's|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list
+            # 教育网联合镜像站（https://mirrors.cernet.edu.cn/）目录结构与官方一致，仅替换主机名即可
+            sed -i 's|deb.debian.org|mirrors.cernet.edu.cn|g' /etc/apt/sources.list
+            sed -i 's|security.debian.org|mirrors.cernet.edu.cn|g' /etc/apt/sources.list
             
             for i in 1 2 3; do
               apt-get update -qq && \
