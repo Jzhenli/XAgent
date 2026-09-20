@@ -82,7 +82,6 @@ const textStyle = computed(() => ({
   fontSize: `${fontSize.value}px`,
 }))
 
-const showInputMode = computed(() => !!writeValueConfig.value.showInput)
 const inputBorderColor = computed(() => writeValueConfig.value.inputBorderColor || 'var(--color-primary)')
 
 const inputStyle = computed(() => ({
@@ -97,7 +96,8 @@ const inputRef = ref<HTMLInputElement | null>(null)
 /** 写值请求进行中标志：防止写值未完成时新写值请求并发 */
 const writing = ref(false)
 
-const showEditor = computed(() => showInputMode.value && (isEditing.value || !!props.editing))
+// showInput 只控制画布编辑模式下的预览样式；预览模式下由本地 isEditing 控制
+const showEditor = computed(() => props.editing ? !!writeValueConfig.value.showInput : isEditing.value)
 
 const confirmColor = computed(() => writeValueConfig.value.confirmColor || '#67c23a')
 const cancelColor = computed(() => writeValueConfig.value.cancelColor || '#f56c6c')
@@ -119,7 +119,7 @@ watch(displayValue, (val) => {
 }, { immediate: true })
 
 const handleClick = () => {
-  if (props.editing || !showInputMode.value) return
+  if (props.editing) return
   isEditing.value = true
   inputValue.value = displayValue.value
   nextTick(() => {
