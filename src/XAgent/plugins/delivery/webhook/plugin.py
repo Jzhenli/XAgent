@@ -7,11 +7,18 @@ import asyncio
 import logging
 from typing import Any, Dict
 
+logger = logging.getLogger(__name__)
+
 try:
     import aiohttp
     _HAS_AIOHTTP = True
-except ImportError:
+except ImportError as e:
     _HAS_AIOHTTP = False
+    if "aiohttp" in str(e):
+        logger.warning("aiohttp not installed, webhook delivery will not work. Install with: pip install aiohttp")
+    else:
+        # aiohttp 已安装但导入失败（如二进制依赖与运行环境不符），报"未安装"会误导排查
+        logger.warning("aiohttp is installed but failed to import, webhook delivery will not work: %s", e, exc_info=True)
 
 from XAgent.xcore.rule_engine import (
     DeliveryPlugin,
@@ -20,8 +27,6 @@ from XAgent.xcore.rule_engine import (
     DeliveryResult,
     DeliveryStatus,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class WebhookDeliveryPlugin(DeliveryPlugin):

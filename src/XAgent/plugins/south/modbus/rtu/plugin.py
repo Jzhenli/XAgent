@@ -25,18 +25,26 @@ def _check_modbus_rtu_available():
 
     try:
         import serial
-    except ImportError:
+    except ImportError as e:
         _MODBUS_RTU_AVAILABLE = False
-        logger.warning("pyserial not installed, Modbus RTU plugin will not work. Install with: pip install pyserial")
+        if "serial" in str(e):
+            logger.warning("pyserial not installed, Modbus RTU plugin will not work. Install with: pip install pyserial")
+        else:
+            # pyserial 已安装但导入失败（如二进制依赖与运行环境不符），报"未安装"会误导排查
+            logger.warning("pyserial is installed but failed to import, Modbus RTU plugin will not work: %s", e, exc_info=True)
         return _MODBUS_RTU_AVAILABLE
 
     try:
         from pymodbus.client import AsyncModbusSerialClient
         _AsyncModbusSerialClient = AsyncModbusSerialClient
         _MODBUS_RTU_AVAILABLE = True
-    except ImportError:
+    except ImportError as e:
         _MODBUS_RTU_AVAILABLE = False
-        logger.warning("pymodbus not installed, Modbus RTU plugin will not work")
+        if "pymodbus" in str(e):
+            logger.warning("pymodbus not installed, Modbus RTU plugin will not work. Install with: pip install pymodbus")
+        else:
+            # pymodbus 已安装但导入失败（如二进制依赖与运行环境不符），报"未安装"会误导排查
+            logger.warning("pymodbus is installed but failed to import, Modbus RTU plugin will not work: %s", e, exc_info=True)
     return _MODBUS_RTU_AVAILABLE
 
 

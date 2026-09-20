@@ -23,9 +23,13 @@ def _check_modbus_tcp_available():
         from pymodbus.client import AsyncModbusTcpClient
         _AsyncModbusTcpClient = AsyncModbusTcpClient
         _MODBUS_TCP_AVAILABLE = True
-    except ImportError:
+    except ImportError as e:
         _MODBUS_TCP_AVAILABLE = False
-        logger.warning("pymodbus not installed, Modbus TCP plugin will not work")
+        if "pymodbus" in str(e):
+            logger.warning("pymodbus not installed, Modbus TCP plugin will not work. Install with: pip install pymodbus")
+        else:
+            # pymodbus 已安装但导入失败（如二进制依赖与运行环境不符），报"未安装"会误导排查
+            logger.warning("pymodbus is installed but failed to import, Modbus TCP plugin will not work: %s", e, exc_info=True)
     return _MODBUS_TCP_AVAILABLE
 
 

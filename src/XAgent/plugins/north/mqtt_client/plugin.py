@@ -71,12 +71,16 @@ def _check_mqtt_available():
         _aiomqtt = aiomqtt
         _DownlinkHandler = DownlinkHandler
         MQTT_AVAILABLE = True
-    except ImportError:
+    except ImportError as e:
         MQTT_AVAILABLE = False
-        logger.warning(
-            "aiomqtt not installed, MQTT plugin will not work. "
-            "Install with: pip install aiomqtt"
-        )
+        if "aiomqtt" in str(e):
+            logger.warning(
+                "aiomqtt not installed, MQTT plugin will not work. "
+                "Install with: pip install aiomqtt"
+            )
+        else:
+            # aiomqtt 已安装但导入失败（如二进制依赖与运行环境不符），报"未安装"会误导排查
+            logger.warning("aiomqtt is installed but failed to import, MQTT plugin will not work: %s", e, exc_info=True)
     return MQTT_AVAILABLE
 
 

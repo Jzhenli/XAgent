@@ -56,9 +56,14 @@ def _check_knx_available():
         _GroupAddress = GroupAddress
         _XknxConnectionState = XknxConnectionState
         KNX_AVAILABLE = True
-    except ImportError:
+    except ImportError as e:
         KNX_AVAILABLE = False
-        logger.warning("xknx not installed, KNX plugin will not work. Install with: pip install xknx")
+        if "xknx" in str(e):
+            logger.warning("xknx not installed, KNX plugin will not work. Install with: pip install xknx")
+        else:
+            # xknx 已安装但导入失败（如 cryptography/cffi 的二进制依赖与运行环境不符），
+            # 此时报"未安装"会误导排查，需给出真实异常
+            logger.warning("xknx is installed but failed to import, KNX plugin will not work: %s", e, exc_info=True)
     return KNX_AVAILABLE
 
 

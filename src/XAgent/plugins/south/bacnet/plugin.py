@@ -179,9 +179,13 @@ def _check_bacnet_available():
         _NetworkPortObject = NetworkPortObject
         _ErrorRejectAbortNack = ErrorRejectAbortNack
         BACNET_AVAILABLE = True
-    except ImportError:
+    except ImportError as e:
         BACNET_AVAILABLE = False
-        logger.warning("bacpypes3 not installed, BACnet plugin will not work. Install with: pip install bacpypes3")
+        if "bacpypes3" in str(e):
+            logger.warning("bacpypes3 not installed, BACnet plugin will not work. Install with: pip install bacpypes3")
+        else:
+            # bacpypes3 已安装但导入失败（如二进制依赖与运行环境不符），报"未安装"会误导排查
+            logger.warning("bacpypes3 is installed but failed to import, BACnet plugin will not work: %s", e, exc_info=True)
     return BACNET_AVAILABLE
 
 
