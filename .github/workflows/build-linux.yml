@@ -142,7 +142,7 @@ jobs:
             for i in 1 2 3; do
               apt-get update -qq && \
               apt-get install -y -qq --no-install-recommends \
-                build-essential gcc g++ make patchelf wget git file ca-certificates tar gzip && break
+                build-essential gcc g++ make patchelf wget git file ca-certificates tar gzip libffi-dev && break
               echo "::warning::apt install failed, retry $i..." && sleep 5
             done
             command -v wget >/dev/null 2>&1 || { echo "::error::apt install failed after 3 retries"; exit 1; }
@@ -171,6 +171,23 @@ jobs:
             
             pyapp build linux --arch ${{ matrix.arch }}
             [[ "${{ inputs.enable_nuitka }}" != "false" ]] && pyapp compile linux
+
+            # 4.5 armv7l 目标板 Ubuntu 20.04 (glibc 2.31 / libffi.so.7) 适配（仅 armv7l 需要）：
+            #  - 根因在 cffi，与 cryptography 版本无关：cryptography（含 42~50 各版本）的 _rust 扩展
+            #    本身不链接 libffi、仅要求基础 glibc，可在板上直接加载；但 cryptography 运行时会
+            #    import cffi，而 cffi 唯一的 cp311 armv7l wheel（piwheels bookworm 构建）硬依赖
+            #    libffi.so.8 + GLIBC_2_34，板上无法加载。
+            #  - 修复：删除 piwheels 的 cffi，用 PBS python 在 bullseye 环境（= 板子 glibc 2.31 /
+            #    libffi.so.7）以 --no-binary 源码重建「同一个 cffi 版本」（版本号取自已装 dist-info，
+            #    与 cryptography 的 cffi>=.. 约束一致，无需改动 cryptography 版本）
+            if [ "${{ matrix.arch }}" = "armv7l" ]; then
+              PKG_DIR="bundles/linux/${{ needs.config.outputs.app_name }}-${{ needs.config.outputs.version }}/app_packages"
+              CFFI_VER="$(grep -m1 '^Version:' "$PKG_DIR"/cffi-*.dist-info/METADATA | cut -d' ' -f2)"
+              rm -rf "$PKG_DIR/cffi" "$PKG_DIR"/cffi-*.dist-info "$PKG_DIR"/_cffi_backend*.so
+              /opt/python/bin/python3 -m pip install --no-binary cffi --target "$PKG_DIR" \
+                --index-url https://pypi.org/simple "cffi==$CFFI_VER"
+            fi
+
             pyapp package linux
 
       - uses: actions/upload-artifact@v4
