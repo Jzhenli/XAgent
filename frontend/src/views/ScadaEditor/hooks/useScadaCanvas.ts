@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useScadaEditor } from './useScadaEditor'
 import type { ScadaComponent, CanvasPosition, DragState, BoxSelectState, ResizeState, ResizeHandle, GuideLine, ContextMenuState, ContextAction } from '../types'
 import type { ComponentType } from '../registry'
+import { getComponentTemplate } from '../registry'
 
 /**
  * Scada画布交互Hook
@@ -907,7 +908,16 @@ export function useScadaCanvas() {
     if (!componentType) return
 
     const pos = screenToCanvas(e.clientX, e.clientY)
-    scada.addComponent(componentType, pos.x, pos.y)
+
+    // 将组件中心对齐到鼠标落点
+    const template = getComponentTemplate(componentType)
+    if (template) {
+      const halfW = template.defaultConfig.width / 2
+      const halfH = template.defaultConfig.height / 2
+      scada.addComponent(componentType, pos.x - halfW, pos.y - halfH)
+    } else {
+      scada.addComponent(componentType, pos.x, pos.y)
+    }
   }
 
   // ─── 生命周期 ──────────────────────────────────────────────────────
