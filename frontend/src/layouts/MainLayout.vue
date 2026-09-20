@@ -78,7 +78,7 @@
             :key="item.path"
             :index="item.path"
           >
-            <Icon :name="item.icon" :size="32" :color="{ normal: 'white' }" />
+            <Icon :name="item.icon" :size="28" type="mono-line" :color="{ normal: 'white' }" />
 
             <span style="margin-left: 14px">{{ item.title }}</span>
           </el-menu-item>

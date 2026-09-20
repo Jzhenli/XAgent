@@ -1797,6 +1797,7 @@
     "imageValue": "值",
     "imageFile": "图片",
     "addValueImageItem": "添加图片项",
+    "imageFormatError": "仅支持 JPG、PNG、WebP、SVG、GIF 格式的图片",
     "imageFit": "填充方式",
     "fitContain": "适应",
     "fitCover": "覆盖",

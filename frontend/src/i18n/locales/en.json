@@ -1797,6 +1797,7 @@
     "imageValue": "Value",
     "imageFile": "Image",
     "addValueImageItem": "Add Image Item",
+    "imageFormatError": "Only JPG, PNG, WebP, SVG, GIF formats are supported",
     "imageFit": "Object Fit",
     "fitContain": "Adapt",
     "fitCover": "Cover",
