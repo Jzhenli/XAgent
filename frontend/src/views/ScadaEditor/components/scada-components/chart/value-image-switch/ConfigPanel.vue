@@ -20,6 +20,15 @@
       </div>
     </div>
 
+    <!-- 写值开关 -->
+    <div class="form-group form-group--switch">
+      <label>{{ t('componentConfig.enableWrite') }}</label>
+      <el-switch
+        :model-value="config.enableWrite ?? false"
+        @change="updateConfig('enableWrite', $event as boolean)"
+      />
+    </div>
+
     <!-- 值对应图片列表 -->
     <div class="subsection-title">{{ t('componentConfig.valueImageItems') }}</div>
     <div class="items-list">
@@ -448,5 +457,9 @@ const updateItemValue = (index: number, value: string) => {
   border-color: var(--scada-cyan);
   color: var(--scada-cyan);
   background: rgba(34, 211, 238, 0.05);
+}
+
+.form-group--switch :deep(.el-switch) {
+  margin-top: 6px;
 }
 </style>

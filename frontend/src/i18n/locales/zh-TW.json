@@ -1802,6 +1802,7 @@
     "fitContain": "適應",
     "fitCover": "覆蓋",
     "fitFill": "拉伸",
+    "enableWrite": "啟用寫值",
     "textConfig": "文本設定",
     "rectangleConfig": "矩形設定",
     "circleConfig": "圓形設定",

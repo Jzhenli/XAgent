@@ -1802,6 +1802,7 @@
     "fitContain": "Adapt",
     "fitCover": "Cover",
     "fitFill": "Fill",
+    "enableWrite": "Enable Write",
     "textConfig": "Text Config",
     "rectangleConfig": "Rectangle Config",
     "circleConfig": "Circle Config",

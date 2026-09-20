@@ -11,6 +11,7 @@ const defaultConfig: ValueImageSwitchComponentConfig = {
   fit: 'contain',
   items: [],
   defaultUrl: '',
+  enableWrite: false,
 }
 
 export const valueImageSwitchMeta: ScadaComponentMeta = {
