@@ -481,6 +481,7 @@ export function useScadaEditor() {
     const component = currentPanel.value.components.find(c => c.id === id)
     if (component) {
       clipboard.value = [JSON.parse(JSON.stringify(component))]
+      clipboard.value.forEach(c => { c.binding = null })
     }
   }
 
@@ -491,6 +492,7 @@ export function useScadaEditor() {
       .map(id => currentPanel.value?.components.find(c => c.id === id))
       .filter((c): c is ScadaComponent => !!c)
       .map(c => JSON.parse(JSON.stringify(c)))
+    clipboard.value.forEach(c => { c.binding = null })
   }
 
   /** 粘贴剪贴板组件到指定坐标 */
@@ -498,15 +500,23 @@ export function useScadaEditor() {
     const panel = getEditablePanel()
     if (!panel || clipboard.value.length === 0) return
 
+    // 计算剪贴板组件包围盒左上角，用于保留多选组件的相对位置
+    const minX = Math.min(...clipboard.value.map(c => c.x))
+    const minY = Math.min(...clipboard.value.map(c => c.y))
+
     const newIds: string[] = []
     // 剪贴板内同组组件映射到同一个全新 groupId：副本之间保持成组、与原组相互独立
     const groupIdRemap = new Map<string, string>()
 
-    clipboard.value.forEach((clipComp, index) => {
-      const offset = index * 20
+    clipboard.value.forEach((clipComp) => {
+      const relX = clipComp.x - minX
+      const relY = clipComp.y - minY
+      const newX = x !== undefined && y !== undefined ? x + relX : clipComp.x + 20
+      const newY = x !== undefined && y !== undefined ? y + relY : clipComp.y + 20
+
       const newComponent = cloneComponent(clipComp, {
-        x: x !== undefined ? x + offset : clipComp.x + 20,
-        y: y !== undefined ? y + offset : clipComp.y + 20
+        x: newX,
+        y: newY
       }, t('common.duplicateSuffix'), t)
 
       if (clipComp.groupId) {
