@@ -158,7 +158,9 @@ jobs:
             ln -sf /opt/python/bin/python3 /usr/bin/python3
             export PATH="/opt/python/bin:$PATH"
             
+            # armv7l: 其余包走 piwheels；cffi 强制从 sdist 源码编译（piwheels 的 wheel 为 bookworm 构建，板子加载不了）
             [ "${{ matrix.arch }}" = "armv7l" ] && export PIP_EXTRA_INDEX_URL="https://www.piwheels.org/simple"
+            [ "${{ matrix.arch }}" = "armv7l" ] && export PIP_NO_BINARY=cffi
             
             # 3. 预填充 pyapp 运行时缓存，避免重复下载
             CACHE_DIR="/root/.pyapp/cache/runtimes"
@@ -170,23 +172,15 @@ jobs:
             python3 -m pip install "pyapp-cli[compile] @ git+https://github.com/Jzhenli/pyapp.git"
             
             pyapp build linux --arch ${{ matrix.arch }}
-            [[ "${{ inputs.enable_nuitka }}" != "false" ]] && pyapp compile linux
 
-            # 4.5 armv7l 目标板 Ubuntu 20.04 (glibc 2.31 / libffi.so.7) 适配（仅 armv7l 需要）：
-            #  - 根因在 cffi，与 cryptography 版本无关：cryptography（含 42~50 各版本）的 _rust 扩展
-            #    本身不链接 libffi、仅要求基础 glibc，可在板上直接加载；但 cryptography 运行时会
-            #    import cffi，而 cffi 唯一的 cp311 armv7l wheel（piwheels bookworm 构建）硬依赖
-            #    libffi.so.8 + GLIBC_2_34，板上无法加载。
-            #  - 修复：删除 piwheels 的 cffi，用 PBS python 在 bullseye 环境（= 板子 glibc 2.31 /
-            #    libffi.so.7）以 --no-binary 源码重建「同一个 cffi 版本」（版本号取自已装 dist-info，
-            #    与 cryptography 的 cffi>=.. 约束一致，无需改动 cryptography 版本）
+            # armv7l: 断言 bundle 内 cffi 为源码编译版（防 piwheels 坏 wheel 意外混入）
             if [ "${{ matrix.arch }}" = "armv7l" ]; then
-              PKG_DIR="bundles/linux/${{ needs.config.outputs.app_name }}-${{ needs.config.outputs.version }}/app_packages"
-              CFFI_VER="$(grep -m1 '^Version:' "$PKG_DIR"/cffi-*.dist-info/METADATA | cut -d' ' -f2)"
-              rm -rf "$PKG_DIR/cffi" "$PKG_DIR"/cffi-*.dist-info "$PKG_DIR"/_cffi_backend*.so
-              /opt/python/bin/python3 -m pip install --no-binary cffi --target "$PKG_DIR" \
-                --index-url https://pypi.org/simple "cffi==$CFFI_VER"
+              PKG_DIR="$(find bundles/linux -maxdepth 4 -type d -name app_packages | head -1)"
+              CFFI_SO="$(find "$PKG_DIR" -maxdepth 1 -name '_cffi_backend'*.so | head -1)"
+              grep -aqE 'GLIBC_2\.34|libffi\.so\.8' "$CFFI_SO" && { echo "::error::cffi is a bookworm-built wheel, board cannot load it"; exit 1; }
             fi
+
+            [[ "${{ inputs.enable_nuitka }}" != "false" ]] && pyapp compile linux
 
             pyapp package linux
 
