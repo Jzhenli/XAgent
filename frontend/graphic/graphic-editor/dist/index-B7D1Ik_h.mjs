@@ -5317,7 +5317,7 @@ const _hoisted_1$q = { class: "property-group-panel-title" }, _hoisted_2$m = { c
       ])
     ]));
   }
-}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-J45fSujg.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-BkdrTBk_.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-BvEHeJvz.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-B4IJMGlH.mjs"));
+}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-CL3mclu_.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-BWCrkPxr.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-CVugzrY8.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-3swD1VcQ.mjs"));
 var propertyGroupRenderType = /* @__PURE__ */ ((l) => (l.normal = "normal", l.binding = "binding", l.listBinding = "listBinding", l.alignItems = "alignItems", l.orderItems = "orderItems", l.bindingDashboard = "bindingDashboard", l.propertyGroupBackground = "propertyGroupBackground", l.propertyGroupText = "propertyGroupText", l.propertyGroupPositionSize = "propertyGroupPositionSize", l.propertyGroupViewPosition = "propertyGroupViewPosition", l.animationConfigGroup = "animationConfigGroup", l.iconPropertyConfig = "iconPropertyConfig", l.GlowEffectConfig = "GlowEffectConfig", l.popupConfigGroup = "popupConfigGroup", l))(propertyGroupRenderType || {}), brushTypes = /* @__PURE__ */ ((l) => (l.backgroundStyle = "backgroundStyle", l.textStyle = "textStyle", l.shadingColor = "shadingColor", l.iconStyle = "iconStyle", l))(brushTypes || {});
 const brushPropertiesMap = /* @__PURE__ */ new Map([
   ["backgroundStyle", [
@@ -52361,7 +52361,10 @@ class WaterPipeStraight extends PipeStraightBase {
         backgroundColor: "rgba(83,186,237,1)",
         focus: !1
       }
-    ]
+    ],
+    // 弹框配置：PropertyPanelManager 检测到 options.popupConfig 会自动注入弹框配置面板
+    // GraphicRenderManager 点击时读取 item.options.popupConfig.enablePopup 触发 configPopup 弹框
+    popupConfig: createDefaultPopupConfig()
   });
   relatedChildrenProperties = [
     "flowState"
@@ -61639,7 +61642,10 @@ class DuctStraight extends PipeStraightBase {
     width: 0,
     height: 0,
     keepAspectRatio: !0,
-    colorShader: "#FFFFFF"
+    colorShader: "#FFFFFF",
+    // 弹框配置：PropertyPanelManager 检测到 options.popupConfig 会自动注入弹框配置面板
+    // GraphicRenderManager 点击时读取 item.options.popupConfig.enablePopup 触发 configPopup 弹框
+    popupConfig: createDefaultPopupConfig()
   });
   brushTypes = [brushTypes.shadingColor];
   pipeDrawMeta = [{
@@ -67111,7 +67117,10 @@ class GLayer {
       const f = d.itemList.indexOf(a);
       d.itemList.splice(f, 1), a.dispose(), d.resetCanRotate(), d.itemList.length <= 1 && this.unGroup(d, !0);
     }
-    a.options.parentUqId && this.items.filter((f) => f.options.uqId === a.options.parentUqId)[0].removeChildrenBinding(a.options.uqId);
+    if (a.options.parentUqId) {
+      const d = this.items.filter((f) => f.options.uqId === a.options.parentUqId)[0];
+      d && d.removeChildrenBinding(a.options.uqId);
+    }
   }
   removeItemWithBinding(a) {
     let n = [];
@@ -67133,7 +67142,7 @@ class GLayer {
         v > -1 && (this.items.splice(v, 1), g.dispose());
       }), d.resetCanRotate(), d.itemList.length === 1 && this.unGroup(d, !0);
     } else
-      n = this.items.filter((d) => d.options.parentUqId === a.options.uqId || a.id === d.id), n.forEach((d) => {
+      n = this.items.filter((d) => d.options.parentUqId === a.options.uqId || d === a), n.forEach((d) => {
         const f = this.items.indexOf(d);
         this.items.splice(f, 1), d.dispose();
       });
@@ -67471,13 +67480,13 @@ class GraphicItemManager extends Eventful$1 {
     }), this.deactivateCurrentSelected()) : n.exists(a) && (a.dispatch("deleteItem", null), n.removeItem(a)), this.dispatch("deleteItem", null);
   }
   selectAll() {
-    const n = this.currLayer.items.concat([]);
+    const n = this.currLayer.items.filter((d) => !d.options.parentUqId);
     n.length === 1 ? this.activateItem(n[0], { keepCursor: !0 }) : n.length > 1 && this.selectMultiple(n);
   }
   boundSelect(a) {
     const n = this.currLayer, d = [];
     n.items.forEach((f) => {
-      f.withinBound(a) && d.push(f);
+      f.options.parentUqId || f.withinBound(a) && d.push(f);
     }), d.length === 1 ? this.activateItem(d[0], { keepCursor: !0 }) : d.length > 1 && this.selectMultiple(d);
   }
   selectMultiple(a) {
@@ -67488,7 +67497,7 @@ class GraphicItemManager extends Eventful$1 {
     this.controlItems = f.concat(d).concat(n);
   }
   activateItem(a, n) {
-    if (this.activeItem === a)
+    if (this.activeItem === a || n?.isCtrl && a.options.parentUqId)
       return;
     if (n?.isCtrl && this.tempGroup !== null) {
       a.isGroup && a.activate(), this.tempGroup.addItems([a]), this.updateTempGroupCtrls(this.tempGroup), this.dispatch("activate", this.tempGroup), propertyPanelManager.dispatch("setPanel", {
