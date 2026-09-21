@@ -41,10 +41,16 @@ const selectedComponentIds = ref<string[]>([])
 const isEditing = ref(true)
 /** 画布缩放比例 */
 const zoom = ref(1)
-/** 是否显示画布网格（从 localStorage 恢复用户偏好，默认显示） */
-const showGrid = ref(localStorage.getItem('scada_showGrid') !== 'false')
-watch(showGrid, (v) => {
-  localStorage.setItem('scada_showGrid', String(v))
+/** 是否显示画布网格（跟随面板数据持久化，默认显示） */
+const showGrid = computed({
+  get: () => currentPanel.value?.showGrid !== false,
+  set: (v: boolean) => {
+    const panel = getEditablePanel()
+    if (panel) {
+      panel.showGrid = v
+      panel.updatedAt = Date.now()
+    }
+  }
 })
 /** 是否处于全屏预览状态 */
 const isFullscreenPreview = ref(false)
@@ -67,6 +73,8 @@ function serializePanelState(): string {
     grid: panel.grid,
     backgroundColor: panel.backgroundColor,
     backgroundImage: panel.backgroundImage,
+    adaptMode: panel.adaptMode,
+    showGrid: panel.showGrid,
     components: panel.components
   })
 }
@@ -85,6 +93,8 @@ function restorePanelState(state: string): void {
     if (data.grid !== undefined) panel.grid = data.grid
     if (data.backgroundColor !== undefined) panel.backgroundColor = data.backgroundColor
     if (data.backgroundImage !== undefined) panel.backgroundImage = data.backgroundImage
+    if (data.adaptMode !== undefined) panel.adaptMode = data.adaptMode
+    if (data.showGrid !== undefined) panel.showGrid = data.showGrid
     if (data.components !== undefined) {
       panel.components = JSON.parse(JSON.stringify(data.components))
     }
@@ -130,6 +140,7 @@ function parseProjectData(data: string | Record<string, unknown>): ScadaPanel | 
       backgroundColor: parsed.backgroundColor || '#f0f2f5',
       backgroundImage: parsed.backgroundImage,
       adaptMode: normalizeAdaptMode(parsed.adaptMode),
+      showGrid: parsed.showGrid !== false,
       components: migrateComponents(parsed.components || []),
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -151,6 +162,7 @@ function buildPanelPayload(panel: ScadaPanel): Record<string, unknown> {
     backgroundColor: panel.backgroundColor,
     backgroundImage: panel.backgroundImage,
     adaptMode: panel.adaptMode,
+    showGrid: panel.showGrid,
     components: panel.components
   }
 }
@@ -819,6 +831,7 @@ export function validatePanel(data: unknown): ScadaPanel | null {
     backgroundColor: typeof panel.backgroundColor === 'string' ? panel.backgroundColor : '#f0f2f5',
     backgroundImage: typeof panel.backgroundImage === 'string' ? panel.backgroundImage : undefined,
     adaptMode: normalizeAdaptMode(panel.adaptMode),
+    showGrid: panel.showGrid !== false,
     components: validComponents,
     createdAt: typeof panel.createdAt === 'number' ? panel.createdAt : Date.now(),
     updatedAt: Date.now()
