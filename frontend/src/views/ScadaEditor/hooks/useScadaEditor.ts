@@ -41,8 +41,11 @@ const selectedComponentIds = ref<string[]>([])
 const isEditing = ref(true)
 /** 画布缩放比例 */
 const zoom = ref(1)
-/** 是否显示画布网格 */
-const showGrid = ref(false)
+/** 是否显示画布网格（从 localStorage 恢复用户偏好，默认显示） */
+const showGrid = ref(localStorage.getItem('scada_showGrid') !== 'false')
+watch(showGrid, (v) => {
+  localStorage.setItem('scada_showGrid', String(v))
+})
 /** 是否处于全屏预览状态 */
 const isFullscreenPreview = ref(false)
 /** 面板是否存在未保存的修改 */
