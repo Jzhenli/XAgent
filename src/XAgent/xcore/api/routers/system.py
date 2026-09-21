@@ -7,6 +7,7 @@ from typing import Optional
 
 from ..dependencies import get_storage, get_buffer, get_app_state, get_gateway, get_stats_manager
 from ..models.system import HealthResponse
+from .... import __version__ as BACKEND_VERSION
 from ...storage import StorageInterface, WriteBehindBuffer
 from ...statistics import StatisticsManager
 from ...utils.system_monitor import get_system_monitor
@@ -78,6 +79,19 @@ async def get_startup_status(gateway = Depends(get_gateway)):
         status = gateway.get_plugin_startup_status()
     
     return status
+
+
+@router.get("/api/system/version")
+async def get_version():
+    """获取软件版本号
+
+    Returns:
+        dict: 包含软件名称与后端版本号，供前端"关于"页面/版本校验使用
+    """
+    return {
+        "software": "XAgent",
+        "backend": BACKEND_VERSION,
+    }
 
 
 @router.get("/api/system/stats")

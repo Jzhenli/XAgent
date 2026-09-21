@@ -3,7 +3,7 @@
 This package provides a FastAPI-based IoT gateway backend.
 """
 
-__version__ = "0.1.0"
+__version__ = "3.0.4"
 
 # Import main function for PyApp launcher
 from XAgent.main import main
