@@ -8,6 +8,7 @@ from ..models.panel import (
     PanelCreate,
     PanelUpdate,
     PanelResponse,
+    PanelBriefResponse,
     PanelType
 )
 from ..repositories.panel_repository import PanelRepository
@@ -94,7 +95,25 @@ class PanelService:
             项目列表
         """
         return await self._repo.list(type=type, enabled=enabled)
-    
+
+    async def list_panels_brief(
+        self,
+        type: Optional[PanelType] = None,
+        enabled: Optional[bool] = None
+    ) -> List[PanelBriefResponse]:
+        """列出项目概要（不含 data 字段）
+
+        用于项目概览场景，避免加载/传输体积较大的 data 数据。
+
+        Args:
+            type: 按类型筛选
+            enabled: 按启用状态筛选
+
+        Returns:
+            项目概要列表
+        """
+        return await self._repo.list_brief(type=type, enabled=enabled)
+
     async def update_panel(
         self,
         panel_id: str,

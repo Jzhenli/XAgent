@@ -53,18 +53,36 @@ class PanelUpdate(BaseModel):
     updatedAt: float = Field(..., description="更新时间戳")
 
 
-class PanelResponse(BaseModel):
-    """项目响应模型"""
+class PanelBase(BaseModel):
+    """项目公共字段基类（PanelResponse / PanelBriefResponse 共用，避免字段重复定义后改漏）"""
     id: str
     name: str
     type: PanelType
     description: Optional[str]
-    data: PanelData
     enabled: bool = Field(default=True)
     createdAt: float
     updatedAt: float
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PanelResponse(PanelBase):
+    """项目响应模型（含完整 data）"""
+    data: PanelData
+
+
+class PanelBriefResponse(PanelBase):
+    """项目概要响应模型（不含 data 字段）
+
+    用于项目概览/列表场景，避免返回体积较大的 data 数据。
+    需要完整数据时请使用 PanelResponse（GET /api/panels/{panel_id}）。
+    """
+
+
+class PanelBriefListResponse(BaseModel):
+    """项目概要列表响应（不含 data 字段）"""
+    total: int
+    items: List[PanelBriefResponse]
 
 
 class PanelListResponse(BaseModel):

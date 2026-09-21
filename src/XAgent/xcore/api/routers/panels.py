@@ -1,7 +1,7 @@
 """项目管理API路由"""
 
 import logging
-from fastapi import APIRouter, HTTPException, Depends, Query, status
+from fastapi import APIRouter, HTTPException, Depends, Query, Path, status
 from typing import Optional
 
 from ..models.panel import (
@@ -9,6 +9,7 @@ from ..models.panel import (
     PanelUpdate,
     PanelResponse,
     PanelListResponse,
+    PanelBriefListResponse,
     PanelType
 )
 from ..services.panel_service import PanelService
@@ -82,9 +83,39 @@ async def list_panels(
     )
 
 
+@router.get("/brief", response_model=PanelBriefListResponse)
+async def list_panels_brief(
+    type: Optional[PanelType] = Query(None, description="按类型筛选"),
+    enabled: Optional[bool] = Query(None, description="按启用状态筛选"),
+    service: PanelService = Depends(get_panel_service),
+    token: str = Depends(verify_api_token)
+):
+    """列出项目概要（不含 data 字段，用于项目概览）
+
+    与 GET /api/panels/ 的区别：不返回 data 字段，避免数据量过大。
+
+    Args:
+        type: 按类型筛选（Dashboard/Graphic）
+        enabled: 按启用状态筛选
+
+    Returns:
+        项目概要列表（无分页，返回所有符合条件的记录）
+
+    Note:
+        该路由必须定义在 /{panel_id} 之前，否则会被路径参数路由拦截；
+        /{panel_id} 的 panel_id 带 ^panel-[0-9]+$ 约束，顺序错乱时请求会以 422 暴露而非静默 404。
+    """
+    panels = await service.list_panels_brief(type=type, enabled=enabled)
+
+    return PanelBriefListResponse(
+        total=len(panels),
+        items=panels
+    )
+
+
 @router.get("/{panel_id}", response_model=PanelResponse)
 async def get_panel(
-    panel_id: str,
+    panel_id: str = Path(..., pattern=r"^panel-[0-9]+$", description="项目ID"),
     service: PanelService = Depends(get_panel_service),
     token: str = Depends(verify_api_token)
 ):
@@ -106,8 +137,8 @@ async def get_panel(
 
 @router.put("/{panel_id}", response_model=PanelResponse)
 async def update_panel(
-    panel_id: str,
     updates: PanelUpdate,
+    panel_id: str = Path(..., pattern=r"^panel-[0-9]+$", description="项目ID"),
     service: PanelService = Depends(get_panel_service),
     token: str = Depends(verify_api_token)
 ):
@@ -134,7 +165,7 @@ async def update_panel(
 
 @router.delete("/{panel_id}")
 async def delete_panel(
-    panel_id: str,
+    panel_id: str = Path(..., pattern=r"^panel-[0-9]+$", description="项目ID"),
     service: PanelService = Depends(get_panel_service),
     token: str = Depends(verify_api_token)
 ):

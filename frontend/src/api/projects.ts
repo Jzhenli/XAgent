@@ -6,6 +6,22 @@ export interface ProjectListResponse {
   total: number
 }
 
+/** 项目概要（不含 data 字段，用于项目概览） */
+export interface ProjectBrief {
+  id: string
+  name: string
+  type: Project['type']
+  description?: string | null
+  enabled: boolean
+  createdAt: number
+  updatedAt: number
+}
+
+export interface ProjectBriefListResponse {
+  items: ProjectBrief[]
+  total: number
+}
+
 export interface ProjectCreateRequest {
   id: string
   name: string
@@ -40,6 +56,12 @@ export interface ProjectDeleteResponse {
 export const projectApi = {
   async list(): Promise<ProjectListResponse> {
     const res = await api.get('/api/panels/')
+    return res.data
+  },
+
+  /** 列出项目概要（不含 data 字段，用于项目概览） */
+  async listBrief(): Promise<ProjectBriefListResponse> {
+    const res = await api.get('/api/panels/brief')
     return res.data
   },
 

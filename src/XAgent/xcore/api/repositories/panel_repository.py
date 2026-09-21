@@ -3,11 +3,12 @@
 import logging
 import json
 import aiosqlite
-from typing import List, Optional
+from typing import Any, Callable, List, Optional, Tuple
 
 from ..models.panel import (
     PanelType,
-    PanelResponse
+    PanelResponse,
+    PanelBriefResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -121,46 +122,108 @@ class PanelRepository:
         
         return self._parse_row(row)
     
+    def _build_where_clause(
+        self,
+        type: Optional[PanelType] = None,
+        enabled: Optional[bool] = None
+    ) -> Tuple[str, List[Any]]:
+        """构建查询条件
+
+        Args:
+            type: 按类型筛选
+            enabled: 按启用状态筛选
+
+        Returns:
+            (where条件字符串, 参数列表)
+        """
+        conditions = []
+        params: List[Any] = []
+
+        if type is not None:
+            conditions.append("type = ?")
+            params.append(type.value)
+
+        if enabled is not None:
+            conditions.append("enabled = ?")
+            params.append(enabled)
+
+        return (" AND ".join(conditions) if conditions else "1=1", params)
+
     async def list(
         self,
         type: Optional[PanelType] = None,
         enabled: Optional[bool] = None
     ) -> List[PanelResponse]:
-        """列出项目
-        
+        """列出项目（含完整 data 字段）
+
         Args:
             type: 按类型筛选
             enabled: 按启用状态筛选
-            
+
         Returns:
             项目列表
         """
-        conditions = []
-        params = []
-        
-        if type:
-            conditions.append("type = ?")
-            params.append(type.value)
-        
-        if enabled is not None:
-            conditions.append("enabled = ?")
-            params.append(enabled)
-        
-        where_clause = " AND ".join(conditions) if conditions else "1=1"
-        
+        return await self._fetch_all(
+            "panel_id, name, type, description, data, enabled, created_at, updated_at",
+            self._parse_row,
+            type=type,
+            enabled=enabled
+        )
+
+    async def _fetch_all(
+        self,
+        columns: str,
+        parser: Callable,
+        type: Optional[PanelType] = None,
+        enabled: Optional[bool] = None
+    ) -> List[Any]:
+        """按条件查询并解析所有行（list / list_brief 共用查询逻辑，仅 SELECT 列与解析函数不同）
+
+        Args:
+            columns: SELECT 列清单
+            parser: 行解析函数（_parse_row / _parse_brief_row）
+            type: 按类型筛选
+            enabled: 按启用状态筛选
+
+        Returns:
+            解析后的模型列表
+        """
+        where_clause, params = self._build_where_clause(type, enabled)
+
         query = f"""
-            SELECT panel_id, name, type, description, data, enabled, created_at, updated_at
+            SELECT {columns}
             FROM panel_registry
             WHERE {where_clause}
             ORDER BY updated_at DESC
         """
-        
+
         rows = []
         async with self._db.execute(query, params) as cursor:
             async for row in cursor:
                 rows.append(row)
-        
-        return [self._parse_row(row) for row in rows]
+
+        return [parser(row) for row in rows]
+
+    async def list_brief(
+        self,
+        type: Optional[PanelType] = None,
+        enabled: Optional[bool] = None
+    ) -> List[PanelBriefResponse]:
+        """列出项目概要（不查询 data 字段，避免大数据量传输）
+
+        Args:
+            type: 按类型筛选
+            enabled: 按启用状态筛选
+
+        Returns:
+            项目概要列表（不含 data）
+        """
+        return await self._fetch_all(
+            "panel_id, name, type, description, enabled, created_at, updated_at",
+            self._parse_brief_row,
+            type=type,
+            enabled=enabled
+        )
     
     async def update(
         self,
@@ -254,7 +317,28 @@ class PanelRepository:
             type=PanelType(row[2]),
             description=row[3],
             data=data_dict,
-            enabled=row[5],
+            # enabled 列无 NOT NULL 约束，历史数据可能为 NULL，回退为默认启用
+            enabled=bool(row[5]) if row[5] is not None else True,
             createdAt=row[6],
             updatedAt=row[7]
+        )
+
+    def _parse_brief_row(self, row) -> PanelBriefResponse:
+        """解析数据库行为项目概要（不含 data 字段）
+
+        Args:
+            row: 数据库行（panel_id, name, type, description, enabled, created_at, updated_at）
+
+        Returns:
+            项目概要响应模型
+        """
+        return PanelBriefResponse(
+            id=row[0],
+            name=row[1],
+            type=PanelType(row[2]),
+            description=row[3],
+            # enabled 列无 NOT NULL 约束，历史数据可能为 NULL，回退为默认启用
+            enabled=bool(row[4]) if row[4] is not None else True,
+            createdAt=row[5],
+            updatedAt=row[6]
         )
