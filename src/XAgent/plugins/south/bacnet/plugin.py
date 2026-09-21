@@ -23,6 +23,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 from XAgent.xcore.plugins.south import SouthPluginBase
+from XAgent.xcore.services.bacnet_compat import patch_bacpypes
 from XAgent.xcore.storage.interface import Reading
 from XAgent.xcore.transform import StandardDataPoint
 
@@ -150,7 +151,8 @@ class BACnetAppManager:
                 # 所有设备都已断开，关闭并清理实例
                 try:
                     if hasattr(cls._shared_app, 'close'):
-                        await cls._shared_app.close()
+                        # bacpypes3 的 Application.close() 是同步方法，不能 await
+                        cls._shared_app.close()
                     logger.info(
                         f"Closed and released shared BACnet Application "
                         f"(port {cls._local_port})"
@@ -179,6 +181,7 @@ def _check_bacnet_available():
         _NetworkPortObject = NetworkPortObject
         _ErrorRejectAbortNack = ErrorRejectAbortNack
         BACNET_AVAILABLE = True
+        patch_bacpypes()
     except ImportError as e:
         BACNET_AVAILABLE = False
         if "bacpypes3" in str(e):

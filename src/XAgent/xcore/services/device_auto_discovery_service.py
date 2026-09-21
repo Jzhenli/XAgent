@@ -34,6 +34,8 @@ import re
 from typing import List, Optional, Tuple, Any
 from dataclasses import dataclass
 
+from XAgent.xcore.services.bacnet_compat import patch_bacpypes
+
 logger = logging.getLogger(__name__)
 
 
@@ -379,6 +381,10 @@ class DeviceAutoDiscoveryService:
             from bacpypes3.ipv4.app import NormalApplication
             from bacpypes3.object import DeviceObject
             from bacpypes3.pdu import IPv4Address
+
+            # 创建应用前先应用 bacpypes3 运行时补丁
+            # （无轮询设备时补丁未生效，此处保证发现路径也被覆盖）
+            patch_bacpypes()
 
             # 创建IPv4地址（根据是否指定网卡）
             # 设备发现层使用标准端口 47808（与轮询层 47809 隔离，避免冲突）
