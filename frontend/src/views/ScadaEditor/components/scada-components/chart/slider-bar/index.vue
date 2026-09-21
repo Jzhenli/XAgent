@@ -145,8 +145,13 @@ const displayValues = computed(() =>
     // 非编辑模式 + 已绑定：取点位实时值
     if (!scada.isEditing.value && item.binding) {
       const point = boundPoints.value[index]
-      if (point && typeof point.currentValue === 'number') {
-        return point.currentValue
+      if (point) {
+        if (typeof point.currentValue === 'number') {
+          return point.currentValue
+        }
+        if (typeof point.currentValue === 'boolean') {
+          return point.currentValue ? 1 : 0
+        }
       }
     }
     // 兜底：item 配置值或 min
@@ -302,12 +307,15 @@ watch(
       const index = Number(indexStr)
       const point = newPoints[index]
       const expected = dragValues[index]
-      if (
-        point
-        && typeof point.currentValue === 'number'
-        && Math.abs(point.currentValue - expected) < 0.001
-      ) {
-        delete dragValues[index]
+      if (point) {
+        const pv = point.currentValue
+        const numeric = typeof pv === 'boolean' ? (pv ? 1 : 0) : pv
+        if (
+          typeof numeric === 'number'
+          && Math.abs(numeric - expected) < 0.001
+        ) {
+          delete dragValues[index]
+        }
       }
     }
   },

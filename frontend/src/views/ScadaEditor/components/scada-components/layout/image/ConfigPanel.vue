@@ -21,7 +21,7 @@
       <input 
         ref="imageFileInput"
         type="file"
-        accept="image/*"
+        accept=".jpg,.jpeg,.png,.webp,.svg,.gif,image/jpeg,image/png,image/webp,image/svg+xml,image/gif"
         class="hidden-file-input"
         @change="handleImageUpload"
       />
@@ -62,9 +62,18 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useScadaConfig } from '../../../../hooks/useScadaEditor'
 import type { ScadaComponent, ImageComponentConfig } from '../../../../types'
+
+const ALLOWED_IMAGE_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/svg+xml',
+  'image/gif',
+]
 
 const { t } = useI18n()
 
@@ -76,10 +85,23 @@ const { config, updateConfig } = useScadaConfig(props.component as ScadaComponen
 
 const imageFileInput = ref<HTMLInputElement | null>(null)
 
+const isValidImageFile = (file: File): boolean => {
+  // SVG 可能没有标准 MIME，同时校验扩展名
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+  if (ext === 'svg') return true
+  return ALLOWED_IMAGE_MIME_TYPES.includes(file.type)
+}
+
 const handleImageUpload = (e: Event) => {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+
+  if (!isValidImageFile(file)) {
+    ElMessage.error(t('componentConfig.imageFormatError'))
+    input.value = ''
+    return
+  }
 
   const reader = new FileReader()
   reader.onload = (event) => {

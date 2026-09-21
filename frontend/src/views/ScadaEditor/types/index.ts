@@ -422,6 +422,8 @@ export interface ValueImageSwitchComponentConfig extends BaseComponentConfig {
   defaultUrl?: string
   /** 图片填充方式 */
   fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
+  /** 是否启用点击写值（预览模式下点击图片切换并下发值） */
+  enableWrite?: boolean
 }
 
 /** 弹框组件配置 */
@@ -609,6 +611,8 @@ export interface ScadaPanel {
   backgroundImage?: string
   /** 预览时的画布适配模式，缺省按 fit 处理 */
   adaptMode?: PanelAdaptMode
+  /** 编辑时是否显示网格，默认 true */
+  showGrid?: boolean
   components: ScadaComponent[]
   createdAt: number
   updatedAt: number

@@ -45,7 +45,10 @@ const fallbackValue = computed(() =>
 const { currentValue, boundPoint, writeValue } = useScadaBinding(
   binding,
   {
-    transform: (value) => (typeof value === 'number' ? value : 0),
+    transform: (value) => {
+      if (typeof value === 'boolean') return value ? 1 : 0
+      return typeof value === 'number' ? value : 0
+    },
   },
   fallbackValue,
 )

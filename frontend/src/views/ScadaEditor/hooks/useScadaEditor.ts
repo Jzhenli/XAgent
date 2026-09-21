@@ -41,8 +41,17 @@ const selectedComponentIds = ref<string[]>([])
 const isEditing = ref(true)
 /** 画布缩放比例 */
 const zoom = ref(1)
-/** 是否显示画布网格 */
-const showGrid = ref(false)
+/** 是否显示画布网格（跟随面板数据持久化，默认显示） */
+const showGrid = computed({
+  get: () => currentPanel.value?.showGrid !== false,
+  set: (v: boolean) => {
+    const panel = getEditablePanel()
+    if (panel) {
+      panel.showGrid = v
+      panel.updatedAt = Date.now()
+    }
+  }
+})
 /** 是否处于全屏预览状态 */
 const isFullscreenPreview = ref(false)
 /** 面板是否存在未保存的修改 */
@@ -64,6 +73,8 @@ function serializePanelState(): string {
     grid: panel.grid,
     backgroundColor: panel.backgroundColor,
     backgroundImage: panel.backgroundImage,
+    adaptMode: panel.adaptMode,
+    showGrid: panel.showGrid,
     components: panel.components
   })
 }
@@ -82,6 +93,8 @@ function restorePanelState(state: string): void {
     if (data.grid !== undefined) panel.grid = data.grid
     if (data.backgroundColor !== undefined) panel.backgroundColor = data.backgroundColor
     if (data.backgroundImage !== undefined) panel.backgroundImage = data.backgroundImage
+    if (data.adaptMode !== undefined) panel.adaptMode = data.adaptMode
+    if (data.showGrid !== undefined) panel.showGrid = data.showGrid
     if (data.components !== undefined) {
       panel.components = JSON.parse(JSON.stringify(data.components))
     }
@@ -127,6 +140,7 @@ function parseProjectData(data: string | Record<string, unknown>): ScadaPanel | 
       backgroundColor: parsed.backgroundColor || '#f0f2f5',
       backgroundImage: parsed.backgroundImage,
       adaptMode: normalizeAdaptMode(parsed.adaptMode),
+      showGrid: parsed.showGrid !== false,
       components: migrateComponents(parsed.components || []),
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -148,6 +162,7 @@ function buildPanelPayload(panel: ScadaPanel): Record<string, unknown> {
     backgroundColor: panel.backgroundColor,
     backgroundImage: panel.backgroundImage,
     adaptMode: panel.adaptMode,
+    showGrid: panel.showGrid,
     components: panel.components
   }
 }
@@ -481,6 +496,7 @@ export function useScadaEditor() {
     const component = currentPanel.value.components.find(c => c.id === id)
     if (component) {
       clipboard.value = [JSON.parse(JSON.stringify(component))]
+      clipboard.value.forEach(c => { c.binding = null })
     }
   }
 
@@ -491,6 +507,7 @@ export function useScadaEditor() {
       .map(id => currentPanel.value?.components.find(c => c.id === id))
       .filter((c): c is ScadaComponent => !!c)
       .map(c => JSON.parse(JSON.stringify(c)))
+    clipboard.value.forEach(c => { c.binding = null })
   }
 
   /** 粘贴剪贴板组件到指定坐标 */
@@ -498,15 +515,23 @@ export function useScadaEditor() {
     const panel = getEditablePanel()
     if (!panel || clipboard.value.length === 0) return
 
+    // 计算剪贴板组件包围盒左上角，用于保留多选组件的相对位置
+    const minX = Math.min(...clipboard.value.map(c => c.x))
+    const minY = Math.min(...clipboard.value.map(c => c.y))
+
     const newIds: string[] = []
     // 剪贴板内同组组件映射到同一个全新 groupId：副本之间保持成组、与原组相互独立
     const groupIdRemap = new Map<string, string>()
 
-    clipboard.value.forEach((clipComp, index) => {
-      const offset = index * 20
+    clipboard.value.forEach((clipComp) => {
+      const relX = clipComp.x - minX
+      const relY = clipComp.y - minY
+      const newX = x !== undefined && y !== undefined ? x + relX : clipComp.x + 20
+      const newY = x !== undefined && y !== undefined ? y + relY : clipComp.y + 20
+
       const newComponent = cloneComponent(clipComp, {
-        x: x !== undefined ? x + offset : clipComp.x + 20,
-        y: y !== undefined ? y + offset : clipComp.y + 20
+        x: newX,
+        y: newY
       }, t('common.duplicateSuffix'), t)
 
       if (clipComp.groupId) {
@@ -806,6 +831,7 @@ export function validatePanel(data: unknown): ScadaPanel | null {
     backgroundColor: typeof panel.backgroundColor === 'string' ? panel.backgroundColor : '#f0f2f5',
     backgroundImage: typeof panel.backgroundImage === 'string' ? panel.backgroundImage : undefined,
     adaptMode: normalizeAdaptMode(panel.adaptMode),
+    showGrid: panel.showGrid !== false,
     components: validComponents,
     createdAt: typeof panel.createdAt === 'number' ? panel.createdAt : Date.now(),
     updatedAt: Date.now()

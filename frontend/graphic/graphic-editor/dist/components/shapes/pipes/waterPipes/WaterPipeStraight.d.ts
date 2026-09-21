@@ -41,6 +41,32 @@ export default class WaterPipeStraight extends PipeStraightBase {
             backgroundColor: string;
             focus: boolean;
         }[];
+        popupConfig: {
+            enablePopup: boolean;
+            popupTitle: string;
+            popupWidth: number;
+            popupHeight: number;
+            popupPointBindings: {
+                id: string;
+                displayName: string;
+                pointInfo: {
+                    deviceId: string;
+                    deviceName: string;
+                    pointId: string;
+                    pointName: string;
+                    unit: string;
+                    description: string;
+                };
+                triggerConfig?: {
+                    mode: "switch";
+                    onLabel: string;
+                    offLabel: string;
+                } | {
+                    mode: "number";
+                    label: string;
+                } | undefined;
+            }[];
+        };
     };
     relatedChildrenProperties: string[];
     propertyMeta: shapePropertyGroupDef[];

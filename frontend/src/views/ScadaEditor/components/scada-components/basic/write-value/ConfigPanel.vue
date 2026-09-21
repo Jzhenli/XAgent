@@ -23,7 +23,7 @@
           @change="updateConfig('showInput', $event as boolean)"
         />
       </div>
-      <div v-if="config.showInput" class="form-group">
+      <div class="form-group">
         <label>{{ t('componentConfig.inputBorderColor') }}</label>
         <el-color-picker
           :model-value="config.inputBorderColor"
@@ -32,7 +32,6 @@
           @change="handleInputBorderColorChange"
         />
       </div>
-      <div v-else class="form-group"></div>
     </div>
 
     <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>

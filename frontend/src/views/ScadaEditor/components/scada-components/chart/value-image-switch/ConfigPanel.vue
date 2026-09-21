@@ -20,6 +20,15 @@
       </div>
     </div>
 
+    <!-- 写值开关 -->
+    <div class="form-group form-group--switch">
+      <label>{{ t('componentConfig.enableWrite') }}</label>
+      <el-switch
+        :model-value="config.enableWrite ?? false"
+        @change="updateConfig('enableWrite', $event as boolean)"
+      />
+    </div>
+
     <!-- 值对应图片列表 -->
     <div class="subsection-title">{{ t('componentConfig.valueImageItems') }}</div>
     <div class="items-list">
@@ -97,7 +106,7 @@
       :key="key"
       :ref="(el: any) => setFileInputRef(el, key)"
       type="file"
-      accept="image/*"
+      accept=".jpg,.jpeg,.png,.webp,.svg,.gif,image/jpeg,image/png,image/webp,image/svg+xml,image/gif"
       class="hidden-file-input"
       @change="(e: Event) => handleImageUpload(e, key)"
     />
@@ -106,9 +115,18 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useScadaConfig } from '../../../../hooks/useScadaEditor'
 import type { ScadaComponent, ValueImageSwitchComponentConfig, ValueImageItem } from '../../../../types'
+
+const ALLOWED_IMAGE_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/svg+xml',
+  'image/gif',
+]
 
 const { t } = useI18n()
 
@@ -140,10 +158,23 @@ const triggerUpload = (key: string) => {
   fileInputs.value[key]?.click()
 }
 
+const isValidImageFile = (file: File): boolean => {
+  // SVG 可能没有标准 MIME，同时校验扩展名
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+  if (ext === 'svg') return true
+  return ALLOWED_IMAGE_MIME_TYPES.includes(file.type)
+}
+
 const handleImageUpload = (e: Event, key: string) => {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+
+  if (!isValidImageFile(file)) {
+    ElMessage.error(t('componentConfig.imageFormatError'))
+    input.value = ''
+    return
+  }
 
   const reader = new FileReader()
   reader.onload = (event) => {
@@ -426,5 +457,9 @@ const updateItemValue = (index: number, value: string) => {
   border-color: var(--scada-cyan);
   color: var(--scada-cyan);
   background: rgba(34, 211, 238, 0.05);
+}
+
+.form-group--switch :deep(.el-switch) {
+  margin-top: 6px;
 }
 </style>

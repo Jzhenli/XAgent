@@ -325,9 +325,8 @@ const selectCategory = (key: string) => {
   color: var(--text-regular);
   text-align: center;
   line-height: 1.3;
-  word-break: keep-all;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-all;
+  overflow-wrap: break-word;
   max-width: 100%;
   letter-spacing: 0.3px;
 }
