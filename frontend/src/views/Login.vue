@@ -103,15 +103,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/users";
 import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import { Switch } from "@element-plus/icons-vue";
 import AboutUsDialog from "@/components/AboutUsDialog.vue";
-import packageInfo from "../../package.json";
 import { i18nScope } from '@x-plateform-mono/common'
+import { systemApi } from "@/api/system";
 
 /** 路由实例 */
 const router = useRouter();
@@ -128,18 +128,27 @@ const loginForm = ref({ username: "", password: "" });
 const loading = ref(false);
 /** 关于我们弹框显隐 */
 const aboutDialogVisible = ref(false);
-/** 版本信息：软件版本、UI 版本、后端版本 */
-const versionInfo = ref({
-  software: "3.0.0",
-  ui: packageInfo.version,
-  backend: "-",
-});
 
-const aboutVersions = computed(() => [
-  { labelKey: "login.softwareVersion", value: versionInfo.value.software },
-  { labelKey: "login.uiVersion", value: versionInfo.value.ui },
-  { labelKey: "login.backendVersion", value: versionInfo.value.backend },
+const aboutVersions = ref<{ labelKey: string; value: string }[]>([
+  { labelKey: "login.softwareVersion", value: "3.0.0" },
 ]);
+
+/** 从后端加载版本信息，失败时保留默认值 */
+async function fetchVersionInfo() {
+  try {
+    const data = await systemApi.getVersion();
+    const version = data.backend?.trim();
+    if (version) {
+      aboutVersions.value[0].value = version;
+    }
+  } catch {
+    // 版本接口非关键路径，失败时静默保留默认值
+  }
+}
+
+onMounted(() => {
+  fetchVersionInfo();
+});
 
 /** 支持的语言列表 */
 interface LanguageOption {

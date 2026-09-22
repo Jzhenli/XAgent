@@ -234,6 +234,7 @@ import { useDesktopNotification } from "@/views/Alarms/hooks/useDesktopNotificat
 import ThemeSwitcher from "@/components/ThemeSwitcher.vue";
 import AboutUsDialog from "@/components/AboutUsDialog.vue";
 import { ElMessage } from "element-plus";
+import { systemApi } from "@/api/system";
 import "@x-plateform/graphic-editor/dist/index.css";
 import "@x-plateform-mono/common/dist/index.css";
 import { Icon } from "@/icon/index";
@@ -290,9 +291,22 @@ function openAboutDialog() {
   aboutDialogVisible.value = true;
 }
 
-const aboutVersions = computed(() => [
+const aboutVersions = ref<{ labelKey: string; value: string }[]>([
   { labelKey: "layout.softwareVersion", value: "3.0.4" },
 ]);
+
+/** 从后端加载版本信息，失败时保留默认值 */
+async function fetchVersionInfo() {
+  try {
+    const data = await systemApi.getVersion();
+    const version = data.backend?.trim();
+    if (version) {
+      aboutVersions.value[0].value = version;
+    }
+  } catch {
+    // 版本接口非关键路径，失败时静默保留默认值
+  }
+}
 
 const languageOptions = [
   { value: "zh-CN", label: "简体中文" },
@@ -457,6 +471,9 @@ onMounted(async () => {
       second: "2-digit",
     });
   }, 1000);
+
+  // 从后端异步加载版本信息
+  fetchVersionInfo();
 
   // 初始化告警数据并启动轮询
   await alertStore.fetchChannels();
