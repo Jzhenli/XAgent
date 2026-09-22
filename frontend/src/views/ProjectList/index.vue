@@ -129,9 +129,8 @@ import {
   Loading,
 } from "@element-plus/icons-vue";
 import { projectApi } from "@/api/projects";
-import type { ProjectCreateRequest } from "@/api/projects";
+import type { ProjectBrief, ProjectCreateRequest } from "@/api/projects";
 import type { PanelType } from "@/views/ScadaEditor/types";
-import type { Project } from "@/types/project";
 import ProjectCard from "./components/ProjectCard.vue";
 import CreateDialog from "./components/CreateDialog.vue";
 import EditDialog from "./components/EditDialog.vue";
@@ -140,8 +139,8 @@ import ProjectSelectDialog from "./components/ProjectSelectDialog.vue";
 const { t } = useI18n();
 const router = useRouter();
 
-// 项目列表
-const projects = ref<Project[]>([]);
+// 项目列表（概要，不含 data）
+const projects = ref<ProjectBrief[]>([]);
 
 // 加载状态
 const loading = ref(false);
@@ -178,14 +177,14 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
-/** 从后端加载项目列表 */
+/** 从后端加载项目列表（概要，不含 data） */
 const loadProjects = async (): Promise<boolean> => {
   if (loading.value) return false;
 
   loading.value = true;
 
   try {
-    const res = await projectApi.list();
+    const res = await projectApi.listBrief();
     projects.value = (res?.items ?? []).sort(
       (a, b) => a.createdAt - b.createdAt,
     );
@@ -250,10 +249,10 @@ const handleCreate = async () => {
     });
 
     if (res) {
-      projects.value.push(res);
       ElMessage.success(t("scada.createSuccess"));
       showCreateDialog.value = false;
       resetDialogForm();
+      await loadProjects();
     }
   } catch (error) {
     ElMessage.error(getErrorMessage(error, t("scada.createFailed")));
@@ -261,7 +260,7 @@ const handleCreate = async () => {
 };
 
 /** 打开编辑项目对话框 */
-const openEditDialog = (project: Project) => {
+const openEditDialog = (project: ProjectBrief) => {
   editingProjectId.value = project.id;
   dialogName.value = project.name;
   dialogDescription.value = project.description || "";
@@ -279,12 +278,7 @@ const handleSaveEdit = async () => {
       updatedAt: Date.now(),
     });
 
-    const index = projects.value.findIndex(
-      (p) => p.id === editingProjectId.value,
-    );
-    if (index !== -1) {
-      projects.value[index] = res;
-    }
+    await loadProjects();
 
     ElMessage.success(t("common.updateSuccess"));
     showEditDialog.value = false;
@@ -317,7 +311,7 @@ const handleDelete = async (id: string) => {
 };
 
 /** 跳转预览 */
-const handlePreview = (project: Project) => {
+const handlePreview = (project: ProjectBrief) => {
   router.push({
     name: project.type === "Dashboard" ? "ScadaPreview" : "GraphicPreview",
     params: { id: project.id },
@@ -325,7 +319,7 @@ const handlePreview = (project: Project) => {
 };
 
 /** 跳转编辑器 */
-const handleEdit = (project: Project) => {
+const handleEdit = (project: ProjectBrief) => {
   const routeName = project.type === "Dashboard" ? "ScadaEdit" : "GraphicEdit";
   router.push({ name: routeName, params: { id: project.id } });
 };
@@ -404,7 +398,7 @@ const validateImportedItems = (items: unknown[]): ProjectCreateRequest[] => {
 
   items.forEach((item, index) => {
     if (!item || typeof item !== "object") return;
-    const project = item as Partial<Project>;
+    const project = item as any;
     if (!project.name) return;
     if (!project.type || !isValidProjectType(project.type)) return;
 
@@ -492,22 +486,29 @@ const handleExport = () => {
   showExportDialog.value = true;
 };
 
-/** 确认导出选中项目（弹窗确认按钮已保证至少选中一项） */
-const handleExportConfirm = (indices: number[]) => {
-  const selected = indices.map((i) => projects.value[i]);
-  const blob = new Blob([JSON.stringify(selected, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `projects-${new Date().toISOString().slice(0, 10)}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+/** 确认导出选中项目（调用完整列表接口拿到带 data 的数据，再按选中过滤） */
+const handleExportConfirm = async (indices: number[]) => {
+  try {
+    const fullList = await projectApi.list();
+    const selectedIds = new Set(indices.map((i) => projects.value[i].id));
+    const selected = fullList.items.filter((p) => selectedIds.has(p.id));
 
-  ElMessage.success(t("scada.projectsExported", { count: selected.length }));
+    const blob = new Blob([JSON.stringify(selected, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `projects-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    ElMessage.success(t("scada.projectsExported", { count: selected.length }));
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error, t("common.error")));
+  }
 };
 
 /** 格式化时间戳为本地时间字符串 */

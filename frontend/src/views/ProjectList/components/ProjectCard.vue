@@ -65,20 +65,20 @@
 
 <script setup lang="ts">
 import { Icon } from "@/icon/index";
-import type { Project } from "@/types/project";
+import type { ProjectBrief } from "@/api/projects";
 import { useThemeStore } from "@/stores/theme";
 
 const themeStore = useThemeStore();
 
 defineProps<{
-  project: Project;
+  project: ProjectBrief;
   formatTime: (timestamp: number) => string;
 }>();
 
 defineEmits<{
-  (e: "preview", project: Project): void;
-  (e: "edit", project: Project): void;
-  (e: "settings", project: Project): void;
+  (e: "preview", project: ProjectBrief): void;
+  (e: "edit", project: ProjectBrief): void;
+  (e: "settings", project: ProjectBrief): void;
   (e: "delete", id: string): void;
 }>();
 </script>
