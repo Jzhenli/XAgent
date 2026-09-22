@@ -1825,6 +1825,7 @@
     "arcEndAngle": "结束角度",
     "iconConfig": "图标配置",
     "iconName": "图标名称",
+    "showIcon": "显示图标",
     "operations": "操作",
     "duplicate": "复制",
     "bringToFront": "置顶",

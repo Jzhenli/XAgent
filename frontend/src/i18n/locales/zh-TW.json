@@ -1825,6 +1825,7 @@
     "arcEndAngle": "結束角度",
     "iconConfig": "圖示設定",
     "iconName": "圖示名稱",
+    "showIcon": "顯示圖示",
     "operations": "操作",
     "duplicate": "複製",
     "bringToFront": "置頂",

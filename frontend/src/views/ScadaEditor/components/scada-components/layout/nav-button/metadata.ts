@@ -12,6 +12,10 @@ const defaultConfig: NavButtonComponentConfig = {
   borderWidth: 0,
   borderColor: '#409eff',
   borderRadius: 4,
+  showIcon: false,
+  iconName: '',
+  iconSize: 16,
+  iconColor: '#ffffff',
   jumpMode: 'url',
   targetUrl: ''
 }

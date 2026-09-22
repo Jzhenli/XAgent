@@ -408,6 +408,14 @@ export interface NavButtonComponentConfig extends BaseComponentConfig {
   borderWidth: number
   borderColor: string
   borderRadius: number
+  /** 是否显示图标 */
+  showIcon?: boolean
+  /** 图标名称 */
+  iconName?: string
+  /** 图标大小（px） */
+  iconSize?: number
+  /** 图标颜色 */
+  iconColor?: string
   /** 跳转模式：url=自定义网址，project=从项目列表选择 */
   jumpMode: 'url' | 'project'
   /** 自定义跳转网址 */

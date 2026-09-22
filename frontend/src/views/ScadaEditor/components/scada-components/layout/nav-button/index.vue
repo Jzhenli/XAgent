@@ -8,7 +8,16 @@
       @click.stop="handleClick"
       @keydown.enter="handleClick"
     >
-      {{ displayText }}
+      <div v-if="showIcon" class="nav-button-icon">
+        <XIcon
+          v-if="navConfig.iconName"
+          :name="navConfig.iconName"
+          type="mono-line"
+          :size="iconSize"
+          :color="iconColor"
+        />
+      </div>
+      <span class="nav-button-text">{{ displayText }}</span>
     </div>
   </div>
 </template>
@@ -18,6 +27,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import XIcon from '@/icon/index.vue'
 import type { ScadaComponent, NavButtonComponentConfig } from '@/types/scada'
 
 const { t } = useI18n()
@@ -29,6 +39,14 @@ const props = defineProps<{
 }>()
 
 const navConfig = computed(() => props.component.config as NavButtonComponentConfig)
+
+const showIcon = computed(() => navConfig.value.showIcon === true && !!navConfig.value.iconName)
+
+const iconSize = computed(() => navConfig.value.iconSize ?? 16)
+
+const iconColor = computed(() => ({
+  normal: navConfig.value.iconColor ?? navConfig.value.fontColor ?? '#ffffff',
+}))
 
 const displayText = computed(() => navConfig.value?.text || t('componentConfig.navButton'))
 
@@ -99,13 +117,26 @@ const handleClick = () => {
   cursor: pointer;
   transition: opacity 0.2s;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   text-align: center;
   white-space: pre-wrap;
   word-break: break-word;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+.nav-button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.nav-button-text {
+  line-height: 1.3;
 }
 
 .nav-button:hover {

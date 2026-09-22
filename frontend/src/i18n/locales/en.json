@@ -1825,6 +1825,7 @@
     "arcEndAngle": "End Angle",
     "iconConfig": "Icon Config",
     "iconName": "Icon Name",
+    "showIcon": "Show Icon",
     "operations": "Actions",
     "duplicate": "Duplicate",
     "bringToFront": "Bring to Front",

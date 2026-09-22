@@ -67,6 +67,65 @@
       />
     </div>
 
+    <div class="subsection-title">{{ t('componentConfig.iconConfig') }}</div>
+    <div class="form-group form-row-switch">
+      <label>{{ t('componentConfig.showIcon') }}</label>
+      <el-switch
+        :model-value="config.showIcon"
+        @change="(v) => updateConfig('showIcon', !!v)"
+      />
+    </div>
+    <template v-if="config.showIcon">
+      <div class="form-group">
+        <label>{{ t('componentConfig.iconName') }}</label>
+        <el-select
+          :model-value="config.iconName"
+          class="scada-select"
+          popper-class="scada-select-dropdown"
+          filterable
+          clearable
+          @change="handleIconNameChange"
+        >
+          <el-option
+            v-for="name in iconOptions"
+            :key="name"
+            :label="name"
+            :value="name"
+          >
+            <span class="option-icon">
+              <XIcon
+                :name="name"
+                type="mono-line"
+                :size="16"
+                :color="{ normal: 'var(--text-regular)' }"
+              />
+            </span>
+            <span>{{ name }}</span>
+          </el-option>
+        </el-select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>{{ t('componentConfig.iconSize') }}</label>
+          <input
+            type="number"
+            min="8"
+            max="64"
+            :value="config.iconSize"
+            @input="updateConfig('iconSize', +($event.target as HTMLInputElement).value)"
+          />
+        </div>
+        <div class="form-group">
+          <label>{{ t('componentConfig.iconColor') }}</label>
+          <el-color-picker
+            :model-value="config.iconColor"
+            show-alpha
+            @change="(v) => updateConfig('iconColor', v || '')"
+          />
+        </div>
+      </div>
+    </template>
+
     <div class="subsection-title">{{ t('componentConfig.jumpSection') }}</div>
     <div class="form-group">
       <label>{{ t('componentConfig.jumpMode') }}</label>
@@ -131,6 +190,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useScadaConfig } from '../../../../hooks/useScadaEditor'
 import { projectApi } from '@/api/projects'
+import XIcon from '@/icon/index.vue'
 import type { ScadaComponent, NavButtonComponentConfig } from '../../../../types'
 import type { Project } from '@/types/project'
 
@@ -143,6 +203,24 @@ const props = defineProps<{
 const { config, updateConfig } = useScadaConfig(
   props.component as ScadaComponent<'nav-button'>,
 )
+
+const svgModules = import.meta.glob('/src/icon/svg/*.svg') as Record<string, () => Promise<unknown>>
+
+const iconOptions = computed(() => {
+  const names = new Set<string>()
+  Object.keys(svgModules).forEach((path) => {
+    const fileName = path.split('/').pop() || ''
+    const match = /^_(.+?)_[A-Z]{2}(?:_\d+)?\.svg$/.exec(fileName)
+    if (match?.[1]) {
+      names.add(match[1])
+    }
+  })
+  return Array.from(names).sort()
+})
+
+const handleIconNameChange = (val: string | null) => {
+  updateConfig('iconName', val || '')
+}
 
 const projects = ref<Project[]>([])
 const projectLoading = ref(false)
@@ -298,5 +376,34 @@ const handleProjectChange = (val: string) => {
 .project-type-tag.type-graphic {
   background: rgba(255, 152, 0, 0.15);
   color: rgba(255, 152, 0, 1);
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.form-row-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row;
+}
+
+.form-row-switch label {
+  margin-bottom: 0;
+}
+
+.option-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  margin-right: 4px;
+  vertical-align: middle;
 }
 </style>
