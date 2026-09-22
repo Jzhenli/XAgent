@@ -59,8 +59,6 @@ const emit = defineEmits<{
 
 const defaultVersions = computed(() => [
   { labelKey: "login.softwareVersion", value: "3.0.0" },
-  { labelKey: "login.uiVersion", value: "-" },
-  { labelKey: "login.backendVersion", value: "-" },
 ]);
 
 const versionItems = computed(() => props.versions ?? defaultVersions.value);

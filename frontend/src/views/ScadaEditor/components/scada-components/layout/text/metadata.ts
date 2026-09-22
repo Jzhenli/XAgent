@@ -11,6 +11,8 @@ const defaultConfig: TextComponentConfig = {
   fontColor: 'rgb(44, 62, 80)',
   content: 'Text',
   fontWeight: 'normal',
+  rotation: 0,
+  skewX: 0,
   textAlign: 'center'
 }
 

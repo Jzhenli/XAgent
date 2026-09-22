@@ -292,7 +292,7 @@ function openAboutDialog() {
 }
 
 const aboutVersions = ref<{ labelKey: string; value: string }[]>([
-  { labelKey: "layout.softwareVersion", value: "3.0.4" },
+  { labelKey: "layout.softwareVersion", value: "3.0.0" },
 ]);
 
 /** 从后端加载版本信息，失败时保留默认值 */

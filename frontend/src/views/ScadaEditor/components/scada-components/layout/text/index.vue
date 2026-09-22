@@ -37,7 +37,9 @@ const containerStyle = computed(() => ({
   textAlign: textConfig.value?.textAlign || 'center',
   justifyContent: justifyMap[textConfig.value?.textAlign || 'center'],
   background: textConfig.value?.backgroundColor || undefined,
-  borderRadius: `${textConfig.value?.borderRadius ?? 4}px`
+  borderRadius: `${textConfig.value?.borderRadius ?? 4}px`,
+  transform: `rotate(${textConfig.value?.rotation ?? 0}deg) skewX(${textConfig.value?.skewX ?? 0}deg)`,
+  transformOrigin: 'center center',
 }))
 
 
@@ -51,5 +53,7 @@ const containerStyle = computed(() => ({
   align-items: center;
   padding: 8px;
   word-break: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 </style>

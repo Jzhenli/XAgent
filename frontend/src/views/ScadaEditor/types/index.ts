@@ -50,6 +50,10 @@ export interface BaseComponentConfig {
 export interface TextComponentConfig extends BaseComponentConfig {
   content: string
   fontWeight: 'normal' | 'bold'
+  /** 文字旋转角度（度），0 为默认，正数顺时针 */
+  rotation?: number
+  /** 水平倾斜角度（度）：0 正常，负值向左歪，正值向右歪 */
+  skewX?: number
   textAlign: 'left' | 'center' | 'right'
 }
 
