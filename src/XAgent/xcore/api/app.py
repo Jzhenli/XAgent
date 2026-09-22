@@ -121,7 +121,13 @@ class SPAServer:
         Returns:
             Response: FileResponse with no-cache headers, or JSONResponse with app info
         """
+        # 在判断前加日志
+        logging.info(f"index_path = {self.index_path}")
+        logging.info(f"exists = {self.index_path.exists()}")
+        logging.info(f"is_dir = {self.index_path.parent.exists()}")
+
         if not self.index_path.exists():
+            logging.warning("index.html NOT FOUND, return json info")
             return JSONResponse({
                 "name": "XAgent Gateway",
                 "version": "1.0.0",
