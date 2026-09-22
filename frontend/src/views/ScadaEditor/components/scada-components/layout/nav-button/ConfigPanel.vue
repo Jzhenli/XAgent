@@ -4,10 +4,10 @@
 
     <div class="form-group">
       <label>{{ t('componentConfig.buttonText') }}</label>
-      <input
-        type="text"
+      <textarea
+        rows="3"
         :value="config.text"
-        @input="updateConfig('text', ($event.target as HTMLInputElement).value)"
+        @input="updateConfig('text', ($event.target as HTMLTextAreaElement).value)"
       />
     </div>
 
@@ -218,7 +218,8 @@ const handleProjectChange = (val: string) => {
   margin-bottom: 4px;
 }
 
-.form-group input {
+.form-group input,
+.form-group textarea {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(34, 211, 238, 0.2);
@@ -226,13 +227,23 @@ const handleProjectChange = (val: string) => {
   font-size: 13px;
   background-color: var(--scada-bg-elevated);
   color: var(--text-primary);
+  box-sizing: border-box;
+  font-family: inherit;
+  resize: vertical;
 }
 
-.form-group input::placeholder {
+.form-group textarea {
+  min-height: 60px;
+  line-height: 1.5;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
   color: var(--text-placeholder);
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: var(--color-primary);
 }

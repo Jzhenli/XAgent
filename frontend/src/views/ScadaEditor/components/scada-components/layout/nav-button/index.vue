@@ -1,13 +1,15 @@
 <template>
   <div class="nav-button-container" :class="{ 'is-editing': editing }">
-    <button
-      type="button"
+    <div
       class="nav-button"
       :style="buttonStyle"
+      role="button"
+      tabindex="0"
       @click.stop="handleClick"
+      @keydown.enter="handleClick"
     >
       {{ displayText }}
-    </button>
+    </div>
   </div>
 </template>
 
@@ -45,9 +47,7 @@ const buttonStyle = computed(() => {
   }
 })
 
-const handleClick = (event: MouseEvent) => {
-  event.preventDefault()
-
+const handleClick = () => {
   if (props.editing) return
 
   const config = navConfig.value
@@ -101,8 +101,11 @@ const handleClick = (event: MouseEvent) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  outline: none;
+  text-align: center;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .nav-button:hover {
