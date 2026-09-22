@@ -41,9 +41,9 @@ const selectedComponentIds = ref<string[]>([])
 const isEditing = ref(true)
 /** 画布缩放比例 */
 const zoom = ref(1)
-/** 是否显示画布网格（跟随面板数据持久化，默认显示） */
+/** 是否显示画布网格（跟随面板数据持久化，默认不显示） */
 const showGrid = computed({
-  get: () => currentPanel.value?.showGrid !== false,
+  get: () => currentPanel.value?.showGrid === true,
   set: (v: boolean) => {
     const panel = getEditablePanel()
     if (panel) {
@@ -140,7 +140,7 @@ function parseProjectData(data: string | Record<string, unknown>): ScadaPanel | 
       backgroundColor: parsed.backgroundColor || '#f0f2f5',
       backgroundImage: parsed.backgroundImage,
       adaptMode: normalizeAdaptMode(parsed.adaptMode),
-      showGrid: parsed.showGrid !== false,
+      showGrid: parsed.showGrid === true,
       components: migrateComponents(parsed.components || []),
       createdAt: Date.now(),
       updatedAt: Date.now()

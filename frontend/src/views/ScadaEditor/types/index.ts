@@ -615,7 +615,7 @@ export interface ScadaPanel {
   backgroundImage?: string
   /** 预览时的画布适配模式，缺省按 fit 处理 */
   adaptMode?: PanelAdaptMode
-  /** 编辑时是否显示网格，默认 true */
+  /** 编辑时是否显示网格，默认 false */
   showGrid?: boolean
   components: ScadaComponent[]
   createdAt: number
