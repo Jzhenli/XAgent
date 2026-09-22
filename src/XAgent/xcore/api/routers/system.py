@@ -7,7 +7,6 @@ from typing import Optional
 
 from ..dependencies import get_storage, get_buffer, get_app_state, get_gateway, get_stats_manager
 from ..models.system import HealthResponse
-from .... import __version__ as BACKEND_VERSION
 from ...storage import StorageInterface, WriteBehindBuffer
 from ...statistics import StatisticsManager
 from ...utils.system_monitor import get_system_monitor
@@ -81,6 +80,17 @@ async def get_startup_status(gateway = Depends(get_gateway)):
     return status
 
 
+def _get_backend_version():
+    """懒加载后端版本号。
+
+    避免在模块导入阶段直接 `from XAgent import __version__`：
+    编译包（Nuitka .pyd）自身初始化时，桩模块尚未把 __version__ 暴露给子模块，
+    会导致 ImportError。运行时 XAgent 包已就绪，可安全获取。
+    """
+    from XAgent import __version__
+    return __version__
+
+
 @router.get("/api/system/version")
 async def get_version():
     """获取软件版本号
@@ -90,7 +100,7 @@ async def get_version():
     """
     return {
         "software": "XAgent",
-        "backend": BACKEND_VERSION,
+        "backend": _get_backend_version(),
     }
 
 
