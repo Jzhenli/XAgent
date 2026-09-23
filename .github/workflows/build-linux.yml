@@ -34,14 +34,13 @@ jobs:
   config:
     runs-on: ubuntu-24.04
     outputs:
-      app_name: ${{ steps.vars.outputs.app_name }}
-      version: ${{ steps.vars.outputs.version }}
-      python_version: ${{ steps.vars.outputs.python_version }}
-      build_matrix: ${{ steps.matrix.outputs.build_matrix }}
+      app_name: ${{ steps.cfg.outputs.app_name }}
+      version: ${{ steps.cfg.outputs.version }}
+      build_matrix: ${{ steps.cfg.outputs.build_matrix }}
     steps:
       - uses: actions/checkout@v5
-      - name: Read project config
-        id: vars
+      - name: Read project config & generate matrix
+        id: cfg
         env:
           VERSION_INPUT: ${{ inputs.version }}
         run: |
@@ -55,10 +54,6 @@ jobs:
           # 各 job 独立 runner，版本由 build job 注入，此处不回写
           echo "app_name=$(grep '^name = ' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "python_version=$(grep 'python_version' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
-      - name: Generate matrix
-        id: matrix
-        run: |
           # 官方 manylinux 镜像（https://github.com/pypa/manylinux），glibc 封顶由容器工具链决定：
           #   armv7l  -> manylinux_2_31（唯一支持 armv7l 的策略），QEMU 模拟
           #   aarch64 -> manylinux_2_28，原生 arm64 runner
@@ -81,14 +76,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - name: Inject version into pyproject.toml
+      - name: Inject version & fetch pyapp
         run: |
           sed -i "s/^version = \".*\"/version = \"${{ needs.config.outputs.version }}\"/" pyproject.toml
           grep '^version = ' pyproject.toml
-
-      - name: Fetch pyapp source (host)
-        run: |
-          rm -rf pyapp_src
+          # 完整克隆保留 tags，供 setuptools-scm 推导 pyapp 版本
           git clone --quiet https://github.com/Jzhenli/pyapp.git pyapp_src
           git -C pyapp_src describe --tags
 
@@ -101,14 +93,18 @@ jobs:
           if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
           npm run build
 
+      # 仅 armv7l 需要 QEMU（无原生 armv7 runner）
       - name: Set up QEMU
         if: matrix.arch == 'armv7l'
         uses: docker/setup-qemu-action@v4
 
+      # 官方 manylinux 用法：docker run 直跑官方镜像
       - name: Build in ${{ matrix.image }}
         run: |
           docker run --rm -i \
             --platform ${{ matrix.platform }} \
+            -e ARCH=${{ matrix.arch }} \
+            -e ENABLE_NUITKA=${{ inputs.enable_nuitka != 'false' }} \
             -v "$GITHUB_WORKSPACE":/work -w /work \
             ${{ matrix.image }} \
             bash -s <<'SCRIPT'
@@ -130,7 +126,7 @@ jobs:
             export PATH="/opt/python/cp311-cp311/bin:$PATH"
 
             # 2. armv7l: piwheels 提速；cffi 强制 sdist（其预编译 wheel 为 bookworm 构建，板端加载不了）
-            if [[ "${{ matrix.arch }}" == "armv7l" ]]; then
+            if [[ "$ARCH" == "armv7l" ]]; then
               export PIP_EXTRA_INDEX_URL="https://www.piwheels.org/simple"
               export PIP_NO_BINARY=cffi
             fi
@@ -141,10 +137,10 @@ jobs:
             pyapp --version
 
             # 4. 构建 bundle（运行时由 pyapp 按 pyproject 的 python_version 下载）
-            pyapp build linux --arch ${{ matrix.arch }}
+            pyapp build linux --arch "$ARCH"
 
             # 5. armv7l: 断言 cffi 非预编译 wheel（防 bookworm 产物混入）
-            if [[ "${{ matrix.arch }}" == "armv7l" ]]; then
+            if [[ "$ARCH" == "armv7l" ]]; then
               PKG_DIR="$(find bundles/linux -maxdepth 4 -type d -name app_packages 2>/dev/null | head -1)"
               CFFI_SO="$(find "$PKG_DIR" -maxdepth 1 -name '_cffi_backend'*.so 2>/dev/null | head -1)"
               if [[ -z "$CFFI_SO" ]]; then
@@ -158,7 +154,7 @@ jobs:
             fi
 
             # 6. Nuitka 编译 + 打包
-            if [[ "${{ inputs.enable_nuitka }}" != "false" ]]; then
+            if [[ "$ENABLE_NUITKA" != "false" ]]; then
               pyapp compile linux
             fi
 
