@@ -10,7 +10,7 @@
     />
     <Icon
       v-else
-      name="question"
+      name="unknownCircle"
       :size="iconSize"
       type="mono-line"
       :color="{ normal: iconColor }"
