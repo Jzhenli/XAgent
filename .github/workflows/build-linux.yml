@@ -115,11 +115,10 @@ jobs:
           [[ -s "$F" ]] || { echo "::error::PBS download failed"; exit 1; }
           ls -lh "$F"
 
-      # 宿主机构建 pyapp wheel（容器镜像无 git，无法 git+https 安装；wheel 为纯 Python 与架构无关，跨架构可用）
-      - name: Build pyapp wheel (host)
+      - name: Fetch pyapp source (host)
         run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip wheel "pyapp-cli[compile] @ git+https://github.com/Jzhenli/pyapp.git" -w pyapp_wheel
+          rm -rf pyapp_src
+          git clone --depth 1 https://github.com/Jzhenli/pyapp.git pyapp_src
 
       - uses: actions/setup-node@v5
         with:
@@ -161,9 +160,9 @@ jobs:
             mkdir -p "$CACHE_DIR"
             cp "$PBS_FILENAME" "$CACHE_DIR/$PBS_FILENAME"
 
-            # 安装 pyapp（运行于 PBS CPython），bundle 运行时取自同一 PBS 缓存；wheel 已在宿主机构建，容器内免 git
+            # 安装 pyapp（运行于 PBS CPython），bundle 运行时取自同一 PBS 缓存；源码已在宿主机克隆，容器内从本地路径安装
             python3 -m pip install --upgrade pip
-            python3 -m pip install pyapp_wheel/*.whl
+            python3 -m pip install "./pyapp_src[compile]"
 
             pyapp build linux --arch ${{ matrix.arch }}
 
