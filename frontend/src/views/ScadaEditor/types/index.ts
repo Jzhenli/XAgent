@@ -501,6 +501,28 @@ export interface AcFanSpeedComponentConfig extends BaseComponentConfig {
   lowValue: number | string
 }
 
+/** 空调风速图标 key */
+export type AcFanSpeedKey = 'auto' | 'low' | 'medium' | 'high'
+
+/** 空调风速图标组件 —— 仅显示当前风速档位图标，点击循环切换，支持自定义档位组合 */
+export interface AcFanSpeedIconComponentConfig extends BaseComponentConfig {
+  iconSize: number
+  iconColor: string
+  activeIconColor: string
+  /** 当前值：编辑态/未绑定点位时的模拟值 */
+  currentValue: number | string
+  /** 自动档位值 */
+  autoValue: number | string
+  /** 低档位值 */
+  lowValue: number | string
+  /** 中档位值 */
+  mediumValue: number | string
+  /** 高档位值 */
+  highValue: number | string
+  /** 参与循环切换的档位列表（按数组顺序依次切换），为空则默认全部四种档位 */
+  cycleModes: AcFanSpeedKey[]
+}
+
 import type { ComponentType } from '../registry'
 
 /** 组件类型到统一配置的映射 */
@@ -527,6 +549,7 @@ export interface ComponentConfigMap {
   acMode: AcModeComponentConfig
   acModeIcon: AcModeIconComponentConfig
   acFanSpeed: AcFanSpeedComponentConfig
+  acFanSpeedIcon: AcFanSpeedIconComponentConfig
   'value-image-switch': ValueImageSwitchComponentConfig
   'nav-button': NavButtonComponentConfig
   popup: PopupComponentConfig

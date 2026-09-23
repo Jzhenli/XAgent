@@ -38,6 +38,8 @@ export type {
   AcModeIconComponentConfig,
   AcModeKey,
   AcFanSpeedComponentConfig,
+  AcFanSpeedIconComponentConfig,
+  AcFanSpeedKey,
   ValueImageItem,
   ValueImageSwitchComponentConfig,
   NavButtonComponentConfig,
