@@ -391,6 +391,28 @@ export interface AcModeComponentConfig extends BaseComponentConfig {
   fanValue: number | string
 }
 
+/** 空调模式图标组件 —— 仅显示当前模式图标，点击循环切换，支持自定义模式组合 */
+export interface AcModeIconComponentConfig extends BaseComponentConfig {
+  iconSize: number
+  iconColor: string
+  activeIconColor: string
+  /** 当前值：编辑态/未绑定点位时的模拟值 */
+  currentValue: number | string
+  /** 自动模式值 */
+  autoValue: number | string
+  /** 制冷模式值 */
+  coolValue: number | string
+  /** 制暖模式值 */
+  heatValue: number | string
+  /** 通风模式值 */
+  fanValue: number | string
+  /** 参与循环切换的模式列表（按数组顺序依次切换），为空则默认全部四种模式 */
+  cycleModes: AcModeKey[]
+}
+
+/** 空调模式 key */
+export type AcModeKey = 'auto' | 'cool' | 'heat' | 'fan'
+
 /** 图片切换项（值对应图片） */
 export interface ValueImageItem {
   /** 绑定的数值 */
@@ -503,6 +525,7 @@ export interface ComponentConfigMap {
   image: ImageComponentConfig
   button: ButtonComponentConfig
   acMode: AcModeComponentConfig
+  acModeIcon: AcModeIconComponentConfig
   acFanSpeed: AcFanSpeedComponentConfig
   'value-image-switch': ValueImageSwitchComponentConfig
   'nav-button': NavButtonComponentConfig

@@ -22,6 +22,7 @@ import { iconMeta } from './components/scada-components/layout/icon/metadata'
 import { imageMeta } from './components/scada-components/layout/image/metadata'
 import { buttonMeta } from './components/scada-components/basic/button/metadata'
 import { acModeMeta } from './components/scada-components/basic/ac-mode/metadata'
+import { acModeIconMeta } from './components/scada-components/basic/ac-mode-icon/metadata'
 import { acFanSpeedMeta } from './components/scada-components/basic/ac-fan-speed/metadata'
 import { valueImageSwitchMeta } from './components/scada-components/chart/value-image-switch/metadata'
 import { navButtonMeta } from './components/scada-components/layout/nav-button/metadata'
@@ -50,6 +51,7 @@ export const componentMetaRegistry = {
   image: imageMeta,
   button: buttonMeta,
   acMode: acModeMeta,
+  acModeIcon: acModeIconMeta,
   acFanSpeed: acFanSpeedMeta,
   'value-image-switch': valueImageSwitchMeta,
   'nav-button': navButtonMeta,
