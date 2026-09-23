@@ -46,7 +46,7 @@ jobs:
         env:
           VERSION_INPUT: ${{ inputs.version }}
         run: |
-          # 仅读取版本，不回写（build job 独立 runner 负责注入）
+          # 仅读取版本（build job 在独立 runner 注入）
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             VERSION="${GITHUB_REF#refs/tags/*/v}"
           elif [[ -n "$VERSION_INPUT" ]]; then
@@ -62,7 +62,7 @@ jobs:
         run: |
           ARCHS="${{ inputs.archs || 'armv7l' }}"
           MATRIX=""
-          # armv7l→manylinux_2_31 (glibc 2.31, 对齐板端 Debian 11)；aarch64→manylinux_2_28 (glibc 2.28, 板端可加载)
+          # armv7l→manylinux_2_31 (glibc 2.31)；aarch64→manylinux_2_28 (glibc 2.28)
           [[ "$ARCHS" == *"armv7l"* ]] && MATRIX+='{"arch":"armv7l","qemu_arch":"armv7","image":"quay.io/pypa/manylinux_2_31_armv7l"},'
           [[ "$ARCHS" == *"aarch64"* ]] && MATRIX+='{"arch":"aarch64","qemu_arch":"aarch64","image":"quay.io/pypa/manylinux_2_28_aarch64"},'
           echo "build_matrix=[${MATRIX%,}]" >> $GITHUB_OUTPUT
@@ -107,9 +107,17 @@ jobs:
           echo "url=https://github.com/astral-sh/python-build-standalone/releases/download/${PBS_TAG}/${FILENAME}" >> $GITHUB_OUTPUT
           echo "filename=$FILENAME" >> $GITHUB_OUTPUT
 
+      - name: Download PBS runtime (host)
+        run: |
+          F="${{ steps.pbs.outputs.filename }}"
+          echo "Downloading ${{ steps.pbs.outputs.url }} -> $F"
+          curl -fsSL --retry 3 --retry-connrefused --retry-delay 5 "${{ steps.pbs.outputs.url }}" -o "$F"
+          [[ -s "$F" ]] || { echo "::error::PBS download failed"; exit 1; }
+          ls -lh "$F"
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       - name: Build frontend
         run: |
           cd frontend
@@ -124,35 +132,19 @@ jobs:
           githubToken: ${{ github.token }}
           run: |
             set -e
-
-            # 镜像已预装工具链与 /opt/python CPython（cp310/311/312），无需 apt；两镜像 glibc 上限(2.31/2.28) <= 板端 2.31，产物可加载
-
-            download() {
-              local url="$1" dest="$2"
-              if command -v curl >/dev/null 2>&1; then
-                curl -fsSL --retry 3 --retry-connrefused --retry-delay 5 "$url" -o "$dest"
-              else
-                echo "::error::curl not available in image ${{ matrix.image }}"
-                return 1
-              fi
-            }
-
-            # 选定与目标 pyproject python_version 匹配的 manylinux 解释器（镜像无默认 python3，需显式路径）
-            PY_VER="${{ needs.config.outputs.python_version }}"
-            PY_SHORT=$(echo "$PY_VER" | cut -d. -f1,2 | tr -d '.')
-            MANYLINUX_PY="/opt/python/cp${PY_SHORT}-cp${PY_SHORT}/bin/python3"
-            command -v "$MANYLINUX_PY" >/dev/null 2>&1 || { echo "::error::manylinux python $MANYLINUX_PY not found (image may not ship cp${PY_SHORT})"; exit 1; }
-            export PATH="/opt/python/cp${PY_SHORT}-cp${PY_SHORT}/bin:$PATH"
-
-            # 下载 PBS 编译环境（仅作为 pyapp bundle 的 runtime，不覆盖镜像自带 CPython）
-            PBS_URL="${{ steps.pbs.outputs.url }}"
+            
+            # PBS 已下载到工作区，直接解压安装
             PBS_FILENAME="${{ steps.pbs.outputs.filename }}"
-            echo "Downloading $PBS_URL"
-            download "$PBS_URL" "$PBS_FILENAME"
-            [[ -s "$PBS_FILENAME" ]] || { echo "::error::PBS download produced empty file: $PBS_URL"; exit 1; }
+            [[ -s "$PBS_FILENAME" ]] || { echo "::error::PBS runtime $PBS_FILENAME not found in workspace (host download step may have failed)"; exit 1; }
 
-            # 依赖按架构区分：armv7l 用 piwheels 提速，但 cffi 须走 sdist（piwheels 的 bookworm 件链接
-            # libffi.so.8 / glibc 2.36，板端 Debian 11 加载不了）；aarch64 直接用 PyPI manylinux wheel。
+            mkdir -p /opt/python
+            tar -xzf "$PBS_FILENAME" -C /opt/python --strip-components=1
+            ln -sf /opt/python/bin/python3 /usr/bin/python3
+            export PATH="/opt/python/bin:$PATH"
+            command -v python3 >/dev/null 2>&1 || { echo "::error::python3 unavailable after PBS install"; exit 1; }
+            python3 --version
+
+            # armv7l: piwheels 提速，但 cffi 须走 sdist（避免 bookworm wheel 链接 glibc 2.36/libffi.so.8 板端加载不了）
             if [ "${{ matrix.arch }}" = "armv7l" ]; then
               export PIP_EXTRA_INDEX_URL="https://www.piwheels.org/simple"
               export PIP_NO_BINARY=cffi
@@ -163,7 +155,7 @@ jobs:
             mkdir -p "$CACHE_DIR"
             cp "$PBS_FILENAME" "$CACHE_DIR/$PBS_FILENAME"
 
-            # 安装 pyapp 并执行构建（pyapp-cli 运行于 manylinux 自带 CPython，bundle runtime 取自上面缓存的 PBS）
+            # 安装 pyapp（运行于 PBS CPython），bundle 运行时取自同一 PBS 缓存
             python3 -m pip install --upgrade pip
             python3 -m pip install "pyapp-cli[compile] @ git+https://github.com/Jzhenli/pyapp.git"
 
