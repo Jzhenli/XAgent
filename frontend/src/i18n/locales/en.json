@@ -1911,7 +1911,32 @@
     "useHtml": "Render as HTML",
     "maskColor": "Mask Color",
     "popupContentHtmlPlaceholder": "Supports HTML content, e.g. <p>Hello</p>",
-    "popupContentTextPlaceholder": "Supports plain text content"
+    "popupContentTextPlaceholder": "Supports plain text content",
+    "acControllerConfig": "AC Panel Config",
+    "bindingsSection": "Point Bindings",
+    "powerBinding": "Power Point",
+    "modeBinding": "Mode Point",
+    "fanSpeedBinding": "Fan Speed Point",
+    "setpointBinding": "Setpoint Point",
+    "currentValueBindingConfig": "Current Value Point",
+    "panelSection": "Panel",
+    "titleSection": "Title",
+    "powerSection": "Power Switch",
+    "powerIconColor": "Power Off Color",
+    "powerActiveColor": "Power Active Color",
+    "gaugeSection": "Gauge Area",
+    "gaugeSize": "Gauge Size",
+    "currentValueSection": "Current Value Area",
+    "modeSection": "Mode Buttons",
+    "fanSpeedSection": "Fan Speed Buttons",
+    "acFanSpeedAuto": "Auto",
+    "acFanSpeedLow": "Low",
+    "acFanSpeedMedium": "Medium",
+    "acFanSpeedHigh": "High",
+    "xPosition": "X Position (px)",
+    "yPosition": "Y Position (px)",
+    "text": "Text",
+    "label": "Label"
   },
   "scadaComponentCategories": {
     "gauge": "Gauges",
@@ -1947,7 +1972,8 @@
     "icon": "Icon",
     "valueImageSwitch": "Value Image",
     "navButton": "Navigation Button",
-    "popup": "Popup"
+    "popup": "Popup",
+    "acController": "AC Panel"
   },
   "ruleNodeCategories": {
     "trigger": "Triggers",

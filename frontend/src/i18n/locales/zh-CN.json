@@ -1911,7 +1911,32 @@
     "useHtml": "使用 HTML 渲染",
     "maskColor": "遮罩颜色",
     "popupContentHtmlPlaceholder": "支持 HTML 内容，如 <p>示例</p>",
-    "popupContentTextPlaceholder": "支持纯文本内容"
+    "popupContentTextPlaceholder": "支持纯文本内容",
+    "acControllerConfig": "空调面板配置",
+    "bindingsSection": "点位绑定",
+    "powerBinding": "开关点位",
+    "modeBinding": "模式点位",
+    "fanSpeedBinding": "风速点位",
+    "setpointBinding": "设定值点位",
+    "currentValueBindingConfig": "当前值点位",
+    "panelSection": "面板",
+    "titleSection": "标题",
+    "powerSection": "电源开关",
+    "powerIconColor": "电源关闭颜色",
+    "powerActiveColor": "电源激活颜色",
+    "gaugeSection": "仪表盘区域",
+    "gaugeSize": "仪表盘大小",
+    "currentValueSection": "当前值区域",
+    "modeSection": "模式按钮区域",
+    "fanSpeedSection": "风速按钮区域",
+    "acFanSpeedAuto": "自动",
+    "acFanSpeedLow": "低",
+    "acFanSpeedMedium": "中",
+    "acFanSpeedHigh": "高",
+    "xPosition": "水平位置 (px)",
+    "yPosition": "垂直位置 (px)",
+    "text": "文本",
+    "label": "标签"
   },
   "scadaComponentCategories": {
     "gauge": "仪表",
@@ -1947,7 +1972,8 @@
     "icon": "图标",
     "valueImageSwitch": "图片切换",
     "navButton": "导航按钮",
-    "popup": "弹框"
+    "popup": "弹框",
+    "acController": "空调面板"
   },
   "ruleNodeCategories": {
     "trigger": "触发器",

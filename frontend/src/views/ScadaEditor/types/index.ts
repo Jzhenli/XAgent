@@ -523,6 +523,94 @@ export interface AcFanSpeedIconComponentConfig extends BaseComponentConfig {
   cycleModes: AcFanSpeedKey[]
 }
 
+/** 空调控制器点位绑定集合（5 个专用点位） */
+export interface AcControllerBindings {
+  /** 开关点位（开/关状态） */
+  power: PointBinding | null
+  /** 模式点位（自动/制热/制冷/风机） */
+  mode: PointBinding | null
+  /** 风速点位（自动/低/中/高） */
+  fanSpeed: PointBinding | null
+  /** 设定值点位（可读写，支持小数） */
+  setpoint: PointBinding | null
+  /** 当前值点位（只读） */
+  currentValue: PointBinding | null
+}
+
+/** 区域位置配置（绝对定位偏移，像素） */
+export interface ZonePosition {
+  x: number
+  y: number
+}
+
+/** 空调控制器组件配置 */
+export interface AcControllerComponentConfig extends BaseComponentConfig {
+  // ── 点位绑定 ──
+  bindings: AcControllerBindings
+
+  // ── 面板 ──
+  backgroundColor: string
+  borderRadius: number
+
+  // ── 标题 ──
+  title: string
+  titleFontSize: number
+  titleFontColor: string
+
+  // ── 电源开关 ──
+  powerIconColor: string
+  powerActiveColor: string
+
+  // ── 仪表盘（el-progress dashboard） ──
+  gaugeSize: number
+  gaugeMin: number
+  gaugeMax: number
+  gaugeUnit: string
+  gaugeTrackWidth: number
+  gaugeTrackColor: string
+  gaugeFillColor: string
+  gaugeFillGradient?: string[]
+  gaugeFontSize: number
+  gaugeFontColor: string
+  gaugeStep: number
+
+  // ── 当前值显示 ──
+  currentValueLabel: string
+  currentValueFontSize: number
+  currentValueFontColor: string
+  currentValueUnit: string
+
+  // ── 模式按钮 ──
+  modeIconSize: number
+  modeIconColor: string
+  modeActiveIconColor: string
+  modeFontColor: string
+  modeActiveFontColor: string
+  modeAutoValue: number | string
+  modeCoolValue: number | string
+  modeHeatValue: number | string
+  modeFanValue: number | string
+
+  // ── 风速按钮 ──
+  fanFontSize: number
+  fanBackgroundColor: string
+  fanActiveBackgroundColor: string
+  fanFontColor: string
+  fanActiveFontColor: string
+  fanAutoValue: number | string
+  fanLowValue: number | string
+  fanMediumValue: number | string
+  fanHighValue: number | string
+
+  // ── 分区自由定位 ──
+  titlePosition: ZonePosition
+  powerPosition: ZonePosition
+  gaugePosition: ZonePosition
+  currentValuePosition: ZonePosition
+  modePosition: ZonePosition
+  fanSpeedPosition: ZonePosition
+}
+
 import type { ComponentType } from '../registry'
 
 /** 组件类型到统一配置的映射 */
@@ -553,6 +641,7 @@ export interface ComponentConfigMap {
   'value-image-switch': ValueImageSwitchComponentConfig
   'nav-button': NavButtonComponentConfig
   popup: PopupComponentConfig
+  'ac-controller': AcControllerComponentConfig
 }
 
 /** 组件统一配置类型 */

@@ -44,6 +44,9 @@ export type {
   ValueImageSwitchComponentConfig,
   NavButtonComponentConfig,
   PopupComponentConfig,
+  AcControllerBindings,
+  ZonePosition,
+  AcControllerComponentConfig,
   ScadaComponent,
   PanelType,
   ScadaPanel

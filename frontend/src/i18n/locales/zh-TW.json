@@ -1911,7 +1911,32 @@
     "useHtml": "使用 HTML 渲染",
     "maskColor": "遮罩顏色",
     "popupContentHtmlPlaceholder": "支援 HTML 內容，如 <p>範例</p>",
-    "popupContentTextPlaceholder": "支援純文字內容"
+    "popupContentTextPlaceholder": "支援純文字內容",
+    "acControllerConfig": "空調面板配置",
+    "bindingsSection": "點位綁定",
+    "powerBinding": "開關點位",
+    "modeBinding": "模式點位",
+    "fanSpeedBinding": "風速點位",
+    "setpointBinding": "設定值點位",
+    "currentValueBindingConfig": "當前值點位",
+    "panelSection": "面板",
+    "titleSection": "標題",
+    "powerSection": "電源開關",
+    "powerIconColor": "電源關閉顏色",
+    "powerActiveColor": "電源啟用顏色",
+    "gaugeSection": "儀表區域",
+    "gaugeSize": "儀表大小",
+    "currentValueSection": "當前值區域",
+    "modeSection": "模式按鈕區域",
+    "fanSpeedSection": "風速按鈕區域",
+    "acFanSpeedAuto": "自動",
+    "acFanSpeedLow": "低",
+    "acFanSpeedMedium": "中",
+    "acFanSpeedHigh": "高",
+    "xPosition": "水平位置 (px)",
+    "yPosition": "垂直位置 (px)",
+    "text": "文字",
+    "label": "標籤"
   },
   "scadaComponentCategories": {
     "gauge": "儀表",
@@ -1947,7 +1972,8 @@
     "icon": "圖示",
     "valueImageSwitch": "圖片切換",
     "navButton": "導航按鈕",
-    "popup": "彈框"
+    "popup": "彈框",
+    "acController": "空調面板"
   },
   "ruleNodeCategories": {
     "trigger": "觸發器",
