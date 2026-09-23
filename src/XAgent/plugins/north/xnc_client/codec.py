@@ -19,15 +19,6 @@ logger = logging.getLogger(__name__)
 class ProtobufCodec:
     """Protobuf message codec for XNC UDP protocol"""
     
-    PYTHON_TO_APP_DATA_TYPE = {
-        bool: ApplicationDataType.APP_TAG_BOOLEAN,
-        int: ApplicationDataType.APP_TAG_SIGNED_INT,
-        float: ApplicationDataType.APP_TAG_DOUBLE,
-        str: ApplicationDataType.APP_TAG_CHARACTER_STRING,
-        bytes: ApplicationDataType.APP_TAG_OCTET_STRING,
-        type(None): ApplicationDataType.APP_TAG_NULL,
-    }
-    
     @staticmethod
     def infer_data_type(value: Any) -> ApplicationDataType:
         if value is None:
@@ -39,7 +30,7 @@ class ProtobufCodec:
                 return ApplicationDataType.APP_TAG_UNSIGNED_INT
             return ApplicationDataType.APP_TAG_SIGNED_INT
         if isinstance(value, float):
-            return ApplicationDataType.APP_TAG_DOUBLE
+            return ApplicationDataType.APP_TAG_REAL
         if isinstance(value, str):
             return ApplicationDataType.APP_TAG_CHARACTER_STRING
         if isinstance(value, bytes):
