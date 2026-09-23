@@ -55,8 +55,8 @@ jobs:
           else
             VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
           fi
-          # 回写 pyproject.toml，确保 pyapp build 读到正确版本（无覆盖时为空操作）
-          [[ -n "$VERSION" ]] && sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          # 注意：不在此处回写 pyproject.toml —— 各 job 运行在独立 runner 上，
+          # 修改不会传递到后续 job，由 compile/build job 各自按需注入版本号。
           echo "app_name=$(grep '^name = ' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "app_module=$(grep 'app_module' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
@@ -83,6 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Inject version into source
+        # job 独立 runner，checkout 后需将 version 注入 __init__.py，供 Nuitka 编译进 .so
         run: |
           INIT_FILE="src/${{ needs.config.outputs.app_module }}/__init__.py"
           [[ -f "$INIT_FILE" ]] && sed -i -E "s/__version__\s*=\s*[\"'][^\"']*[\"']/__version__ = \"${{ needs.config.outputs.version }}\"/" "$INIT_FILE" || true
@@ -163,6 +164,12 @@ jobs:
         include: ${{ fromJson(needs.config.outputs.build_matrix) }}
     steps:
       - uses: actions/checkout@v4
+      - name: Inject version into pyproject.toml
+        # job 独立 runner，checkout 恢复仓库原始版本；需注入正确 version 供 pyapp 生成 APK versionName
+        run: |
+          sed -i "s/^version = \".*\"/version = \"${{ needs.config.outputs.version }}\"/" pyproject.toml
+          echo "Updated pyproject.toml version to ${{ needs.config.outputs.version }}"
+          grep '^version = ' pyproject.toml
       - uses: actions/download-artifact@v4
         if: inputs.enable_nuitka != false
         with:
