@@ -54,8 +54,8 @@ jobs:
           else
             VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
           fi
-          # 回写 pyproject.toml，确保 pyapp build 读到正确版本（无覆盖时为空操作）
-          [[ -n "$VERSION" ]] && sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          # 注意：不在此处回写 pyproject.toml —— 各 job 运行在独立 runner 上，
+          # 修改不会传递到后续 job，由 build job checkout 后再注入版本号。
           echo "app_name=$(grep '^name = ' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "python_version=$(grep 'python_version' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
@@ -79,6 +79,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Inject version into pyproject.toml
+        # job 独立 runner，checkout 恢复仓库原始版本；run-on-arch 会把整个工作目录挂载进容器，
+        # 此处注入后容器内 pyapp build linux 能读到正确版本号
+        run: |
+          sed -i "s/^version = \".*\"/version = \"${{ needs.config.outputs.version }}\"/" pyproject.toml
+          echo "Updated pyproject.toml version to ${{ needs.config.outputs.version }}"
+          grep '^version = ' pyproject.toml
 
       # 在宿主机计算好 PBS 的下载 URL 和文件名，避免在 QEMU 内写复杂的 case 判断
       - name: Resolve PBS metadata
