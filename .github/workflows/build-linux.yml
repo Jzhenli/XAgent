@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   config:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       app_name: ${{ steps.vars.outputs.app_name }}
       version: ${{ steps.vars.outputs.version }}
@@ -45,7 +45,6 @@ jobs:
         env:
           VERSION_INPUT: ${{ inputs.version }}
         run: |
-          # 版本号：tag 触发从 tag 提取，手动触发用输入值，否则读 pyproject.toml
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             VERSION="${GITHUB_REF#refs/tags/*/v}"
           elif [[ -n "$VERSION_INPUT" ]]; then
@@ -53,30 +52,21 @@ jobs:
           else
             VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
           fi
-          # 不在此处回写 pyproject.toml —— 各 job 独立 runner，由 build job 自行注入
+          # 各 job 独立 runner，版本由 build job 注入，此处不回写
           echo "app_name=$(grep '^name = ' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "python_version=$(grep 'python_version' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
       - name: Generate matrix
         id: matrix
         run: |
-          # 官方 manylinux 镜像矩阵（https://github.com/pypa/manylinux）：
-          #   armv7l  -> manylinux_2_31 (Ubuntu 20.04, glibc 2.31, GCC 9)
-          #              官方唯一提供 armv7l 的 manylinux 策略
-          #   aarch64 -> manylinux_2_28 (AlmaLinux 8, glibc 2.28, GCC 14)
-          # 镜像内置 CPython 3.9-3.15（/opt/python/cpXY-cpXY），并内建
-          # AUDITWHEEL_* 合规标识与 manylinux-interpreters 工具
-          #
-          # Runner 策略：
-          #   armv7l  无原生 runner，只能在 x86_64 机器上经 QEMU binfmt 模拟
-          #   aarch64 走原生 arm64 runner（ubuntu-24.04-arm，公共仓库免费），
-          #           宿主与容器同为 arm64，无需模拟
-          # 两种架构都在官方 manylinux 容器内编译，glibc 封顶由容器工具链决定
+          # 官方 manylinux 镜像（https://github.com/pypa/manylinux），glibc 封顶由容器工具链决定：
+          #   armv7l  -> manylinux_2_31（唯一支持 armv7l 的策略），QEMU 模拟
+          #   aarch64 -> manylinux_2_28，原生 arm64 runner
           ARCHS="${{ inputs.archs || 'armv7l' }}"
-          # tag 形如 *-all/v* 时构建全部架构（如 xagent-all/v1.2.3）
+          # *-all/v* tag 构建全部架构
           [[ "$GITHUB_REF" == refs/tags/*-all/* ]] && ARCHS="armv7l,aarch64"
           MATRIX=""
-          [[ "$ARCHS" == *"armv7l"* ]] && MATRIX+='{"arch":"armv7l","platform":"linux/arm/v7","image":"quay.io/pypa/manylinux_2_31_armv7l","runner":"ubuntu-latest"},'
+          [[ "$ARCHS" == *"armv7l"* ]] && MATRIX+='{"arch":"armv7l","platform":"linux/arm/v7","image":"quay.io/pypa/manylinux_2_31_armv7l","runner":"ubuntu-24.04"},'
           [[ "$ARCHS" == *"aarch64"* ]] && MATRIX+='{"arch":"aarch64","platform":"linux/arm64","image":"quay.io/pypa/manylinux_2_28_aarch64","runner":"ubuntu-24.04-arm"},'
           echo "build_matrix=[${MATRIX%,}]" >> $GITHUB_OUTPUT
 
@@ -96,17 +86,12 @@ jobs:
           sed -i "s/^version = \".*\"/version = \"${{ needs.config.outputs.version }}\"/" pyproject.toml
           grep '^version = ' pyproject.toml
 
-      # pyapp-cli 为纯 Python 包，但版本号由 setuptools-scm 从 git 标签推导。
-      # 必须完整克隆（含 tags）：浅克隆无 tags 会导致构建报
-      # "unable to detect version"（并连带触发 setuptools-scm 9.x 的
-      # _version_missing(tool=...) TypeError）
       - name: Fetch pyapp source (host)
         run: |
           rm -rf pyapp_src
           git clone --quiet https://github.com/Jzhenli/pyapp.git pyapp_src
           git -C pyapp_src describe --tags
 
-      # 前端为纯静态资源，在宿主机构建；工作目录会挂载进容器
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
@@ -117,16 +102,9 @@ jobs:
           npm run build
 
       - name: Set up QEMU
-        # 仅 x86_64 runner 需要：armv7l 二进制必须经 QEMU binfmt 模拟执行；
-        # aarch64 在原生 arm64 runner 上跑 arm64 容器，无需注册
-        if: matrix.runner == 'ubuntu-latest'
-        uses: docker/setup-qemu-action@v3
+        if: matrix.arch == 'armv7l'
+        uses: docker/setup-qemu-action@v4
 
-      # 官方推荐的 manylinux 用法：docker run 直接执行官方镜像。
-      # armv7l 在 x86_64 runner 上经 QEMU binfmt 用户态模拟；
-      # aarch64 在原生 arm64 runner 上原生执行。
-      # 不再经由第三方 run-on-arch-action 封装（其自定义镜像参数为
-      # base_image，此前误写为无效的 image 导致镜像被静默忽略）。
       - name: Build in ${{ matrix.image }}
         run: |
           docker run --rm -i \
@@ -136,15 +114,14 @@ jobs:
             bash -s <<'SCRIPT'
             set -euo pipefail
 
-            # ---- 0. 确认确实运行在官方 manylinux 镜像内 ----
-            # 官方镜像内建 AUDITWHEEL_* 合规环境变量，缺失即用错容器
+            # 0. 确认在官方 manylinux 镜像内（AUDITWHEEL_* 为官方内建标识）
             echo "AUDITWHEEL_PLAT=${AUDITWHEEL_PLAT:-<unset>}"
             [[ -n "${AUDITWHEEL_PLAT:-}" ]] || {
               echo "::error::AUDITWHEEL_PLAT is unset - this is NOT a manylinux image"; exit 1;
             }
             command -v manylinux-interpreters >/dev/null 2>&1 && manylinux-interpreters list || true
 
-            # ---- 1. 用镜像自带的 CPython 3.11 作为构建解释器（官方路径）----
+            # 1. 构建解释器：镜像自带 cp311
             PY=/opt/python/cp311-cp311/bin/python3
             [[ -x "$PY" ]] || {
               echo "::error::$PY not found in image ${AUDITWHEEL_PLAT}"; exit 1;
@@ -152,26 +129,21 @@ jobs:
             "$PY" --version
             export PATH="/opt/python/cp311-cp311/bin:$PATH"
 
-            # ---- 2. armv7l: piwheels 提速；cffi 强制走 sdist 源码编译 ----
-            # （piwheels 的 cffi wheel 为 bookworm 构建，链接 glibc 2.36/libffi.so.8，
-            #   板端 bullseye 为 glibc 2.31/libffi.so.7 加载不了；
-            #   镜像 glibc 2.31 源码编译出的产物正好与板端匹配）
+            # 2. armv7l: piwheels 提速；cffi 强制 sdist（其预编译 wheel 为 bookworm 构建，板端加载不了）
             if [[ "${{ matrix.arch }}" == "armv7l" ]]; then
               export PIP_EXTRA_INDEX_URL="https://www.piwheels.org/simple"
               export PIP_NO_BINARY=cffi
             fi
 
-            # ---- 3. 安装 pyapp-cli（纯 Python，无需 Rust）----
-            # 关闭构建隔离 + 统一一份 setuptools-scm(<9)，规避
-            # "_version_missing() got an unexpected keyword argument 'tool'" 冲突
+            # 3. 安装 pyapp-cli（--no-build-isolation + setuptools-scm<9，规避版本冲突）
             "$PY" -m pip install --upgrade pip setuptools wheel "setuptools-scm<9"
             "$PY" -m pip install --no-build-isolation "./pyapp_src[compile]"
             pyapp --version
 
-            # ---- 4. 构建 bundle（pyapp 按 pyproject 的 python_version 自行下载 PBS 运行时）----
+            # 4. 构建 bundle（运行时由 pyapp 按 pyproject 的 python_version 下载）
             pyapp build linux --arch ${{ matrix.arch }}
 
-            # ---- 5. armv7l: 断言 bundle 内 cffi 为源码编译版（防 bookworm wheel 混入）----
+            # 5. armv7l: 断言 cffi 非预编译 wheel（防 bookworm 产物混入）
             if [[ "${{ matrix.arch }}" == "armv7l" ]]; then
               PKG_DIR="$(find bundles/linux -maxdepth 4 -type d -name app_packages 2>/dev/null | head -1)"
               CFFI_SO="$(find "$PKG_DIR" -maxdepth 1 -name '_cffi_backend'*.so 2>/dev/null | head -1)"
@@ -185,7 +157,7 @@ jobs:
               fi
             fi
 
-            # ---- 6. Nuitka 编译 + 打包 ----
+            # 6. Nuitka 编译 + 打包
             if [[ "${{ inputs.enable_nuitka }}" != "false" ]]; then
               pyapp compile linux
             fi
@@ -193,7 +165,7 @@ jobs:
             pyapp package linux
           SCRIPT
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: ${{ needs.config.outputs.app_name }}-${{ needs.config.outputs.version }}-linux-${{ matrix.arch }}
