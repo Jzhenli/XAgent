@@ -40,7 +40,7 @@ jobs:
       python_version: ${{ steps.vars.outputs.python_version }}
       build_matrix: ${{ steps.matrix.outputs.build_matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Read project config
         id: vars
         env:
@@ -77,7 +77,7 @@ jobs:
         include: ${{ fromJson(needs.config.outputs.build_matrix) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Inject version into pyproject.toml
         run: |
           sed -i "s/^version = \".*\"/version = \"${{ needs.config.outputs.version }}\"/" pyproject.toml
@@ -115,7 +115,13 @@ jobs:
           [[ -s "$F" ]] || { echo "::error::PBS download failed"; exit 1; }
           ls -lh "$F"
 
-      - uses: actions/setup-node@v4
+      # 宿主机构建 pyapp wheel（容器镜像无 git，无法 git+https 安装；wheel 为纯 Python 与架构无关，跨架构可用）
+      - name: Build pyapp wheel (host)
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip wheel "pyapp-cli[compile] @ git+https://github.com/Jzhenli/pyapp.git" -w pyapp_wheel
+
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Build frontend
@@ -155,9 +161,9 @@ jobs:
             mkdir -p "$CACHE_DIR"
             cp "$PBS_FILENAME" "$CACHE_DIR/$PBS_FILENAME"
 
-            # 安装 pyapp（运行于 PBS CPython），bundle 运行时取自同一 PBS 缓存
+            # 安装 pyapp（运行于 PBS CPython），bundle 运行时取自同一 PBS 缓存；wheel 已在宿主机构建，容器内免 git
             python3 -m pip install --upgrade pip
-            python3 -m pip install "pyapp-cli[compile] @ git+https://github.com/Jzhenli/pyapp.git"
+            python3 -m pip install pyapp_wheel/*.whl
 
             pyapp build linux --arch ${{ matrix.arch }}
 
@@ -178,7 +184,7 @@ jobs:
 
             pyapp package linux
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: ${{ needs.config.outputs.app_name }}-${{ needs.config.outputs.version }}-linux-${{ matrix.arch }}
