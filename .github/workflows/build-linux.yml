@@ -139,17 +139,15 @@ jobs:
             # 4. 构建 bundle（运行时由 pyapp 按 pyproject 的 python_version 下载）
             pyapp build linux --arch "$ARCH"
 
-            # 5. armv7l: 断言 cffi 非预编译 wheel（防 bookworm 产物混入）
+            # 5. armv7l: 断言 bundle 内全部 .so 的 glibc 符号 ≤ 2.31（拦截 piwheels bookworm 产物等混入）
             if [[ "$ARCH" == "armv7l" ]]; then
-              PKG_DIR="$(find bundles/linux -maxdepth 4 -type d -name app_packages 2>/dev/null | head -1)"
-              CFFI_SO="$(find "$PKG_DIR" -maxdepth 1 -name '_cffi_backend'*.so 2>/dev/null | head -1)"
-              if [[ -z "$CFFI_SO" ]]; then
-                echo "::warning::cffi not present in bundle (pkg_dir=$PKG_DIR), skip glibc/libffi assert"
-              elif grep -aqE 'GLIBC_2\.34|libffi\.so\.8' "$CFFI_SO"; then
-                echo "::error::cffi links newer glibc/libffi than target board supports: $CFFI_SO"
+              [[ -d bundles/linux ]] || { echo "::error::bundle directory not found: bundles/linux"; exit 1; }
+              BAD_SO="$(find bundles/linux -type f \( -name '*.so' -o -name '*.so.*' \) -print0 \
+                | xargs -0 -r grep -laE 'GLIBC_2\.(3[2-9]|4[0-9])|libffi\.so\.8' 2>/dev/null || true)"
+              if [[ -n "$BAD_SO" ]]; then
+                echo "::error::.so files requiring glibc > 2.31 or libffi.so.8 (unsupported on board):"
+                echo "$BAD_SO" | sed 's/^/  - /'
                 exit 1
-              else
-                echo "cffi glibc/libffi assert passed: $CFFI_SO"
               fi
             fi
 
