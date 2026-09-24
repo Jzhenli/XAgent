@@ -226,24 +226,28 @@ onMounted(async () => {
   document.addEventListener('fullscreenchange', handleFullscreenChange)
 
   const panelId = route.params.id as string
-  const results = await Promise.allSettled([
-    scada.loadPanel(panelId),
-    pointStore.fetchDevicesWithPoints()
-  ])
 
-  if (results[0].status === 'rejected') {
-    console.error('Failed to load panel:', results[0].reason)
+  // 先加载面板
+  try {
+    const panel = await scada.loadPanel(panelId)
+    if (panel === null) {
+      console.error('Panel not found or failed to parse:', panelId)
+      ElMessage.error(t('scada.loadPanelFailed'))
+    }
+  } catch (err) {
+    console.error('Failed to load panel:', err)
     ElMessage.error(t('scada.loadPanelFailed'))
-  } else if (results[0].value === null) {
-    console.error('Panel not found or failed to parse:', panelId)
-    ElMessage.error(t('scada.loadPanelFailed'))
-  }
-  if (results[1].status === 'rejected') {
-    console.error('Failed to load devices:', results[1].reason)
-    ElMessage.error(t('scada.loadDevicesFailed'))
   }
 
   isLoading.value = false
+
+  // 再加载设备点位
+  try {
+    await pointStore.fetchDevicesWithPoints()
+  } catch (err) {
+    console.error('Failed to load devices:', err)
+    ElMessage.error(t('scada.loadDevicesFailed'))
+  }
 })
 
 onUnmounted(() => {
