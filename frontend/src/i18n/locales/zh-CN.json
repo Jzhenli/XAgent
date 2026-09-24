@@ -1316,7 +1316,6 @@
     "timeoutTime": "超时时间",
     "requestHeaders": "请求头",
     "requestHeadersHint": "请求头提示",
-    "retryIntervalHint": "重试间隔提示",
     "otherConfig": "其他配置",
     "tagsHint": "标签提示",
     "statusChanged": "状态已更改",

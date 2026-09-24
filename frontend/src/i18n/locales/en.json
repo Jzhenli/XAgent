@@ -1316,7 +1316,6 @@
     "timeoutTime": "Timeout Time",
     "requestHeaders": "Request Headers",
     "requestHeadersHint": "Request headers hint",
-    "retryIntervalHint": "Retry interval hint",
     "otherConfig": "Other Config",
     "tagsHint": "Tags hint",
     "statusChanged": "Status Changed",
