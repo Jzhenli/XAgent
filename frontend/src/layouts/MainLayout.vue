@@ -174,7 +174,7 @@
                     }}
                   </el-tag>
                 </el-dropdown-item>
-                <el-dropdown-item @click="router.push('/settings')">{{
+                <el-dropdown-item @click="router.push('/settings?tab=users')">{{
                   $t("layout.personalSettings")
                 }}</el-dropdown-item>
                 <el-dropdown-item divided @click="openAboutDialog">{{
