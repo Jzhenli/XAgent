@@ -11,6 +11,7 @@ const defaultConfig: SwitchComponentConfig = {
   offColor: 'rgba(149, 165, 166, 1)',
   onValue: 1,
   offValue: 0,
+  value: 0,
   confirmRequired: false,
   writePoint: null
 }

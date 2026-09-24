@@ -1,31 +1,52 @@
-﻿<template>
+<template>
   <div class="config-section">
-    <div class="section-title">{{ t('componentConfig.sliderConfig') }}</div>
+    <div class="section-title">{{ t("componentConfig.sliderConfig") }}</div>
 
-    <div class="subsection-title">{{ t('componentConfig.dataSection') }}</div>
+    <div class="subsection-title">{{ t("componentConfig.dataSection") }}</div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t('componentConfig.minValue') }}</label>
+        <label>{{ t("componentConfig.currentValue") }}</label>
+        <input
+          type="number"
+          :value="config.value ?? ''"
+          @change="
+            updateConfig(
+              'value',
+              ($event.target as HTMLInputElement).value === ''
+                ? null
+                : +($event.target as HTMLInputElement).value,
+            )
+          "
+        />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t("componentConfig.minValue") }}</label>
         <input
           type="number"
           :value="config.min"
-          @change="updateConfig('min', +($event.target as HTMLInputElement).value)"
+          @change="
+            updateConfig('min', +($event.target as HTMLInputElement).value)
+          "
         />
       </div>
       <div class="form-group">
-        <label>{{ t('componentConfig.maxValue') }}</label>
+        <label>{{ t("componentConfig.maxValue") }}</label>
         <input
           type="number"
           :value="config.max"
-          @change="updateConfig('max', +($event.target as HTMLInputElement).value)"
+          @change="
+            updateConfig('max', +($event.target as HTMLInputElement).value)
+          "
         />
       </div>
     </div>
 
-    <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>
+    <div class="subsection-title">{{ t("componentConfig.styleSection") }}</div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t('componentConfig.thumbColor') }}</label>
+        <label>{{ t("componentConfig.thumbColor") }}</label>
         <el-color-picker
           :model-value="config.thumbColor"
           show-alpha
@@ -33,7 +54,7 @@
         />
       </div>
       <div class="form-group">
-        <label>{{ t('componentConfig.backgroundColor') }}</label>
+        <label>{{ t("componentConfig.backgroundColor") }}</label>
         <el-color-picker
           :model-value="config.backgroundColor"
           show-alpha
@@ -43,11 +64,16 @@
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t('componentConfig.borderRadius') }}</label>
+        <label>{{ t("componentConfig.borderRadius") }}</label>
         <input
           type="number"
           :value="config.borderRadius"
-          @change="updateConfig('borderRadius', +($event.target as HTMLInputElement).value)"
+          @change="
+            updateConfig(
+              'borderRadius',
+              +($event.target as HTMLInputElement).value,
+            )
+          "
         />
       </div>
     </div>
@@ -55,19 +81,19 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-import { useScadaConfig } from '../../../../hooks/useScadaEditor'
-import type { ScadaComponent } from '../../../../types'
+import { useI18n } from "vue-i18n";
+import { useScadaConfig } from "../../../../hooks/useScadaEditor";
+import type { ScadaComponent } from "../../../../types";
 
-const { t } = useI18n()
+const { t } = useI18n();
 
 const props = defineProps<{
-  component: ScadaComponent
-}>()
+  component: ScadaComponent;
+}>();
 
 const { config, updateConfig } = useScadaConfig(
-  props.component as ScadaComponent<'slider'>,
-)
+  props.component as ScadaComponent<"slider">,
+);
 </script>
 
 <style scoped>

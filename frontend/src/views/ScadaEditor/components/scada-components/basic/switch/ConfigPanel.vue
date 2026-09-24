@@ -6,11 +6,30 @@
     <div class="subsection-title">{{ t("componentConfig.dataSection") }}</div>
     <div class="form-row">
       <div class="form-group">
+        <label>{{ t("componentConfig.currentValue") }}</label>
+        <input
+          type="number"
+          :value="config.value ?? ''"
+          @change="
+            updateConfig(
+              'value',
+              ($event.target as HTMLInputElement).value === ''
+                ? null
+                : +($event.target as HTMLInputElement).value,
+            )
+          "
+        />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label>{{ t("componentConfig.onValue") }}</label>
         <input
           type="number"
           :value="config.onValue"
-          @change="updateConfig('onValue', +($event.target as HTMLInputElement).value)"
+          @change="
+            updateConfig('onValue', +($event.target as HTMLInputElement).value)
+          "
         />
       </div>
       <div class="form-group">
@@ -18,7 +37,9 @@
         <input
           type="number"
           :value="config.offValue"
-          @change="updateConfig('offValue', +($event.target as HTMLInputElement).value)"
+          @change="
+            updateConfig('offValue', +($event.target as HTMLInputElement).value)
+          "
         />
       </div>
     </div>
