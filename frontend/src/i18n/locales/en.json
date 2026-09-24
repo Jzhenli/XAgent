@@ -1749,6 +1749,7 @@
     "onColor": "On Color",
     "offColor": "Off Color",
     "switchConfig": "Switch Config",
+    "lightButtonConfig": "Light Button Config",
     "sliderConfig": "Brightness Adjuster Config",
     "sliderSwitchConfig": "Slider Progress Bar Config",
     "sliderBarConfig": "Slider Bar Chart Config",
@@ -1989,7 +1990,8 @@
     "navButton": "Navigation Button",
     "popup": "Popup",
     "acController": "AC Panel",
-    "acController2": "AC Panel 2"
+    "acController2": "AC Panel 2",
+    "lightButton": "Light Button"
   },
   "ruleNodeCategories": {
     "trigger": "Triggers",

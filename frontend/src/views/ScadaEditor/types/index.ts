@@ -286,6 +286,34 @@ export interface SwitchComponentConfig extends BaseComponentConfig {
   writePoint: PointBinding | null
 }
 
+/** 灯控按钮组件配置 —— 两行布局（图标 + 文字），支持开启/关闭两套配色 */
+export interface LightButtonComponentConfig extends BaseComponentConfig {
+  /** 按钮文字 */
+  text: string
+  /** 图标名称（对应 icon 组件的 iconName） */
+  iconName: string
+  /** 图标大小（px） */
+  iconSize: number
+  /** 关闭态图标颜色 */
+  iconColor: string
+  /** 开启态图标颜色 */
+  activeIconColor: string
+  /** 关闭态文字颜色 */
+  fontColor: string
+  /** 开启态文字颜色 */
+  activeFontColor: string
+  /** 开启态背景色（关闭态使用 backgroundColor） */
+  activeBackgroundColor: string
+  /** 开启值 */
+  onValue: number
+  /** 关闭值 */
+  offValue: number
+  /** 操作前是否需要确认 */
+  confirmRequired: boolean
+  /** 独立写值点位（为空则使用组件 binding） */
+  writePoint: PointBinding | null
+}
+
 /** 亮度调节器组件配置 */
 export interface SliderComponentConfig extends BaseComponentConfig {
   min: number
@@ -697,6 +725,7 @@ export interface ComponentConfigMap {
   'chart-bar': BarChartComponentConfig
   indicator: IndicatorComponentConfig
   switch: SwitchComponentConfig
+  'light-button': LightButtonComponentConfig
   slider: SliderComponentConfig
   'slider-switch': SliderSwitchComponentConfig
   'slider-bar': SliderBarComponentConfig

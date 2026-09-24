@@ -28,6 +28,7 @@ export type {
   LineChartSeriesItem,
   IndicatorComponentConfig,
   SwitchComponentConfig,
+  LightButtonComponentConfig,
   SliderComponentConfig,
   SliderSwitchComponentConfig,
   SliderBarItemConfig,

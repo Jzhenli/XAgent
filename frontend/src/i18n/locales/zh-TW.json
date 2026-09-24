@@ -1749,6 +1749,7 @@
     "onColor": "開啟顏色",
     "offColor": "關閉顏色",
     "switchConfig": "開關設定",
+    "lightButtonConfig": "燈控按鈕設定",
     "sliderConfig": "亮度調節器設定",
     "sliderSwitchConfig": "滑塊式進度條設定",
     "sliderBarConfig": "滑塊式長條圖設定",
@@ -1989,7 +1990,8 @@
     "navButton": "導航按鈕",
     "popup": "彈框",
     "acController": "空調面板",
-    "acController2": "空調面板2"
+    "acController2": "空調面板2",
+    "lightButton": "燈控按鈕"
   },
   "ruleNodeCategories": {
     "trigger": "觸發器",

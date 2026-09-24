@@ -12,6 +12,7 @@ import { sliderSwitchMeta } from './components/scada-components/chart/slider-swi
 import { sliderBarMeta } from './components/scada-components/chart/slider-bar/metadata'
 import { indicatorMeta } from './components/scada-components/basic/indicator/metadata'
 import { switchMeta } from './components/scada-components/basic/switch/metadata'
+import { lightButtonMeta } from './components/scada-components/basic/light-button/metadata'
 import { sliderMeta } from './components/scada-components/basic/slider/metadata'
 import { textMeta } from './components/scada-components/layout/text/metadata'
 import { rectangleMeta } from './components/scada-components/layout/rectangle/metadata'
@@ -44,6 +45,7 @@ export const componentMetaRegistry = {
   'slider-bar': sliderBarMeta,
   indicator: indicatorMeta,
   switch: switchMeta,
+  'light-button': lightButtonMeta,
   slider: sliderMeta,
   text: textMeta,
   rectangle: rectangleMeta,

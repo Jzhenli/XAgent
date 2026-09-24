@@ -1749,6 +1749,7 @@
     "onColor": "开启颜色",
     "offColor": "关闭颜色",
     "switchConfig": "开关配置",
+    "lightButtonConfig": "灯控按钮配置",
     "sliderConfig": "亮度调节器配置",
     "sliderSwitchConfig": "滑块式进度条配置",
     "sliderBarConfig": "滑块式柱状图配置",
@@ -1989,7 +1990,8 @@
     "navButton": "导航按钮",
     "popup": "弹框",
     "acController": "空调面板",
-    "acController2": "空调面板2"
+    "acController2": "空调面板2",
+    "lightButton": "灯控按钮"
   },
   "ruleNodeCategories": {
     "trigger": "触发器",
