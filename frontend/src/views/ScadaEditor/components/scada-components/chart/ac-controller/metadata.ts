@@ -39,7 +39,7 @@ const defaultConfig: AcControllerComponentConfig = {
   gaugeMax: 30,
   gaugeUnit: '°C',
   gaugeTrackWidth: 12,
-  gaugeTrackColor: '#2a2a4a',
+  gaugeTrackColor: '#4a4a6a',
   gaugeFillColor: '#00d4ff',
   gaugeFillGradient: ['#00d4ff', '#00ff88', '#f5a623'],
   gaugeFontSize: 22,

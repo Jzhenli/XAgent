@@ -29,6 +29,7 @@ import { valueImageSwitchMeta } from './components/scada-components/chart/value-
 import { navButtonMeta } from './components/scada-components/layout/nav-button/metadata'
 import { popupMeta } from './components/scada-components/layout/popup/metadata'
 import { acControllerMeta } from './components/scada-components/chart/ac-controller/metadata'
+import { acController2Meta } from './components/scada-components/chart/ac-controller-2/metadata'
 
 // ─── 统一组件注册表：type -> 完整元数据 ─────────────────────────
 // 新增组件只需在此添加映射，ComponentType 自动推导
@@ -60,6 +61,7 @@ export const componentMetaRegistry = {
   'nav-button': navButtonMeta,
   popup: popupMeta,
   'ac-controller': acControllerMeta,
+  'ac-controller-2': acController2Meta,
 } as const
 
 /** 组件类型 —— 从注册表键名自动推导 */

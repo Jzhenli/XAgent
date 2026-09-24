@@ -611,6 +611,73 @@ export interface AcControllerComponentConfig extends BaseComponentConfig {
   fanSpeedPosition: ZonePosition
 }
 
+/** 空调面板2组件配置（紧凑型单图标版） */
+export interface AcController2ComponentConfig extends BaseComponentConfig {
+  // ── 点位绑定 ──
+  bindings: AcControllerBindings
+
+  // ── 面板 ──
+  backgroundColor: string
+  borderRadius: number
+
+  // ── 标题 ──
+  title: string
+  titleFontSize: number
+  titleFontColor: string
+
+  // ── 电源开关 ──
+  powerIconSize: number
+  powerIconColor: string
+  powerActiveColor: string
+
+  // ── 仪表盘 ──
+  gaugeSize: number
+  gaugeMin: number
+  gaugeMax: number
+  gaugeUnit: string
+  gaugeTrackWidth: number
+  gaugeTrackColor: string
+  gaugeFillColor: string
+  gaugeFillGradient?: string[]
+  gaugeFontSize: number
+  gaugeFontColor: string
+  gaugeStep: number
+
+  // ── 当前值 ──
+  currentValueLabel: string
+  currentValueFontSize: number
+  currentValueFontColor: string
+  currentValueUnit: string
+
+  // ── 模式（单图标循环切换） ──
+  modeIconSize: number
+  modeIconColor: string
+  modeActiveIconColor: string
+  modeAutoValue: number | string
+  modeCoolValue: number | string
+  modeHeatValue: number | string
+  modeFanValue: number | string
+  modeCycleModes: AcModeKey[]
+
+  // ── 风速（单图标循环切换） ──
+  fanIconSize: number
+  fanIconColor: string
+  fanActiveIconColor: string
+  fanAutoValue: number | string
+  fanLowValue: number | string
+  fanMediumValue: number | string
+  fanHighValue: number | string
+  fanCycleModes: AcFanSpeedKey[]
+
+  // ── 分区定位 ──
+  titlePosition: ZonePosition
+  powerPosition: ZonePosition
+  modePosition: ZonePosition
+  fanSpeedPosition: ZonePosition
+  gaugePosition: ZonePosition
+  currentValuePosition: ZonePosition
+}
+
 import type { ComponentType } from '../registry'
 
 /** 组件类型到统一配置的映射 */
@@ -642,6 +709,7 @@ export interface ComponentConfigMap {
   'nav-button': NavButtonComponentConfig
   popup: PopupComponentConfig
   'ac-controller': AcControllerComponentConfig
+  'ac-controller-2': AcController2ComponentConfig
 }
 
 /** 组件统一配置类型 */

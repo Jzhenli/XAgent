@@ -47,6 +47,7 @@ export type {
   AcControllerBindings,
   ZonePosition,
   AcControllerComponentConfig,
+  AcController2ComponentConfig,
   ScadaComponent,
   PanelType,
   ScadaPanel

@@ -334,6 +334,7 @@ const POINT_BINDINGLESS_TYPES = new Set([
   "arc",
   "popup",
   "ac-controller",
+  "ac-controller-2",
 ]);
 
 const showPointBinding = computed(() => {
