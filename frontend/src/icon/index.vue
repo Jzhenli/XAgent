@@ -40,6 +40,21 @@
       :style="[fontSizeStyle, { color: 'transparent' }]"
     ></span>
   </div>
+  <span v-else-if="type === 'dual-color'" class="fa-stack pointer" :style="sizeStyle">
+    <i
+      :class="['xicon_' + name + '_FL']"
+      class="fa-stack-1x"
+      :style="[fontSizeStyle, { color: color?.normal || 'var(--color-font-default)' }]"
+    ></i>
+    <i
+      :class="['xicon_' + name + '_HL']"
+      class="fa-stack-1x"
+      :style="[
+        fontSizeStyle,
+        { color: color?.active || color?.normal || 'var(--color-primary)' },
+      ]"
+    ></i>
+  </span>
   <span v-else class="fa-stack pointer" :style="sizeStyle">
     <i
       :class="['xicon_' + name + '_FL']"
@@ -72,7 +87,8 @@ const props = withDefaults(
       | "mono-line"
       | "mono-filled"
       | "color-white"
-      | "no-background";
+      | "no-background"
+      | "dual-color";
     color?: {
       normal: string;
       active?: string;

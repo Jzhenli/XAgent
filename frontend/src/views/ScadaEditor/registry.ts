@@ -12,6 +12,7 @@ import { sliderSwitchMeta } from './components/scada-components/chart/slider-swi
 import { sliderBarMeta } from './components/scada-components/chart/slider-bar/metadata'
 import { indicatorMeta } from './components/scada-components/basic/indicator/metadata'
 import { switchMeta } from './components/scada-components/basic/switch/metadata'
+import { lightButtonMeta } from './components/scada-components/basic/light-button/metadata'
 import { sliderMeta } from './components/scada-components/basic/slider/metadata'
 import { textMeta } from './components/scada-components/layout/text/metadata'
 import { rectangleMeta } from './components/scada-components/layout/rectangle/metadata'
@@ -22,10 +23,14 @@ import { iconMeta } from './components/scada-components/layout/icon/metadata'
 import { imageMeta } from './components/scada-components/layout/image/metadata'
 import { buttonMeta } from './components/scada-components/basic/button/metadata'
 import { acModeMeta } from './components/scada-components/basic/ac-mode/metadata'
+import { acModeIconMeta } from './components/scada-components/basic/ac-mode-icon/metadata'
 import { acFanSpeedMeta } from './components/scada-components/basic/ac-fan-speed/metadata'
+import { acFanSpeedIconMeta } from './components/scada-components/basic/ac-fan-speed-icon/metadata'
 import { valueImageSwitchMeta } from './components/scada-components/chart/value-image-switch/metadata'
 import { navButtonMeta } from './components/scada-components/layout/nav-button/metadata'
 import { popupMeta } from './components/scada-components/layout/popup/metadata'
+import { acControllerMeta } from './components/scada-components/chart/ac-controller/metadata'
+import { acController2Meta } from './components/scada-components/chart/ac-controller-2/metadata'
 
 // ─── 统一组件注册表：type -> 完整元数据 ─────────────────────────
 // 新增组件只需在此添加映射，ComponentType 自动推导
@@ -40,6 +45,7 @@ export const componentMetaRegistry = {
   'slider-bar': sliderBarMeta,
   indicator: indicatorMeta,
   switch: switchMeta,
+  'light-button': lightButtonMeta,
   slider: sliderMeta,
   text: textMeta,
   rectangle: rectangleMeta,
@@ -50,10 +56,14 @@ export const componentMetaRegistry = {
   image: imageMeta,
   button: buttonMeta,
   acMode: acModeMeta,
+  acModeIcon: acModeIconMeta,
   acFanSpeed: acFanSpeedMeta,
+  acFanSpeedIcon: acFanSpeedIconMeta,
   'value-image-switch': valueImageSwitchMeta,
   'nav-button': navButtonMeta,
   popup: popupMeta,
+  'ac-controller': acControllerMeta,
+  'ac-controller-2': acController2Meta,
 } as const
 
 /** 组件类型 —— 从注册表键名自动推导 */

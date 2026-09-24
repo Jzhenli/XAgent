@@ -911,12 +911,18 @@ export function useScadaCanvas() {
 
     // 将组件中心对齐到鼠标落点
     const template = getComponentTemplate(componentType)
+    let newComponent: ReturnType<typeof scada.addComponent> | null = null
     if (template) {
       const halfW = template.defaultConfig.width / 2
       const halfH = template.defaultConfig.height / 2
-      scada.addComponent(componentType, pos.x - halfW, pos.y - halfH)
+      newComponent = scada.addComponent(componentType, pos.x - halfW, pos.y - halfH)
     } else {
-      scada.addComponent(componentType, pos.x, pos.y)
+      newComponent = scada.addComponent(componentType, pos.x, pos.y)
+    }
+
+    // 选中新拖入的组件，让选中框跟随它
+    if (newComponent) {
+      scada.selectComponent(newComponent.id)
     }
   }
 

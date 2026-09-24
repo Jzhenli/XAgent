@@ -286,6 +286,34 @@ export interface SwitchComponentConfig extends BaseComponentConfig {
   writePoint: PointBinding | null
 }
 
+/** 灯控按钮组件配置 —— 两行布局（图标 + 文字），支持开启/关闭两套配色 */
+export interface LightButtonComponentConfig extends BaseComponentConfig {
+  /** 按钮文字 */
+  text: string
+  /** 图标名称（对应 icon 组件的 iconName） */
+  iconName: string
+  /** 图标大小（px） */
+  iconSize: number
+  /** 关闭态图标颜色 */
+  iconColor: string
+  /** 开启态图标颜色 */
+  activeIconColor: string
+  /** 关闭态文字颜色 */
+  fontColor: string
+  /** 开启态文字颜色 */
+  activeFontColor: string
+  /** 开启态背景色（关闭态使用 backgroundColor） */
+  activeBackgroundColor: string
+  /** 开启值 */
+  onValue: number
+  /** 关闭值 */
+  offValue: number
+  /** 操作前是否需要确认 */
+  confirmRequired: boolean
+  /** 独立写值点位（为空则使用组件 binding） */
+  writePoint: PointBinding | null
+}
+
 /** 亮度调节器组件配置 */
 export interface SliderComponentConfig extends BaseComponentConfig {
   min: number
@@ -391,6 +419,28 @@ export interface AcModeComponentConfig extends BaseComponentConfig {
   fanValue: number | string
 }
 
+/** 空调模式图标组件 —— 仅显示当前模式图标，点击循环切换，支持自定义模式组合 */
+export interface AcModeIconComponentConfig extends BaseComponentConfig {
+  iconSize: number
+  iconColor: string
+  activeIconColor: string
+  /** 当前值：编辑态/未绑定点位时的模拟值 */
+  currentValue: number | string
+  /** 自动模式值 */
+  autoValue: number | string
+  /** 制冷模式值 */
+  coolValue: number | string
+  /** 制暖模式值 */
+  heatValue: number | string
+  /** 通风模式值 */
+  fanValue: number | string
+  /** 参与循环切换的模式列表（按数组顺序依次切换），为空则默认全部四种模式 */
+  cycleModes: AcModeKey[]
+}
+
+/** 空调模式 key */
+export type AcModeKey = 'auto' | 'cool' | 'heat' | 'fan'
+
 /** 图片切换项（值对应图片） */
 export interface ValueImageItem {
   /** 绑定的数值 */
@@ -479,6 +529,184 @@ export interface AcFanSpeedComponentConfig extends BaseComponentConfig {
   lowValue: number | string
 }
 
+/** 空调风速图标 key */
+export type AcFanSpeedKey = 'auto' | 'low' | 'medium' | 'high'
+
+/** 空调风速图标组件 —— 仅显示当前风速档位图标，点击循环切换，支持自定义档位组合 */
+export interface AcFanSpeedIconComponentConfig extends BaseComponentConfig {
+  iconSize: number
+  iconColor: string
+  activeIconColor: string
+  /** 当前值：编辑态/未绑定点位时的模拟值 */
+  currentValue: number | string
+  /** 自动档位值 */
+  autoValue: number | string
+  /** 低档位值 */
+  lowValue: number | string
+  /** 中档位值 */
+  mediumValue: number | string
+  /** 高档位值 */
+  highValue: number | string
+  /** 参与循环切换的档位列表（按数组顺序依次切换），为空则默认全部四种档位 */
+  cycleModes: AcFanSpeedKey[]
+}
+
+/** 空调控制器点位绑定集合（5 个专用点位） */
+export interface AcControllerBindings {
+  /** 开关点位（开/关状态） */
+  power: PointBinding | null
+  /** 模式点位（自动/制热/制冷/风机） */
+  mode: PointBinding | null
+  /** 风速点位（自动/低/中/高） */
+  fanSpeed: PointBinding | null
+  /** 设定值点位（可读写，支持小数） */
+  setpoint: PointBinding | null
+  /** 当前值点位（只读） */
+  currentValue: PointBinding | null
+}
+
+/** 区域位置配置（绝对定位偏移，像素） */
+export interface ZonePosition {
+  x: number
+  y: number
+}
+
+/** 空调控制器组件配置 */
+export interface AcControllerComponentConfig extends BaseComponentConfig {
+  // ── 点位绑定 ──
+  bindings: AcControllerBindings
+
+  // ── 面板 ──
+  backgroundColor: string
+  borderRadius: number
+
+  // ── 标题 ──
+  title: string
+  titleFontSize: number
+  titleFontColor: string
+
+  // ── 电源开关 ──
+  powerIconSize: number
+  powerIconColor: string
+  powerActiveColor: string
+
+  // ── 仪表盘（el-progress dashboard） ──
+  gaugeSize: number
+  gaugeMin: number
+  gaugeMax: number
+  gaugeUnit: string
+  gaugeTrackWidth: number
+  gaugeTrackColor: string
+  gaugeFillColor: string
+  gaugeFillGradient?: string[]
+  gaugeFontSize: number
+  gaugeFontColor: string
+  gaugeStep: number
+
+  // ── 当前值显示 ──
+  currentValueLabel: string
+  currentValueFontSize: number
+  currentValueFontColor: string
+  currentValueUnit: string
+
+  // ── 模式按钮 ──
+  modeIconSize: number
+  modeIconColor: string
+  modeActiveIconColor: string
+  modeFontColor: string
+  modeActiveFontColor: string
+  modeAutoValue: number | string
+  modeCoolValue: number | string
+  modeHeatValue: number | string
+  modeFanValue: number | string
+
+  // ── 风速按钮 ──
+  fanFontSize: number
+  fanBackgroundColor: string
+  fanActiveBackgroundColor: string
+  fanFontColor: string
+  fanActiveFontColor: string
+  fanAutoValue: number | string
+  fanLowValue: number | string
+  fanMediumValue: number | string
+  fanHighValue: number | string
+
+  // ── 分区自由定位 ──
+  titlePosition: ZonePosition
+  powerPosition: ZonePosition
+  gaugePosition: ZonePosition
+  currentValuePosition: ZonePosition
+  modePosition: ZonePosition
+  fanSpeedPosition: ZonePosition
+}
+
+/** 空调面板2组件配置（紧凑型单图标版） */
+export interface AcController2ComponentConfig extends BaseComponentConfig {
+  // ── 点位绑定 ──
+  bindings: AcControllerBindings
+
+  // ── 面板 ──
+  backgroundColor: string
+  borderRadius: number
+
+  // ── 标题 ──
+  title: string
+  titleFontSize: number
+  titleFontColor: string
+
+  // ── 电源开关 ──
+  powerIconSize: number
+  powerIconColor: string
+  powerActiveColor: string
+
+  // ── 仪表盘 ──
+  gaugeSize: number
+  gaugeMin: number
+  gaugeMax: number
+  gaugeUnit: string
+  gaugeTrackWidth: number
+  gaugeTrackColor: string
+  gaugeFillColor: string
+  gaugeFillGradient?: string[]
+  gaugeFontSize: number
+  gaugeFontColor: string
+  gaugeStep: number
+
+  // ── 当前值 ──
+  currentValueLabel: string
+  currentValueFontSize: number
+  currentValueFontColor: string
+  currentValueUnit: string
+
+  // ── 模式（单图标循环切换） ──
+  modeIconSize: number
+  modeIconColor: string
+  modeActiveIconColor: string
+  modeAutoValue: number | string
+  modeCoolValue: number | string
+  modeHeatValue: number | string
+  modeFanValue: number | string
+  modeCycleModes: AcModeKey[]
+
+  // ── 风速（单图标循环切换） ──
+  fanIconSize: number
+  fanIconColor: string
+  fanActiveIconColor: string
+  fanAutoValue: number | string
+  fanLowValue: number | string
+  fanMediumValue: number | string
+  fanHighValue: number | string
+  fanCycleModes: AcFanSpeedKey[]
+
+  // ── 分区定位 ──
+  titlePosition: ZonePosition
+  powerPosition: ZonePosition
+  modePosition: ZonePosition
+  fanSpeedPosition: ZonePosition
+  gaugePosition: ZonePosition
+  currentValuePosition: ZonePosition
+}
+
 import type { ComponentType } from '../registry'
 
 /** 组件类型到统一配置的映射 */
@@ -497,16 +725,21 @@ export interface ComponentConfigMap {
   'chart-bar': BarChartComponentConfig
   indicator: IndicatorComponentConfig
   switch: SwitchComponentConfig
+  'light-button': LightButtonComponentConfig
   slider: SliderComponentConfig
   'slider-switch': SliderSwitchComponentConfig
   'slider-bar': SliderBarComponentConfig
   image: ImageComponentConfig
   button: ButtonComponentConfig
   acMode: AcModeComponentConfig
+  acModeIcon: AcModeIconComponentConfig
   acFanSpeed: AcFanSpeedComponentConfig
+  acFanSpeedIcon: AcFanSpeedIconComponentConfig
   'value-image-switch': ValueImageSwitchComponentConfig
   'nav-button': NavButtonComponentConfig
   popup: PopupComponentConfig
+  'ac-controller': AcControllerComponentConfig
+  'ac-controller-2': AcController2ComponentConfig
 }
 
 /** 组件统一配置类型 */

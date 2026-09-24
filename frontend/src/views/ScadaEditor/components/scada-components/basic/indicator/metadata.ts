@@ -9,6 +9,7 @@ const defaultConfig: IndicatorComponentConfig = {
   offColor: '#95a5a6',
   onValue: 1,
   offValue: 0,
+  value: 0,
   blinkOnAlarm: true
 }
 

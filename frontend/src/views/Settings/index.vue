@@ -25,6 +25,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useResponsive } from "@/utils/useResponsive";
 import { useUserStore } from "@/stores/users";
@@ -39,6 +40,8 @@ import VisualizationConfig from "./components/VisualizationConfig.vue";
 
 const { t } = useI18n();
 
+const route = useRoute();
+
 const { isTablet, isMobile, isMediumTablet, width } = useResponsive();
 
 const useCompactLayout = computed(() => {
@@ -49,7 +52,15 @@ const useCompactLayout = computed(() => {
   return false;
 });
 
-const activeMenu = ref("general");
+const VALID_MENUS = ["general", "logs", "backup", "users", "permissions", "visualization"] as const;
+type SettingsMenu = typeof VALID_MENUS[number];
+
+const initialMenu: SettingsMenu =
+  typeof route.query.tab === "string" && VALID_MENUS.includes(route.query.tab as SettingsMenu)
+    ? (route.query.tab as SettingsMenu)
+    : "general";
+
+const activeMenu = ref<SettingsMenu>(initialMenu);
 
 const userStore = useUserStore();
 

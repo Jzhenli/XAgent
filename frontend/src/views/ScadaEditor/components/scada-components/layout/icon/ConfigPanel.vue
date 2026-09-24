@@ -51,6 +51,7 @@ import { useI18n } from "vue-i18n";
 import { useScadaConfig } from "../../../../hooks/useScadaEditor";
 import type { ScadaComponent } from "../../../../types";
 import XIcon from "@/icon/index.vue";
+import { iconFontList } from "@/icon/x-icon";
 
 const { t } = useI18n();
 
@@ -81,22 +82,8 @@ const handleColorChange = (val: string | null) => {
   updateConfig("iconColor", isCleared ? "" : latestIconColor.value);
 };
 
-const svgModules = import.meta.glob("/src/icon/svg/*.svg") as Record<
-  string,
-  () => Promise<unknown>
->;
-
-const iconOptions = computed(() => {
-  const names = new Set<string>();
-  Object.keys(svgModules).forEach((path) => {
-    const fileName = path.split("/").pop() || "";
-    const match = /^_(.+?)_[A-Z]{2}(?:_\d+)?\.svg$/.exec(fileName);
-    if (match?.[1]) {
-      names.add(match[1]);
-    }
-  });
-  return Array.from(names).sort();
-});
+// 直接从 iconfont 列表取（XIcon 实际渲染依赖字体 class，SVG 文件名会多出不存在的基名）
+const iconOptions = computed(() => [...iconFontList].sort());
 </script>
 
 <style scoped>

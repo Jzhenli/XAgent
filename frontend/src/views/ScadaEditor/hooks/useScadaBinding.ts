@@ -217,6 +217,16 @@ function extractBoundAssets(components: ScadaComponent[]): string[] {
         }
       }
     }
+    // 4. ac-controller 组件的嵌套 bindings 对象（5 个专用点位）
+    const bindings = cfg?.bindings
+    if (bindings && typeof bindings === 'object' && !Array.isArray(bindings)) {
+      for (const key of Object.keys(bindings)) {
+        const bind = (bindings as Record<string, any>)[key]
+        if (bind?.deviceId) {
+          assets.add(bind.deviceId)
+        }
+      }
+    }
   }
   return Array.from(assets)
 }

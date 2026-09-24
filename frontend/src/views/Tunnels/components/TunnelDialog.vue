@@ -357,7 +357,7 @@
             </el-row>
             <el-form-item :label="t('channels.retryInterval')">
               <el-input-number v-model="form.retry_interval" :min="1" :max="300" />
-              <span class="unit-hint">{{ t('channels.retryIntervalHint') }}</span>
+              <span class="unit-hint">{{ t('channels.seconds') }}</span>
             </el-form-item>
           </el-collapse-item>
 
