@@ -30,6 +30,7 @@ const defaultConfig: AcControllerComponentConfig = {
   titleFontColor: '#ffffff',
 
   // 电源开关
+  powerIconSize: 20,
   powerIconColor: 'rgba(255, 255, 255, 0.5)',
   powerActiveColor: '#00d4ff',
 

@@ -220,6 +220,7 @@ const titleFontColor = computed(() => config.value.titleFontColor)
 
 const powerIconColor = computed(() => config.value.powerIconColor)
 const powerActiveColor = computed(() => config.value.powerActiveColor)
+const powerIconSize = computed(() => config.value.powerIconSize ?? 20)
 
 const gaugeMin = computed(() => config.value.gaugeMin)
 const gaugeMax = computed(() => config.value.gaugeMax)
@@ -551,6 +552,7 @@ const powerZoneStyle = computed(() => ({
 
 const powerIconStyle = computed(() => ({
   color: isOn.value ? powerActiveColor.value : powerIconColor.value,
+  fontSize: `${powerIconSize.value}px`,
 }))
 
 const gaugeZoneStyle = computed(() => ({
@@ -608,7 +610,6 @@ const fanZoneStyle = computed(() => ({
 }
 
 .power-icon {
-  font-size: 20px;
   transition: color 0.2s;
 }
 

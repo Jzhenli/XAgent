@@ -382,6 +382,22 @@
         </template>
         <div class="form-row">
           <div class="form-group">
+            <label>{{ t("componentConfig.iconSize") }}</label>
+            <input
+              type="number"
+              min="1"
+              :value="config.powerIconSize ?? 20"
+              @change="
+                updateConfig(
+                  'powerIconSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
             <label>{{ t("componentConfig.powerIconColor") }}</label>
             <el-color-picker
               :model-value="config.powerIconColor"

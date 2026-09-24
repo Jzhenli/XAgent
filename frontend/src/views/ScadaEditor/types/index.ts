@@ -558,6 +558,7 @@ export interface AcControllerComponentConfig extends BaseComponentConfig {
   titleFontColor: string
 
   // ── 电源开关 ──
+  powerIconSize: number
   powerIconColor: string
   powerActiveColor: string
 
