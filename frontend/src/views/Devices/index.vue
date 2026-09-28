@@ -123,6 +123,7 @@
           @deletePoint="onDeletePoint"
           @import="handlePointImport"
           @export="handlePointExport"
+          @clearAllPoints="handleClearAllPoints"
         />
       </div>
     </div>
@@ -156,6 +157,7 @@
           @deletePoint="onDeletePoint"
           @import="handlePointImport"
           @export="handlePointExport"
+          @clearAllPoints="handleClearAllPoints"
         />
       </div>
     </div>
@@ -576,6 +578,15 @@ const onSavePoint = () => {
 
 const onDeletePoint = (pointName: string) => {
   handleDeletePoint(pointName);
+};
+
+/**
+ * 清空所有点位成功回调：重新拉取设备点位列表
+ */
+const handleClearAllPoints = async () => {
+  if (selectedDeviceAsset.value) {
+    await pointStore.fetchDevicePoints(selectedDeviceAsset.value);
+  }
 };
 
 const onWritePoint = (point: PointDisplay) => {

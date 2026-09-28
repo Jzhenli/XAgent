@@ -76,6 +76,14 @@
                 <el-icon :size="16"><Upload /></el-icon>
                 <span>{{ t("devices.importPoints") }}</span>
               </el-dropdown-item>
+              <el-dropdown-item
+                command="clearAll"
+                class="dropdown-item-danger"
+                :disabled="clearingAll"
+              >
+                <el-icon :size="16"><Delete /></el-icon>
+                <span>{{ t("devices.clearAllPoints") }}</span>
+              </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -222,13 +230,50 @@
       </el-table>
     </div>
   </div>
+
+  <!-- 清空点位确认弹窗 -->
+  <el-dialog
+    v-model="showClearConfirmDialog"
+    :title="t('devices.clearAllPointsConfirmTitle')"
+    width="min(400px, 92vw)"
+    class="x-dialog"
+    align-center
+    :close-on-click-modal="false"
+    :close-on-press-escape="!clearingAll"
+    :show-close="!clearingAll"
+    :teleported="false"
+  >
+    <div class="clear-confirm-body">
+      <el-icon :size="36" class="clear-confirm-icon"><InfoFilled /></el-icon>
+      <div class="clear-confirm-text">
+        {{ t("devices.clearAllPointsConfirm", { count: points.length }) }}
+      </div>
+    </div>
+    <template #footer>
+      <el-button
+        :disabled="clearingAll"
+        @click="cancelClearAllPoints"
+      >
+        {{ t("common.cancel") }}
+      </el-button>
+      <el-button
+        type="danger"
+        :loading="clearingAll"
+        @click="confirmClearAllPoints"
+      >
+        {{ t("common.confirm") }}
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { watch, onUnmounted } from "vue";
+import { watch, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { ElMessage } from "element-plus";
 import { useUserStore } from "@/stores/users";
 import { usePointStore } from "@/stores/points";
+import { deviceApi } from "@/api/devices";
 import { Icon } from "@/icon/index";
 import {
   TrendCharts,
@@ -236,6 +281,8 @@ import {
   Search,
   Upload,
   Download,
+  Delete,
+  InfoFilled,
 } from "@element-plus/icons-vue";
 import type { PointDisplay } from "@/stores/points";
 
@@ -281,6 +328,7 @@ const emit = defineEmits<{
   (e: "deletePoint", pointName: string): void;
   (e: "import"): void;
   (e: "export"): void;
+  (e: "clearAllPoints"): void;
 }>();
 
 const { t } = useI18n();
@@ -333,12 +381,65 @@ onUnmounted(() => {
   stopPolling();
 });
 
+/** 清空点位确认弹窗可见性 */
+const showClearConfirmDialog = ref(false);
+/** 清空点位进行中（用于按钮 loading + 禁用关闭） */
+const clearingAll = ref(false);
+
 const handleDropdownCommand = (cmd: string) => {
   if (cmd === "import") {
     emit("import");
   } else if (cmd === "export") {
     emit("export");
+  } else if (cmd === "clearAll") {
+    openClearAllDialog();
   }
+};
+
+/**
+ * 打开清空点位确认弹窗
+ */
+const openClearAllDialog = () => {
+  if (!props.selectedAsset || clearingAll.value) return;
+  if (props.points.length === 0) return;
+  showClearConfirmDialog.value = true;
+};
+
+/**
+ * 确认执行清空：串行删除所有点位，期间弹窗保持打开 + 按钮 loading
+ */
+const confirmClearAllPoints = async () => {
+  if (!props.selectedAsset || clearingAll.value) return;
+
+  clearingAll.value = true;
+  try {
+    const pointNames = props.points.map((p) => p.name);
+
+    // 串行删除所有点位，不使用并发
+    for (const name of pointNames) {
+      await deviceApi.removePoint(props.selectedAsset, name);
+    }
+
+    ElMessage.success(t("devices.allPointsCleared"));
+    emit("clearAllPoints");
+    showClearConfirmDialog.value = false;
+  } catch (error: unknown) {
+    const detail =
+      (error as { response?: { data?: { detail?: string } }; message?: string })
+        ?.response?.data?.detail ||
+      (error as Error)?.message ||
+      t("common.unknownError");
+    ElMessage.error(t("common.deleteFailed") + ": " + detail);
+    showClearConfirmDialog.value = false;
+  } finally {
+    clearingAll.value = false;
+  }
+};
+
+/** 取消清空 */
+const cancelClearAllPoints = () => {
+  if (clearingAll.value) return;
+  showClearConfirmDialog.value = false;
 };
 </script>
 
@@ -633,6 +734,39 @@ const handleDropdownCommand = (cmd: string) => {
   background: rgba(102, 102, 255, 0.1) !important;
   color: rgba(102, 102, 255, 1) !important;
   transform: translateX(2px);
+}
+
+/* 危险操作项：红色文字 + 红色 hover */
+:deep(.point-more-menu .dropdown-item-danger) {
+  color: var(--el-color-danger) !important;
+  margin-top: 4px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border-light);
+}
+
+:deep(.point-more-menu .dropdown-item-danger:hover),
+:deep(.point-more-menu .dropdown-item-danger:focus),
+:deep(.point-more-menu .dropdown-item-danger:active) {
+  background: rgba(var(--el-color-danger-rgb, 239, 68, 68), 0.1) !important;
+  color: var(--el-color-danger) !important;
+}
+
+/* ========== 清空点位确认弹窗 ========== */
+.clear-confirm-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.clear-confirm-icon {
+  color: var(--el-color-warning);
+  flex-shrink: 0;
+}
+
+.clear-confirm-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-regular);
 }
 
 /* ========== 响应式：平板/小屏 ========== */

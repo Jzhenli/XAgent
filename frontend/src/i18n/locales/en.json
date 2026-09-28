@@ -311,6 +311,10 @@
     },
     "exportPoints": "Export Points",
     "importPoints": "Import Points",
+    "clearAllPoints": "Clear All Points",
+    "clearAllPointsConfirm": "Are you sure you want to clear all {count} points? This action cannot be undone.",
+    "clearAllPointsConfirmTitle": "Clear Points Confirmation",
+    "allPointsCleared": "All points cleared",
     "export": {
       "success": "Exported {count} devices",
       "importConfirm": "About to import {count} devices and their points. Continue?",

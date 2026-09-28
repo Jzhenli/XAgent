@@ -311,6 +311,10 @@
     },
     "exportPoints": "匯出點位",
     "importPoints": "匯入點位",
+    "clearAllPoints": "清空點位",
+    "clearAllPointsConfirm": "確定要清空所有 {count} 個點位嗎？此操作無法復原。",
+    "clearAllPointsConfirmTitle": "清空點位確認",
+    "allPointsCleared": "已清空所有點位",
     "export": {
       "success": "已匯出 {count} 個裝置",
       "importConfirm": "即將匯入 {count} 個裝置及其點位，是否繼續？",
