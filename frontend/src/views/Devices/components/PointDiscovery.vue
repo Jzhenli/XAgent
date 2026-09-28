@@ -255,6 +255,7 @@
           type="primary"
           :icon="CircleCheck"
           @click="handleBatchAdd"
+          :loading="batchAdding"
           :disabled="!canBatchOperate"
         >
           {{ t("devices.batchAddSelected", { count: selectedCount }) }}
@@ -523,6 +524,9 @@ const filteredPoints = computed(() => {
 
 const showBatchEditDialog = ref(false);
 
+/** 批量添加/删除请求进行中 */
+const batchAdding = ref(false);
+
 const batchEditForm = ref<BatchEditForm>({
   unit: "",
   scale: null,
@@ -725,6 +729,8 @@ const handleBatchAdd = async () => {
     return;
   }
 
+  batchAdding.value = true;
+
   try {
     await ElMessageBox.confirm(
       t("devices.batchSyncPointsConfirm", {
@@ -867,6 +873,8 @@ const handleBatchAdd = async () => {
       const detail = getErrorDetail(error, t("common.unknownError"));
       ElMessage.error(t("devices.batchAddFailedWithDetail", { detail }));
     }
+  } finally {
+    batchAdding.value = false;
   }
 };
 
