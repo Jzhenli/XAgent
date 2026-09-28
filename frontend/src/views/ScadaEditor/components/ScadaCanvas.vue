@@ -13,63 +13,65 @@
     @dragleave="handleDragLeave"
     @drop="handleDrop"
   >
-    <div v-if="showGrid" class="grid-overlay" :style="gridStyle" />
-    
-    <div v-if="guideLines.length > 0" class="guide-lines">
-      <div
-        v-for="(line, idx) in guideLines"
-        :key="idx"
-        class="guide-line"
-        :class="{ 'guide-x': line.type === 'x', 'guide-y': line.type === 'y' }"
-        :style="getGuideLineStyle(line)"
-      />
-    </div>
+    <div class="canvas-inner" :style="canvasInnerStyle">
+      <div v-if="showGrid" class="grid-overlay" :style="gridStyle" />
 
-    <div
-      v-if="boxSelectState.active"
-      class="box-select"
-      :style="boxSelectStyle"
-    />
-
-    <div
-      v-if="groupBBox"
-      class="group-bounding-box"
-      :style="groupBBox"
-    >
-      <span class="group-label">{{ $t('scada.groupTag') }}</span>
-    </div>
-
-    <div class="components-layer">
-      <div
-        v-for="comp in currentPanel?.components"
-        :key="comp.id"
-        class="component-wrapper"
-        :class="{
-          'component-selected': isSelected(comp.id),
-          'component-locked': comp.locked,
-          'component-hidden': !comp.visible
-        }"
-        :style="getComponentStyle(comp)"
-        :data-component-id="comp.id"
-      >
-        <component
-          :is="getComponent(comp.type)"
-          :component="comp"
-          :editing="isEditing"
-          @select="$emit('select', comp.id)"
-        />
-
+      <div v-if="guideLines.length > 0" class="guide-lines">
         <div
-          v-if="isSelected(comp.id) && isEditing && !comp.locked"
-          class="selection-border"
-        >
-          <div
-          v-for="handle in resizeHandles"
-          :key="handle"
-          class="resize-handle"
-          :class="handle"
-          @mousedown.stop="startResize(handle, comp.id, $event)"
+          v-for="(line, idx) in guideLines"
+          :key="idx"
+          class="guide-line"
+          :class="{ 'guide-x': line.type === 'x', 'guide-y': line.type === 'y' }"
+          :style="getGuideLineStyle(line)"
         />
+      </div>
+
+      <div
+        v-if="boxSelectState.active"
+        class="box-select"
+        :style="boxSelectStyle"
+      />
+
+      <div
+        v-if="groupBBox"
+        class="group-bounding-box"
+        :style="groupBBox"
+      >
+        <span class="group-label">{{ $t('scada.groupTag') }}</span>
+      </div>
+
+      <div class="components-layer">
+        <div
+          v-for="comp in currentPanel?.components"
+          :key="comp.id"
+          class="component-wrapper"
+          :class="{
+            'component-selected': isSelected(comp.id),
+            'component-locked': comp.locked,
+            'component-hidden': !comp.visible
+          }"
+          :style="getComponentStyle(comp)"
+          :data-component-id="comp.id"
+        >
+          <component
+            :is="getComponent(comp.type)"
+            :component="comp"
+            :editing="isEditing"
+            @select="$emit('select', comp.id)"
+          />
+
+          <div
+            v-if="isSelected(comp.id) && isEditing && !comp.locked"
+            class="selection-border"
+          >
+            <div
+            v-for="handle in resizeHandles"
+            :key="handle"
+            class="resize-handle"
+            :class="handle"
+            @mousedown.stop="startResize(handle, comp.id, $event)"
+          />
+          </div>
         </div>
       </div>
     </div>
@@ -255,6 +257,7 @@ onUnmounted(() => {
 
 const isSelected = (id: string) => selectedComponentIds.value.includes(id)
 
+/** 外层画布：硬放大尺寸，用作滚动区域 */
 const canvasStyle = computed(() => ({
   width: `${canvasWidth.value * zoom.value}px`,
   height: `${canvasHeight.value * zoom.value}px`,
@@ -264,27 +267,35 @@ const canvasStyle = computed(() => ({
   backgroundPosition: 'center'
 }))
 
+/** 内层画布：保持逻辑尺寸 + transform scale，整体缩放所有内容 */
+const canvasInnerStyle = computed(() => ({
+  width: `${canvasWidth.value}px`,
+  height: `${canvasHeight.value}px`,
+  transform: `scale(${zoom.value})`,
+  transformOrigin: 'top left'
+}))
+
 const gridStyle = computed(() => ({
-  backgroundSize: `${gridSize.value * zoom.value}px ${gridSize.value * zoom.value}px`,
+  backgroundSize: `${gridSize.value}px ${gridSize.value}px`,
   backgroundImage: `linear-gradient(to right, rgba(34, 211, 238, 0.15) 1px, transparent 1px),
                     linear-gradient(to bottom, rgba(168, 85, 247, 0.15) 1px, transparent 1px)`
 }))
 
 const getGuideLineStyle = (line: GuideLine) => {
   if (line.type === 'x') {
-    return { left: `${line.pos * zoom.value}px`, height: '100%', width: '1px' }
+    return { left: `${line.pos}px`, height: '100%', width: '1px' }
   }
-  return { top: `${line.pos * zoom.value}px`, width: '100%', height: '1px' }
+  return { top: `${line.pos}px`, width: '100%', height: '1px' }
 }
 
 const boxSelectStyle = computed(() => {
   const start = boxSelectState.value.start
   const end = boxSelectState.value.end
   return {
-    left: `${Math.min(start.x, end.x) * zoom.value}px`,
-    top: `${Math.min(start.y, end.y) * zoom.value}px`,
-    width: `${Math.abs(end.x - start.x) * zoom.value}px`,
-    height: `${Math.abs(end.y - start.y) * zoom.value}px`
+    left: `${Math.min(start.x, end.x)}px`,
+    top: `${Math.min(start.y, end.y)}px`,
+    width: `${Math.abs(end.x - start.x)}px`,
+    height: `${Math.abs(end.y - start.y)}px`
   }
 })
 
@@ -323,18 +334,18 @@ const groupBBox = computed(() => {
   })
 
   return {
-    left: `${(minX - 4) * zoom.value}px`,
-    top: `${(minY - 4) * zoom.value}px`,
-    width: `${(maxX - minX + 8) * zoom.value}px`,
-    height: `${(maxY - minY + 8) * zoom.value}px`
+    left: `${minX - 4}px`,
+    top: `${minY - 4}px`,
+    width: `${maxX - minX + 8}px`,
+    height: `${maxY - minY + 8}px`
   }
 })
 
 const getComponentStyle = (comp: { x: number; y: number; config: { width: number; height: number } }) => ({
-  left: `${comp.x * zoom.value}px`,
-  top: `${comp.y * zoom.value}px`,
-  width: `${comp.config.width * zoom.value}px`,
-  height: `${comp.config.height * zoom.value}px`
+  left: `${comp.x}px`,
+  top: `${comp.y}px`,
+  width: `${comp.config.width}px`,
+  height: `${comp.config.height}px`
 })
 </script>
 
@@ -345,6 +356,12 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
   cursor: crosshair;
   border-radius: 8px;
   border: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+.canvas-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .grid-overlay {

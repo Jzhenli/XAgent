@@ -266,6 +266,8 @@ const setPreviewMode = (enabled: boolean, fullscreen = false) => {
   isPreviewMode.value = enabled
   scada.isFullscreenPreview.value = fullscreen
   scada.isEditing.value = !enabled
+  // 进入预览模式重置编辑器 zoom，由 useScadaAdapt 负责适配缩放
+  if (enabled) scada.zoom.value = 1
 }
 
 const handleFullscreenChange = () => {

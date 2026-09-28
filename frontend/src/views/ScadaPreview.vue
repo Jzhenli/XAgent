@@ -68,6 +68,8 @@ onMounted(async () => {
     scada.isFullscreenPreview.value = true
     // 必须在 loadPanel 前设置：确保 boundAssets watch 触发时 refreshBoundDevices 不被 isEditing 短路
     scada.isEditing.value = false
+    // 预览模式重置编辑器 zoom，由 useScadaAdapt 负责适配缩放
+    scada.zoom.value = 1
     await scada.loadPanel(panelId)
     // loadPanel 后 boundAssets 变化 → boundAssets watch 自动触发 refreshBoundDevices
   }
