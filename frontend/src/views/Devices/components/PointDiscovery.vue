@@ -170,20 +170,21 @@
         <!-- 点位表格 -->
         <el-table
           v-else
-          ref="tableRef"
           :data="filteredPoints"
           :row-key="
             (row: DiscoveredPoint) =>
               `${row.object_type}:${row.object_instance}`
           "
           @selection-change="handleSelectionChange"
+          :row-class-name="pointRowClassName"
           max-height="360"
         >
-          <el-table-column type="selection" width="48" />
+          <el-table-column
+            type="selection"
+            :selectable="isSelectableRow"
+          />
           <el-table-column prop="object_type" :label="t('devices.type')">
-            <template #default="{ row }">
-              <el-tag>{{ row.object_type }}</el-tag>
-            </template>
+            
           </el-table-column>
           <el-table-column
             prop="object_instance"
@@ -193,13 +194,11 @@
           <el-table-column
             prop="object_name"
             :label="t('devices.name')"
-            show-overflow-tooltip
           />
-          <el-table-column
+          <!-- <el-table-column
             prop="description"
             :label="t('devices.description')"
-            show-overflow-tooltip
-          />
+          /> -->
           <el-table-column
             prop="writable"
             :label="t('devices.access')"
@@ -208,6 +207,26 @@
             <template #default="{ row }">
               <el-tag :type="row.writable ? 'success' : 'info'">
                 {{ row.writable ? t("common.write") : t("common.read") }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('common.status')" align="center">
+            <template #default="{ row }">
+              <el-tag
+                v-if="isExistingRow(row)"
+                type="warning"
+                size="small"
+                effect="plain"
+              >
+                {{ t("devices.alreadyAdded") }}
+              </el-tag>
+              <el-tag
+                v-else
+                type="success"
+                size="small"
+                effect="plain"
+              >
+                {{ t("devices.availableToAdd") }}
               </el-tag>
             </template>
           </el-table-column>
@@ -256,7 +275,7 @@
           :icon="CircleCheck"
           @click="handleBatchAdd"
           :loading="batchAdding"
-          :disabled="!canBatchOperate"
+          :disabled="selectedCount === 0"
         >
           {{ t("devices.batchAddSelected", { count: selectedCount }) }}
         </el-button>
@@ -323,7 +342,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
@@ -462,44 +481,37 @@ let progressTimer: ReturnType<typeof setInterval> | null = null;
 
 const selectedPoints = ref<DiscoveredPoint[]>([]);
 
-/** 表格引用，用于程序化操作行勾选 */
-interface TableInstance {
-  toggleRowSelection: (row: DiscoveredPoint, selected?: boolean) => void;
-}
-const tableRef = ref<TableInstance | null>(null);
-
-/** 设备上已存在的点位（发现前拉取，用于对比自动勾选） */
+/** 设备上已存在的点位（发现前拉取，用于对比） */
 const existingDevicePoints = ref<PointConfig[]>([]);
 
 /** 生成点位唯一标识 key */
 const getPointKey = (type: string, instance: number | string): string =>
   `${type}:${instance}`;
 
-/** 根据已存在点位，在表格中自动勾选匹配的行 */
-const autoSelectExistingPoints = async () => {
-  if (existingDevicePoints.value.length === 0) return;
-
-  // 等待 Vue 完成渲染（表格在 v-else 块中，需要等 discoveredPoints 变更后 DOM 更新）
-  await nextTick();
-
-  if (!tableRef.value) return;
-
-  const existingKeys = new Set(
+/** 已存在点位 key 集合（Set，O(1) 查询） */
+const existingPointKeys = computed(() =>
+  new Set(
     existingDevicePoints.value.map((p) =>
       getPointKey(
         (p.config?.object_type as string) || "",
         (p.config?.object_instance as number) || 0,
       ),
     ),
+  ),
+);
+
+/** 判断某发现点位是否已在设备上存在 */
+const isExistingRow = (row: DiscoveredPoint): boolean =>
+  existingPointKeys.value.has(
+    getPointKey(row.object_type, row.object_instance),
   );
 
-  discoveredPoints.value.forEach((row) => {
-    const key = getPointKey(row.object_type, row.object_instance);
-    if (existingKeys.has(key)) {
-      tableRef.value?.toggleRowSelection(row, true);
-    }
-  });
-};
+/** selection 列 selectable：已存在的点位不可勾选 */
+const isSelectableRow = (row: DiscoveredPoint): boolean => !isExistingRow(row);
+
+/** 行 class：已存在点位置灰 */
+const pointRowClassName = ({ row }: { row: DiscoveredPoint }): string =>
+  isExistingRow(row) ? "existing-point-row" : "";
 
 // ========== 搜索过滤 ==========
 
@@ -539,31 +551,6 @@ const batchEditForm = ref<BatchEditForm>({
 
 /** 已选中的点位数量 */
 const selectedCount = computed(() => selectedPoints.value.length);
-
-/** 需要移除的点位数量（已存在但被取消勾选） */
-const removeCount = computed(() => {
-  const selectedKeys = new Set(
-    selectedPoints.value.map((p) => getPointKey(p.object_type, p.object_instance)),
-  );
-  const existingKeys = new Set(
-    existingDevicePoints.value.map((p) =>
-      getPointKey(
-        (p.config?.object_type as string) || "",
-        (p.config?.object_instance as number) || 0,
-      ),
-    ),
-  );
-  return discoveredPoints.value.filter(
-    (p) =>
-      existingKeys.has(getPointKey(p.object_type, p.object_instance)) &&
-      !selectedKeys.has(getPointKey(p.object_type, p.object_instance)),
-  ).length;
-});
-
-/** 批量操作是否可执行：有勾选或有取消勾选的已存在点位 */
-const canBatchOperate = computed(
-  () => selectedCount.value > 0 || removeCount.value > 0,
-);
 
 // ========== 事件处理 ==========
 
@@ -631,11 +618,6 @@ const handleDiscoverPoints = async () => {
       discoveredPoints.value = response.points ?? [];
       currentStep.value = STEP_RESULT;
 
-      // 自动勾选已存在的点位
-      if (existingPoints.length > 0 && discoveredPoints.value.length > 0) {
-        autoSelectExistingPoints();
-      }
-
       if (response.total === 0) {
         ElMessage.warning(t("devices.discoveryNoPointsFound"));
       } else {
@@ -692,39 +674,12 @@ const handleBatchEditConfirm = () => {
 
 /**
  * 将已选点位批量添加到设备
- * 同时处理取消勾选的已存在点位 → 自动删除
+ * 已存在点位在表格中被禁用，不会出现在 selectedPoints 里
  */
 const handleBatchAdd = async () => {
-  // 计算需要添加和移除的点位
-  const selectedKeys = new Set(
-    selectedPoints.value.map((p) => getPointKey(p.object_type, p.object_instance)),
-  );
+  const pointsToAdd = selectedPoints.value;
 
-  const existingDiscoveredKeys = new Set(
-    existingDevicePoints.value.map((p) =>
-      getPointKey(
-        (p.config?.object_type as string) || "",
-        (p.config?.object_instance as number) || 0,
-      ),
-    ),
-  );
-
-  // 需要移除的：已存在但未勾选的点位
-  const pointsToRemove = discoveredPoints.value.filter(
-    (p) =>
-      existingDiscoveredKeys.has(getPointKey(p.object_type, p.object_instance)) &&
-      !selectedKeys.has(getPointKey(p.object_type, p.object_instance)),
-  );
-
-  // 需要添加的：已勾选但尚未存在的点位（已存在的跳过，避免重复添加）
-  const pointsToAdd = selectedPoints.value.filter(
-    (p) =>
-      !existingDiscoveredKeys.has(
-        getPointKey(p.object_type, p.object_instance),
-      ),
-  );
-
-  if (pointsToAdd.length === 0 && pointsToRemove.length === 0) {
+  if (pointsToAdd.length === 0) {
     ElMessage.warning(t("devices.pleaseSelectPointsToAdd"));
     return;
   }
@@ -733,10 +688,7 @@ const handleBatchAdd = async () => {
 
   try {
     await ElMessageBox.confirm(
-      t("devices.batchSyncPointsConfirm", {
-        addCount: pointsToAdd.length,
-        deleteCount: pointsToRemove.length,
-      }),
+      t("devices.batchAddPointsConfirm", { count: pointsToAdd.length }),
       t("devices.batchAddConfirmTitle"),
       {
         confirmButtonText: t("common.confirm"),
@@ -746,139 +698,100 @@ const handleBatchAdd = async () => {
       },
     );
 
-    // 先执行移除（串行，避免并发）
-    if (pointsToRemove.length > 0) {
-      for (const point of pointsToRemove) {
-        const existing = existingDevicePoints.value.find(
-          (p) =>
-            getPointKey(
-              (p.config?.object_type as string) || "",
-              (p.config?.object_instance as number) || 0,
-            ) === getPointKey(point.object_type, point.object_instance),
-        );
-        if (existing) {
-          await deviceApi.removePoint(props.deviceAsset, existing.name);
-        }
-      }
+    // 构造完整 payload 后按 chunk 串行请求，避免后端超时
+    const addPayload: PointConfig[] = pointsToAdd.map((point) => {
+      const config: Record<string, unknown> = {
+        object_type: point.object_type,
+        object_instance: point.object_instance,
+        writable: point.writable,
+      };
+      if (batchEditForm.value.scale !== null)
+        config.scale = batchEditForm.value.scale;
+      if (batchEditForm.value.offset !== null)
+        config.offset = batchEditForm.value.offset;
+
+      const metadata: Record<string, unknown> = {};
+      if (batchEditForm.value.unit) metadata.unit = batchEditForm.value.unit;
+      if (batchEditForm.value.alarm_high !== null)
+        metadata.alarm_high = batchEditForm.value.alarm_high;
+      if (batchEditForm.value.alarm_low !== null)
+        metadata.alarm_low = batchEditForm.value.alarm_low;
+
+      return {
+        name: point.object_name,
+        description:
+          point.description || `${point.object_type}:${point.object_instance}`,
+        data_type: point.data_type,
+        enabled: true,
+        config,
+        metadata,
+        tags: [],
+      };
+    });
+
+    const chunkSize = 1;
+    const merged: BatchAddPointsResponse = {
+      success: true,
+      message: "",
+      asset: props.deviceAsset,
+      total: 0,
+      succeeded: 0,
+      failed: 0,
+      details: [],
+    };
+
+    for (let i = 0; i < addPayload.length; i += chunkSize) {
+      const chunk = addPayload.slice(i, i + chunkSize);
+      const resp = await deviceApi.batchAddPoints(props.deviceAsset, {
+        points: chunk,
+      });
+      merged.total += resp.total;
+      merged.succeeded += resp.succeeded;
+      merged.failed += resp.failed;
+      merged.details.push(...(resp.details ?? []));
+      if (!resp.success) merged.success = false;
     }
 
-    let batchAddResult: BatchAddPointsResponse | null = null;
-
-    // 再执行添加：构造完整 payload 后按 CHUNK_SIZE 切片串行请求，避免后端超时
-    if (pointsToAdd.length > 0) {
-      const addPayload: PointConfig[] = pointsToAdd.map((point) => {
-        const config: Record<string, unknown> = {
-          object_type: point.object_type,
-          object_instance: point.object_instance,
-          writable: point.writable,
-        };
-        if (batchEditForm.value.scale !== null)
-          config.scale = batchEditForm.value.scale;
-        if (batchEditForm.value.offset !== null)
-          config.offset = batchEditForm.value.offset;
-
-        const metadata: Record<string, unknown> = {};
-        if (batchEditForm.value.unit) metadata.unit = batchEditForm.value.unit;
-        if (batchEditForm.value.alarm_high !== null)
-          metadata.alarm_high = batchEditForm.value.alarm_high;
-        if (batchEditForm.value.alarm_low !== null)
-          metadata.alarm_low = batchEditForm.value.alarm_low;
-
-        return {
-          name: point.object_name,
-          description:
-            point.description || `${point.object_type}:${point.object_instance}`,
-          data_type: point.data_type,
-          enabled: true,
-          config,
-          metadata,
-          tags: [],
-        };
-      });
-
-      const chunkSize = 1;
-      const merged: BatchAddPointsResponse = {
-        success: true,
-        message: "",
-        asset: props.deviceAsset,
-        total: 0,
-        succeeded: 0,
-        failed: 0,
-        details: [],
-      };
-
-      for (let i = 0; i < addPayload.length; i += chunkSize) {
-        const chunk = addPayload.slice(i, i + chunkSize);
-        const resp = await deviceApi.batchAddPoints(props.deviceAsset, {
-          points: chunk,
-        });
-        merged.total += resp.total;
-        merged.succeeded += resp.succeeded;
-        merged.failed += resp.failed;
-        merged.details.push(...(resp.details ?? []));
-        if (!resp.success) merged.success = false;
-      }
-
-      batchAddResult = merged;
-
-      if (!batchAddResult.success) {
-        ElMessage.error(
-          batchAddResult.message || t("devices.batchAddFailed"),
-        );
-        return;
-      }
+    if (!merged.success) {
+      ElMessage.error(merged.message || t("devices.batchAddFailed"));
+      return;
     }
 
     const messages: string[] = [];
     let allFailed = false;
 
-    if (batchAddResult && batchAddResult.total > 0) {
-      if (batchAddResult.failed > 0) {
-        const errorDetails = (batchAddResult.details || [])
-          .filter((d) => d["status"] === "failed")
-          .map(
-            (d) => `${d["point_name"]}: ${d["message"]}`,
-          )
-          .join("; ");
+    if (merged.failed > 0) {
+      const errorDetails = (merged.details || [])
+        .filter((d) => d["status"] === "failed")
+        .map((d) => `${d["point_name"]}: ${d["message"]}`)
+        .join("; ");
 
-        if (batchAddResult.succeeded > 0) {
-          messages.push(
-            t("devices.batchAddPointsPartial", {
-              succeeded: batchAddResult.succeeded,
-              failed: batchAddResult.failed,
-            }) + (errorDetails ? ` (${errorDetails})` : ""),
-          );
-        } else {
-          messages.push(
-            t("devices.batchAddPointsAllFailed", {
-              count: batchAddResult.failed,
-            }) + (errorDetails ? `: ${errorDetails}` : ""),
-          );
-          allFailed = true;
-        }
+      if (merged.succeeded > 0) {
+        messages.push(
+          t("devices.batchAddPointsPartial", {
+            succeeded: merged.succeeded,
+            failed: merged.failed,
+          }) + (errorDetails ? ` (${errorDetails})` : ""),
+        );
       } else {
         messages.push(
-          t("devices.batchAddPointsSuccess", {
-            count: batchAddResult.succeeded,
-          }),
+          t("devices.batchAddPointsAllFailed", { count: merged.failed }) +
+            (errorDetails ? `: ${errorDetails}` : ""),
         );
+        allFailed = true;
       }
-    }
-
-    if (pointsToRemove.length > 0) {
+    } else {
       messages.push(
-        t("devices.batchRemovePointsSuccess", {
-          count: pointsToRemove.length,
-        }),
+        t("devices.batchAddPointsSuccess", { count: merged.succeeded }),
       );
     }
 
     const resultMessage = messages.join(" ");
     if (allFailed) {
       ElMessage.error(resultMessage);
-    } else if (batchAddResult && batchAddResult.failed > 0) {
+    } else if (merged.failed > 0) {
       ElMessage.warning(resultMessage);
-    } else if (resultMessage) {
+    } else {
       ElMessage.success(resultMessage);
     }
 
@@ -1051,6 +964,15 @@ const handleClose = () => {
 
 .search-result-card :deep(.el-table__body tr:hover > td.el-table__cell) {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 已存在点位：行灰化 + 禁用 checkbox 光标 */
+.search-result-card :deep(.el-table__row.existing-point-row) {
+  opacity: 0.55;
+}
+
+.search-result-card :deep(.el-table__row.existing-point-row .el-checkbox) {
+  cursor: not-allowed;
 }
 
 .search-result-card :deep(.el-checkbox__inner) {
@@ -1320,7 +1242,7 @@ const handleClose = () => {
 }
 
 .el-table :deep(.el-table__row) {
-  height: 44px;
+  height: auto;
 }
 
 .el-table th {
@@ -1330,6 +1252,16 @@ const handleClose = () => {
 
 .el-table td {
   padding: 8px 0;
+}
+
+/* 单元格强制换行，避免省略号，支持多行文本自动撑开 */
+.search-result-card :deep(.el-table__cell .cell) {
+  white-space: normal !important;
+  word-break: break-word;
+  line-height: 1.5;
+  max-height: none !important;
+  -webkit-line-clamp: unset !important;
+  display: block !important;
 }
 
 /* ========== 空状态样式 ========== */

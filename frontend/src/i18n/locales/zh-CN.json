@@ -315,6 +315,8 @@
     "clearAllPointsConfirm": "确定要清空所有 {count} 个点位吗？此操作不可恢复。",
     "clearAllPointsConfirmTitle": "清空点位确认",
     "allPointsCleared": "已清空所有点位",
+    "alreadyAdded": "已添加",
+    "availableToAdd": "可添加",
     "export": {
       "success": "已导出 {count} 个设备",
       "importConfirm": "即将导入 {count} 个设备及其点位，是否继续？",
@@ -581,6 +583,7 @@
     "addDeviceFailed": "添加失败: {detail}",
     "pleaseSelectDevices": "请先选择要添加的设备",
     "batchAddConfirmTitle": "批量添加确认",
+    "batchAddPointsConfirm": "确定要批量添加 {count} 个点位吗？",
     "batchAddConfirm": "确定要批量添加 {count} 个设备吗？",
     "batchAddSuccess": "成功添加 {count} 个设备",
     "batchAddFailed": "批量添加失败",

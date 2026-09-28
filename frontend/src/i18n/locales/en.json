@@ -315,6 +315,8 @@
     "clearAllPointsConfirm": "Are you sure you want to clear all {count} points? This action cannot be undone.",
     "clearAllPointsConfirmTitle": "Clear Points Confirmation",
     "allPointsCleared": "All points cleared",
+    "alreadyAdded": "Added",
+    "availableToAdd": "Available",
     "export": {
       "success": "Exported {count} devices",
       "importConfirm": "About to import {count} devices and their points. Continue?",
@@ -581,6 +583,7 @@
     "addDeviceFailed": "Failed to add device: {detail}",
     "pleaseSelectDevices": "Please select devices to add",
     "batchAddConfirmTitle": "Batch Add Confirmation",
+    "batchAddPointsConfirm": "Are you sure you want to batch add {count} points?",
     "batchAddConfirm": "Are you sure you want to batch add {count} devices?",
     "batchAddSuccess": "Successfully added {count} devices",
     "batchAddFailed": "Batch add failed",
