@@ -729,7 +729,7 @@ const handleBatchAdd = async () => {
       };
     });
 
-    const chunkSize = 1;
+    const chunkSize = 10;
     const merged: BatchAddPointsResponse = {
       success: true,
       message: "",
