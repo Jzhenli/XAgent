@@ -258,15 +258,15 @@
 
         <!-- 设备基本信息 -->
         <div class="device-item-content">
-          <div class="device-item-name">{{ device.name }}</div>
+          <el-tooltip
+            :content="device.name"
+            placement="top"
+            :show-after="300"
+          >
+            <div class="device-item-name">{{ device.name }}</div>
+          </el-tooltip>
           <div class="device-item-meta">
-            <el-tooltip
-              :content="device.pluginName"
-              placement="top"
-              :show-after="300"
-            >
-              <div class="meta-plugin-name">{{ device.pluginName }}</div>
-            </el-tooltip>
+            <div class="meta-plugin-name">{{ device.pluginName }}</div>
             <span class="meta-point-count"
               >{{ device.pointCount }} {{ t("devices.devicePoints") }}</span
             >
