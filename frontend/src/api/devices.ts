@@ -70,12 +70,13 @@ export const deviceApi = {
   },
 
   async updatePoint(asset: string, pointName: string, updates: Record<string, unknown>): Promise<PointCreateResponse> {
-    const res = await api.put(`/api/devices/${asset}/points/${pointName}`, updates)
+    // 点位名可能含 "#"（URL fragment 分隔符），必须编码为 %23
+    const res = await api.put(`/api/devices/${asset}/points/${encodeURIComponent(pointName)}`, updates)
     return res.data
   },
 
   async removePoint(asset: string, pointName: string): Promise<void> {
-    await api.delete(`/api/devices/${asset}/points/${pointName}`)
+    await api.delete(`/api/devices/${asset}/points/${encodeURIComponent(pointName)}`)
   },
 
   async batchCreate(devices: DeviceConfig[]): Promise<BatchOperationResult> {
