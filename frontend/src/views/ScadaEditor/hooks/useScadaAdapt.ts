@@ -48,13 +48,12 @@ export function useScadaAdapt(containerRef: Ref<HTMLElement | null>) {
     normalizeAdaptMode(scada.currentPanel.value?.adaptMode)
   )
 
-  /** 画布渲染尺寸（画布逻辑尺寸 × 编辑器缩放） */
+  /** 画布逻辑尺寸（由 ScadaCanvas 内部处理编辑器 zoom，此处仅用面板原始尺寸） */
   const canvasSize = computed(() => {
     const panel = scada.currentPanel.value
-    const zoom = scada.zoom.value || 1
     return {
-      width: (panel?.width || 0) * zoom,
-      height: (panel?.height || 0) * zoom
+      width: panel?.width || 0,
+      height: panel?.height || 0
     }
   })
 
