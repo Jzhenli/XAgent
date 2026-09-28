@@ -59,6 +59,24 @@ export function useScadaCanvas() {
     type: 'canvas'
   })
 
+  /** 画布平移状态 */
+  const panState = ref<{
+    active: boolean
+    startClientX: number
+    startClientY: number
+    startScrollLeft: number
+    startScrollTop: number
+  }>({
+    active: false,
+    startClientX: 0,
+    startClientY: 0,
+    startScrollLeft: 0,
+    startScrollTop: 0
+  })
+
+  /** 空格键是否按下（用于触发画布平移） */
+  const spacePressed = ref(false)
+
   // ─── 计算属性 ──────────────────────────────────────────────────────
 
   /** 当前面板数据 */
@@ -127,6 +145,27 @@ export function useScadaCanvas() {
     // 左键点击时关闭右键菜单
     if (e.button === 0 && contextMenu.value.visible) {
       closeContextMenu()
+    }
+
+    // ─── 画布平移触发：空格键+左键 或 中键 ───
+    if ((e.button === 0 && spacePressed.value) || e.button === 1) {
+      e.preventDefault()
+
+      // 获取外层滚动容器
+      const wrapper = canvasRef.value?.closest('.canvas-wrapper') as HTMLElement | null
+      if (wrapper) {
+        panState.value = {
+          active: true,
+          startClientX: e.clientX,
+          startClientY: e.clientY,
+          startScrollLeft: wrapper.scrollLeft,
+          startScrollTop: wrapper.scrollTop
+        }
+        // 平移期间使用 document 级监听器，防止鼠标离开画布时事件丢失
+        document.addEventListener('mousemove', handlePanMove)
+        document.addEventListener('mouseup', handlePanUp)
+      }
+      return
     }
 
     const pos = screenToCanvas(e.clientX, e.clientY)
@@ -586,6 +625,7 @@ export function useScadaCanvas() {
     dragState.value.active = false
     boxSelectState.value.active = false
     resizeState.value.active = false
+    panState.value.active = false
     guideLines.value = []
   }
 
@@ -594,6 +634,10 @@ export function useScadaCanvas() {
    */
   const handleMouseLeave = () => {
     isMouseOnCanvas.value = false
+    // 兜底：平移模式下离开画布时清理（通常 document 级 mouseup 会先处理）
+    if (panState.value.active) {
+      handlePanUp()
+    }
   }
 
   /**
@@ -768,6 +812,24 @@ export function useScadaCanvas() {
    * @param e - 键盘事件
    */
   const handleKeyDown = (e: KeyboardEvent) => {
+    // Space 键状态追踪（不在表单内时阻止默认滚动行为）
+    if (e.code === 'Space' || e.key === ' ') {
+      spacePressed.value = true
+      const target = e.target as HTMLElement | null
+      const isFormElementFocused = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable ||
+        target.closest('input, textarea, select, [contenteditable]') !== null
+      )
+      if (!isFormElementFocused) {
+        e.preventDefault()
+      }
+      // Space 仅用于平移触发，不走下方快捷键分支
+      return
+    }
+
     if (!isEditing.value) return
 
     const target = e.target as HTMLElement | null
@@ -875,6 +937,35 @@ export function useScadaCanvas() {
     }
   }
 
+  /**
+   * 处理键盘按键释放事件
+   * 用于清除 Space 键状态，防止平移模式卡住
+   */
+  const handleKeyUp = (e: KeyboardEvent) => {
+    if (e.code === 'Space' || e.key === ' ') {
+      spacePressed.value = false
+    }
+  }
+
+  // ─── 画布平移的 document 级监听器 ──────────────────────────────────
+
+  /** 平移期间的 mousemove 处理（document 级，保证鼠标离开画布仍可响应） */
+  const handlePanMove = (e: MouseEvent) => {
+    if (!panState.value.active) return
+    const wrapper = canvasRef.value?.closest('.canvas-wrapper') as HTMLElement | null
+    if (wrapper) {
+      wrapper.scrollLeft = panState.value.startScrollLeft - (e.clientX - panState.value.startClientX)
+      wrapper.scrollTop = panState.value.startScrollTop - (e.clientY - panState.value.startClientY)
+    }
+  }
+
+  /** 平移结束清理 */
+  const handlePanUp = () => {
+    panState.value.active = false
+    document.removeEventListener('mousemove', handlePanMove)
+    document.removeEventListener('mouseup', handlePanUp)
+  }
+
   // ─── 拖拽组件到画布 ──────────────────────────────────────────────────
 
   /**
@@ -930,11 +1021,25 @@ export function useScadaCanvas() {
 
   onMounted(() => {
     document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('keyup', handleKeyUp)
+    // 窗口失焦时清除 space 状态，防止平移模式卡住
+    window.addEventListener('blur', handleWindowBlur)
   })
 
   onUnmounted(() => {
     document.removeEventListener('keydown', handleKeyDown)
+    document.removeEventListener('keyup', handleKeyUp)
+    window.removeEventListener('blur', handleWindowBlur)
+    // 卸载时清除可能残留的平移 document 级监听器
+    document.removeEventListener('mousemove', handlePanMove)
+    document.removeEventListener('mouseup', handlePanUp)
   })
+
+  /** 窗口失焦时清除所有临时键盘状态 */
+  const handleWindowBlur = () => {
+    spacePressed.value = false
+    panState.value.active = false
+  }
 
   return {
     // 状态引用
@@ -946,6 +1051,8 @@ export function useScadaCanvas() {
     resizeState,
     guideLines,
     contextMenu,
+    panState,
+    spacePressed,
     // 计算属性
     currentPanel,
     selectedComponent,
@@ -966,6 +1073,7 @@ export function useScadaCanvas() {
     closeContextMenu,
     handleContextAction,
     handleKeyDown,
+    handleKeyUp,
     handleDragOver,
     handleDragLeave,
     handleDrop,

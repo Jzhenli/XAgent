@@ -189,6 +189,8 @@ const {
   zoom,
   showGrid,
   contextMenu,
+  panState,
+  spacePressed,
   handleMouseDown,
   handleMouseMove,
   handleMouseUp,
@@ -264,7 +266,10 @@ const canvasStyle = computed(() => ({
   backgroundColor: currentPanel.value?.backgroundColor || '#f0f2f5',
   backgroundImage: currentPanel.value?.backgroundImage ? `url(${currentPanel.value.backgroundImage})` : undefined,
   backgroundSize: 'cover',
-  backgroundPosition: 'center'
+  backgroundPosition: 'center',
+  cursor: spacePressed.value
+    ? (panState.value.active ? 'grabbing' : 'grab')
+    : 'crosshair'
 }))
 
 /** 内层画布：保持逻辑尺寸 + transform scale，整体缩放所有内容 */
