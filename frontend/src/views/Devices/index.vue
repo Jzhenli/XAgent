@@ -178,7 +178,7 @@
       :saving="savingPoint"
       :current-plugin-name="currentDevicePluginName"
       :modbus-data-types="modbusDataTypes"
-      :knx-data-types="knxDataTypes"
+      :knx-dpt-groups="knxDptGroups"
       :bacnet-data-types="bacnetDataTypes"
       :register-types="registerTypes"
       @save="onSavePoint"
@@ -395,7 +395,7 @@ const {
   showWriteDialog,
   writing,
   modbusDataTypes,
-  knxDataTypes,
+  knxDptGroups,
   bacnetDataTypes,
   registerTypes,
   currentDevicePluginName,
