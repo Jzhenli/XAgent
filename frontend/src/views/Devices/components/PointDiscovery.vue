@@ -1261,6 +1261,7 @@ const handleClose = () => {
   line-height: 1.5;
   max-height: none !important;
   -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
   display: block !important;
 }
 
