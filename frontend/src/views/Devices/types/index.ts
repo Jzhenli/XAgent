@@ -168,7 +168,7 @@ export const populateDeviceForm = (form: DeviceFormData, opts: PopulateFormOptio
 export const createInitialPointForm = (pluginName: string = 'modbus_tcp'): PointFormData => ({
   name: '',
   description: '',
-  data_type: pluginName === 'knx' ? 'switch' : pluginName === 'bacnet' ? 'analogInput' : 'uint16',
+  data_type: pluginName === 'knx' ? '1.001' : pluginName === 'bacnet' ? 'analogInput' : 'uint16',
   standard_data_type: '',
   unit: '',
   enabled: true,
