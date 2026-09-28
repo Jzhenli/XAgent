@@ -487,7 +487,9 @@ const pointListProps = computed(() => ({
   showDiscoverBtn:
     userStore.hasPermission("devices", "create") &&
     currentDevicePluginName.value === "bacnet",
-  pollingEnabled: !isCompactMode.value || activeTab.value === "points",
+  pollingEnabled:
+    !showPointDiscoveryDialog.value &&
+    (!isCompactMode.value || activeTab.value === "points"),
 }));
 
 // ==================== 事件处理 (从子组件到 Hooks 的桥接) ====================

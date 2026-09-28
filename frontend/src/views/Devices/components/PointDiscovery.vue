@@ -746,10 +746,9 @@ const handleBatchAdd = async () => {
       },
     );
 
-    // 先执行移除
+    // 先执行移除（串行，避免并发）
     if (pointsToRemove.length > 0) {
-      const removePromises = pointsToRemove.map((point) => {
-        // 找到对应的已有点位名称用于删除
+      for (const point of pointsToRemove) {
         const existing = existingDevicePoints.value.find(
           (p) =>
             getPointKey(
@@ -758,16 +757,14 @@ const handleBatchAdd = async () => {
             ) === getPointKey(point.object_type, point.object_instance),
         );
         if (existing) {
-          return deviceApi.removePoint(props.deviceAsset, existing.name);
+          await deviceApi.removePoint(props.deviceAsset, existing.name);
         }
-        return Promise.resolve();
-      });
-      await Promise.all(removePromises);
+      }
     }
 
     let batchAddResult: BatchAddPointsResponse | null = null;
 
-    // 再执行添加
+    // 再执行添加：构造完整 payload 后按 CHUNK_SIZE 切片串行请求，避免后端超时
     if (pointsToAdd.length > 0) {
       const addPayload: PointConfig[] = pointsToAdd.map((point) => {
         const config: Record<string, unknown> = {
@@ -799,9 +796,30 @@ const handleBatchAdd = async () => {
         };
       });
 
-      batchAddResult = await deviceApi.batchAddPoints(props.deviceAsset, {
-        points: addPayload,
-      });
+      const chunkSize = 1;
+      const merged: BatchAddPointsResponse = {
+        success: true,
+        message: "",
+        asset: props.deviceAsset,
+        total: 0,
+        succeeded: 0,
+        failed: 0,
+        details: [],
+      };
+
+      for (let i = 0; i < addPayload.length; i += chunkSize) {
+        const chunk = addPayload.slice(i, i + chunkSize);
+        const resp = await deviceApi.batchAddPoints(props.deviceAsset, {
+          points: chunk,
+        });
+        merged.total += resp.total;
+        merged.succeeded += resp.succeeded;
+        merged.failed += resp.failed;
+        merged.details.push(...(resp.details ?? []));
+        if (!resp.success) merged.success = false;
+      }
+
+      batchAddResult = merged;
 
       if (!batchAddResult.success) {
         ElMessage.error(
