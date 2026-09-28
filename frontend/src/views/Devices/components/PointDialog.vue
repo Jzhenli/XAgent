@@ -116,13 +116,22 @@
               :teleported="false"
               class="scada-select"
               popper-class="scada-select-dropdown"
+              filterable
+              allow-create
+              default-first-option
             >
-              <el-option
-                v-for="opt in knxDataTypes"
-                :key="opt.value"
-                :label="opt.label"
-                :value="opt.value"
-              />
+              <el-option-group
+                v-for="grp in knxDptGroups"
+                :key="grp.group"
+                :label="grp.group"
+              >
+                <el-option
+                  v-for="opt in grp.options"
+                  :key="opt.value"
+                  :label="opt.label"
+                  :value="opt.value"
+                />
+              </el-option-group>
             </el-select>
           </el-form-item>
           <el-form-item :label="t('devices.groupAddress')" prop="group_address">
@@ -318,7 +327,7 @@ const props = defineProps<{
   saving: boolean
   currentPluginName: string
   modbusDataTypes: { label: string; value: string }[]
-  knxDataTypes: { label: string; value: string }[]
+  knxDptGroups: { group: string; options: { label: string; value: string }[] }[]
   bacnetDataTypes: { label: string; value: string }[]
   registerTypes: { label: string; value: string }[]
 }>()
@@ -354,7 +363,14 @@ const pointFormRules = {
     }
   ],
   data_type: [
-    { required: true, message: t('devices.dataTypeRequired'), trigger: 'blur' }
+    { required: true, message: t('devices.dataTypeRequired'), trigger: 'blur' },
+    {
+      // KNX DPT 格式:主号或主号.子号(各最多 3 位),与后端 DPT_STRING_PATTERN 一致,
+      // 拦截 allow-create 手输的非法编号(如 "abc"、"5.0011")
+      pattern: /^\d{1,3}(\.\d{1,3})?$/,
+      message: t('devices.invalidDptFormat'),
+      trigger: 'blur'
+    }
   ]
 }
 

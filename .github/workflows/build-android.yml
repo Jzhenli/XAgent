@@ -73,7 +73,7 @@ jobs:
 
   compile:
     needs: config
-    if: inputs.enable_nuitka != false
+    if: github.event_name != 'workflow_dispatch' || inputs.enable_nuitka
     runs-on: ${{ matrix.runs_on }}
     timeout-minutes: 90
     strategy:
@@ -155,7 +155,7 @@ jobs:
     needs: [config, compile]
     if: >-
       always() && needs.config.result == 'success' && 
-      (inputs.enable_nuitka == false || needs.compile.result == 'success')
+      (needs.compile.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.enable_nuitka == false))
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -171,7 +171,7 @@ jobs:
           echo "Updated pyproject.toml version to ${{ needs.config.outputs.version }}"
           grep '^version = ' pyproject.toml
       - uses: actions/download-artifact@v4
-        if: inputs.enable_nuitka != false
+        if: github.event_name != 'workflow_dispatch' || inputs.enable_nuitka
         with:
           name: compiled-${{ matrix.android_abi }}
           path: dist/${{ matrix.android_abi }}
@@ -195,7 +195,7 @@ jobs:
       - name: Build
         run: pyapp build android --arch ${{ matrix.android_abi }}
       - name: Compile with precompiled .so
-        if: inputs.enable_nuitka != false
+        if: github.event_name != 'workflow_dispatch' || inputs.enable_nuitka
         run: |
           SO_FILE="dist/${{ matrix.android_abi }}/${{ needs.config.outputs.app_module }}.so"
           [ ! -f "$SO_FILE" ] && { echo "::error::.so not found: $SO_FILE"; exit 1; }
@@ -217,4 +217,4 @@ jobs:
           echo "### Android Build (${{ matrix.android_abi }})" >> $GITHUB_STEP_SUMMARY
           echo "- **Version**: ${{ needs.config.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Arch**: ${{ matrix.android_abi }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Nuitka**: ${{ inputs.enable_nuitka != false }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Nuitka**: ${{ github.event_name != 'workflow_dispatch' || inputs.enable_nuitka }}" >> $GITHUB_STEP_SUMMARY

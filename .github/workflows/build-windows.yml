@@ -66,7 +66,7 @@ jobs:
       - name: Build
         run: pyapp build windows
       - name: Compile with Nuitka
-        if: inputs.enable_nuitka != false
+        if: github.event_name != 'workflow_dispatch' || inputs.enable_nuitka
         run: pyapp compile windows
       - name: Package
         run: pyapp package windows
@@ -82,4 +82,4 @@ jobs:
           echo "### Windows Build" >> $GITHUB_STEP_SUMMARY
           echo "- **App**: ${{ steps.vars.outputs.app_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Version**: ${{ steps.vars.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Nuitka**: ${{ inputs.enable_nuitka != false }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Nuitka**: ${{ github.event_name != 'workflow_dispatch' || inputs.enable_nuitka }}" >> $GITHUB_STEP_SUMMARY

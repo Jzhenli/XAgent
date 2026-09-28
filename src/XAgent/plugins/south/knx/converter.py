@@ -3,7 +3,13 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from .constants import DATA_TYPE_MAPPING, ERROR_CODE_DEVICE_OFFLINE, VALUE_RANGES
+from .constants import (
+    DPT_DEFAULT_UNITS,
+    DPT_MAIN_TO_STANDARD,
+    ERROR_CODE_DEVICE_OFFLINE,
+    VALUE_RANGES,
+    dpt_main_number,
+)
 from XAgent.xcore.transform import ScaleOffsetTransformer
 
 logger = logging.getLogger(__name__)
@@ -18,6 +24,7 @@ class KNXConverter:
     KNX 数据转换器 - 符合 DataConverter 协议
 
     将 KNX 设备原始数据转换为标准格式。
+    data_type 为 DPT 字符串(如 "5.010"),standard_data_type 按 DPT 主号推导。
     """
 
     @staticmethod
@@ -29,6 +36,29 @@ class KNXConverter:
         if key in point:
             return point[key]
         return default
+
+    @staticmethod
+    def _dpt_main_number(dpt: Any) -> Optional[int]:
+        """解析 DPT 主号,非法返回 None(统一委托 constants,避免双实现漂移)"""
+        return dpt_main_number(dpt)
+
+    def standard_type_for_dpt(self, dpt: Any) -> str:
+        """DPT 主号 → 标准数据类型;未映射的主号 warning + string 兜底"""
+        main = self._dpt_main_number(dpt)
+        if main is None:
+            logger.warning(
+                "Invalid KNX data_type %r, fallback to standard type 'string'", dpt
+            )
+            return "string"
+        standard = DPT_MAIN_TO_STANDARD.get(main)
+        if standard is None:
+            logger.warning(
+                "Unmapped KNX DPT main number %s (from %r), "
+                "fallback to standard type 'string'",
+                main, dpt,
+            )
+            return "string"
+        return standard
 
     def convert(
         self,
@@ -52,16 +82,15 @@ class KNXConverter:
 
             raw_value = raw_data.get(point_name)
 
-            data_type_config = self._get_point_config(point_config, "data_type", "switch")
-            type_info = DATA_TYPE_MAPPING.get(data_type_config, DATA_TYPE_MAPPING["switch"])
+            data_type_config = self._get_point_config(point_config, "data_type")
+            standard_data_type = self.standard_type_for_dpt(data_type_config)
 
-            unit = self._get_point_config(point_config, "unit", type_info.get("unit"))
+            unit = self._get_point_config(
+                point_config, "unit",
+                DPT_DEFAULT_UNITS.get(data_type_config) if data_type_config else None
+            )
             scale = self._get_point_config(point_config, "scale")
             offset = self._get_point_config(point_config, "offset")
-
-            standard_data_type = ScaleOffsetTransformer(scale, offset).infer_standard_type(
-                type_info.get("data_type", "string")
-            )
 
             converted_value = None
             quality = "bad"
@@ -75,7 +104,7 @@ class KNXConverter:
                 converted_value = self._convert_value(raw_value, standard_data_type, scale, offset)
                 quality = self._assess_quality(
                     converted_value,
-                    point_config,
+                    data_type_config,
                     connection_status
                 )
             else:
@@ -86,8 +115,7 @@ class KNXConverter:
                 "status_address": self._get_point_config(point_config, "status_address"),
                 "control_address": self._get_point_config(point_config, "control_address"),
                 "writable": self._get_point_config(point_config, "writable", False),
-                "dpt": type_info.get("dpt"),
-                "device_class": type_info.get("device_class"),
+                "dpt": data_type_config,
                 "raw_value": raw_value
             }
 
@@ -137,7 +165,7 @@ class KNXConverter:
     def _assess_quality(
         self,
         value: Any,
-        point_config: Dict[str, Any],
+        dpt: Any,
         connection_status: str
     ) -> str:
         if connection_status != "connected":
@@ -146,17 +174,14 @@ class KNXConverter:
         if value is None:
             return "bad"
 
-        data_type = self._get_point_config(point_config, "data_type")
-        if data_type in VALUE_RANGES:
-            min_val, max_val = VALUE_RANGES[data_type]
-            if isinstance(value, (int, float)) and not (min_val <= value <= max_val):
+        if dpt in VALUE_RANGES:
+            min_val, max_val = VALUE_RANGES[dpt]
+            if isinstance(value, (int, float)) and not isinstance(value, bool) \
+                    and not (min_val <= value <= max_val):
                 return "uncertain"
 
         return "good"
 
-    def get_type_info(self, data_type: str) -> Dict[str, Any]:
-        return DATA_TYPE_MAPPING.get(data_type, DATA_TYPE_MAPPING["switch"])
-
     def get_standard_data_type(self, knx_data_type: str) -> str:
-        type_info = self.get_type_info(knx_data_type)
-        return type_info.get("data_type", "string")
+        """DPT 字符串 → 标准数据类型"""
+        return self.standard_type_for_dpt(knx_data_type)
