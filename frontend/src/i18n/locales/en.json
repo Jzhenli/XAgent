@@ -1635,7 +1635,9 @@
     "title": "📦 Component Library",
     "dragHint": "Drag to canvas",
     "hideComponentList": "Hide component list",
-    "showComponentList": "Show component list"
+    "showComponentList": "Show component list",
+    "singleColumn": "Single column",
+    "doubleColumn": "Double column"
   },
   "componentConfig": {
     "componentConfig": "Component Config",

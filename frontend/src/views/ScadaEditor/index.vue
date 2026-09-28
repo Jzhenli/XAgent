@@ -43,8 +43,13 @@
     </div>
 
     <div class="scada-editor">
-      <div v-if="!isPreviewMode" class="editor-left">
-        <ComponentPalette :showComponentList="showComponentList" @toggleList="showComponentList = !showComponentList" />
+      <div v-if="!isPreviewMode" class="editor-left" :class="{ compact: paletteCompact }">
+        <ComponentPalette
+          :showComponentList="showComponentList"
+          :initialCompact="paletteCompact"
+          @toggleList="showComponentList = !showComponentList"
+          @compact="paletteCompact = $event"
+        />
       </div>
 
       <div v-if="!isPreviewMode" class="editor-list" :class="{ collapsed: !showComponentList }">
@@ -164,10 +169,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, toRefs, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScadaEditor } from './hooks/useScadaEditor'
+import { useScadaUiPrefs } from './hooks/useScadaUiPrefs'
 import { useUserStore } from '@/stores/users'
 import { usePointStore } from '@/stores/points'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -193,7 +199,11 @@ const pointStore = usePointStore()
 const { currentPanel, exportPanel, importPanel } = useScadaData()
 
 const isPreviewMode = ref(false)
-const showComponentList = ref(false)
+
+// UI 偏好：按 panelId 隔离持久化到 localStorage（不与后端同步）
+const panelId = route.params.id as string
+const { showComponentList, paletteCompact } = toRefs(useScadaUiPrefs(panelId))
+
 const isLoading = ref(true)
 const importInputRef = ref<HTMLInputElement | null>(null)
 
@@ -518,6 +528,12 @@ const handleImportFileChange = async (event: Event) => {
   backdrop-filter: blur(10px);
   border-right: var(--scada-border-glow);
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.editor-left.compact {
+  width: 180px;
 }
 
 .editor-list {

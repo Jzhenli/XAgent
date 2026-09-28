@@ -44,6 +44,8 @@ export const useUserStore = defineStore('user', () => {
       currentUser.value = data.user
       isAuthenticated.value = true
       localStorage.setItem('xagent_user', JSON.stringify(data.user))
+      // 登录时清除 scada UI 偏好，防止跨账号偏好泄漏
+      localStorage.removeItem('scadaEditor.uiPrefs')
       await fetchRoles().catch(() => {})
       return { success: true }
     } catch {
@@ -57,6 +59,7 @@ export const useUserStore = defineStore('user', () => {
     currentUser.value = null
     isAuthenticated.value = false
     localStorage.removeItem('xagent_user')
+    localStorage.removeItem('scadaEditor.uiPrefs')
   }
 
   function restoreSession() {

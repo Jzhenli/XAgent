@@ -1635,7 +1635,9 @@
     "title": "📦 组件库",
     "dragHint": "拖拽到画布",
     "hideComponentList": "隐藏组件列表",
-    "showComponentList": "显示组件列表"
+    "showComponentList": "显示组件列表",
+    "singleColumn": "单列显示",
+    "doubleColumn": "双列显示"
   },
   "componentConfig": {
     "componentConfig": "组件配置",

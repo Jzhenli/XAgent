@@ -1635,7 +1635,9 @@
     "title": "📦 元件庫",
     "dragHint": "拖曳到畫布",
     "hideComponentList": "隱藏元件列表",
-    "showComponentList": "顯示元件列表"
+    "showComponentList": "顯示元件列表",
+    "singleColumn": "單列顯示",
+    "doubleColumn": "雙列顯示"
   },
   "componentConfig": {
     "componentConfig": "元件設定",

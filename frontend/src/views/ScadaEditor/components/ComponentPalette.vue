@@ -1,17 +1,22 @@
 <template>
-  <div class="component-palette">
+  <div class="component-palette" :class="{ compact: singleColumn }">
     <div class="palette-header">
       <div class="header-content">
         <span class="header-title">{{ t('componentPalette.title') }}</span>
-        <div class="header-toggle" @click="emit('toggleList')" :title="props.showComponentList ? t('componentPalette.hideComponentList') : t('componentPalette.showComponentList')">
-          <el-icon><DArrowLeft v-if="props.showComponentList" /><DArrowRight v-else /></el-icon>
+        <div class="header-actions">
+          <div class="header-toggle" @click="toggleGridLayout" :title="singleColumn ? t('componentPalette.doubleColumn') : t('componentPalette.singleColumn')">
+            <el-icon><Grid v-if="!singleColumn" /><List v-else /></el-icon>
+          </div>
+          <div class="header-toggle" @click="emit('toggleList')" :title="props.showComponentList ? t('componentPalette.hideComponentList') : t('componentPalette.showComponentList')">
+            <el-icon><DArrowLeft v-if="props.showComponentList" /><DArrowRight v-else /></el-icon>
+          </div>
         </div>
       </div>
     </div>
     
     <div class="palette-body">
-      <!-- Category menu -->
-      <div class="category-menu">
+      <!-- Category menu（仅双列模式显示） -->
+      <div v-if="!singleColumn" class="category-menu">
         <div
           v-for="category in categories"
           :key="category.key"
@@ -24,12 +29,12 @@
         </div>
       </div>
 
-      <!-- Component grid -->
+      <!-- Component panel -->
       <div class="component-panel">
         <div v-if="activeComponents.length === 0" class="empty-category">
           {{ $t('scada.noComponents') }}
         </div>
-        <div v-else class="component-grid">
+        <div v-else class="component-grid" :class="{ 'single-column': singleColumn }">
           <div
             v-for="template in activeComponents"
             :key="template.type"
@@ -47,34 +52,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { type ComponentType } from '@/types/scada'
 import {
   getSortedCategories,
   getComponentsByCategory
 } from '../utils/component-categories'
-import { DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
+import { getAllTemplates } from '../component-registry'
+import { DArrowLeft, DArrowRight, Grid, List } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
 
 const emit = defineEmits<{
   (e: 'dragStart', type: ComponentType): void
   (e: 'toggleList'): void
+  (e: 'compact', value: boolean): void
 }>()
 
 const props = defineProps<{
   showComponentList?: boolean
+  initialCompact?: boolean
 }>()
 
-// Active category state
+// Active category state（双列模式用）
 const activeCategory = ref<string>('basic')
+
+// Grid layout: false = 双列网格（默认，显示分类菜单），true = 单列列表（隐藏分类菜单、平铺所有组件）
+const singleColumn = ref<boolean>(props.initialCompact ?? false)
+const toggleGridLayout = () => {
+  singleColumn.value = !singleColumn.value
+}
+
+// 通知父组件面板是否紧凑（单列模式下父容器要收窄）
+watch(singleColumn, (val) => emit('compact', val), { immediate: true })
 
 // Get all categories sorted by order
 const categories = computed(() => getSortedCategories())
 
-// Get components for active category
+// Get components: 单列平铺全部，双列按分类
 const activeComponents = computed(() => {
+  if (singleColumn.value) {
+    return getAllTemplates()
+  }
   return getComponentsByCategory(activeCategory.value)
 })
 
@@ -107,6 +127,11 @@ const selectCategory = (key: string) => {
   flex-shrink: 0;
 }
 
+/* 单列紧凑模式：header padding 收窄 */
+.component-palette.compact .palette-header {
+  padding: 0 10px;
+}
+
 .header-content {
   display: flex;
   justify-content: space-between;
@@ -115,12 +140,25 @@ const selectCategory = (key: string) => {
   gap: 8px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .header-title {
   font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: 1px;
   text-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+}
+
+/* 紧凑模式：标题字号缩小 */
+.component-palette.compact .header-title {
+  font-size: 13px;
+  letter-spacing: 0.5px;
 }
 
 .palette-hint {
@@ -143,6 +181,12 @@ const selectCategory = (key: string) => {
   transition: all 0.25s ease;
   flex-shrink: 0;
   background: var(--scada-bg-elevated);
+}
+
+/* 紧凑模式：切换按钮更小 */
+.component-palette.compact .header-toggle {
+  width: 28px;
+  height: 28px;
 }
 
 .header-toggle:hover {
@@ -232,6 +276,11 @@ const selectCategory = (key: string) => {
   overflow-y: auto;
 }
 
+/* 紧凑模式：panel padding 收窄 */
+.component-palette.compact .component-panel {
+  padding: 8px;
+}
+
 .component-panel::-webkit-scrollbar {
   width: 6px;
 }
@@ -264,6 +313,11 @@ const selectCategory = (key: string) => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
+}
+
+/* 紧凑模式：双列间距收窄 */
+.component-palette.compact:not(.force-single) .component-grid {
+  gap: 6px;
 }
 
 .component-item {
@@ -320,6 +374,12 @@ const selectCategory = (key: string) => {
   transition: all 0.25s ease;
 }
 
+/* 紧凑模式双列：图标缩小 */
+.component-palette.compact .component-grid:not(.single-column) .component-icon {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+
 .component-name {
   font-size: 11px;
   color: var(--text-regular);
@@ -331,7 +391,40 @@ const selectCategory = (key: string) => {
   letter-spacing: 0.3px;
 }
 
+/* 紧凑模式双列：文字缩小 */
+.component-palette.compact .component-grid:not(.single-column) .component-name {
+  font-size: 10px;
+}
+
 .component-item:hover .component-name {
   color: var(--scada-cyan);
+}
+
+/* ---- 单列列表布局 ---- */
+.component-grid.single-column {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.component-grid.single-column .component-item {
+  aspect-ratio: auto;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+}
+
+.component-grid.single-column .component-icon {
+  font-size: 22px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.component-grid.single-column .component-name {
+  font-size: 12px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

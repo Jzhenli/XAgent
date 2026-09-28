@@ -7,3 +7,4 @@
 export { useScadaCanvas } from './useScadaCanvas'
 export { useScadaBinding, useScadaPolling } from './useScadaBinding'
 export { useScadaNavigationGuard } from './useScadaNavigationGuard'
+export { useScadaUiPrefs } from './useScadaUiPrefs'
