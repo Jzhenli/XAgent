@@ -22,6 +22,7 @@ env/
 bundles/
 frontend/dist/
 frontend/node_modules/
+src/XAgent/resources/static/
 
 # OS
 .DS_Store
