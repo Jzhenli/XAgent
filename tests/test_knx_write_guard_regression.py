@@ -36,12 +36,13 @@ async def _write_uses_session_guard_in_shared_mode():
     with patch.object(KNXSessionManager, "get_session", return_value=fake_session):
         plugin._enable_session_sharing = True
         plugin._session_key = "shared-key"
-        device = MagicMock()
-        device.set_on = AsyncMock()
-        ok = await plugin._write_device_value(device, "switch", True)
+        # DPT 化后写路径走 RemoteValueSensor.set(同步方法)
+        write_rv = MagicMock()
+        write_rv.set = MagicMock()
+        ok = await plugin._write_device_value(write_rv, "1.001", True)
         assert ok is True
         assert guard_cm.__aenter__.called, "共享模式写命令应在会话守卫内执行"
-        assert device.set_on.called
+        assert write_rv.set.called
 
 
 async def _write_skips_guard_in_exclusive_mode():
@@ -55,12 +56,12 @@ async def _write_skips_guard_in_exclusive_mode():
     with patch.object(KNXSessionManager, "get_session", return_value=fake_session):
         plugin._enable_session_sharing = False  # 独占模式：守卫应为空操作
         plugin._session_key = "shared-key"
-        device = MagicMock()
-        device.set_on = AsyncMock()
-        ok = await plugin._write_device_value(device, "switch", True)
+        write_rv = MagicMock()
+        write_rv.set = MagicMock()
+        ok = await plugin._write_device_value(write_rv, "1.001", True)
         assert ok is True
         assert not guard_cm.__aenter__.called, "独占模式不应进入会话守卫"
-        assert device.set_on.called
+        assert write_rv.set.called
 
 
 def test_knx_write_uses_session_guard_in_shared_mode():

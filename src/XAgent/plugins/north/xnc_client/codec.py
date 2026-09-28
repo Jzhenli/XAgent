@@ -35,7 +35,13 @@ class ProtobufCodec:
             return ApplicationDataType.APP_TAG_CHARACTER_STRING
         if isinstance(value, bytes):
             return ApplicationDataType.APP_TAG_OCTET_STRING
-        return ApplicationDataType.APP_TAG_NULL
+        # 未知类型(如 tuple/dict/dataclass 等复合结构)不静默丢数据:
+        # 兜底为字符串 + warning,由上层排查点位 DPT 配置是否合理
+        logger.warning(
+            "infer_data_type: unsupported value type %s, fallback to string: %r",
+            type(value).__name__, value,
+        )
+        return ApplicationDataType.APP_TAG_CHARACTER_STRING
     
     @staticmethod
     def create_data_value(value: Any) -> apiDataValue:
@@ -57,6 +63,9 @@ class ProtobufCodec:
             data_value.pv = value
         elif isinstance(value, bytes):
             data_value.pv = value.decode('utf-8', errors='replace')
+        else:
+            # 与 infer_data_type 的字符串兜底对称
+            data_value.pv = str(value)
         
         return data_value
     

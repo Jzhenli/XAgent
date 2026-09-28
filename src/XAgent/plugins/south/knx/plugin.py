@@ -10,7 +10,12 @@ from XAgent.xcore.plugins.south import SouthPluginBase
 from XAgent.xcore.storage.interface import Reading
 from XAgent.xcore.transform import StandardDataPoint
 from .converter import KNXConverter
-from .constants import DATA_TYPE_MAPPING
+from .constants import (
+    DPT_MAIN_TO_STANDARD,
+    KNX_DEFAULT_DPT,
+    LEGACY_DATA_TYPE_TO_DPT,
+    dpt_main_number,
+)
 from .session import KNXSessionManager, build_session_key
 
 logger = logging.getLogger(__name__)
@@ -19,19 +24,16 @@ KNX_AVAILABLE = None
 _XKNX = None
 _ConnectionConfig = None
 _ConnectionType = None
-_Switch = None
-_BinarySensor = None
-_Climate = None
-_Light = None
-_Cover = None
 _Sensor = None
+_RemoteValueSensor = None
+_ConversionError = None
 _GroupAddress = None
 _XknxConnectionState = None
 
 
 def _check_knx_available():
     global KNX_AVAILABLE, _XKNX, _ConnectionConfig, _ConnectionType
-    global _Switch, _BinarySensor, _Climate, _Light, _Cover, _Sensor, _GroupAddress
+    global _Sensor, _RemoteValueSensor, _ConversionError, _GroupAddress
     global _XknxConnectionState
 
     if KNX_AVAILABLE is not None:
@@ -39,7 +41,9 @@ def _check_knx_available():
 
     try:
         from xknx import XKNX
-        from xknx.devices import Switch, BinarySensor, Climate, Light, Cover, Sensor
+        from xknx.devices import Sensor
+        from xknx.exceptions import ConversionError
+        from xknx.remote_value import RemoteValueSensor
         from xknx.telegram import GroupAddress
         from xknx.io import ConnectionConfig, ConnectionType
         from xknx.core.connection_manager import XknxConnectionState
@@ -47,12 +51,9 @@ def _check_knx_available():
         _XKNX = XKNX
         _ConnectionConfig = ConnectionConfig
         _ConnectionType = ConnectionType
-        _Switch = Switch
-        _BinarySensor = BinarySensor
-        _Climate = Climate
-        _Light = Light
-        _Cover = Cover
         _Sensor = Sensor
+        _RemoteValueSensor = RemoteValueSensor
+        _ConversionError = ConversionError
         _GroupAddress = GroupAddress
         _XknxConnectionState = XknxConnectionState
         KNX_AVAILABLE = True
@@ -140,17 +141,74 @@ class KNXPlugin(SouthPluginBase):
     
     def _get_base_type(self, data_type: str, point_config: Dict[str, Any]) -> str:
         """
-        将KNX业务类型转换为基础类型
-        
+        将 data_type(DPT 字符串)转换为基础类型
+
         Args:
-            data_type: KNX业务类型（如 "switch", "percent"）
+            data_type: KNX DPT 字符串(如 "5.010")
             point_config: 点位配置
-        
+
         Returns:
-            基础类型（如 "bool", "int", "float"）
+            基础类型(如 "bool", "int", "float", "string")
         """
-        type_info = DATA_TYPE_MAPPING.get(data_type, {})
-        return type_info.get("data_type", data_type)
+        return self._standard_type_for_dpt(data_type)
+
+    @staticmethod
+    def _dpt_main_number(dpt: Any) -> Optional[int]:
+        """解析 DPT 主号,非法返回 None(统一委托 constants,避免双实现漂移)"""
+        return dpt_main_number(dpt)
+
+    def _standard_type_for_dpt(self, dpt: Any) -> str:
+        """DPT 主号 → 标准数据类型;未映射的主号 warning + string 兜底"""
+        main = self._dpt_main_number(dpt)
+        if main is None:
+            logger.warning(
+                "Invalid KNX data_type %r, fallback to standard type 'string'", dpt
+            )
+            return "string"
+        standard = DPT_MAIN_TO_STANDARD.get(main)
+        if standard is None:
+            logger.warning(
+                "Unmapped KNX DPT main number %s (from %r), "
+                "fallback to standard type 'string'",
+                main, dpt,
+            )
+            return "string"
+        return standard
+
+    def _normalize_points_data_types(self, points: List[Dict[str, Any]]) -> None:
+        """点位 data_type 归一化:旧语义名 → DPT(warning),非法值回退默认 DPT(warning)。
+
+        顶层与 config 子对象同时覆盖,保证 converter 读取一致。
+        """
+        for point in points:
+            if not isinstance(point, dict):
+                continue
+            name = point.get("name") or "<unnamed>"
+            config_section = point.get("config") if isinstance(point.get("config"), dict) else {}
+            raw = config_section.get("data_type", point.get("data_type"))
+
+            if raw is None:
+                # 未配置 data_type:沿用旧版默认(switch → 1.001),不告警
+                dpt = KNX_DEFAULT_DPT
+            else:
+                dpt = str(raw).strip()
+                legacy = LEGACY_DATA_TYPE_TO_DPT.get(dpt)
+                if legacy is not None:
+                    logger.warning(
+                        "Point %s: legacy data_type %r is deprecated, "
+                        "migrated to DPT %r", name, raw, legacy,
+                    )
+                    dpt = legacy
+                elif dpt_main_number(dpt) is None:
+                    logger.warning(
+                        "Point %s: unrecognized data_type %r, "
+                        "fallback to DPT %r", name, raw, KNX_DEFAULT_DPT,
+                    )
+                    dpt = KNX_DEFAULT_DPT
+
+            point["data_type"] = dpt
+            if "data_type" in config_section:
+                config_section["data_type"] = dpt
     
     def _create_data_converter(self) -> KNXConverter:
         """创建数据转换器"""
@@ -177,6 +235,7 @@ class KNXPlugin(SouthPluginBase):
         self._max_concurrent_syncs = config.get("max_concurrent_syncs", self.DEFAULT_MAX_CONCURRENT_SYNCS)
         
         self._points: List[Dict[str, Any]] = config.get("points", [])
+        self._normalize_points_data_types(self._points)
         self._xknx: Any = None
         self._device_online = False
         self._offline_counter = 0
@@ -534,7 +593,8 @@ class KNXPlugin(SouthPluginBase):
             group_address = self._get_point_config(point, "group_address")
             status_address = self._get_point_config(point, "status_address")
             control_address = self._get_point_config(point, "control_address")
-            data_type = point.get("data_type", "switch")
+            # data_type 已在 __init__ 归一化为 DPT 字符串
+            dpt = point.get("data_type", KNX_DEFAULT_DPT)
             writable = self._get_point_config(point, "writable", False)
 
             read_address = status_address or group_address
@@ -558,154 +618,116 @@ class KNXPlugin(SouthPluginBase):
                 except Exception:
                     logger.debug("Failed to remove existing xknx device %s", xknx_name, exc_info=True)
             try:
-                device = await self._create_device(
-                    xknx_name,
-                    read_address,
-                    write_address,
-                    data_type,
-                    writable
-                )
-                if device:
+                # 读设备:DPT 非法时抛 ConversionError(整个点位跳过,写也不该建);
+                # 无读地址时返回 None(只写点位,继续建写 RemoteValue)
+                device = self._create_read_device(xknx_name, read_address, dpt)
+
+                write_rv = None
+                if writable and write_address:
+                    write_rv = self._create_write_remote_value(xknx_name, write_address, dpt)
+                    if write_rv is None:
+                        logger.error(
+                            f"Point {point_name}: invalid DPT {dpt!r} for write, "
+                            f"point will be read-only"
+                        )
+
+                if device is None and write_rv is None:
+                    logger.error(
+                        f"Point {point_name}: neither readable nor writable, skip point"
+                    )
+                    self._xknx_name_to_point.pop(xknx_name, None)
+                    continue
+
+                if device is not None:
                     self._devices[point_name] = {
                         "device": device,
                         "config": point,
-                        "data_type": data_type,
+                        "dpt": dpt,
                         "read_address": read_address,
                         "write_address": write_address
                     }
                     self._point_order.append(point_name)
-                    if writable:
-                        self._write_devices[point_name] = {
-                            "device": device,
-                            "config": point,
-                            "data_type": data_type,
-                            "address": write_address
-                        }
-                    logger.debug(f"Created device for point {point_name}: read={read_address}, write={write_address}")
+                if write_rv is not None:
+                    # 只写点位只进写集合,不进读集合,
+                    # 避免读路径/心跳取到 device=None 误判连接异常
+                    self._write_devices[point_name] = {
+                        "write_rv": write_rv,
+                        "config": point,
+                        "dpt": dpt,
+                        "address": write_address
+                    }
+                logger.debug(
+                    f"Created sensor for point {point_name}: dpt={dpt}, "
+                    f"read={read_address}, write={write_address}, writable={write_rv is not None}"
+                )
             except Exception as e:
                 logger.error(f"Error creating device for point {point_name}: {e}")
-    
-    async def _create_device(
-        self, 
-        name: str, 
-        read_address: Optional[str],
-        write_address: Optional[str],
-        data_type: str,
-        writable: bool = False
-    ) -> Any:
+                self._xknx_name_to_point.pop(xknx_name, None)
+
+    def _create_read_device(self, name: str, read_address: Optional[str], dpt: str) -> Any:
+        """创建读路径设备:xknx Sensor(value_type=DPT)。
+
+        Sensor 内部是 RemoteValueSensor,挂入 xknx.devices 后:
+        - 自动接收总线 telegram(主动上报),passive/smart 同步模式依赖此路径;
+        - 支持 device.sync() 主动发 GroupValueRead。
+        """
         if not self._xknx:
             return None
-        
-        type_config = DATA_TYPE_MAPPING.get(data_type, DATA_TYPE_MAPPING["switch"])
-        dpt_value = type_config.get("dpt", 1)
-        
-        device_class_name = type_config["device_class"]
-        writable_config = {}
-        
-        if writable:
-            if "writable_device_class" in type_config:
-                device_class_name = type_config["writable_device_class"]
-                writable_config = type_config.get("writable_config", {})
-                logger.info(
-                    f"Using {device_class_name} device class for writable {data_type} point {name}: "
-                    f"{writable_config.get('description', '')}"
-                )
-            elif "writable_config" in type_config:
-                writable_config = type_config["writable_config"]
-        
-        try:
-            read_ga = _GroupAddress(read_address) if read_address else None
-            write_ga = _GroupAddress(write_address) if write_address else None
-        except Exception as e:
-            logger.error(f"Invalid group address: {e}")
-            return None
-        
-        device = self._construct_device(
-            device_class_name, name, read_ga, write_ga, dpt_value, writable_config, writable
-        )
-        
-        if device:
-            # xknx >=3.x 使用 Devices.async_add (同步方法); 旧版为 add
-            try:
-                self._xknx.devices.async_add(device)
-            except AttributeError:
-                self._xknx.devices.add(device)
-        
-        return device
-    
-    def _construct_device(
-        self,
-        device_class_name: str,
-        name: str,
-        read_ga: Any,
-        write_ga: Any,
-        dpt_value: Any = 1,
-        writable_config: Dict[str, Any] = None,
-        writable: bool = False
-    ) -> Any:
-        """根据设备类名构造xknx设备对象"""
-        if writable_config is None:
-            writable_config = {}
 
-        constructors = {
-            "Switch": lambda: _Switch(
+        if not read_address:
+            logger.warning(f"No read address for point {name}, skip read device")
+            return None
+
+        try:
+            read_ga = _GroupAddress(read_address)
+        except Exception as e:
+            logger.error(f"Invalid group address {read_address!r}: {e}")
+            return None
+
+        try:
+            device = _Sensor(
                 self._xknx, name=name,
-                group_address=write_ga, group_address_state=read_ga
-            ),
-            "BinarySensor": lambda: _BinarySensor(
-                self._xknx, name=name,
-                group_address_state=read_ga
-            ),
-            "Climate": lambda: _Climate(
-                self._xknx, name=name,
-                group_address_temperature=read_ga,
-                # 仅可写点才传 target 写地址，避免非可写点把 target 退化成测量地址导致重复读/误写
-                group_address_target_temperature=write_ga if writable else None
-            ),
-            "Light": lambda: self._create_light_device(
-                name, read_ga, write_ga, writable_config
-            ),
-            "Cover": lambda: _Cover(
-                self._xknx, name=name,
-                group_address_position=write_ga, group_address_position_state=read_ga
-            ),
-        }
-        
-        factory = constructors.get(device_class_name)
-        if factory:
-            return factory()
-        
-        return _Sensor(self._xknx, name=name, group_address_state=read_ga, value_type=dpt_value)
-    
-    def _create_light_device(
-        self, 
-        name: str, 
-        read_ga: Any, 
-        write_ga: Any,
-        writable_config: Dict[str, Any]
-    ) -> Any:
-        """创建Light设备，根据配置选择使用brightness或switch地址"""
-        use_brightness = writable_config.get("use_brightness", False)
-        use_color = writable_config.get("use_color", False)
-        
-        if use_brightness:
-            return _Light(
-                self._xknx, name=name,
-                group_address_brightness=write_ga,
-                group_address_brightness_state=read_ga
+                group_address_state=read_ga, value_type=dpt,
             )
-        elif use_color:
-            return _Light(
-                self._xknx, name=name,
-                group_address_color=write_ga,
-                group_address_color_state=read_ga
+        except _ConversionError as e:
+            logger.error(
+                f"Point {name}: invalid DPT {dpt!r} for read: {e}. "
+                f"Hint: main-number-only forms (e.g. '16') are not supported by xknx "
+                f"for all main numbers - use a full sub number (e.g. '16.001')"
             )
-        else:
-            return _Light(
-                self._xknx, name=name,
-                group_address_switch=write_ga,
-                group_address_switch_state=read_ga
+            return None
+
+        # xknx >=3.x 使用 Devices.async_add (同步方法); 旧版为 add
+        try:
+            self._xknx.devices.async_add(device)
+        except AttributeError:
+            self._xknx.devices.add(device)
+
+        return device
+
+    def _create_write_remote_value(self, name: str, write_address: str, dpt: str) -> Any:
+        """创建写路径 RemoteValue(value_type=DPT),可脱离设备类独立 group write。"""
+        try:
+            write_ga = _GroupAddress(write_address)
+        except Exception as e:
+            logger.error(f"Invalid group address {write_address!r}: {e}")
+            return None
+
+        try:
+            return _RemoteValueSensor(
+                self._xknx,
+                group_address=write_ga,  # writable 判定依据
+                value_type=dpt,
+                device_name=name,
+                feature_name="Write",
             )
+        except _ConversionError as e:
+            logger.error(
+                f"Point {name}: invalid DPT {dpt!r} for write: {e}. "
+                f"Hint: main-number-only forms (e.g. '16') are not supported by xknx "
+                f"for all main numbers - use a full sub number (e.g. '16.001')"
+            )
+            return None
     
     async def _get_connection_state(self) -> Optional[str]:
         """安全读取 xknx 连接状态名称（CONNECTED/CONNECTING/DISCONNECTED）。"""
@@ -766,7 +788,7 @@ class KNXPlugin(SouthPluginBase):
 
         heartbeat_success = await self._read_with_retry(
             heartbeat_device_info["device"],
-            heartbeat_device_info["data_type"],
+            heartbeat_device_info["dpt"],
             self._heartbeat_timeout,
             self._heartbeat_retries,
             self.HEARTBEAT_RETRY_INTERVAL
@@ -814,7 +836,7 @@ class KNXPlugin(SouthPluginBase):
         
         heartbeat_value = self._get_device_state(
             heartbeat_device_info["device"],
-            heartbeat_device_info["data_type"]
+            heartbeat_device_info["dpt"]
         )
         
         raw_data[heartbeat_point] = heartbeat_value
@@ -850,7 +872,7 @@ class KNXPlugin(SouthPluginBase):
     async def _read_with_retry(
         self,
         device: Any,
-        data_type: str,
+        dpt: str,
         timeout: float,
         max_retries: int,
         retry_interval: float
@@ -858,7 +880,7 @@ class KNXPlugin(SouthPluginBase):
         for attempt in range(max_retries + 1):
             try:
                 value = await asyncio.wait_for(
-                    self._read_device_value(device, data_type),
+                    self._read_device_value(device, dpt),
                     timeout=timeout
                 )
                 return value
@@ -870,14 +892,14 @@ class KNXPlugin(SouthPluginBase):
                 logger.error(f"Error reading device: {e}")
                 if attempt < max_retries:
                     await asyncio.sleep(retry_interval)
-        
+
         return None
-    
-    async def _read_device_value(self, device: Any, data_type: str) -> Any:
+
+    async def _read_device_value(self, device: Any, dpt: str) -> Any:
         if not device:
-            logger.debug(f"Device is None for data_type {data_type}")
+            logger.debug(f"Device is None for dpt {dpt}")
             return None
-        
+
         try:
             if _XknxConnectionState is None:
                 return None
@@ -894,8 +916,8 @@ class KNXPlugin(SouthPluginBase):
                 # CONNECTING：xknx 正在自动重连，本轮读取跳过，不干扰恢复
                 logger.debug(f"KNX reconnecting (state={conn_state.name}), skip read device {device.name}")
                 return None
-            
-            logger.debug(f"Reading device {device.name}, data_type={data_type}")
+
+            logger.debug(f"Reading device {device.name}, dpt={dpt}")
 
             # 共享会话下用读守卫包裹实际读写，避免会话正在 teardown/rebuild 时
             # 对已被 stop 的 XKNX 做 device.sync() 引发异常或脏数据。
@@ -905,72 +927,126 @@ class KNXPlugin(SouthPluginBase):
                     await device.sync(wait_for_result=True)
                     logger.debug(f"Sync completed for device {device.name}")
 
-                value = self._extract_device_value(device, data_type)
+                value = self._extract_device_value(device, dpt)
             if value is None:
                 logger.warning(f"Could not read value from device {device.name}")
             return value
-                
+
         except Exception as e:
             logger.error(f"Error reading device value: {e}", exc_info=True)
             return None
-    
-    def _extract_device_value(self, device: Any, data_type: str) -> Any:
-        """
-        从xknx设备对象提取状态值
-        
-        使用 DATA_TYPE_MAPPING 中的 value_type 字段确定读取方式：
-        - "property": 直接访问属性
-        - "method": 调用方法
-        - "special": 特殊处理（resolve_state等）
-        
-        Args:
-            device: xknx设备对象
-            data_type: 数据类型
-        
-        Returns:
-            设备状态值
+
+    def _extract_device_value(self, device: Any, dpt: str) -> Any:
+        """从 xknx Sensor 提取状态值,并按 DPT 主号归一化为 Python 原生类型。
+
+        - DPT 1/2.xxx:xknx 读出 Switch 等枚举成员(bool(枚举) 恒为 True,陷阱),
+          必须取 .value 转 bool;
+        - DPT 232.600:RGBColor dataclass → {"r","g","b"} dict(与写路径对称);
+        - 其余(int/float/str)由 xknx DPT 层直接给出,透传。
         """
         if not device:
             return None
-        
-        type_info = DATA_TYPE_MAPPING.get(data_type, DATA_TYPE_MAPPING["switch"])
-        value_attr = type_info.get("value_attr", "state")
-        value_type = type_info.get("value_type", "property")
-        
-        try:
-            if value_type == "special":
-                return self._extract_special_value(device, data_type, value_attr)
-            elif value_type == "method":
-                return self._extract_method_value(device, value_attr)
-            else:
-                return self._extract_property_value(device, value_attr)
-        except Exception as e:
-            logger.error(f"Error extracting device value for {data_type}: {e}")
-            return None
-    
-    @staticmethod
-    def _percent_to_knx(v: float) -> int:
-        """百分比(0-100) → KNX 亮度(0-255)"""
-        return max(0, min(255, round(float(v) * 255 / 100)))
 
-    @staticmethod
-    def _knx_to_percent(v: int) -> float:
-        """KNX 亮度(0-255) → 百分比(0-100)"""
-        if v is None:
+        try:
+            value = device.sensor_value.value
+        except AttributeError:
+            logger.error(f"Device {device.name} has no sensor_value, dpt={dpt}")
             return None
-        return round(float(v) * 100 / 255, 1)
+
+        return self._normalize_dpt_value(value, dpt)
+
+    def _normalize_dpt_value(self, value: Any, dpt: str) -> Any:
+        """按 DPT 主号归一化读值"""
+        if value is None:
+            return None
+
+        main = self._dpt_main_number(dpt)
+        if main in (1, 2):
+            # 循环剥壳至原生类型:
+            # DPT 1.x 读出 Switch 枚举(.value 一层即 bool);
+            # DPT 2.x 读出 SwitchControl dataclass(.value 仍是 Switch 枚举,需两层)。
+            # bool(枚举成员) 恒为 True,必须剥到底再转。
+            inner = value
+            while hasattr(inner, "value") and not isinstance(inner, bool):
+                inner = inner.value
+            return bool(inner)
+        if main == 232:
+            # RGBColor dataclass(字段 red/green/blue)→ dict,与旧版 {"r","g","b"} 表示一致
+            return {
+                "r": getattr(value, "red", 0),
+                "g": getattr(value, "green", 0),
+                "b": getattr(value, "blue", 0),
+            }
+        return value
+
+    def _get_device_state(self, device: Any, dpt: str) -> Any:
+        """直接读取设备状态（不发送KNX请求）"""
+        return self._extract_device_value(device, dpt)
+    
+    async def write_setpoint(self, asset: str, point: str, value: Any) -> bool:
+        if not self._connected or not self._xknx:
+            logger.error("Not connected to KNX gateway")
+            return False
+
+        write_device_info = self._write_devices.get(point)
+        if write_device_info:
+            write_rv = write_device_info["write_rv"]
+            dpt = write_device_info["dpt"]
+            address = write_device_info["address"]
+            point_config = write_device_info.get("config")
+
+            raw_value = self._reverse_transform_value(value, point_config) if point_config else value
+            logger.debug(f"Reverse transform: {value!r} -> {raw_value!r} (dpt={dpt})")
+            if raw_value is None and value is not None:
+                logger.error(f"Failed to reverse transform value {value} for point {point}")
+                return False
+
+            success = await self._write_device_value(write_rv, dpt, raw_value)
+            if success:
+                logger.info(f"Successfully wrote value {value} to point {point} at address {address}")
+            return success
+
+        device_info = self._devices.get(point)
+        if not device_info:
+            logger.error(f"Point {point} not found in configuration")
+            return False
+
+        # 可写点位必然注册在 _write_devices(见 _setup_devices);
+        # 走到这里说明点位存在但不可写(或写 RemoteValue 创建失败)
+        logger.warning(f"Point {point} is not writable")
+        return False
+
+    def _normalize_write_value(self, value: Any, dpt: str) -> Any:
+        """写值归一化。
+
+        - DPT 232.600(RGB):接受 {"r","g","b"} dict / "r,g,b" 字符串 / tuple,
+          统一转为 xknx 要求的 {"red","green","blue"};
+        - 其余 DPT 透传,值类型/值域由 xknx 编码层校验(ConversionError 拒绝,不钳位)。
+        """
+        main = self._dpt_main_number(dpt)
+        if main != 232:
+            return value
+
+        if isinstance(value, dict) and "red" in value:
+            return value
+        rgb = self._parse_rgb(value)
+        return {"red": rgb[0], "green": rgb[1], "blue": rgb[2]}
 
     @staticmethod
     def _parse_rgb(value: Any) -> tuple:
         """将多种 RGB 表示解析为 (r,g,b) 元组：
-        - dict: {"r":..,"g":..,"b":..}
+        - dict: {"r":..,"g":..,"b":..} / {"red":..,"green":..,"blue":..}
         - 字符串: "r,g,b" / '((r,g,b),None)' 等
         - tuple/list: (r,g,b)
         """
         if isinstance(value, (tuple, list)):
             return tuple(int(c) for c in value[:3])
         if isinstance(value, dict):
-            return int(value.get("r")), int(value.get("g")), int(value.get("b"))
+            return (
+                int(value.get("r", value.get("red", 0))),
+                int(value.get("g", value.get("green", 0))),
+                int(value.get("b", value.get("blue", 0))),
+            )
         if isinstance(value, str):
             s = value.strip()
             # 兼容 "((r, g, b), None)" 这类 xknx 原始表示
@@ -983,169 +1059,30 @@ class KNXPlugin(SouthPluginBase):
             return tuple(int(x) for x in nums[:3])
         raise ValueError(f"Unsupported RGB value: {value!r}")
 
-    def _extract_special_value(self, device: Any, data_type: str, value_attr: str) -> Any:
-        """处理特殊值提取（resolve_state等）"""
-        if value_attr == "temperature":
-            # #1 Climate.temperature 是 RemoteValueTemp 实例，真实数值在 .value 上
-            temp = getattr(device, 'temperature', None)
-            if temp is not None and hasattr(temp, 'value'):
-                return temp.value
-            return None
-        elif value_attr == "resolve":
-            if data_type in ("percent", "brightness", "dimming"):
-                # #3 xknx 亮度为 0–255，按百分比语义对外暴露需换算
-                brightness = getattr(device, 'current_brightness', None)
-                if brightness is not None:
-                    return self._knx_to_percent(brightness)
+    async def _write_device_value(self, write_rv: Any, dpt: str, value: Any) -> bool:
+        """写值:RemoteValueSensor.set(value)(同步编码 + group write)。
 
-            if hasattr(device, 'resolve_state'):
-                result = device.resolve_state()
-                if asyncio.iscoroutine(result):
-                    logger.warning(f"resolve_state() returned coroutine for {device.name}")
-                    return None
-                return result
-            return getattr(device, 'state', None)
-        elif value_attr == "current_color":
-            # #5 读时规范序列化为 {"r":..,"g":..,"b":..}，与写路径对称
-            color = getattr(device, 'current_color', None)
-            if not color:
-                return None
-            rgb = color[0]
-            if not rgb:
-                return None
-            return {"r": rgb[0], "g": rgb[1], "b": rgb[2]}
-        else:
-            return getattr(device, value_attr, None)
-    
-    def _extract_method_value(self, device: Any, value_attr: str) -> Any:
-        """处理方法调用"""
-        method = getattr(device, value_attr, None)
-        if method and callable(method):
-            try:
-                result = method()
-                if asyncio.iscoroutine(result):
-                    logger.warning(f"{value_attr}() returned coroutine for {device.name}")
-                    return None
-                return result
-            except Exception as e:
-                logger.error(f"Error calling {value_attr}() on device {device.name}: {e}")
-                return None
-        return None
-    
-    def _extract_property_value(self, device: Any, value_attr: str) -> Any:
-        """处理属性访问"""
-        return getattr(device, value_attr, None)
-    
-    def _get_device_state(self, device: Any, data_type: str) -> Any:
-        """直接读取设备状态（不发送KNX请求）"""
-        return self._extract_device_value(device, data_type)
-    
-    async def write_setpoint(self, asset: str, point: str, value: Any) -> bool:
-        if not self._connected or not self._xknx:
-            logger.error("Not connected to KNX gateway")
+        值类型/值域校验由 xknx 编码层拒绝式完成(ConversionError),不钳位:
+        - DPT 1.001 只接受 bool/0/1(及 xknx 认可的 on/off 字符串),
+          其它任意 truthy 字符串一律编码失败显式报错,修复旧版 if value: 歧义;
+        - DPT 5.001 严格 0-100,5.010 严格 0-255,越界即失败。
+        """
+        if not write_rv:
             return False
-        
-        write_device_info = self._write_devices.get(point)
-        if write_device_info:
-            device = write_device_info["device"]
-            data_type = write_device_info["data_type"]
-            address = write_device_info["address"]
-            point_config = write_device_info.get("config")
-            
-            raw_value = self._reverse_transform_value(value, point_config) if point_config else value
-            logger.debug(f"Reverse transform: {value!r} -> {raw_value!r} (data_type={data_type})")
-            if raw_value is None and value is not None:
-                logger.error(f"Failed to reverse transform value {value} for point {point}")
-                return False
-            
-            try:
-                success = await self._write_device_value(device, data_type, raw_value)
-                if success:
-                    logger.info(f"Successfully wrote value {value} to point {point} at address {address}")
-                else:
-                    logger.error(f"Failed to write value {value} to point {point}")
-                return success
-            except Exception as e:
-                logger.error(f"Error writing to point {point}: {e}")
-                return False
-        
-        device_info = self._devices.get(point)
-        if not device_info:
-            logger.error(f"Point {point} not found in configuration")
-            return False
-        
-        writable = self._get_point_config(device_info["config"], "writable", False)
-        
-        if not writable:
-            logger.warning(f"Point {point} is not writable")
-            return False
-        
-        device = device_info["device"]
-        data_type = device_info["data_type"]
-        address = device_info.get("write_address", "unknown")
-        point_config = device_info.get("config")
-        
-        raw_value = self._reverse_transform_value(value, point_config) if point_config else value
-        logger.debug(f"Reverse transform: {value!r} -> {raw_value!r} (data_type={data_type})")
-        if raw_value is None and value is not None:
-            logger.error(f"Failed to reverse transform value {value} for point {point}")
-            return False
-        
-        try:
-            success = await self._write_device_value(device, data_type, raw_value)
-            if success:
-                logger.info(f"Successfully wrote value {value} to point {point} at address {address}")
-            else:
-                logger.error(f"Failed to write value {value} to point {point}")
-            return success
-        except Exception as e:
-            logger.error(f"Error writing to point {point}: {e}")
-            return False
-    
-    async def _write_device_value(self, device: Any, data_type: str, value: Any) -> bool:
-        if not device:
-            return False
-        
-        logger.debug(f"Writing to device: data_type={data_type}, value={value!r}, value_type={type(value).__name__}")
-        
+
+        logger.debug(
+            f"Writing to point: dpt={dpt}, value={value!r}, value_type={type(value).__name__}"
+        )
+
         # 与读路径对称：用会话守卫包裹写操作，避免共享会话正在 teardown/rebuild 时
         # 对已被 stop 的 XKNX 发出写命令而抛异常或产生脏数据（文档 K2 要求读写均守卫）。
         async with self._session_read_guard():
             try:
-                if data_type in ("switch", "binary", "bool"):
-                    if hasattr(device, 'set_on') and hasattr(device, 'set_off'):
-                        logger.debug(f"Bool write: value={value!r}, bool(value)={bool(value)}")
-                        if value:
-                            await device.set_on()
-                        else:
-                            await device.set_off()
-                        return True
-                elif data_type in ("percent", "brightness", "dimming"):
-                    if hasattr(device, 'set_brightness'):
-                        # #3 对外百分比(0-100) → KNX 亮度(0-255)
-                        await device.set_brightness(self._percent_to_knx(value))
-                        return True
-                elif data_type == "blinds":
-                    if hasattr(device, 'set_position'):
-                        await device.set_position(int(value))
-                        return True
-                elif data_type == "color_rgb":
-                    if hasattr(device, 'set_color'):
-                        # #5 写时解析多种 RGB 表示
-                        rgb = value if isinstance(value, (tuple, list)) else self._parse_rgb(value)
-                        await device.set_color(tuple(int(c) for c in rgb))
-                        return True
-                elif data_type == "temperature":
-                    if hasattr(device, 'set_target_temperature'):
-                        # #2 xknx Climate 用 set_target_temperature（无 set_setpoint）
-                        await device.set_target_temperature(float(value))
-                        return True
-                
-                logger.warning(f"No write method available for data type {data_type} on device {device.name}")
-                return False
-                
+                normalized = self._normalize_write_value(value, dpt)
+                write_rv.set(normalized)
+                return True
             except Exception as e:
-                logger.error(f"Error writing device value: {e}")
+                logger.error(f"Failed to write value {value!r} (dpt={dpt}): {e}")
                 return False
     
     async def _read_states_passive(self, point_names: List[str]) -> Dict[str, Any]:
@@ -1168,18 +1105,18 @@ class KNXPlugin(SouthPluginBase):
             if not device_info:
                 raw_data[point_name] = None
                 continue
-            
+
             value = self._get_device_state(
                 device_info["device"],
-                device_info["data_type"]
+                device_info["dpt"]
             )
             raw_data[point_name] = value
-            
+
             if value is not None:
                 logger.debug(f"[Passive] Read {point_name}: value={value}")
             else:
                 logger.warning(f"[Passive] Point {point_name} has no state (device may not have reported)")
-        
+
         return raw_data
     
     async def _read_states_with_sync(self, point_names: List[str]) -> Dict[str, Any]:
@@ -1207,10 +1144,10 @@ class KNXPlugin(SouthPluginBase):
                 device_info = self._devices.get(point_name)
                 if not device_info:
                     return (point_name, None)
-                
+
                 device = device_info["device"]
-                data_type = device_info["data_type"]
-                
+                dpt = device_info["dpt"]
+
                 try:
                     if hasattr(device, 'sync'):
                         await device.sync(wait_for_result=True)
@@ -1219,8 +1156,8 @@ class KNXPlugin(SouthPluginBase):
                 except Exception as e:
                     logger.error(f"[Always] Sync failed for {point_name}: {e}")
                     return (point_name, None)
-                
-                value = self._get_device_state(device, data_type)
+
+                value = self._get_device_state(device, dpt)
                 return (point_name, value)
         
         tasks = [sync_and_read(name) for name in point_names]
@@ -1283,7 +1220,7 @@ class KNXPlugin(SouthPluginBase):
             if device_info:
                 passive_data[point_name] = self._get_device_state(
                     device_info["device"],
-                    device_info["data_type"]
+                    device_info["dpt"]
                 )
         
         return {**passive_data, **sync_data}
@@ -1309,10 +1246,10 @@ class KNXPlugin(SouthPluginBase):
                 device_info = self._devices.get(point_name)
                 if not device_info:
                     return (point_name, None)
-                
+
                 device = device_info["device"]
-                data_type = device_info["data_type"]
-                
+                dpt = device_info["dpt"]
+
                 try:
                     if hasattr(device, 'sync'):
                         await device.sync(wait_for_result=True)
@@ -1320,8 +1257,8 @@ class KNXPlugin(SouthPluginBase):
                 except Exception as e:
                     logger.error(f"[Smart] Sync failed for {point_name}: {e}")
                     return (point_name, None)
-                
-                value = self._get_device_state(device, data_type)
+
+                value = self._get_device_state(device, dpt)
                 return (point_name, value)
         
         tasks = [sync_single(name) for name in point_names]
