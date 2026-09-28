@@ -64,12 +64,8 @@
             step="1"
             min="-180"
             max="180"
-            @input="
-              updateConfig(
-                'rotation',
-                clampRotation(($event.target as HTMLInputElement).value),
-              )
-            "
+            @input="handleRotationInput"
+            @blur="handleRotationBlur"
           />
           <span class="rotation-unit">°</span>
         </div>
@@ -172,6 +168,24 @@ function clampRotation(value: string): number {
   const num = Number.parseFloat(value);
   if (Number.isNaN(num)) return 0;
   return Math.max(-180, Math.min(180, num));
+}
+
+/** 输入过程中处理：允许中间态（空串、"-"），不对中间态强制重置 */
+function handleRotationInput(e: Event) {
+  const raw = (e.target as HTMLInputElement).value;
+  // 中间态：空串或仅 "-" 开头无后续数字 → 暂不更新，避免破坏输入
+  if (raw === "" || raw === "-") return;
+  const num = Number.parseFloat(raw);
+  if (Number.isNaN(num)) return;
+  // input 时只做简单转换，clamp 留给 blur
+  updateConfig("rotation", num);
+}
+
+/** 失焦时兜底：确保最终值在 [-180, 180] 范围内 */
+function handleRotationBlur(e: Event) {
+  const raw = (e.target as HTMLInputElement).value;
+  const clamped = clampRotation(raw);
+  updateConfig("rotation", clamped);
 }
 
 /** 左/右倾斜预设角度（degrees） */
