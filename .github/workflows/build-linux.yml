@@ -104,7 +104,7 @@ jobs:
           docker run --rm -i \
             --platform ${{ matrix.platform }} \
             -e ARCH=${{ matrix.arch }} \
-            -e ENABLE_NUITKA=${{ inputs.enable_nuitka != 'false' }} \
+            -e ENABLE_NUITKA=${{ github.event_name != 'workflow_dispatch' || inputs.enable_nuitka }} \
             -v "$GITHUB_WORKSPACE":/work -w /work \
             ${{ matrix.image }} \
             bash -s <<'SCRIPT'
@@ -174,4 +174,4 @@ jobs:
           echo "- **Arch**: ${{ matrix.arch }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Image**: ${{ matrix.image }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Runner**: ${{ matrix.runner }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Nuitka**: ${{ inputs.enable_nuitka != 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Nuitka**: ${{ github.event_name != 'workflow_dispatch' || inputs.enable_nuitka }}" >> $GITHUB_STEP_SUMMARY
