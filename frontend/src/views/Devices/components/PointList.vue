@@ -93,7 +93,7 @@
     <!-- 点位数据表格 -->
     <div class="table-wrapper">
       <el-table
-        :data="points"
+        :data="pagedPoints"
         stripe
         style="width: 100%; flex: 1"
         height="100%"
@@ -228,6 +228,18 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 分页控件：仅当超过一页时显示 -->
+      <el-pagination
+        v-if="points.length > 0"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[20, 50, 100, 200]"
+        :total="points.length"
+        layout="total, sizes, prev, pager, next, jumper"
+        class="point-pagination"
+        background
+      />
     </div>
   </div>
 
@@ -268,7 +280,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, onUnmounted, ref } from "vue";
+import { watch, onUnmounted, ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import { useUserStore } from "@/stores/users";
@@ -380,6 +392,28 @@ watch(
 onUnmounted(() => {
   stopPolling();
 });
+
+/** 分页：当前页码 */
+const currentPage = ref(1);
+/** 分页：每页条数 */
+const pageSize = ref(20);
+
+/**
+ * 当前页展示的点位数据
+ * 客户端分页切片：仅渲染当前页，避免大数据量一次性全量渲染导致卡顿
+ */
+const pagedPoints = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return props.points.slice(start, start + pageSize.value);
+});
+
+/** 切换设备时重置到第一页，避免停留在超出新设备点位总数的页码 */
+watch(
+  () => props.selectedAsset,
+  () => {
+    currentPage.value = 1;
+  },
+);
 
 /** 清空点位确认弹窗可见性 */
 const showClearConfirmDialog = ref(false);
@@ -517,6 +551,13 @@ const cancelClearAllPoints = () => {
   padding: 0 12px 12px 12px;
   overflow: hidden;
   min-height: 0;
+}
+
+/* 分页控件：紧贴表格底部，居右对齐 */
+.point-pagination {
+  flex-shrink: 0;
+  margin-top: 8px;
+  justify-content: flex-end;
 }
 
 /* ========== 操作按钮（div 实现） ========== */
