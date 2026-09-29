@@ -13,6 +13,8 @@ import type {
   DiscoverPointsResponse,
   BatchAddPointsRequest,
   BatchAddPointsResponse,
+  BatchDeletePointsRequest,
+  BatchDeletePointsResponse,
   // 设备发现相关类型
   DiscoverDevicesRequest,
   DiscoverDevicesResponse,
@@ -79,6 +81,16 @@ export const deviceApi = {
     await api.delete(`/api/devices/${asset}/points/${encodeURIComponent(pointName)}`)
   },
 
+  async batchRemovePoints(asset: string, pointNames: string[]): Promise<BatchDeletePointsResponse> {
+    const body: BatchDeletePointsRequest = { point_names: pointNames }
+    // 批量删除含一次插件重载（可能走网络连接测试），放宽超时
+    const res = await api.delete(`/api/devices/${asset}/points/batch`, {
+      data: body,
+      timeout: 60000
+    })
+    return res.data
+  },
+
   async batchCreate(devices: DeviceConfig[]): Promise<BatchOperationResult> {
     const res = await api.post('/api/devices/batch', devices)
     return res.data
@@ -124,7 +136,10 @@ export const deviceApi = {
   },
 
   async batchAddPoints(asset: string, request: BatchAddPointsRequest): Promise<BatchAddPointsResponse> {
-    const res = await api.post(`/api/devices/${asset}/points/batch`, request)
+    // 批量添加含一次插件重载（可能走网络连接测试），放宽超时
+    const res = await api.post(`/api/devices/${asset}/points/batch`, request, {
+      timeout: 60000
+    })
     return res.data
   }
 }

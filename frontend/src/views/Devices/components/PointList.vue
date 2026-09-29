@@ -406,7 +406,7 @@ const openClearAllDialog = () => {
 };
 
 /**
- * 确认执行清空：串行删除所有点位，期间弹窗保持打开 + 按钮 loading
+ * 确认执行清空：调用批量删除接口（后端统一重载一次插件），期间弹窗保持打开 + 按钮 loading
  */
 const confirmClearAllPoints = async () => {
   if (!props.selectedAsset || clearingAll.value) return;
@@ -415,12 +415,18 @@ const confirmClearAllPoints = async () => {
   try {
     const pointNames = props.points.map((p) => p.name);
 
-    // 串行删除所有点位，不使用并发
-    for (const name of pointNames) {
-      await deviceApi.removePoint(props.selectedAsset, name);
-    }
+    const resp = await deviceApi.batchRemovePoints(props.selectedAsset, pointNames);
 
-    ElMessage.success(t("devices.allPointsCleared"));
+    if (resp.failed > 0) {
+      ElMessage.warning(
+        t("devices.allPointsClearedPartial", {
+          success: resp.succeeded,
+          failed: resp.failed,
+        })
+      );
+    } else {
+      ElMessage.success(t("devices.allPointsCleared"));
+    }
     emit("clearAllPoints");
     showClearConfirmDialog.value = false;
   } catch (error: unknown) {

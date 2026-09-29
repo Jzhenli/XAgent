@@ -428,6 +428,20 @@ export interface BatchAddPointsResponse {
   details: Record<string, unknown>[]
 }
 
+export interface BatchDeletePointsRequest {
+  point_names: string[]
+}
+
+export interface BatchDeletePointsResponse {
+  success: boolean
+  message: string
+  asset: string
+  total: number
+  succeeded: number
+  failed: number
+  details: Record<string, unknown>[]
+}
+
 // ========== 设备发现相关类型 ==========
 
 export interface DiscoverDevicesRequest {

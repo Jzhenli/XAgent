@@ -315,6 +315,7 @@
     "clearAllPointsConfirm": "確定要清空所有 {count} 個點位嗎？此操作無法復原。",
     "clearAllPointsConfirmTitle": "清空點位確認",
     "allPointsCleared": "已清空所有點位",
+    "allPointsClearedPartial": "已清空 {success} 個點位，{failed} 個未找到或刪除失敗",
     "alreadyAdded": "已新增",
     "availableToAdd": "可新增",
     "export": {

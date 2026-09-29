@@ -315,6 +315,7 @@
     "clearAllPointsConfirm": "Are you sure you want to clear all {count} points? This action cannot be undone.",
     "clearAllPointsConfirmTitle": "Clear Points Confirmation",
     "allPointsCleared": "All points cleared",
+    "allPointsClearedPartial": "Cleared {success} points, {failed} not found or failed to delete",
     "alreadyAdded": "Added",
     "availableToAdd": "Available",
     "export": {

@@ -356,7 +356,6 @@ import { deviceApi } from "@/api/devices";
 import type {
   DiscoveredPoint,
   PointConfig,
-  BatchAddPointsResponse,
 } from "@/api/types";
 
 interface Props {
@@ -698,7 +697,7 @@ const handleBatchAdd = async () => {
       },
     );
 
-    // 构造完整 payload 后按 chunk 串行请求，避免后端超时
+    // 单次批量请求：后端一次事务落库 + 统一重载一次插件
     const addPayload: PointConfig[] = pointsToAdd.map((point) => {
       const config: Record<string, unknown> = {
         object_type: point.object_type,
@@ -729,28 +728,9 @@ const handleBatchAdd = async () => {
       };
     });
 
-    const chunkSize = 10;
-    const merged: BatchAddPointsResponse = {
-      success: true,
-      message: "",
-      asset: props.deviceAsset,
-      total: 0,
-      succeeded: 0,
-      failed: 0,
-      details: [],
-    };
-
-    for (let i = 0; i < addPayload.length; i += chunkSize) {
-      const chunk = addPayload.slice(i, i + chunkSize);
-      const resp = await deviceApi.batchAddPoints(props.deviceAsset, {
-        points: chunk,
-      });
-      merged.total += resp.total;
-      merged.succeeded += resp.succeeded;
-      merged.failed += resp.failed;
-      merged.details.push(...(resp.details ?? []));
-      if (!resp.success) merged.success = false;
-    }
+    const merged = await deviceApi.batchAddPoints(props.deviceAsset, {
+      points: addPayload,
+    });
 
     if (!merged.success) {
       ElMessage.error(merged.message || t("devices.batchAddFailed"));
