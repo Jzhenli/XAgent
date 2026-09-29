@@ -526,46 +526,139 @@ class DeviceService:
             ValueError: 设备不存在
         """
         config_service = self._get_config_service()
-        
+
         # 检查设备是否存在
         device = await self.get_device(asset)
         if not device:
             raise ValueError(f"Device '{asset}' not found")
-        
+
+        point_dicts = [point.model_dump() for point in points]
+
+        try:
+            result = await config_service.add_points(
+                asset, point_dicts, user="api"
+            )
+        except ValueError:
+            # 设备不存在等配置错误向上抛出，由路由层转换为 404/400
+            raise
+        except Exception as e:
+            # 其他异常：所有点位记为失败
+            logger.error(f"Batch add points failed for '{asset}': {e}")
+            return {
+                'total': len(points),
+                'succeeded': 0,
+                'failed': len(points),
+                'details': [
+                    {
+                        'point_name': point.name,
+                        'status': 'failed',
+                        'message': str(e)
+                    }
+                    for point in points
+                ]
+            }
+
         results = {
             'total': len(points),
-            'succeeded': 0,
-            'failed': 0,
+            'succeeded': len(result['added']),
+            'failed': len(result['duplicates']),
             'details': []
         }
-        
-        # 逐个添加点位
-        for point in points:
-            try:
-                point_dict = point.model_dump()
-                await config_service.add_point(asset, point_dict, user="api")
-                
-                results['succeeded'] += 1
-                results['details'].append({
-                    'point_name': point.name,
-                    'status': 'success',
-                    'message': f"Point '{point.name}' added successfully"
-                })
-                
-            except Exception as e:
-                results['failed'] += 1
-                results['details'].append({
-                    'point_name': point.name,
-                    'status': 'failed',
-                    'message': str(e)
-                })
-                logger.warning(
-                    f"Failed to add point '{point.name}' to device '{asset}': {e}"
-                )
-        
+
+        for name in result['added']:
+            results['details'].append({
+                'point_name': name,
+                'status': 'success',
+                'message': f"Point '{name}' added successfully"
+            })
+        for name in result['duplicates']:
+            results['details'].append({
+                'point_name': name,
+                'status': 'failed',
+                'message': f"Point '{name}' already exists in device '{asset}' or is invalid"
+            })
+
         logger.info(
             f"Batch added {results['succeeded']}/{results['total']} points "
             f"to device '{asset}'"
         )
-        
+
+        return results
+
+    async def batch_delete_points(
+        self,
+        asset: str,
+        point_names: List[str]
+    ) -> Dict[str, Any]:
+        """批量删除点位
+
+        数据库层一次事务完成，插件只重载一次，
+        避免逐点删除导致的性能问题和插件重启风暴。
+
+        Args:
+            asset: 设备资产标识
+            point_names: 要删除的点位名称列表
+
+        Returns:
+            批量操作结果，包含总数、成功数、失败数和详细结果
+
+        Raises:
+            ValueError: 设备不存在
+        """
+        config_service = self._get_config_service()
+
+        # 检查设备是否存在
+        device = await self.get_device(asset)
+        if not device:
+            raise ValueError(f"Device '{asset}' not found")
+
+        try:
+            result = await config_service.delete_points(
+                asset, point_names, user="api"
+            )
+        except ValueError:
+            # 设备不存在等配置错误向上抛出，由路由层转换为 404/400
+            raise
+        except Exception as e:
+            # 其他异常：所有点位记为失败
+            logger.error(f"Batch delete points failed for '{asset}': {e}")
+            return {
+                'total': len(point_names),
+                'succeeded': 0,
+                'failed': len(point_names),
+                'details': [
+                    {
+                        'point_name': name,
+                        'status': 'failed',
+                        'message': str(e)
+                    }
+                    for name in point_names
+                ]
+            }
+
+        results = {
+            'total': len(point_names),
+            'succeeded': len(result['deleted']),
+            'failed': len(result['not_found']),
+            'details': []
+        }
+
+        for name in result['deleted']:
+            results['details'].append({
+                'point_name': name,
+                'status': 'success',
+                'message': f"Point '{name}' deleted successfully"
+            })
+        for name in result['not_found']:
+            results['details'].append({
+                'point_name': name,
+                'status': 'failed',
+                'message': f"Point '{name}' not found in device '{asset}'"
+            })
+
+        logger.info(
+            f"Batch deleted {results['succeeded']}/{results['total']} points "
+            f"from device '{asset}'"
+        )
+
         return results

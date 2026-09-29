@@ -242,6 +242,22 @@ class BatchAddPointsResponse(BaseModel):
     details: List[Dict[str, Any]] = Field(default_factory=list)
 
 
+class BatchDeletePointsRequest(BaseModel):
+    """批量删除点位请求"""
+    point_names: List[str] = Field(..., description="要删除的点位名称列表")
+
+
+class BatchDeletePointsResponse(BaseModel):
+    """批量删除点位响应"""
+    success: bool
+    message: str
+    asset: str
+    total: int
+    succeeded: int
+    failed: int
+    details: List[Dict[str, Any]] = Field(default_factory=list)
+
+
 # ========== 设备发现相关模型 ==========
 
 class DiscoverDevicesRequest(BaseModel):

@@ -538,6 +538,133 @@ class ConfigRepository:
 
         logger.info(f"Point deleted: {asset}/{point_name} by {user}")
 
+    async def delete_points(
+        self,
+        asset: str,
+        point_names: List[str],
+        user: Optional[str] = None
+    ) -> Dict[str, List[str]]:
+        """批量删除点位（软删除）
+
+        与逐个调用 delete_point 等价，但只读取设备一次、
+        只写一次版本快照、只提交一次事务，
+        避免批量操作时大量重复读写和 fsync 开销。
+
+        Args:
+            asset: 设备资产标识
+            point_names: 要删除的点位名称列表
+            user: 操作用户
+
+        Returns:
+            {'deleted': 实际删除的点位名列表, 'not_found': 不存在的点位名列表}
+
+        Raises:
+            ValueError: 如果设备不存在
+        """
+        device = await self.get_device(asset)
+        if not device:
+            raise ValueError(f"Device '{asset}' not found")
+
+        existing = {p.get('name') for p in device.points}
+        to_delete = [name for name in point_names if name in existing]
+        not_found = [name for name in point_names if name not in existing]
+
+        if not to_delete:
+            return {'deleted': [], 'not_found': not_found}
+
+        now = time.time()
+
+        placeholders = ", ".join("?" for _ in to_delete)
+        await self._db.execute(
+            f"""
+            UPDATE point_registry
+            SET status = 'deleted', deleted_at = ?
+            WHERE asset = ? AND point_name IN ({placeholders})
+            """,
+            [now, asset] + to_delete
+        )
+
+        device.points = [p for p in device.points if p.get('name') not in set(to_delete)]
+        device.version += 1
+        device.updated_at = now
+        device.updated_by = user
+
+        await self._update_device_version(device)
+
+        await self._db.commit()
+
+        logger.info(
+            f"Points batch deleted: {asset}/{len(to_delete)} points by {user}"
+            + (f", {len(not_found)} not found" if not_found else "")
+        )
+
+        return {'deleted': to_delete, 'not_found': not_found}
+
+    async def add_points(
+        self,
+        asset: str,
+        points: List[Dict[str, Any]],
+        user: Optional[str] = None
+    ) -> Dict[str, List[str]]:
+        """批量添加点位
+
+        与逐个调用 add_point 等价，但只读取设备一次、
+        只写一次版本快照、只提交一次事务，
+        避免批量操作时大量重复读写和 fsync 开销。
+
+        Args:
+            asset: 设备资产标识
+            points: 要添加的点位配置列表
+            user: 操作用户
+
+        Returns:
+            {'added': 成功添加的点位名列表, 'duplicates': 添加失败的点位名列表
+             （已存在或创建异常）}
+
+        Raises:
+            ValueError: 如果设备不存在
+        """
+        device = await self.get_device(asset)
+        if not device:
+            raise ValueError(f"Device '{asset}' not found")
+
+        existing = {p.get('name') for p in device.points}
+        added: List[str] = []
+        failed: List[str] = []
+        added_points: List[Dict[str, Any]] = []
+        seen: set = set()
+
+        for point in points:
+            name = point.get('name')
+            if not name or name in existing or name in seen:
+                failed.append(name)
+                continue
+            try:
+                await self._create_point(asset, point, user)
+                added.append(name)
+                seen.add(name)
+                added_points.append(point)
+            except ValueError:
+                failed.append(name)
+
+        if added:
+            now = time.time()
+            device.points.extend(added_points)
+            device.version += 1
+            device.updated_at = now
+            device.updated_by = user
+
+            await self._update_device_version(device)
+
+            await self._db.commit()
+
+        logger.info(
+            f"Points batch added: {asset}/{len(added)} points by {user}"
+            + (f", {len(failed)} skipped (duplicate or invalid)" if failed else "")
+        )
+
+        return {'added': added, 'duplicates': failed}
+
     async def get_config_versions(
         self,
         entity_type: str,

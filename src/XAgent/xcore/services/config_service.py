@@ -319,6 +319,119 @@ class ConfigService:
             user=user,
             old_value=old_point
         )
+
+    async def delete_points(
+        self,
+        asset: str,
+        point_names: List[str],
+        user: Optional[str] = None,
+        reload: bool = True
+    ) -> Dict[str, List[str]]:
+        """批量删除点位
+
+        数据库层一次事务完成软删除，审计逐点记录但一次提交，
+        最后统一重载一次插件。
+
+        Args:
+            asset: 设备资产标识
+            point_names: 要删除的点位名称列表
+            user: 操作用户
+            reload: 是否立即重载插件
+
+        Returns:
+            {'deleted': 已删除的点位名列表, 'not_found': 不存在的点位名列表}
+
+        Raises:
+            ValueError: 如果设备不存在
+        """
+        device = await self.config_repo.get_device(asset)
+        if not device:
+            raise ValueError(f"Device '{asset}' not found")
+
+        target_names = set(point_names)
+        old_points = {
+            p.get('name'): p.copy() for p in device.points
+            if p.get('name') in target_names
+        }
+
+        result = await self.config_repo.delete_points(asset, point_names, user)
+
+        # 逐点审计记录，但一次事务提交
+        await self.audit_service.log_actions([
+            {
+                'action': 'delete_point',
+                'entity_type': 'point',
+                'entity_id': f"{asset}/{name}",
+                'user': user,
+                'old_value': old_points.get(name)
+            }
+            for name in result['deleted']
+        ])
+
+        if reload and device.enabled and result['deleted']:
+            try:
+                updated_device = await self.config_repo.get_device(asset)
+                if updated_device:
+                    await self._reload_device_plugin(updated_device)
+            except Exception as e:
+                logger.error(f"Failed to reload plugin after batch deleting points: {e}")
+
+        return result
+
+    async def add_points(
+        self,
+        asset: str,
+        points: List[Dict[str, Any]],
+        user: Optional[str] = None,
+        reload: bool = True
+    ) -> Dict[str, List[str]]:
+        """批量添加点位
+
+        数据库层一次事务完成插入，审计逐点记录但一次提交，
+        最后统一重载一次插件。
+
+        Args:
+            asset: 设备资产标识
+            points: 要添加的点位配置列表
+            user: 操作用户
+            reload: 是否立即重载插件
+
+        Returns:
+            {'added': 成功添加的点位名列表, 'duplicates': 添加失败的点位名列表}
+
+        Raises:
+            ValueError: 如果设备不存在
+        """
+        device = await self.config_repo.get_device(asset)
+        if not device:
+            raise ValueError(f"Device '{asset}' not found")
+
+        result = await self.config_repo.add_points(asset, points, user)
+
+        added_set = set(result['added'])
+        added_by_name = {p.get('name'): p for p in points if p.get('name') in added_set}
+
+        # 逐点审计记录，但一次事务提交
+        await self.audit_service.log_actions([
+            {
+                'action': 'add_point',
+                'entity_type': 'point',
+                'entity_id': f"{asset}/{name}",
+                'user': user,
+                'new_value': added_by_name.get(name)
+            }
+            for name in result['added']
+        ])
+
+        if reload and device.enabled and result['added']:
+            try:
+                updated_device = await self.config_repo.get_device(asset)
+                if updated_device:
+                    await self._reload_device_plugin(updated_device)
+            except Exception as e:
+                logger.error(f"Failed to reload plugin after batch adding points: {e}")
+
+        return result
     
     async def export_devices(
         self,

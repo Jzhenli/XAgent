@@ -18,6 +18,8 @@ from ..models.device import (
     DiscoveredPoint,
     BatchAddPointsRequest,
     BatchAddPointsResponse,
+    BatchDeletePointsRequest,
+    BatchDeletePointsResponse,
     # 设备发现相关模型
     DiscoverDevicesRequest,
     DiscoverDevicesResponse,
@@ -412,6 +414,55 @@ async def list_device_points(
             detail=f"Device '{asset}' not found"
         )
     return device.points
+
+
+@router.delete("/{asset}/points/batch", response_model=BatchDeletePointsResponse)
+async def batch_delete_points_from_device(
+    asset: str,
+    request: BatchDeletePointsRequest,
+    service: DeviceService = Depends(get_device_service),
+    token: str = Depends(verify_api_token)
+):
+    """批量删除设备的多个点位
+
+    注意：此路由必须声明在 DELETE /{asset}/points/{point_name} 之前，
+    否则 "batch" 会被参数化路由作为点位名吞掉。
+
+    Args:
+        asset: 设备资产标识
+        request: 批量删除请求（点位名称列表）
+
+    Returns:
+        批量删除结果
+
+    Raises:
+        HTTPException: 404 - 设备不存在
+    """
+    try:
+        result = await service.batch_delete_points(asset, request.point_names)
+
+        return BatchDeletePointsResponse(
+            success=True,
+            message=f"Batch deleted {result['succeeded']}/{result['total']} points from device '{asset}'",
+            asset=asset,
+            total=result['total'],
+            succeeded=result['succeeded'],
+            failed=result['failed'],
+            details=result['details']
+        )
+
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg:
+            raise HTTPException(status_code=404, detail=error_msg)
+        else:
+            raise HTTPException(status_code=400, detail=error_msg)
+    except Exception as e:
+        logger.error(f"Failed to batch delete points from device '{asset}': {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Batch delete points failed: {str(e)}"
+        )
 
 
 @router.delete(

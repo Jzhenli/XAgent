@@ -67,6 +67,48 @@ class AuditService:
             await self._db.commit()
         except Exception as e:
             logger.error(f"Failed to log audit: {e}")
+
+    async def log_actions(self, entries: List[Dict[str, Any]]) -> None:
+        """批量记录审计日志
+
+        与多次调用 log_action 等价，但只在最后提交一次事务，
+        避免批量操作时逐条 commit 造成的大量磁盘 fsync 开销。
+
+        Args:
+            entries: log_action 的参数字典列表
+        """
+        if not entries:
+            return
+        try:
+            rows = []
+            for e in entries:
+                rows.append(
+                    (
+                        e.get('action'),
+                        e.get('entity_type'),
+                        e.get('entity_id'),
+                        e.get('user'),
+                        e.get('ip_address'),
+                        json.dumps(e['details']) if e.get('details') else None,
+                        json.dumps(e['old_value']) if e.get('old_value') else None,
+                        json.dumps(e['new_value']) if e.get('new_value') else None,
+                        time.time(),
+                        e.get('success', True),
+                        e.get('error_message')
+                    )
+                )
+            await self._db.executemany(
+                """
+                INSERT INTO audit_logs (
+                    action, entity_type, entity_id, user, ip_address,
+                    details, old_value, new_value, timestamp, success, error_message
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                rows
+            )
+            await self._db.commit()
+        except Exception as e:
+            logger.error(f"Failed to log batch audit: {e}")
     
     async def get_audit_logs(
         self,
