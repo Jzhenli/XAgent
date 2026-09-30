@@ -7,7 +7,7 @@
           {{ pointStore.selectedDeviceAsset }} /
           {{ pointStore.selectedPoint.name }}
         </span>
-        <el-tag v-if="pointStore.historyLoading" type="info" size="small">{{
+        <el-tag v-if="pointStore.pointTrendLoading" type="info" size="small">{{
           t("pointTrend.loading")
         }}</el-tag>
       </div>
@@ -28,7 +28,7 @@
             />
           </el-select>
         </div> -->
-        <el-button @click="loadData" :loading="pointStore.historyLoading">{{
+        <el-button @click="loadData" :loading="pointStore.pointTrendLoading">{{
           t("pointTrend.refresh")
         }}</el-button>
         <el-button @click="showConfig = !showConfig">
@@ -241,6 +241,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
+import type { TrendPoint } from "@/api/data";
 import { usePointStore } from "@/stores/points";
 import { useThemeStore } from "@/stores/theme";
 import { use } from "echarts/core";
@@ -409,13 +410,24 @@ function startAutoRefresh() {
 
 /* ========== 数据源 ========== */
 /**
- * 趋势数据：优先使用真实历史读数，缺失时回退到生成的模拟数据。
+ * 趋势数据：优先使用服务端单点位趋势接口（轻量），缺失时回退到生成的模拟数据。
  */
 const trendData = computed(() => {
   if (!pointStore.selectedPoint || !pointStore.selectedDeviceAsset) return [];
 
-  const realData = pointStore.getPointTrendData(pointStore.selectedPoint.name);
-  if (realData.length > 0) return realData;
+  const realData = pointStore.pointTrendData;
+  if (realData.length > 0) {
+    return realData
+      .filter(
+        (d): d is TrendPoint & { value: number | boolean } =>
+          typeof d.value === "number" || typeof d.value === "boolean",
+      )
+      .map((d) => ({
+        timestamp: d.timestamp,
+        value: typeof d.value === "boolean" ? (d.value ? 1 : 0) : d.value,
+        quality: d.quality,
+      }));
+  }
 
   const hours = HOURS_MAP[pointStore.trendTimeRange] || 24;
   return pointStore.generateTrendData(pointStore.selectedPoint, hours);
@@ -432,12 +444,16 @@ function isDigitalPoint(
 }
 
 /**
- * 加载历史读数到 store。
+ * 加载单点位趋势数据（服务端过滤）。
  */
 async function loadData() {
-  if (!pointStore.selectedDeviceAsset) return;
+  if (!pointStore.selectedDeviceAsset || !pointStore.selectedPoint) return;
   const hours = HOURS_MAP[pointStore.trendTimeRange] || 24;
-  await pointStore.fetchHistoryReadings(pointStore.selectedDeviceAsset, hours);
+  await pointStore.fetchPointTrend(
+    pointStore.selectedDeviceAsset,
+    pointStore.selectedPoint.name,
+    hours,
+  );
 }
 
 /**
@@ -742,21 +758,21 @@ watch(refreshInterval, startAutoRefresh);
 watch(() => pointStore.trendTimeRange, loadData);
 
 // 外部传入的 deviceName/pointName 变化 -> 切换点位并加载数据
+// （合并监听两个 prop，避免设备+点位同时变化时触发两次 loadData）
 watch(
-  () => props.deviceName,
-  async (name) => {
-    if (name && props.pointName) {
-      // 打开/切换点位：重置配置面板 & 图表挂载状态
-      showConfig.value = false;
-      chartReady.value = false;
-      pointStore.selectPoint(name, props.pointName);
-      await loadData();
-      // 等待数据更新后再挂载图表
-      await nextTick();
-      requestAnimationFrame(() => {
-        chartReady.value = true;
-      });
-    }
+  [() => props.deviceName, () => props.pointName],
+  async ([name, pointName]) => {
+    if (!name || !pointName) return;
+    // 打开/切换点位：重置配置面板 & 图表挂载状态
+    showConfig.value = false;
+    chartReady.value = false;
+    pointStore.selectPoint(name, pointName);
+    await loadData();
+    // 等待数据更新后再挂载图表
+    await nextTick();
+    requestAnimationFrame(() => {
+      chartReady.value = true;
+    });
   },
   { immediate: true },
 );
