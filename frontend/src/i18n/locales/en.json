@@ -168,6 +168,7 @@
   "devices": {
     "title": "Southbound Device",
     "searchPlaceholder": "Search devices...",
+    "pointSearchPlaceholder": "Search points...",
     "statusFilter": "Status Filter",
     "protocolFilter": "Protocol Filter",
     "totalDevices": "Devices",

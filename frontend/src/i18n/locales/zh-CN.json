@@ -168,6 +168,7 @@
   "devices": {
     "title": "南向设备",
     "searchPlaceholder": "搜索设备...",
+    "pointSearchPlaceholder": "搜索点位...",
     "statusFilter": "状态筛选",
     "protocolFilter": "协议筛选",
     "totalDevices": "设备",

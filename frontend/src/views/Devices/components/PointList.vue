@@ -32,8 +32,18 @@
         <!-- 紧凑模式下显示点位数量徽标 -->
         <span v-if="isCompact" class="point-count">{{ points.length }}</span>
       </div>
+
       <!-- 操作按钮组：新增点位 / 发现点位 / 更多操作 -->
       <div class="panel-actions">
+        <!-- 搜索框：快速查找点位 -->
+        <el-input
+          v-model="searchQuery"
+          :placeholder="t('devices.pointSearchPlaceholder')"
+          :prefix-icon="Search"
+          clearable
+          size="small"
+          class="point-search"
+        />
         <div
           v-if="showAddBtn"
           class="action-btn btn-primary"
@@ -235,7 +245,7 @@
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
         :page-sizes="[20, 50, 100, 200]"
-        :total="points.length"
+        :total="filteredPoints.length"
         layout="total, sizes, prev, pager, next, jumper"
         class="point-pagination"
         background
@@ -262,10 +272,7 @@
       </div>
     </div>
     <template #footer>
-      <el-button
-        :disabled="clearingAll"
-        @click="cancelClearAllPoints"
-      >
+      <el-button :disabled="clearingAll" @click="cancelClearAllPoints">
         {{ t("common.cancel") }}
       </el-button>
       <el-button
@@ -393,27 +400,49 @@ onUnmounted(() => {
   stopPolling();
 });
 
+/** 搜索关键词 */
+const searchQuery = ref("");
 /** 分页：当前页码 */
 const currentPage = ref(1);
 /** 分页：每页条数 */
 const pageSize = ref(20);
 
 /**
+ * 过滤后的点位数据
+ * 按点位名称或描述进行不区分大小写的模糊匹配
+ */
+const filteredPoints = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) return props.points;
+  return props.points.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      (p.description && p.description.toLowerCase().includes(q)),
+  );
+});
+
+/**
  * 当前页展示的点位数据
- * 客户端分页切片：仅渲染当前页，避免大数据量一次性全量渲染导致卡顿
+ * 先按关键词过滤，再做客户端分页切片
  */
 const pagedPoints = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
-  return props.points.slice(start, start + pageSize.value);
+  return filteredPoints.value.slice(start, start + pageSize.value);
 });
 
-/** 切换设备时重置到第一页，避免停留在超出新设备点位总数的页码 */
+/** 切换设备时重置搜索词与页码，避免停留在超出范围的状态 */
 watch(
   () => props.selectedAsset,
   () => {
+    searchQuery.value = "";
     currentPage.value = 1;
   },
 );
+
+/** 搜索词变化时重置到第一页 */
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
 
 /** 清空点位确认弹窗可见性 */
 const showClearConfirmDialog = ref(false);
@@ -449,14 +478,17 @@ const confirmClearAllPoints = async () => {
   try {
     const pointNames = props.points.map((p) => p.name);
 
-    const resp = await deviceApi.batchRemovePoints(props.selectedAsset, pointNames);
+    const resp = await deviceApi.batchRemovePoints(
+      props.selectedAsset,
+      pointNames,
+    );
 
     if (resp.failed > 0) {
       ElMessage.warning(
         t("devices.allPointsClearedPartial", {
           success: resp.succeeded,
           failed: resp.failed,
-        })
+        }),
       );
     } else {
       ElMessage.success(t("devices.allPointsCleared"));
@@ -514,7 +546,7 @@ const cancelClearAllPoints = () => {
   font-size: 14px;
 }
 
-/* 面板头部：标题 + 操作按钮 */
+/* 面板头部：左标题 / 右（搜索框 + 操作按钮） */
 .panel-header {
   display: flex;
   align-items: center;
@@ -522,12 +554,14 @@ const cancelClearAllPoints = () => {
   padding: 16px;
   border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
+  gap: 12px;
 }
 
 .panel-header-left {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .panel-title {
@@ -536,11 +570,31 @@ const cancelClearAllPoints = () => {
   color: var(--text-primary);
 }
 
+/* 搜索框：弹性填充剩余空间 */
+.point-search {
+  flex: 1;
+  max-width: 320px;
+}
+
+.point-search :deep(.el-input__wrapper) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--el-border-color) !important;
+  border-radius: 0 !important;
+}
+
+.point-search :deep(.el-input__wrapper:hover),
+.point-search :deep(.el-input__wrapper.is-focus) {
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--el-color-primary) !important;
+}
+
 /* 操作按钮组 */
 .panel-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 /* 表格外层容器 */
