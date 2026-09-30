@@ -2,7 +2,6 @@ import { ref, computed, type InjectionKey, type Ref } from 'vue'
 import { deviceApi } from '@/api/devices'
 import { dataApi } from '@/api/data'
 import { controlApi } from '@/api/control'
-import type { Reading } from '@/api/data'
 import type { PointConfig } from '@/api/types'
 import { parseStandardPoints, isPointWritable } from '@/utils/pointMapping'
 import type { ReadingData } from '@/utils/pointMapping'
@@ -49,18 +48,10 @@ export interface ScadaDeviceValue {
   points: ScadaPointValue[]
 }
 
-/** 内部历史解析条目：单条后端读数的解析结果（点位名 → 数值），作为点位历史缓存的提取源 */
-interface ParsedHistoryEntry {
-  /** 读数时间戳（秒） */
-  timestamp: number
-  /** 点位名 → 数值（布尔已归一为 0/1，不可图表化的值解析时丢弃） */
-  points: Map<string, number>
-}
-
 /** 历史请求缓存条目：进行中共享 Promise，完成后保留结果与 TTL 过期时间 */
 interface HistoryRequestEntry {
-  promise?: Promise<ParsedHistoryEntry[]>
-  entries?: ParsedHistoryEntry[]
+  promise?: Promise<ScadaPointHistoryEntry[]>
+  entries?: ScadaPointHistoryEntry[]
   expiresAt?: number
 }
 
@@ -97,7 +88,7 @@ export const ScadaPointReaderKey: InjectionKey<ScadaPointReader> = Symbol('scada
 const devices = ref<ScadaDeviceValue[]>([])
 
 /**
- * 历史请求缓存：key = asset:hours:limit
+ * 历史请求缓存：key = asset:pointName:hours:limit
  * - 请求进行中：并发调用共享同一 Promise（in-flight 去重）
  * - 请求成功后：保留结果 5s 复用（TTL 缓存），消除图表挂载加载与设备就绪重载的时序性重复请求
  * - 请求失败：条目删除，保证重试不被 TTL 挡住
@@ -165,60 +156,6 @@ function normalizeChartValue(value: unknown): number | undefined {
   if (typeof value === 'boolean') return value ? 1 : 0
   if (typeof value === 'number') return value
   return undefined
-}
-
-/**
- * 将单条后端读数解析为内部历史条目：
- * 标准点值优先、data 原始值兜底（与趋势提取的取值优先级一致），
- * 不可图表化的值（字符串等）在解析时直接丢弃
- */
-function toParsedEntry(timestamp: number, readingData: ReadingData): ParsedHistoryEntry {
-  const points = new Map<string, number>()
-
-  const addPoint = (name: string, value: unknown): void => {
-    const normalized = normalizeChartValue(value)
-    if (normalized !== undefined) {
-      points.set(name, normalized)
-    }
-  }
-
-  for (const [name, standardPoint] of readingData.standardPoints) {
-    addPoint(name, standardPoint.value ?? readingData.data[name])
-  }
-  for (const [name, rawValue] of Object.entries(readingData.data)) {
-    // 仅补充无标准点的点位：有标准点时其取值优先级已由上方循环处理
-    if (!readingData.standardPoints.has(name)) {
-      addPoint(name, rawValue)
-    }
-  }
-
-  return { timestamp, points }
-}
-
-/** 批量解析历史读数为内部条目，并按 timestamp 升序排序（历史接口返回顺序不保证升序） */
-function toParsedEntries(readings: Reading[]): ParsedHistoryEntry[] {
-  return readings
-    .map((reading) => {
-      const { standardPoints } = parseStandardPoints(reading.standard_points)
-      return toParsedEntry(reading.timestamp, {
-        data: reading.data || {},
-        standardPoints,
-        timestamp: reading.timestamp
-      })
-    })
-    .sort((a, b) => a.timestamp - b.timestamp)
-}
-
-/** 从内部历史条目中提取单个点位的时间序列，截断至 MAX_HISTORY_SIZE */
-function extractPointSeries(entries: ParsedHistoryEntry[], pointName: string): ScadaPointHistoryEntry[] {
-  const series: ScadaPointHistoryEntry[] = []
-  for (const entry of entries) {
-    const value = entry.points.get(pointName)
-    if (value !== undefined) {
-      series.push({ timestamp: entry.timestamp, value })
-    }
-  }
-  return series.slice(-MAX_HISTORY_SIZE)
 }
 
 /** 将提取的时间序列写入 devices 中对应点位的 historyCache（设备/点位不存在时静默跳过，待就绪后重载） */
@@ -398,7 +335,9 @@ export function useScadaPointReader(): ScadaPointReader {
 
   /**
    * 拉取指定点位的历史趋势并写入该点位的 historyCache
-   * 底层按 asset 整体拉取（并发去重 + 5s TTL 复用），再提取出该点位的时间序列
+   * 调用 /api/data/trend 按 point 级别查询（服务端过滤），比 asset 级全量拉取数据量减 10-50×
+   * 同一 asset + pointName + hours + limit 的并发调用共享同一个网络请求（in-flight 去重），
+   * 成功结果保留 5s 复用（TTL 缓存），消除图表挂载加载与设备就绪重载的时序性重复请求
    * @param asset 设备 asset
    * @param pointName 点位名
    * @param hours 查询小时数，默认 24
@@ -410,53 +349,54 @@ export function useScadaPointReader(): ScadaPointReader {
     hours: number = 24,
     limit: number = 100
   ): Promise<ScadaPointHistoryEntry[]> {
-    const entries = await fetchAssetHistory(asset, hours, limit)
-    const series = extractPointSeries(entries, pointName)
-    applyPointHistory(asset, pointName, series)
-    return series
-  }
+    const cacheKey = `${asset}:${pointName}:${hours}:${limit}`
+    const cached = historyRequestCache.get(cacheKey)
 
-  /**
-   * 拉取指定设备的全量历史读数（内部解析条目）
-   * 同一 asset + hours + limit 的并发调用共享同一个网络请求，成功结果保留 5s 复用
-   */
-  async function fetchAssetHistory(asset: string, hours: number, limit: number): Promise<ParsedHistoryEntry[]> {
-    const key = `${asset}:${hours}:${limit}`
-    const cached = historyRequestCache.get(key)
     // TTL 内的相同查询直接复用上一次结果（不发网络请求）
     if (cached?.entries && Date.now() < (cached.expiresAt ?? 0)) {
+      applyPointHistory(asset, pointName, cached.entries)
       return cached.entries
     }
     // 正在进行中的相同请求 → 直接共享
     if (cached?.promise) return cached.promise
 
-    const promise = doFetchAssetHistory(asset, hours, limit, key).finally(() => {
-      // 成功时 doFetchAssetHistory 已用「结果条目」整体覆盖本条目（promise 字段消失）；
+    const promise = (async () => {
+      const epoch = devicesEpoch
+      try {
+        const endTime = Date.now() / 1000
+        const startTime = endTime - hours * 3600
+        const response = await dataApi.getPointTrend(asset, pointName, startTime, endTime, limit)
+        // clearDevices 已发生：丢弃在途回包，避免离开页面后污染单例状态
+        if (epoch !== devicesEpoch) return []
+
+        // TrendPoint.value 可能是 boolean | number | string，归一为可图表化的 number
+        // 后端返回按时间倒序（data.ts 注释），需升序排序
+        const entries = response.points
+          .map(p => {
+            const normalized = normalizeChartValue(p.value)
+            if (normalized === undefined) return null
+            return { timestamp: p.timestamp, value: normalized }
+          })
+          .filter((e): e is ScadaPointHistoryEntry => e !== null)
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .slice(-MAX_HISTORY_SIZE)
+
+        historyRequestCache.set(cacheKey, { entries, expiresAt: Date.now() + HISTORY_CACHE_TTL })
+        applyPointHistory(asset, pointName, entries)
+        return entries
+      } catch (e: unknown) {
+        console.error(`Failed to fetch point history for ${asset}:${pointName}:`, e)
+        return []
+      }
+    })().finally(() => {
+      // 成功时已用「结果条目」整体覆盖本条目（promise 字段消失）；
       // 仍残留 promise 的条目对应失败请求，删除以保证可重试
-      const entry = historyRequestCache.get(key)
-      if (entry?.promise === promise) historyRequestCache.delete(key)
+      const entry = historyRequestCache.get(cacheKey)
+      if (entry?.promise === promise) historyRequestCache.delete(cacheKey)
     })
-    historyRequestCache.set(key, { promise })
+
+    historyRequestCache.set(cacheKey, { promise })
     return promise
-  }
-
-  /** fetchAssetHistory 的实际实现（不含去重逻辑） */
-  async function doFetchAssetHistory(asset: string, hours: number, limit: number, key: string): Promise<ParsedHistoryEntry[]> {
-    const epoch = devicesEpoch
-    try {
-      const endTime = Date.now() / 1000
-      const startTime = endTime - hours * 3600
-      const response = await dataApi.getHistoryReadings(asset, startTime, endTime, limit)
-      // clearDevices 已发生：丢弃在途回包，避免离开页面后污染单例状态
-      if (epoch !== devicesEpoch) return []
-
-      const entries = toParsedEntries(response.readings)
-      historyRequestCache.set(key, { entries, expiresAt: Date.now() + HISTORY_CACHE_TTL })
-      return entries
-    } catch (e: unknown) {
-      console.error(`Failed to fetch history for ${asset}:`, e)
-      return []
-    }
   }
 
   /**
@@ -672,7 +612,7 @@ export function useScadaPointReader(): ScadaPointReader {
       devices: devices.value,
       // O(1) 设备/点位索引：byId（asset/设备名 → 设备）、pointsById（deviceId → 点位名 → 点位值）
       deviceIndex: deviceIndex.value,
-      // 历史请求缓存：asset:hours:limit → { promise?（进行中）, entries? + expiresAt（TTL 结果） }
+      // 历史请求缓存：asset:pointName:hours:limit → { promise?（进行中）, entries? + expiresAt（TTL 结果） }
       historyRequestCache,
       // 点位骨架缓存：asset → 点位定义列表（会话级，避免每轮重拉 listPoints）
       skeletonCache,
