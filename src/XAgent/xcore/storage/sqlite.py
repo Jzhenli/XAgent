@@ -63,6 +63,13 @@ class SQLiteStorage(StorageInterface):
             CREATE INDEX IF NOT EXISTS idx_readings_service 
             ON readings(service_name)
         """)
+
+        # 复合索引：趋势查询 WHERE asset=? AND timestamp 范围 + ORDER BY timestamp DESC，
+        # 消除 TEMP B-TREE 排序
+        await self._db.execute("""
+            CREATE INDEX IF NOT EXISTS idx_readings_asset_timestamp
+            ON readings(asset, timestamp DESC)
+        """)
         
         await self._create_metadata_tables()
 
@@ -410,6 +417,64 @@ class SQLiteStorage(StorageInterface):
                 ))
         
         return readings
+
+    async def query_point_trend(
+        self,
+        asset: str,
+        point_name: str,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
+        limit: int = 1000
+    ) -> List[Dict[str, Any]]:
+        """查询单个点位的历史趋势数据（服务端过滤，避免返回全量行 JSON）
+
+        外层按 (asset, timestamp DESC) 索引流式扫描 + LIMIT 短路；标量子查询
+        json_each/json_extract 从 standard_points 提取指定点位的 value/quality，
+        EXISTS 过滤未命中行（避免返回 NULL 值行）。
+
+        Args:
+            asset: 设备 asset
+            point_name: 点位名（匹配 standard_points 中的 point_name 或 name 键）
+            start_time: 开始时间戳（含），None 表示不限
+            end_time: 结束时间戳（含），None 表示不限
+            limit: 返回条数上限
+
+        Returns:
+            [{"timestamp": float, "value": Any, "quality": str}]，按时间倒序
+        """
+        if not self._initialized or not self._db:
+            raise RuntimeError("Storage not initialized")
+
+        query = """
+            SELECT r.timestamp,
+              (SELECT json_extract(p.value, '$.value') FROM json_each(r.standard_points) p
+                WHERE json_extract(p.value, '$.point_name') = ?1
+                   OR json_extract(p.value, '$.name') = ?1 LIMIT 1),
+              (SELECT json_extract(p.value, '$.quality') FROM json_each(r.standard_points) p
+                WHERE json_extract(p.value, '$.point_name') = ?1
+                   OR json_extract(p.value, '$.name') = ?1 LIMIT 1)
+            FROM readings r
+            WHERE r.asset = ?2
+              AND (?3 IS NULL OR r.timestamp >= ?3)
+              AND (?4 IS NULL OR r.timestamp <= ?4)
+              AND EXISTS (SELECT 1 FROM json_each(r.standard_points) p
+                          WHERE json_extract(p.value, '$.point_name') = ?1
+                             OR json_extract(p.value, '$.name') = ?1)
+            ORDER BY r.timestamp DESC
+            LIMIT ?5
+        """
+        params = [point_name, asset, start_time, end_time, limit]
+
+        trend_points = []
+        async with self._db.execute(query, params) as cursor:
+            async for row in cursor:
+                trend_points.append({
+                    "timestamp": row[0],
+                    "value": row[1],
+                    "quality": row[2] or "good"
+                })
+
+        return trend_points
 
     async def delete_old_readings(self, before_timestamp: float) -> int:
         if not self._initialized or not self._db:
