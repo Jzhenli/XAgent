@@ -353,8 +353,8 @@ const isModbus = computed(
   () => props.currentPluginName === 'modbus_tcp' || props.currentPluginName === 'modbus_rtu'
 )
 
-/** 点位表单校验规则 */
-const pointFormRules = {
+/** 点位表单校验规则(按协议类型条件化,KNX 才校验 DPT 编号格式) */
+const pointFormRules = computed(() => ({
   name: [
     {
       required: true,
@@ -364,15 +364,19 @@ const pointFormRules = {
   ],
   data_type: [
     { required: true, message: t('devices.dataTypeRequired'), trigger: 'blur' },
-    {
-      // KNX DPT 格式:主号或主号.子号(各最多 3 位),与后端 DPT_STRING_PATTERN 一致,
-      // 拦截 allow-create 手输的非法编号(如 "abc"、"5.0011")
-      pattern: /^\d{1,3}(\.\d{1,3})?$/,
-      message: t('devices.invalidDptFormat'),
-      trigger: 'blur'
-    }
+    ...(props.currentPluginName === 'knx'
+      ? [
+          {
+            // KNX DPT 格式:主号或主号.子号(各最多 3 位),与后端 DPT_STRING_PATTERN 一致,
+            // 拦截 allow-create 手输的非法编号(如 "abc"、"5.0011")
+            pattern: /^\d{1,3}(\.\d{1,3})?$/,
+            message: t('devices.invalidDptFormat'),
+            trigger: 'blur' as const
+          }
+        ]
+      : [])
   ]
-}
+}))
 
 /** 保存：校验通过后通知父组件执行保存逻辑 */
 const handleSave = async () => {
