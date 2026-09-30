@@ -468,13 +468,14 @@ export function useScadaLineChart(
       const nodeSize = cfg.nodeSize ?? 0
       const showSymbol = nodeSize > 0
       const values = s.data.map((d) => d.value)
-      const hasOnlyOne = allSeries.length === 1
 
       return {
         name: s.item.name || `Series ${allSeries.indexOf(s) + 1}`,
         type: 'line',
         data: values,
         smooth: cfg.smooth ?? true,
+        showSymbol,
+        showAllSymbol: showSymbol,
         symbol: showSymbol ? 'circle' : 'none',
         symbolSize: showSymbol ? nodeSize : 0,
         lineStyle: {
@@ -484,9 +485,9 @@ export function useScadaLineChart(
         itemStyle: {
           color: s.item.nodeFillColor || lineColor,
         },
-        areaStyle:
-          cfg.areaFill && hasOnlyOne
-            ? {
+        ...(cfg.areaFill
+          ? {
+              areaStyle: {
                 color: {
                   type: 'linear',
                   x: 0,
@@ -498,8 +499,9 @@ export function useScadaLineChart(
                     { offset: 1, color: colorWithAlpha(lineColor, 0.02) },
                   ],
                 },
-              }
-            : undefined,
+              },
+            }
+          : {}),
       }
     })
   }
