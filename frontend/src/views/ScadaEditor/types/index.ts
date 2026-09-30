@@ -239,8 +239,8 @@ export interface BarChartComponentConfig extends BaseComponentConfig {
   yAxisLabelFontSize?: number
   /** 柱体颜色 */
   barColor?: string
-  /** 柱体宽度（像素） */
-  barWidth?: number
+  /** 柱体宽度（像素 或 百分比，如 '60%'） */
+  barWidth?: number | string
   /** 柱体圆角 */
   barBorderRadius?: number | number[]
 }

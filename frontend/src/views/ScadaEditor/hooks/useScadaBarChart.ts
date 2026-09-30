@@ -35,6 +35,26 @@ const hoursMap: Record<string, number> = {
   '7d': 168,
 }
 
+/** 编辑模式下 mock 数据点数 */
+const MOCK_COUNT = 10
+/** 编辑模式下 mock 数据刷新间隔（ms） */
+const MOCK_INTERVAL = 3000
+
+/** 固定 10 个点的 mock 数据生成器：值在 10~90 之间随机 */
+const generateMockData = (): LineChartDataPoint[] => {
+  const now = Date.now()
+  const data: LineChartDataPoint[] = []
+  for (let i = MOCK_COUNT - 1; i >= 0; i--) {
+    data.push({
+      time: `${i + 1}`,
+      timestamp: now - i * 60_000,
+      value: Math.round((Math.random() * 80 + 10) * 10) / 10,
+      quality: 'good',
+    })
+  }
+  return data
+}
+
 export interface UseScadaBarChartReturn {
   /** 图表容器 DOM 引用 */
   containerRef: Ref<HTMLDivElement | null>
@@ -69,6 +89,21 @@ export function useScadaBarChart(
   let resizeObserver: ResizeObserver | null = null
   /** 是否已完成首次完整 option 渲染：true 后数据刷新用 merge 模式仅更新 series */
   let hasInitialized = false
+  /** 编辑模式 mock 数据刷新定时器 */
+  let mockTimer: ReturnType<typeof setInterval> | null = null
+
+  const startMockPolling = () => {
+    stopMockPolling()
+    updateChartOption(true)
+    mockTimer = setInterval(() => updateChartOption(), MOCK_INTERVAL)
+  }
+
+  const stopMockPolling = () => {
+    if (mockTimer) {
+      clearInterval(mockTimer)
+      mockTimer = null
+    }
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // 历史数据加载
@@ -166,7 +201,9 @@ export function useScadaBarChart(
     (isEditing) => {
       if (isEditing) {
         stopHistoryPolling()
+        startMockPolling()
       } else {
+        stopMockPolling()
         void loadHistoryData()
         startHistoryPolling()
       }
@@ -206,6 +243,7 @@ export function useScadaBarChart(
 
   const disposeChart = () => {
     stopHistoryPolling()
+    stopMockPolling()
 
     if (resizeObserver) {
       resizeObserver.disconnect()
@@ -228,7 +266,9 @@ export function useScadaBarChart(
       resizeObserver.observe(containerRef.value)
     }
 
-    if (!scada.isEditing.value && binding.value) {
+    if (scada.isEditing.value) {
+      startMockPolling()
+    } else if (binding.value) {
       void loadHistoryData()
       startHistoryPolling()
     }
@@ -277,16 +317,9 @@ export function useScadaBarChart(
     const cfg = chartConfig.value
     const hours = hoursMap[cfg?.timeRange || '24h'] || 24
 
-    if (scada.isEditing.value && typeof fallbackValue.value === 'number') {
-      return generateTrendData(
-        {
-          name: '',
-          currentValue: fallbackValue.value,
-          type: 'analog',
-          standard_data_type: 'float',
-        },
-        hours,
-      )
+    // 编辑预览模式：始终显示 mock 数据（10 个随机值）
+    if (scada.isEditing.value) {
+      return generateMockData()
     }
 
     if (boundPoint.value) {
@@ -297,7 +330,8 @@ export function useScadaBarChart(
       return generateTrendData(boundPoint.value, hours)
     }
 
-    return []
+    // 运行时无绑定点位也返回 mock，避免图表空白
+    return generateMockData()
   }
 
   const buildXAxisData = (data: LineChartDataPoint[], cfg: BarChartComponentConfig): string[] => {
@@ -359,10 +393,11 @@ export function useScadaBarChart(
       {
         type: 'bar',
         data: values,
-        barWidth: cfg.barWidth ?? '50%',
+        barWidth: cfg.barWidth ?? '60%',
+        barCategoryGap: '50%',
         itemStyle: {
           color: barColor,
-          borderRadius: cfg.barBorderRadius ?? 4,
+          borderRadius: [cfg.barBorderRadius ?? 4, cfg.barBorderRadius ?? 4, 0, 0] as number[],
         },
       },
     ]

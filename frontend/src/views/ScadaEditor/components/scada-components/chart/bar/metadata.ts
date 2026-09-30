@@ -15,8 +15,7 @@ const defaultConfig: BarChartComponentConfig = {
   xAxisLabelFontSize: 12,
   yAxisLabelColor: '#666666',
   yAxisLabelFontSize: 12,
-  barColor: '#27ae60',
-  barWidth: 20,
+  barColor: '#22D3EE',
   barBorderRadius: 4,
 }
 
