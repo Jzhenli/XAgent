@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { deviceApi } from '@/api/devices'
 import { dataApi } from '@/api/data'
 import { controlApi } from '@/api/control'
-import type { Reading, StandardPoint } from '@/api/data'
+import type { Reading, StandardPoint, TrendPoint } from '@/api/data'
 import type { DeviceConfig, PointConfig } from '@/api/types'
 import { parseStandardPoints, mapPointToDisplay, mapDeviceWithPoints } from '@/utils/pointMapping'
 import type { ReadingData } from '@/utils/pointMapping'
@@ -107,6 +107,9 @@ export const usePointStore = defineStore('points', () => {
   const latestReadings = ref<Map<string, Reading>>(new Map())
   const historyReadings = ref<Reading[]>([])
   const historyLoading = ref(false)
+  /** 单点位趋势数据（服务端过滤，轻量） */
+  const pointTrendData = ref<TrendPoint[]>([])
+  const pointTrendLoading = ref(false)
 
   const allPoints = computed(() => {
     const points: (PointDisplay & { deviceAsset: string; deviceName: string })[] = []
@@ -290,6 +293,51 @@ export const usePointStore = defineStore('points', () => {
     }
   }
 
+  /** 单点位趋势请求序号：切换点位后丢弃迟到的旧响应，避免串数据 */
+  let pointTrendRequestId = 0
+
+  /**
+   * 获取单点位历史趋势（服务端过滤，轻量接口）
+   * @param asset 设备 asset
+   * @param pointName 点位名
+   * @param hours 查询小时数，默认 24
+   */
+  async function fetchPointTrend(asset: string, pointName: string, hours: number = 24, limit: number = 1000) {
+    const requestId = ++pointTrendRequestId
+    pointTrendLoading.value = true
+
+    try {
+      const endTime = Date.now() / 1000
+      const startTime = endTime - hours * 3600
+      const response = await dataApi.getPointTrend(asset, pointName, startTime, endTime, limit)
+      // 已切换点位/设备：丢弃迟到响应
+      if (requestId !== pointTrendRequestId) return []
+      // 服务端 timestamp 为秒且按时间倒序返回；统一转为毫秒并升序，
+      // 与 getPointTrendData / generateTrendData 的输出格式保持一致
+      const points = response.points
+        .map(d => ({ ...d, timestamp: d.timestamp * 1000 }))
+        .sort((a, b) => a.timestamp - b.timestamp)
+      pointTrendData.value = points
+      return points
+    } catch (e: unknown) {
+      console.error(`Failed to fetch point trend for ${asset}.${pointName}:`, e)
+      if (requestId !== pointTrendRequestId) return []
+      pointTrendData.value = []
+      return []
+    } finally {
+      // 仅当仍是最新请求时复位 loading，避免旧请求提前结束加载态
+      if (requestId === pointTrendRequestId) {
+        pointTrendLoading.value = false
+      }
+    }
+  }
+
+  /** 清空单点位趋势数据（设备/点位切换时调用，避免串数据） */
+  function clearPointTrendData() {
+    pointTrendRequestId++ // 使在途请求作废，防止响应回来重新填充
+    pointTrendData.value = []
+  }
+
   /**
    * 从历史读数中提取指定点位的趋势数据
    * @param pointName 点位名
@@ -369,6 +417,10 @@ export const usePointStore = defineStore('points', () => {
     if (device) {
       const point = device.points.find(p => p.name === pointName)
       if (point) {
+        // 切换点位时清空上一点位的趋势缓存，避免响应间隙渲染串数据
+        if (selectedPoint.value?.name !== pointName || selectedDeviceAsset.value !== deviceAsset) {
+          pointTrendData.value = []
+        }
         selectedPoint.value = point
         selectedDeviceAsset.value = deviceAsset
       }
@@ -378,6 +430,7 @@ export const usePointStore = defineStore('points', () => {
   function clearSelection() {
     selectedPoint.value = null
     selectedDeviceAsset.value = null
+    pointTrendData.value = []
   }
 
   /**
@@ -504,6 +557,8 @@ export const usePointStore = defineStore('points', () => {
     latestReadings,
     historyReadings,
     historyLoading,
+    pointTrendData,
+    pointTrendLoading,
     allPoints,
     fetchDevicesWithPoints,
     fetchDevicePoints,
@@ -511,6 +566,8 @@ export const usePointStore = defineStore('points', () => {
     fetchLatestReadings,
     fetchAllLatestReadings,
     fetchHistoryReadings,
+    fetchPointTrend,
+    clearPointTrendData,
     getPointTrendData,
     addPoint,
     updatePoint,

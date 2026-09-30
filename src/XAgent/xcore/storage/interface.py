@@ -28,6 +28,22 @@ class StorageInterface(ABC):
         active_only: bool = False
     ) -> List[Reading]:
         pass
+
+    @abstractmethod
+    async def query_point_trend(
+        self,
+        asset: str,
+        point_name: str,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
+        limit: int = 1000
+    ) -> List[Dict[str, Any]]:
+        """查询单个点位的历史趋势数据
+
+        Returns:
+            [{"timestamp": float, "value": Any, "quality": str}]，按时间倒序
+        """
+        pass
     
     @abstractmethod
     async def delete_old_readings(self, before_timestamp: float) -> int:

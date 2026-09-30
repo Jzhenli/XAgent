@@ -25,6 +25,17 @@ export interface ReadingsResponse {
   readings: Reading[]
 }
 
+export interface TrendPoint {
+  timestamp: number
+  value: number | boolean | string
+  quality: string
+}
+
+export interface PointTrendResponse {
+  count: number
+  points: TrendPoint[]
+}
+
 export const dataApi = {
   async getReadings(params?: {
     asset?: string
@@ -54,6 +65,23 @@ export const dataApi = {
       limit,
       active_only: false
     })
+  },
+
+  /**
+   * 单点位历史趋势查询：服务端过滤，仅返回 {timestamp, value, quality}
+   * 注意：timestamp 为 Unix 秒级时间戳，按时间倒序返回（由调用方负责单位转换与排序）
+   */
+  async getPointTrend(
+    asset: string,
+    point: string,
+    startTime?: number,
+    endTime?: number,
+    limit = 1000
+  ): Promise<PointTrendResponse> {
+    const res = await api.get('/api/data/trend', {
+      params: { asset, point, start_time: startTime, end_time: endTime, limit }
+    })
+    return res.data
   },
 
   async deleteReadings(beforeTimestamp: number): Promise<{ success: boolean; deleted: number }> {
