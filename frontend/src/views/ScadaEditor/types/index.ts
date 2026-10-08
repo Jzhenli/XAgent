@@ -511,6 +511,41 @@ export interface InfoCardComponentConfig extends BaseComponentConfig {
   unitFontColor: string
 }
 
+/** 值进度卡片组件配置（左上标题 + 右上图标 + 数值+单位 + 横向进度条） */
+export interface ValueProgressCardComponentConfig extends BaseComponentConfig {
+  // ── 左上标题区 ──
+  title: string
+  titleFontSize: number
+  titleFontColor: string
+
+  // ── 右上图标区 ──
+  iconName: string
+  iconSize: number
+  iconColor: string
+
+  // ── 当前值区（进度条上方） ──
+  valueFontSize: number
+  valueFontColor: string
+  decimalPlaces: number
+
+  // ── 单位区 ──
+  unit: string
+  unitFontSize: number
+  unitFontColor: string
+
+  // ── 进度条区 ──
+  min: number
+  max: number
+  /** 进度条激活颜色（填充色） */
+  barColor: string
+  /** 进度条轨道底色 */
+  barTrackColor: string
+  /** 进度条高度（px） */
+  barHeight: number
+  /** 进度条圆角（px） */
+  barRadius: number
+}
+
 /** 弹框组件配置 */
 export interface PopupComponentConfig extends BaseComponentConfig {
   /** 触发按钮文字 */
@@ -764,6 +799,7 @@ export interface ComponentConfigMap {
   'ac-controller': AcControllerComponentConfig
   'ac-controller-2': AcController2ComponentConfig
   'info-card': InfoCardComponentConfig
+  'value-progress-card': ValueProgressCardComponentConfig
 }
 
 /** 组件统一配置类型 */

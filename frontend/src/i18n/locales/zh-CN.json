@@ -1749,6 +1749,15 @@
     "infoCardIconSection": "图标区",
     "infoCardValueSection": "数值区",
     "infoCardUnitSection": "单位区",
+    "valueProgressCardConfig": "值进度卡片配置",
+    "valueProgressCardTitleSection": "标题区",
+    "valueProgressCardIconSection": "图标区",
+    "valueProgressCardValueSection": "数值区",
+    "valueProgressCardUnitSection": "单位区",
+    "valueProgressCardBarSection": "进度条",
+    "barTrackColor": "轨道底色",
+    "barHeight": "进度条高度",
+    "barRadius": "进度条圆角",
     "barItemsSection": "柱体",
     "barItem": "柱体",
     "barLabel": "标签",
@@ -1988,7 +1997,8 @@
     "acController": "空调面板",
     "acController2": "空调面板2",
     "lightButton": "灯控按钮",
-    "infoCard": "信息卡片"
+    "infoCard": "信息卡片",
+    "valueProgressCard": "值进度卡片"
   },
   "ruleNodeCategories": {
     "trigger": "触发器",

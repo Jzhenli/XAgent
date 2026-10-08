@@ -1749,6 +1749,15 @@
     "infoCardIconSection": "圖示區",
     "infoCardValueSection": "數值區",
     "infoCardUnitSection": "單位區",
+    "valueProgressCardConfig": "值進度卡片設定",
+    "valueProgressCardTitleSection": "標題區",
+    "valueProgressCardIconSection": "圖示區",
+    "valueProgressCardValueSection": "數值區",
+    "valueProgressCardUnitSection": "單位區",
+    "valueProgressCardBarSection": "進度條",
+    "barTrackColor": "軌道底色",
+    "barHeight": "進度條高度",
+    "barRadius": "進度條圓角",
     "barItemsSection": "柱體",
     "barItem": "柱體",
     "barLabel": "標籤",
@@ -1988,7 +1997,8 @@
     "acController": "空調面板",
     "acController2": "空調面板2",
     "lightButton": "燈控按鈕",
-    "infoCard": "資訊卡片"
+    "infoCard": "資訊卡片",
+    "valueProgressCard": "值進度卡片"
   },
   "ruleNodeCategories": {
     "trigger": "觸發器",

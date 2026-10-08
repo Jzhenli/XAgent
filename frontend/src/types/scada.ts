@@ -50,6 +50,7 @@ export type {
   AcControllerComponentConfig,
   AcController2ComponentConfig,
   InfoCardComponentConfig,
+  ValueProgressCardComponentConfig,
   ScadaComponent,
   PanelType,
   ScadaPanel

@@ -1749,6 +1749,15 @@
     "infoCardIconSection": "Icon Section",
     "infoCardValueSection": "Value Section",
     "infoCardUnitSection": "Unit Section",
+    "valueProgressCardConfig": "Value Progress Card Config",
+    "valueProgressCardTitleSection": "Title Section",
+    "valueProgressCardIconSection": "Icon Section",
+    "valueProgressCardValueSection": "Value Section",
+    "valueProgressCardUnitSection": "Unit Section",
+    "valueProgressCardBarSection": "Progress Bar",
+    "barTrackColor": "Track Color",
+    "barHeight": "Bar Height",
+    "barRadius": "Bar Radius",
     "barItemsSection": "Bars",
     "barItem": "Bar",
     "barLabel": "Label",
@@ -1988,7 +1997,8 @@
     "acController": "AC Panel",
     "acController2": "AC Panel 2",
     "lightButton": "Light Button",
-    "infoCard": "Info Card"
+    "infoCard": "Info Card",
+    "valueProgressCard": "Value Progress Card"
   },
   "ruleNodeCategories": {
     "trigger": "Triggers",
