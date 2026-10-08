@@ -16,7 +16,9 @@ const defaultConfig: BarChartComponentConfig = {
   yAxisLabelColor: '#666666',
   yAxisLabelFontSize: 12,
   barColor: '#22D3EE',
+  barWidth: 20,
   barBorderRadius: 4,
+  barCount: 10,
 }
 
 export const chartBarMeta: ScadaComponentMeta = {

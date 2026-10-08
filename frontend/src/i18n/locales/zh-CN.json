@@ -1736,6 +1736,7 @@
     "barColor": "柱体颜色",
     "barWidth": "柱体宽度",
     "barBorderRadius": "柱体圆角",
+    "barCount": "柱子个数",
     "indicatorConfig": "指示灯配置",
     "onColor": "开启颜色",
     "offColor": "关闭颜色",

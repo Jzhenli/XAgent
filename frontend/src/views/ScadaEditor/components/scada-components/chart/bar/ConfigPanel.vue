@@ -123,8 +123,18 @@
         <input
           type="number"
           min="1"
-          :value="config.barWidth"
+          :value="barWidthNumeric"
           @change="updateConfig('barWidth', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.barCount') }}</label>
+        <input
+          type="number"
+          min="1"
+          max="200"
+          :value="config.barCount ?? 10"
+          @change="updateConfig('barCount', +($event.target as HTMLInputElement).value)"
         />
       </div>
     </div>
@@ -132,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useScadaConfig } from '../../../../hooks/useScadaEditor'
 import type { ScadaComponent, BarChartComponentConfig } from '../../../../types'
@@ -144,6 +154,17 @@ const props = defineProps<{
 }>()
 
 const { config, updateConfig } = useScadaConfig(props.component as ScadaComponent<'chart-bar'>)
+
+/** barWidth 兼容 number | string 类型与缺失情况，number input 只认数字 */
+const barWidthNumeric = computed(() => {
+  const v = config.value.barWidth
+  if (typeof v === 'number') return v
+  if (typeof v === 'string') {
+    const n = Number.parseFloat(v)
+    return Number.isFinite(n) ? n : 60
+  }
+  return 60
+})
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 颜色选择器字段

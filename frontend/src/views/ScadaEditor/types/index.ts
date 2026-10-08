@@ -243,6 +243,8 @@ export interface BarChartComponentConfig extends BaseComponentConfig {
   barWidth?: number | string
   /** 柱体圆角 */
   barBorderRadius?: number | number[]
+  /** 柱状图显示的柱子个数（默认 20） */
+  barCount?: number
 }
 
 /** 折线图数据点 */

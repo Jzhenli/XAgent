@@ -35,16 +35,14 @@ const hoursMap: Record<string, number> = {
   '7d': 168,
 }
 
-/** 编辑模式下 mock 数据点数 */
-const MOCK_COUNT = 10
 /** 编辑模式下 mock 数据刷新间隔（ms） */
 const MOCK_INTERVAL = 3000
 
-/** 固定 10 个点的 mock 数据生成器：值在 10~90 之间随机 */
-const generateMockData = (): LineChartDataPoint[] => {
+/** 固定 count 个点的 mock 数据生成器：值在 10~90 之间随机 */
+const generateMockData = (count: number = 20): LineChartDataPoint[] => {
   const now = Date.now()
   const data: LineChartDataPoint[] = []
-  for (let i = MOCK_COUNT - 1; i >= 0; i--) {
+  for (let i = count - 1; i >= 0; i--) {
     data.push({
       time: `${i + 1}`,
       timestamp: now - i * 60_000,
@@ -316,22 +314,23 @@ export function useScadaBarChart(
   const buildData = (): LineChartDataPoint[] => {
     const cfg = chartConfig.value
     const hours = hoursMap[cfg?.timeRange || '24h'] || 24
+    const count = cfg?.barCount ?? 20
 
-    // 编辑预览模式：始终显示 mock 数据（10 个随机值）
+    // 编辑预览模式：始终显示 mock 数据
     if (scada.isEditing.value) {
-      return generateMockData()
+      return generateMockData(count)
     }
 
     if (boundPoint.value) {
       const realData = getPointTrendData(boundPoint.value.name, binding.value?.deviceId)
       if (realData.length > 0) {
-        return realData
+        return realData.slice(-count)
       }
-      return generateTrendData(boundPoint.value, hours)
+      return generateTrendData(boundPoint.value, hours).slice(-count)
     }
 
     // 运行时无绑定点位也返回 mock，避免图表空白
-    return generateMockData()
+    return generateMockData(count)
   }
 
   const buildXAxisData = (data: LineChartDataPoint[], cfg: BarChartComponentConfig): string[] => {
