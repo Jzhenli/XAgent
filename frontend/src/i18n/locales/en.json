@@ -1744,6 +1744,11 @@
     "sliderConfig": "Brightness Adjuster Config",
     "sliderSwitchConfig": "Slider Progress Bar Config",
     "sliderBarConfig": "Slider Bar Chart Config",
+    "infoCardConfig": "Info Card Config",
+    "infoCardTitleSection": "Title Section",
+    "infoCardIconSection": "Icon Section",
+    "infoCardValueSection": "Value Section",
+    "infoCardUnitSection": "Unit Section",
     "barItemsSection": "Bars",
     "barItem": "Bar",
     "barLabel": "Label",
@@ -1982,7 +1987,8 @@
     "popup": "Popup",
     "acController": "AC Panel",
     "acController2": "AC Panel 2",
-    "lightButton": "Light Button"
+    "lightButton": "Light Button",
+    "infoCard": "Info Card"
   },
   "ruleNodeCategories": {
     "trigger": "Triggers",

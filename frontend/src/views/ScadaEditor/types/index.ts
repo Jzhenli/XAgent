@@ -488,6 +488,29 @@ export interface ValueImageSwitchComponentConfig extends BaseComponentConfig {
   enableWrite?: boolean
 }
 
+/** 信息卡片组件配置（分区样式：左上标题 + 右上图标 + 左下当前值 + 左下单位） */
+export interface InfoCardComponentConfig extends BaseComponentConfig {
+  // ── 左上标题区 ──
+  title: string
+  titleFontSize: number
+  titleFontColor: string
+
+  // ── 右上图标区 ──
+  iconName: string
+  iconSize: number
+  iconColor: string
+
+  // ── 当前值区 ──
+  valueFontSize: number
+  valueFontColor: string
+  decimalPlaces: number
+
+  // ── 单位区 ──
+  unit: string
+  unitFontSize: number
+  unitFontColor: string
+}
+
 /** 弹框组件配置 */
 export interface PopupComponentConfig extends BaseComponentConfig {
   /** 触发按钮文字 */
@@ -740,6 +763,7 @@ export interface ComponentConfigMap {
   popup: PopupComponentConfig
   'ac-controller': AcControllerComponentConfig
   'ac-controller-2': AcController2ComponentConfig
+  'info-card': InfoCardComponentConfig
 }
 
 /** 组件统一配置类型 */

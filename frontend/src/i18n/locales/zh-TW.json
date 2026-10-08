@@ -1744,6 +1744,11 @@
     "sliderConfig": "亮度調節器設定",
     "sliderSwitchConfig": "滑塊式進度條設定",
     "sliderBarConfig": "滑塊式長條圖設定",
+    "infoCardConfig": "資訊卡片設定",
+    "infoCardTitleSection": "標題區",
+    "infoCardIconSection": "圖示區",
+    "infoCardValueSection": "數值區",
+    "infoCardUnitSection": "單位區",
     "barItemsSection": "柱體",
     "barItem": "柱體",
     "barLabel": "標籤",
@@ -1982,7 +1987,8 @@
     "popup": "彈框",
     "acController": "空調面板",
     "acController2": "空調面板2",
-    "lightButton": "燈控按鈕"
+    "lightButton": "燈控按鈕",
+    "infoCard": "資訊卡片"
   },
   "ruleNodeCategories": {
     "trigger": "觸發器",
