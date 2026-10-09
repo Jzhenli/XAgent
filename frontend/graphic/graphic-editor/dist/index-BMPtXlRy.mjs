@@ -5317,7 +5317,7 @@ const _hoisted_1$q = { class: "property-group-panel-title" }, _hoisted_2$m = { c
       ])
     ]));
   }
-}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-CL3mclu_.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-BWCrkPxr.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-CVugzrY8.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-3swD1VcQ.mjs"));
+}), PropertyGroupBinding = defineAsyncComponent(() => import("./PropertyGroupBinding-BAOK-tzm.mjs")), PropertyGroupAlignItems = defineAsyncComponent(() => import("./PropertyGroupAlignItems-D2_-g7FV.mjs")), PropertyGroupOrderItems = defineAsyncComponent(() => import("./PropertyGroupOrderItems-Dhl_jn9O.mjs")), PropertyGroupPopupConfig = defineAsyncComponent(() => import("./PropertyGroupPopupConfig-BvXV5meG.mjs"));
 var propertyGroupRenderType = /* @__PURE__ */ ((l) => (l.normal = "normal", l.binding = "binding", l.listBinding = "listBinding", l.alignItems = "alignItems", l.orderItems = "orderItems", l.bindingDashboard = "bindingDashboard", l.propertyGroupBackground = "propertyGroupBackground", l.propertyGroupText = "propertyGroupText", l.propertyGroupPositionSize = "propertyGroupPositionSize", l.propertyGroupViewPosition = "propertyGroupViewPosition", l.animationConfigGroup = "animationConfigGroup", l.iconPropertyConfig = "iconPropertyConfig", l.GlowEffectConfig = "GlowEffectConfig", l.popupConfigGroup = "popupConfigGroup", l))(propertyGroupRenderType || {}), brushTypes = /* @__PURE__ */ ((l) => (l.backgroundStyle = "backgroundStyle", l.textStyle = "textStyle", l.shadingColor = "shadingColor", l.iconStyle = "iconStyle", l))(brushTypes || {});
 const brushPropertiesMap = /* @__PURE__ */ new Map([
   ["backgroundStyle", [
@@ -72553,7 +72553,7 @@ class GraphicRenderManager extends Eventful$1 {
       x.loadDataRender(g, a.customImageCache), this.layers.push(x), this.renderingLayerIdxList.push(v);
     }), this.layers.forEach((g) => {
       g.items.forEach((v) => {
-        v.isRenderPointer() ? (v.on(GMouseEventType.mouseover, () => {
+        v.isRenderPointer() || v.options?.popupConfig?.enablePopup ? (v.on(GMouseEventType.mouseover, () => {
           this.renderDrawingArea?.setCursorStyle(EditorCursorType.pointer);
         }), v.on(GMouseEventType.mouseout, () => {
           this.renderDrawingArea?.setCursorStyle(EditorCursorType.default);
