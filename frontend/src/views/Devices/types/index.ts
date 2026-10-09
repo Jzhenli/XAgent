@@ -70,14 +70,14 @@ export interface WriteFormData {
  * 各插件协议的默认配置，作为单一数据源在新增/编辑设备表单中复用。
  */
 export const PLUGIN_DEFAULTS: Record<string, Record<string, any>> = {
-  modbus_tcp: { host: '', port: 502, slave_id: 1, timeout: 5, interval: 1 },
+  modbus_tcp: { host: '', port: 502, slave_id: 1, timeout: 5, interval: 3 },
   modbus_rtu: {
     serial_port: '/dev/ttyUSB0', baudrate: 9600, parity: 'N',
-    stopbits: 1, bytesize: 8, slave_id: 1, timeout: 5, interval: 1
+    stopbits: 1, bytesize: 8, slave_id: 1, timeout: 5, interval: 3
   },
   knx: {
     gateway_ip: '', local_ip: '', port: 3671, connection_type: 'automatic',
-    interval: 1, sync_mode: 'smart', sync_interval: 60, timeout: 5
+    interval: 3, sync_mode: 'smart', sync_interval: 60, timeout: 5
   },
   bacnet: { host: '', port: 47808, device_id: 1234, timeout: 5, interval: 5 }
 }
@@ -93,7 +93,7 @@ const BASE_FORM_DEFAULTS: DeviceFormData = {
   port: 502,
   slave_id: 1,
   timeout: 5,
-  interval: 1,
+  interval: 3,
   serial_port: '/dev/ttyUSB0',
   baudrate: 9600,
   parity: 'N',
