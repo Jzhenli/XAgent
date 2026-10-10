@@ -42,7 +42,9 @@ const defaultVal = computed(
 // SCADA 读写钩子
 const { currentValue, writeValue } = useScadaBinding(
   bindingInfo,
-  {},
+  {
+    transform: (value) => typeof value === 'boolean' ? (value ? 1 : 0) : value,
+  },
   defaultVal,
 );
 

@@ -18,7 +18,13 @@ const enumConfig = computed(() => props.component.config as EnumValueComponentCo
 const binding = computed(() => props.component.binding)
 const fallbackValue = computed(() => enumConfig.value?.value ?? 1)
 
-const { currentValue } = useScadaBinding(binding, {}, fallbackValue)
+const { currentValue } = useScadaBinding(
+  binding,
+  {
+    transform: (value) => typeof value === 'boolean' ? (value ? 1 : 0) : value,
+  },
+  fallbackValue,
+)
 
 const enumItems = computed(() => enumConfig.value?.enumItems ?? [])
 const fontSize = computed(() => enumConfig.value?.fontSize ?? 24)
