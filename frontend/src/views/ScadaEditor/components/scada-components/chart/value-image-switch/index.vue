@@ -40,7 +40,7 @@ const fallbackValue = computed(() => config.value?.value ?? null)
 const { currentValue, writeValue } = useScadaBinding(
   binding,
   {
-    transform: (value) => value,
+    transform: (value) => typeof value === 'boolean' ? (value ? 1 : 0) : value,
   },
   fallbackValue,
 )
