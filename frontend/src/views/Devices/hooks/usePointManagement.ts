@@ -173,7 +173,7 @@ export function usePointManagement(
         { label: '9.028-wind speed (km/h)', value: '9.028' },
         { label: '9.029-absolute humidity (g/m³)', value: '9.029' },
         { label: '9.030-concentration (ug/m³)', value: '9.030' },
-        { label: '9.031-coefficient', value: '9.031' }
+        // { label: '9.031-coefficient', value: '9.031' }
       ]
     },
     {
