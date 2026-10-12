@@ -40,6 +40,7 @@ from .constants import (
     DEFAULT_HEARTBEAT_PROPERTY,
     DEFAULT_HEARTBEAT_TIMEOUT,
     DEFAULT_HEARTBEAT_RETRIES,
+    DEFAULT_WRITE_TIMEOUT,
 )
 
 logger = logging.getLogger(__name__)
@@ -223,6 +224,7 @@ class BACnetPlugin(SouthPluginBase):
                 "heartbeat_property": {"type": "string", "default": "objectName", "title": "心跳属性"},
                 "heartbeat_timeout": {"type": "number", "default": 5.0, "title": "心跳超时(秒)"},
                 "heartbeat_retries": {"type": "integer", "default": 3, "title": "心跳重试次数"},
+                "write_timeout": {"type": "number", "default": 15.0, "title": "写入超时(秒)"},
                 "point_timeout": {"type": "number", "default": 3.0, "title": "点位超时(秒)"},
                 "point_retries": {"type": "integer", "default": 2, "title": "点位重试次数"},
                 "max_concurrent_reads": {"type": "integer", "default": 20, "title": "最大并发读取数"},
@@ -268,6 +270,8 @@ class BACnetPlugin(SouthPluginBase):
         self._heartbeat_timeout = config.get("heartbeat_timeout", DEFAULT_HEARTBEAT_TIMEOUT)
         self._heartbeat_retries = config.get("heartbeat_retries", DEFAULT_HEARTBEAT_RETRIES)
         self._heartbeat_property = config.get("heartbeat_property", DEFAULT_HEARTBEAT_PROPERTY)
+
+        self._write_timeout = config.get("write_timeout", DEFAULT_WRITE_TIMEOUT)
         
         self._point_timeout = config.get("point_timeout", self.POINT_TIMEOUT)
         self._point_retries = config.get("point_retries", self.POINT_RETRIES)
@@ -468,7 +472,12 @@ class BACnetPlugin(SouthPluginBase):
             else:
                 logger.error(f"Failed to write {value} to {point}")
             return success
-            
+
+        except asyncio.TimeoutError:
+            # 写超时向上传播（其余异常仍归一化为 False）：
+            # 由 CommandExecutor 将命令标记为 FAILED，保持"超时=失败"语义
+            raise
+
         except Exception as e:
             logger.error(f"Write error for {point}: {e}")
             return False
@@ -927,19 +936,31 @@ class BACnetPlugin(SouthPluginBase):
             device_address = f"{self._host}:{self._port}"
             object_identifier = f"{object_type},{object_instance}"
             
-            response = await self._app.write_property(
-                device_address,
-                object_identifier,
-                property_id,
-                value
+            response = await asyncio.wait_for(
+                self._app.write_property(
+                    device_address,
+                    object_identifier,
+                    property_id,
+                    value
+                ),
+                timeout=self._write_timeout
             )
-            
+
             if _ErrorRejectAbortNack and isinstance(response, _ErrorRejectAbortNack):
                 logger.error(f"Error writing point {point_info.get('name')}: {response}")
                 return False
-            
+
             return True
-            
+
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Write timeout after {self._write_timeout}s "
+                f"for point {point_info.get('name')}"
+            )
+            # 向上传播：由 CommandExecutor 将命令标记为 FAILED，
+            # 避免"超时却返回 COMPLETED(result=False)"造成状态误导
+            raise
+
         except Exception as e:
             logger.error(f"Error writing point {point_info.get('name')}: {e}")
             return False

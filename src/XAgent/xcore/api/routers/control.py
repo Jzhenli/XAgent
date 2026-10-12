@@ -31,7 +31,8 @@ async def submit_control_command(
     )
     
     if not success:
-        raise HTTPException(status_code=500, detail="Failed to submit command")
+        # 503 Service Unavailable：执行器已停止或 worker 崩溃熔断（暂时不可用）
+        raise HTTPException(status_code=503, detail="Command executor unavailable")
     
     return ControlCommandResponse(
         command_id=command_id,
