@@ -47,10 +47,15 @@ class SQLiteStorage(StorageInterface):
             )
         """)
         
+        await self._create_metadata_tables()
+
+        # 迁移必须在建表之后执行：全新库首次启动时表尚不存在，
+        # 先迁移会因 "no such table" 抛错并被静默吞掉，导致
+        # CREATE TABLE 未覆盖的列（version/created_by 等）永久缺失
         await self._migrate_add_columns()
-        
+
         await self._db.execute("""
-            CREATE INDEX IF NOT EXISTS idx_readings_asset 
+            CREATE INDEX IF NOT EXISTS idx_readings_asset
             ON readings(asset)
         """)
         
@@ -70,8 +75,6 @@ class SQLiteStorage(StorageInterface):
             CREATE INDEX IF NOT EXISTS idx_readings_asset_timestamp
             ON readings(asset, timestamp DESC)
         """)
-        
-        await self._create_metadata_tables()
 
         await self._db.commit()
         self._initialized = True
@@ -95,7 +98,12 @@ class SQLiteStorage(StorageInterface):
                 config_path TEXT,
                 created_at REAL NOT NULL,
                 updated_at REAL NOT NULL,
-                deleted_at REAL
+                deleted_at REAL,
+                version INTEGER DEFAULT 1,
+                created_by TEXT,
+                updated_by TEXT,
+                last_reload_at REAL,
+                reload_count INTEGER DEFAULT 0
             );
             
             CREATE TABLE IF NOT EXISTS point_registry (
@@ -114,6 +122,10 @@ class SQLiteStorage(StorageInterface):
                 created_at REAL NOT NULL,
                 updated_at REAL NOT NULL,
                 deleted_at REAL,
+                standard_data_type TEXT,
+                version INTEGER DEFAULT 1,
+                created_by TEXT,
+                updated_by TEXT,
                 UNIQUE(asset, point_name)
             );
             
