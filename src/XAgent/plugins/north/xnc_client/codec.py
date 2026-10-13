@@ -138,6 +138,52 @@ class ProtobufCodec:
     @staticmethod
     def encode_message(msg: apiMsg) -> bytes:
         return msg.SerializeToString()
+
+    @staticmethod
+    def split_message(msg: apiMsg, max_payload: int) -> List[apiMsg]:
+        """按单包 payload 上限拆分 apiMsg
+
+        接收端对单个 UDP 包有大小校验（超长直接丢弃），因此序列化后超过
+        max_payload 的消息必须按点位（apiObject 粒度）拆分为多个消息分批发送，
+        每片保持 uuid/cmdID/vdID/status 不变。
+
+        注意：若单个 apiObject 序列化后就超过 max_payload（如超长字符串点位），
+        该片无法再拆分，会原样返回，由发送层兜底丢弃并记录日志。
+
+        Args:
+            msg: 待拆分的 protobuf 消息
+            max_payload: 单个消息序列化后的最大字节数（不含 UDP 帧头尾开销）
+
+        Returns:
+            拆分后的消息列表（不超限时为 [msg]）
+        """
+        if len(msg.SerializeToString()) <= max_payload:
+            return [msg]
+
+        def rebuild(objects: List[apiObject]) -> apiMsg:
+            piece = apiMsg()
+            piece.uuid = msg.uuid
+            piece.cmdID = msg.cmdID
+            piece.vdID = msg.vdID
+            piece.status = msg.status
+            for obj in objects:
+                piece.opv.append(obj)
+            return piece
+
+        chunks: List[List[apiObject]] = []
+        current: List[apiObject] = []
+
+        for obj in msg.opv:
+            candidate = current + [obj]
+            if current and len(rebuild(candidate).SerializeToString()) > max_payload:
+                chunks.append(current)
+                current = [obj]
+            else:
+                current = candidate
+        if current:
+            chunks.append(current)
+
+        return [rebuild(chunk) for chunk in chunks]
     
     @staticmethod
     def decode_message(data: bytes) -> apiMsg:

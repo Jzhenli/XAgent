@@ -21,6 +21,7 @@ from .constants import (
     DEFAULT_BATCH_SIZE as XNC_DEFAULT_BATCH_SIZE,
     DEFAULT_INTERVAL as XNC_DEFAULT_INTERVAL,
     DEFAULT_RECONNECT_INTERVAL as XNC_DEFAULT_RECONNECT_INTERVAL,
+    DEFAULT_MAX_PACKET_SIZE,
 )
 
 logger = logging.getLogger(__name__)
@@ -90,6 +91,7 @@ class XNCClientPlugin(NorthPluginBase):
         self._remote_host = conn.get("remote_host", DEFAULT_REMOTE_HOST)
         self._remote_port = conn.get("remote_port", DEFAULT_REMOTE_PORT)
         self._local_port = conn.get("local_port", DEFAULT_LOCAL_PORT)
+        self._max_packet_size = conn.get("max_packet_size", DEFAULT_MAX_PACKET_SIZE)
         
         self._send_transport = None
         self._command_transport = None
@@ -174,20 +176,39 @@ class XNCClientPlugin(NorthPluginBase):
     # ===== XNC-specific methods =====
     
     async def _send_protobuf_payload(self, payload: Any) -> bool:
-        """Send Protobuf format data"""
+        """Send Protobuf format data (split packets exceeding size limit)"""
         try:
             messages = payload if isinstance(payload, list) else [payload]
-            
+
+            # UDP 帧固定开销: 10B 头 + 2B CRC, payload 上限 = max_packet_size - 12
+            max_payload = (
+                self._max_packet_size
+                - UDPProtocolCodec.HEADER_SIZE
+                - UDPProtocolCodec.CRC_SIZE
+            )
+            sent_any = False
+
             for msg in messages:
                 if not isinstance(msg, apiMsg):
                     continue
-                
-                payload_bytes = ProtobufCodec.encode_message(msg)
-                packet = self._protocol_codec.encode(payload_bytes)
-                self._send_transport.sendto(packet)
-            
-            return True
-            
+
+                for piece in ProtobufCodec.split_message(msg, max_payload):
+                    payload_bytes = ProtobufCodec.encode_message(piece)
+                    packet = self._protocol_codec.encode(payload_bytes)
+                    if len(packet) > self._max_packet_size:
+                        # 兜底: 单点位数据本身超限(如超长字符串), 无法再拆分
+                        logger.error(
+                            "Dropping oversized packet: %d bytes > %d limit, "
+                            "vdID=%s, objects=%d (single object too large)",
+                            len(packet), self._max_packet_size,
+                            piece.vdID, len(piece.opv),
+                        )
+                        continue
+                    self._send_transport.sendto(packet)
+                    sent_any = True
+
+            return sent_any
+
         except Exception as e:
             logger.error(f"Error sending protobuf: {e}")
             return False
