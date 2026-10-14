@@ -130,6 +130,7 @@ class UDPProtocolCodec:
     HEADER_SIZE = 10
     CURRENT_VERSION = 2
     COMMAND_TYPE = 9
+    CRC_SIZE = 2
     
     def __init__(self):
         self._sequence = 0
