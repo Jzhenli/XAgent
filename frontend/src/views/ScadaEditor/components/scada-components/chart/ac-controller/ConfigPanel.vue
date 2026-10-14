@@ -517,6 +517,22 @@
             />
           </div>
           <div class="form-group">
+            <label>{{ t("componentConfig.decimalPlaces") }}</label>
+            <input
+              type="number"
+              min="0"
+              :value="config.gaugeDecimalPlaces"
+              @change="
+                updateConfig(
+                  'gaugeDecimalPlaces',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
             <label>{{ t("componentConfig.step") }}</label>
             <input
               type="number"
@@ -659,19 +675,6 @@
               "
             />
           </div>
-          <div class="form-group">
-            <label>{{ t("componentConfig.unit") }}</label>
-            <input
-              type="text"
-              :value="config.currentValueUnit"
-              @input="
-                updateConfig(
-                  'currentValueUnit',
-                  ($event.target as HTMLInputElement).value,
-                )
-              "
-            />
-          </div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -697,6 +700,35 @@
                 handleColorActiveChange('currentValueFontColor', $event)
               "
               @change="handleColorChange('currentValueFontColor', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.decimalPlaces") }}</label>
+            <input
+              type="number"
+              min="0"
+              :value="config.currentValueDecimalPlaces"
+              @change="
+                updateConfig(
+                  'currentValueDecimalPlaces',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.unit") }}</label>
+            <input
+              type="text"
+              :value="config.currentValueUnit"
+              @input="
+                updateConfig(
+                  'currentValueUnit',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
         </div>

@@ -49,6 +49,17 @@
         />
       </div>
       <div class="form-group">
+        <label>{{ t("componentConfig.decimalPlaces") }}</label>
+        <input
+          type="number"
+          min="0"
+          :value="config.decimalPlaces"
+          @change="updateConfig('decimalPlaces', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label>{{ t("componentConfig.step") }}</label>
         <input
           type="number"

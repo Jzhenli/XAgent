@@ -46,12 +46,14 @@ const defaultConfig: AcControllerComponentConfig = {
   gaugeFontSize: 22,
   gaugeFontColor: '#ffffff',
   gaugeStep: 1,
+  gaugeDecimalPlaces: 0,
 
   // 当前值显示
   currentValueLabel: '当前温度:',
   currentValueFontSize: 12,
   currentValueFontColor: 'rgba(255, 255, 255, 0.8)',
   currentValueUnit: '°C',
+  currentValueDecimalPlaces: 0,
 
   // 模式按钮
   modeIconSize: 16,

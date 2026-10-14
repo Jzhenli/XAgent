@@ -166,6 +166,8 @@ export interface GaugeComponentConfig extends BaseComponentConfig {
   fontWeight?: 'normal' | 'bold'
   /** 按钮调节步进值 */
   step?: number
+  /** 小数位数，未设置时默认 1（保持旧版行为兼容） */
+  decimalPlaces?: number
   /** 是否显示加减按钮 */
   showButtons?: boolean
   /** 步进按钮字体大小 */
@@ -662,12 +664,16 @@ export interface AcControllerComponentConfig extends BaseComponentConfig {
   gaugeFontSize: number
   gaugeFontColor: string
   gaugeStep: number
+  /** 仪表盘数值小数位数，未设置时默认 1 */
+  gaugeDecimalPlaces?: number
 
   // ── 当前值显示 ──
   currentValueLabel: string
   currentValueFontSize: number
   currentValueFontColor: string
   currentValueUnit: string
+  /** 当前值显示小数位数，未设置时默认 1 */
+  currentValueDecimalPlaces?: number
 
   // ── 模式按钮 ──
   modeIconSize: number
@@ -731,12 +737,16 @@ export interface AcController2ComponentConfig extends BaseComponentConfig {
   gaugeFontSize: number
   gaugeFontColor: string
   gaugeStep: number
+  /** 仪表盘数值小数位数，未设置时默认 1 */
+  gaugeDecimalPlaces?: number
 
   // ── 当前值 ──
   currentValueLabel: string
   currentValueFontSize: number
   currentValueFontColor: string
   currentValueUnit: string
+  /** 当前值显示小数位数，未设置时默认 1 */
+  currentValueDecimalPlaces?: number
 
   // ── 模式（单图标循环切换） ──
   modeIconSize: number

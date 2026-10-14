@@ -86,6 +86,7 @@ const { updateValue } = useScadaConfig(props.component as ScadaComponent<'gauge'
 const min = computed(() => gaugeConfig.value?.min ?? 0)
 const max = computed(() => gaugeConfig.value?.max ?? 100)
 const step = computed(() => gaugeConfig.value?.step ?? 1)
+const decimalPlaces = computed(() => gaugeConfig.value?.decimalPlaces ?? 0)
 const unit = computed(() => gaugeConfig.value?.unit ?? '')
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -205,9 +206,9 @@ const sizeScale = computed(() => gaugeSize.value / configMinSize.value)
 // ═══════════════════════════════════════════════════════════════════════════════
 // 文本显示
 // ═══════════════════════════════════════════════════════════════════════════════
-/** 整数直接显示，否则保留一位小数 */
+/** 按 decimalPlaces 配置格式化数值显示 */
 const formatNumber = (val: number): string =>
-  Number.isInteger(val) ? val.toString() : val.toFixed(1)
+  val.toFixed(Math.max(0, decimalPlaces.value))
 
 /** 中心显示的当前值文本 */
 const displayValue = computed(() => formatNumber(currentValue.value ?? fallbackValue.value ?? 0))

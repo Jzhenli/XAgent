@@ -104,7 +104,7 @@
 
           <div class="gauge-value-wrap">
             <span class="gauge-value" :style="gaugeValueStyle">
-              {{ formatNumber(setpointValue) }}
+              {{ formatNumber(setpointValue, gaugeDecimalPlaces) }}
             </span>
             <span v-if="gaugeUnit" class="gauge-unit" :style="gaugeUnitStyle">{{ gaugeUnit }}</span>
           </div>
@@ -130,7 +130,7 @@
         class="current-text"
         :style="currentTextStyle"
       >
-        {{ currentValueLabel }}{{ formatNumber(currentValue) }}{{ currentValueUnit }}
+        {{ currentValueLabel }}{{ formatNumber(currentValue, currentValueDecimalPlaces) }}{{ currentValueUnit }}
       </span>
     </div>
   </div>
@@ -224,11 +224,13 @@ const gaugeFillColor = computed(() => config.value.gaugeFillColor)
 const gaugeFontSize = computed(() => config.value.gaugeFontSize)
 const gaugeFontColor = computed(() => config.value.gaugeFontColor)
 const gaugeStep = computed(() => config.value.gaugeStep ?? 1)
+const gaugeDecimalPlaces = computed(() => config.value.gaugeDecimalPlaces ?? 0)
 
 const currentValueLabel = computed(() => config.value.currentValueLabel)
 const currentValueFontSize = computed(() => config.value.currentValueFontSize)
 const currentValueFontColor = computed(() => config.value.currentValueFontColor)
 const currentValueUnit = computed(() => config.value.currentValueUnit)
+const currentValueDecimalPlaces = computed(() => config.value.currentValueDecimalPlaces ?? 0)
 
 const modeIconSize = computed(() => config.value.modeIconSize)
 const modeIconColor = computed(() => config.value.modeIconColor)
@@ -441,8 +443,9 @@ const progressColor = computed(() => {
 })
 
 const writing = ref(false)
-const formatNumber = (val: number): string =>
-  Number.isInteger(val) ? String(val) : val.toFixed(1)
+/** 按指定精度格式化数值显示 */
+const formatNumber = (val: number, precision: number): string =>
+  val.toFixed(Math.max(0, precision))
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 当前值显示

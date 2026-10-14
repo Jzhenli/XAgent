@@ -18,6 +18,7 @@ const defaultConfig: GaugeComponentConfig = {
   value: 48,
   targetValue: 48,
   step: 1,
+  decimalPlaces: 0,
   unit: '',
   thresholds: [],
 
