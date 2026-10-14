@@ -1761,6 +1761,8 @@
     "barTrackColor": "轨道底色",
     "barHeight": "进度条高度",
     "barRadius": "进度条圆角",
+    "animationEnabled": "启用动画",
+    "animationDuration": "动画时长(秒)",
     "barItemsSection": "柱体",
     "barItem": "柱体",
     "barLabel": "标签",

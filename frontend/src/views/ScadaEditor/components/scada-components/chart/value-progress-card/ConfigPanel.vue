@@ -221,6 +221,27 @@
         />
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.animationEnabled') }}</label>
+        <el-switch
+          :model-value="config.animationEnabled"
+          @change="updateConfig('animationEnabled', $event as boolean)"
+        />
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.animationDuration') }}</label>
+        <input
+          type="number"
+          min="0.3"
+          max="5"
+          step="0.1"
+          :value="config.animationDuration"
+          :disabled="!config.animationEnabled"
+          @change="updateConfig('animationDuration', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+    </div>
 
     <!-- 容器样式 -->
     <div class="subsection-title">{{ t('componentConfig.styleSection') }}</div>

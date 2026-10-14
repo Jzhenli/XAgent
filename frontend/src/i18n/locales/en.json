@@ -1761,6 +1761,8 @@
     "barTrackColor": "Track Color",
     "barHeight": "Bar Height",
     "barRadius": "Bar Radius",
+    "animationEnabled": "Animation",
+    "animationDuration": "Duration (s)",
     "barItemsSection": "Bars",
     "barItem": "Bar",
     "barLabel": "Label",

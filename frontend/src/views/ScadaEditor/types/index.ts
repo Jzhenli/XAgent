@@ -598,6 +598,10 @@ export interface ValueProgressCardComponentConfig extends BaseComponentConfig {
   barHeight: number
   /** 进度条圆角（px） */
   barRadius: number
+  /** 是否启用层层递进动画 */
+  animationEnabled: boolean
+  /** 动画持续时长（秒） */
+  animationDuration: number
 }
 
 /** 弹框组件配置 */

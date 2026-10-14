@@ -32,6 +32,9 @@ const defaultConfig: ValueProgressCardComponentConfig = {
   barTrackColor: 'rgba(0, 0, 0, 0.08)',
   barHeight: 6,
   barRadius: 3,
+  // 动画效果
+  animationEnabled: true,
+  animationDuration: 1.5,
   // 编辑态模拟值
   value: 54,
 }
