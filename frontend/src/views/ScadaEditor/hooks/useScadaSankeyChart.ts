@@ -18,6 +18,7 @@ import type {
   SankeyChartComponentConfig,
   SankeyLinkConfig,
 } from '../types'
+import { useScadaEditor } from './useScadaEditor'
 
 use([CanvasRenderer, SankeyChart, TooltipComponent])
 
@@ -56,6 +57,7 @@ export interface UseScadaSankeyChartReturn {
 export function useScadaSankeyChart(
   configRef: MaybeRef<ScadaComponent>,
 ): UseScadaSankeyChartReturn {
+  const scada = useScadaEditor()
   const config = computed(() => unref(configRef))
   const chartConfig = computed(() => config.value.config as SankeyChartComponentConfig)
 
@@ -99,6 +101,13 @@ export function useScadaSankeyChart(
 
   const startMockPolling = () => {
     stopMockPolling()
+    // 编辑模式：只渲染一次随机占位数据，不启动周期性刷新
+    if (scada.isEditing.value) {
+      initBaseValues()
+      refreshMockData()
+      updateChartOption()
+      return
+    }
     const cfg = chartConfig.value
     if (cfg?.autoRefresh === false) return
 
@@ -150,8 +159,13 @@ export function useScadaSankeyChart(
     initChart()
 
     if (containerRef.value && typeof ResizeObserver !== 'undefined') {
+      let rafId: number | null = null
       resizeObserver = new ResizeObserver(() => {
-        chartInstance?.resize()
+        if (rafId != null) return
+        rafId = requestAnimationFrame(() => {
+          rafId = null
+          chartInstance?.resize()
+        })
       })
       resizeObserver.observe(containerRef.value)
     }
@@ -180,10 +194,16 @@ export function useScadaSankeyChart(
     ],
     () => {
       updateChartOption(true)
-      // autoRefresh / refreshInterval 变更时重启轮询
-      startMockPolling()
     },
     { deep: true },
+  )
+
+  // 编辑/运行模式切换：重新决定"渲染一次 vs 启动 interval"
+  watch(
+    () => scada.isEditing.value,
+    () => {
+      startMockPolling()
+    },
   )
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -269,8 +289,8 @@ export function useScadaSankeyChart(
         nodeWidth: cfg.nodeWidth ?? 20,
         nodeGap: cfg.nodeGap ?? 14,
         nodeAlign: 'justify',
-        animationDuration: 800,
-        animationDurationUpdate: 600,
+        animationDuration: 300,
+        animationDurationUpdate: 150,
         // 节点样式
         itemStyle: {
           borderWidth: 0,
