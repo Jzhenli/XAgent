@@ -494,6 +494,10 @@ export function useScadaBarChart(
       color: cfg.xAxisLabelColor || 'var(--text-secondary)',
       fontSize: cfg.xAxisLabelFontSize ?? 12,
     },
+    axisLine: {
+      // !== false 兼容旧版未配置时默认显示轴线
+      show: cfg.showXAxisLine !== false,
+    },
     axisTick: {
       show: false,
     },

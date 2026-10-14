@@ -239,6 +239,8 @@ export interface BarChartComponentConfig extends BaseComponentConfig {
   timeRange: '1h' | '6h' | '24h' | '7d'
   /** 是否显示图例 */
   showLegend?: boolean
+  /** 是否显示 X 轴线 */
+  showXAxisLine?: boolean
   /** 是否显示 X 轴标签 */
   showXAxisLabel?: boolean
   /** 是否显示 Y 轴标签 */

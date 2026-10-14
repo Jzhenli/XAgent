@@ -1728,6 +1728,7 @@
     "lineColor": "Line Color",
     "showXAxis": "Show X-axis",
     "showXAxisLabel": "Show X-axis Label",
+    "showXAxisLine": "Show X-axis Line",
     "showYAxisLabel": "Show Y-axis Label",
     "showYAxisLine": "Show Y-axis Line",
     "xAxisLabelColor": "X-axis Label Color",
