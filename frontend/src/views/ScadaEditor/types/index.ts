@@ -223,10 +223,22 @@ export interface LineChartComponentConfig
   seriesItems?: LineChartSeriesItem[]
 }
 
+/** 柱状图序列项（每组柱子的配置） */
+export interface BarChartSeriesItem {
+  /** 序列名称（显示在图例中） */
+  name: string
+  /** 点位绑定 */
+  binding: PointBinding | null
+  /** 柱体颜色 */
+  barColor: string
+}
+
 /** 柱状图组件配置 */
 export interface BarChartComponentConfig extends BaseComponentConfig {
   /** 时间范围 */
   timeRange: '1h' | '6h' | '24h' | '7d'
+  /** 是否显示图例 */
+  showLegend?: boolean
   /** 是否显示 X 轴标签 */
   showXAxisLabel?: boolean
   /** 是否显示 Y 轴标签 */
@@ -241,7 +253,7 @@ export interface BarChartComponentConfig extends BaseComponentConfig {
   yAxisLabelColor?: string
   /** Y 轴标签字号 */
   yAxisLabelFontSize?: number
-  /** 柱体颜色 */
+  /** 柱体颜色（旧版单序列兼容，有 seriesItems 时优先） */
   barColor?: string
   /** 柱体宽度（像素 或 百分比，如 '60%'） */
   barWidth?: number | string
@@ -249,6 +261,8 @@ export interface BarChartComponentConfig extends BaseComponentConfig {
   barBorderRadius?: number | number[]
   /** 柱状图显示的柱子个数（默认 20） */
   barCount?: number
+  /** 多序列配置（支持多组柱子） */
+  seriesItems?: BarChartSeriesItem[]
 }
 
 /** 饼状图单项配置 */
