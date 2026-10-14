@@ -8,6 +8,7 @@ import { enumValueMeta } from './components/scada-components/basic/enum-value/me
 import { writeValueMeta } from './components/scada-components/basic/write-value/metadata'
 import { chartLineMeta } from './components/scada-components/chart/line/metadata'
 import { chartBarMeta } from './components/scada-components/chart/bar/metadata'
+import { chartPieMeta } from './components/scada-components/chart/pie/metadata'
 import { sliderSwitchMeta } from './components/scada-components/chart/slider-switch/metadata'
 import { sliderBarMeta } from './components/scada-components/chart/slider-bar/metadata'
 import { indicatorMeta } from './components/scada-components/basic/indicator/metadata'
@@ -43,6 +44,7 @@ export const componentMetaRegistry = {
   'write-value': writeValueMeta,
   'chart-line': chartLineMeta,
   'chart-bar': chartBarMeta,
+  'chart-pie': chartPieMeta,
   'slider-switch': sliderSwitchMeta,
   'slider-bar': sliderBarMeta,
   indicator: indicatorMeta,

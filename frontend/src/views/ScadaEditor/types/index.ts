@@ -249,6 +249,38 @@ export interface BarChartComponentConfig extends BaseComponentConfig {
   barCount?: number
 }
 
+/** 饼状图单项配置 */
+export interface PieChartItemConfig {
+  /** 扇区名称（显示在图例上） */
+  name: string
+  /** 模拟值 */
+  value: number
+  /** 扇区颜色 */
+  color: string
+}
+
+/** 饼状图组件配置 */
+export interface PieChartComponentConfig extends BaseComponentConfig {
+  /** 饼图数据项 */
+  items: PieChartItemConfig[]
+  /** 是否显示图例 */
+  showLegend?: boolean
+  /** 图例字体颜色 */
+  legendColor?: string
+  /** 图例字体大小 */
+  legendFontSize?: number
+  /** 是否显示为环形饼图（Donut） */
+  showDonut?: boolean
+  /** 环形内半径（百分比，如 '40%'），showDonut=true 时生效 */
+  innerRadius?: number | string
+  /** 扇区标签是否显示 */
+  showLabel?: boolean
+  /** 扇区之间的角度间隙（度），通过 ECharts padAngle 实现 */
+  pieGap?: number
+  /** 扇区圆角（px） */
+  pieBorderRadius?: number
+}
+
 /** 折线图数据点 */
 export interface LineChartDataPoint {
   time: string
@@ -793,6 +825,7 @@ export interface ComponentConfigMap {
   gauge: GaugeComponentConfig
   'chart-line': LineChartComponentConfig
   'chart-bar': BarChartComponentConfig
+  'chart-pie': PieChartComponentConfig
   indicator: IndicatorComponentConfig
   switch: SwitchComponentConfig
   'light-button': LightButtonComponentConfig

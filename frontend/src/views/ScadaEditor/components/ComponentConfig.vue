@@ -330,6 +330,7 @@ const POINT_BINDINGLESS_TYPES = new Set([
   "image",
   "nav-button",
   "chart-line",
+  "chart-pie",
   "line",
   "arc",
   "popup",
