@@ -69,6 +69,12 @@ export function useScadaPieChart(
 
   const startMockPolling = () => {
     stopMockPolling()
+    // 编辑模式：只渲染一次随机占位数据，不启动周期性刷新
+    if (scada.isEditing.value) {
+      refreshMockData()
+      updateChartOption()
+      return
+    }
     refreshMockData()
     updateChartOption()
     mockTimer = setInterval(() => {
@@ -120,7 +126,7 @@ export function useScadaPieChart(
       resizeObserver.observe(containerRef.value)
     }
 
-    // 饼图无论编辑/运行模式都显示 mock 数据
+    // 饼图使用 mock 数据；编辑模式下不启动周期刷新
     startMockPolling()
   })
 
@@ -136,6 +142,14 @@ export function useScadaPieChart(
       updateChartOption(true)
     },
     { deep: true },
+  )
+
+  // 编辑/运行模式切换：重新决定"渲染一次 vs 启动 interval"
+  watch(
+    () => scada.isEditing.value,
+    () => {
+      startMockPolling()
+    },
   )
 
   // ═══════════════════════════════════════════════════════════════════════════════

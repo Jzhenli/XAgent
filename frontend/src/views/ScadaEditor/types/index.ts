@@ -299,6 +299,48 @@ export interface PieChartComponentConfig extends BaseComponentConfig {
   pieBorderRadius?: number
 }
 
+/** 桑基图节点配置 */
+export interface SankeyNodeConfig {
+  /** 节点名称（唯一标识） */
+  name: string
+  /** 节点颜色（可选，不填则自动分配渐变） */
+  color?: string
+}
+
+/** 桑基图连线配置 */
+export interface SankeyLinkConfig {
+  /** 源节点名称 */
+  source: string
+  /** 目标节点名称 */
+  target: string
+  /** 流量值 */
+  value: number
+}
+
+/** 桑基图组件配置 */
+export interface SankeyChartComponentConfig extends BaseComponentConfig {
+  /** 节点列表 */
+  nodes: SankeyNodeConfig[]
+  /** 连线列表 */
+  links: SankeyLinkConfig[]
+  /** 节点宽度 */
+  nodeWidth?: number
+  /** 节点垂直间距 */
+  nodeGap?: number
+  /** 节点圆角 */
+  nodeBorderRadius?: number
+  /** 连线颜色模式：gradient(渐变) / source(跟随源节点) / target(跟随目标节点) */
+  linkColorMode?: 'gradient' | 'source' | 'target'
+  /** 连线透明度 */
+  linkOpacity?: number
+  /** 是否悬停高亮关联流 */
+  hoverHighlight?: boolean
+  /** 是否启用 mock 数据自动刷新 */
+  autoRefresh?: boolean
+  /** mock 刷新间隔（毫秒） */
+  refreshInterval?: number
+}
+
 /** 折线图数据点 */
 export interface LineChartDataPoint {
   time: string
@@ -867,6 +909,7 @@ export interface ComponentConfigMap {
   'ac-controller-2': AcController2ComponentConfig
   'info-card': InfoCardComponentConfig
   'value-progress-card': ValueProgressCardComponentConfig
+  'chart-sankey': SankeyChartComponentConfig
 }
 
 /** 组件统一配置类型 */

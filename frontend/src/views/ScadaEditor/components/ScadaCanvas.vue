@@ -2,6 +2,7 @@
   <div
     ref="canvasRef"
     class="scada-canvas"
+    :class="{ 'is-editing': isEditing }"
     :style="canvasStyle"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
@@ -569,5 +570,10 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
   border-radius: 4px 4px 0 0;
   letter-spacing: 0.5px;
   white-space: nowrap;
+}
+
+/* 编辑模式下禁用所有组件内部 pointer 交互，让事件穿透到 wrapper 层 */
+.scada-canvas.is-editing .component-wrapper > * {
+  pointer-events: none;
 }
 </style>

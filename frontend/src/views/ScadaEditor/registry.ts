@@ -34,6 +34,7 @@ import { acControllerMeta } from './components/scada-components/chart/ac-control
 import { acController2Meta } from './components/scada-components/chart/ac-controller-2/metadata'
 import { infoCardMeta } from './components/scada-components/chart/info-card/metadata'
 import { valueProgressCardMeta } from './components/scada-components/chart/value-progress-card/metadata'
+import { chartSankeyMeta } from './components/scada-components/chart/sankey/metadata'
 
 // ─── 统一组件注册表：type -> 完整元数据 ─────────────────────────
 // 新增组件只需在此添加映射，ComponentType 自动推导
@@ -70,6 +71,7 @@ export const componentMetaRegistry = {
   'ac-controller-2': acController2Meta,
   'info-card': infoCardMeta,
   'value-progress-card': valueProgressCardMeta,
+  'chart-sankey': chartSankeyMeta,
 } as const
 
 /** 组件类型 —— 从注册表键名自动推导 */
