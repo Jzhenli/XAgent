@@ -193,6 +193,8 @@ export interface ChartComponentConfig extends BaseComponentConfig {
 /** 折线图组件配置 */
 export interface LineChartComponentConfig
   extends Omit<ChartComponentConfig, 'showLegend' | 'borderRadius'> {
+  /** 是否显示整个 X 轴（含轴线、刻度、标签） */
+  showXAxis?: boolean
   /** 是否显示 X 轴标签 */
   showXAxisLabel?: boolean
   /** 是否显示 Y 轴标签 */

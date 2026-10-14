@@ -1726,6 +1726,7 @@
     "chartConfig": "Chart Config",
     "timeRange": "Time Range",
     "lineColor": "Line Color",
+    "showXAxis": "Show X-axis",
     "showXAxisLabel": "Show X-axis Label",
     "showYAxisLabel": "Show Y-axis Label",
     "showYAxisLine": "Show Y-axis Line",

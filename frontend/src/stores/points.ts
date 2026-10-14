@@ -466,7 +466,7 @@ export const usePointStore = defineStore('points', () => {
       if (isDigital) {
         value = Math.random() > 0.5 ? 1 : 0
       } else {
-        value = 20 + (Math.random() - 0.5) * 10
+        value = Math.random() * 20
       }
 
       data.push({

@@ -1726,6 +1726,7 @@
     "chartConfig": "图表配置",
     "timeRange": "时间范围",
     "lineColor": "线条颜色",
+    "showXAxis": "显示 X 轴",
     "showXAxisLabel": "显示 X 轴标签",
     "showYAxisLabel": "显示 Y 轴标签",
     "showYAxisLine": "显示 Y 轴线",
