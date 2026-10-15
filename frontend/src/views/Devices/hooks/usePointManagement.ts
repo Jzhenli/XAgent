@@ -105,7 +105,7 @@ export function usePointManagement(
         { label: '5.005-ratio (0..255)', value: '5.005' },
         { label: '5.006-tariff (0..255)', value: '5.006' },
         { label: '5.010-counter pulses (0..255)', value: '5.010' },
-        { label: '5.100-fan stage (0..255)', value: '5.100' }
+        // { label: '5.100-fan stage (0..255)', value: '5.100' }
       ]
     },
     {
