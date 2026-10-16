@@ -50,8 +50,8 @@
 
     <!-- 量程范围标签（最小值/最大值） -->
     <div v-if="showRange" class="gauge-range" :style="rangeTextStyle">
-      <span class="gauge-range-label">{{ formatNumber(min) }}</span>
-      <span class="gauge-range-label">{{ formatNumber(max) }}</span>
+      <span class="gauge-range-label">{{ formatRangeValue(min) }}</span>
+      <span class="gauge-range-label">{{ formatRangeValue(max) }}</span>
     </div>
   </div>
 </template>
@@ -221,9 +221,12 @@ const sizeScale = computed(() => gaugeSize.value / configMinSize.value)
 // ═══════════════════════════════════════════════════════════════════════════════
 // 文本显示
 // ═══════════════════════════════════════════════════════════════════════════════
-/** 按 decimalPlaces 配置格式化数值显示 */
+/** 按 decimalPlaces 配置格式化数值显示（用于中心当前值） */
 const formatNumber = (val: number): string =>
   val.toFixed(Math.max(0, decimalPlaces.value))
+
+/** 量程标签格式化：按配置原始值自然输出，不受 decimalPlaces 影响 */
+const formatRangeValue = (val: number): string => String(val)
 
 /** 中心显示的当前值文本 */
 const displayValue = computed(() => formatNumber(currentValue.value ?? fallbackValue.value ?? 0))
