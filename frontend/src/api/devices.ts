@@ -1,4 +1,5 @@
 import api from './index'
+import type { AxiosRequestConfig } from 'axios'
 import type {
   DeviceConfig,
   DeviceCreateResponse,
@@ -42,8 +43,8 @@ export const deviceApi = {
     return res.data
   },
 
-  async get(asset: string): Promise<DeviceConfig> {
-    const res = await api.get(`/api/devices/${asset}`)
+  async get(asset: string, config?: AxiosRequestConfig): Promise<DeviceConfig> {
+    const res = await api.get(`/api/devices/${asset}`, config)
     return res.data
   },
 
@@ -66,8 +67,8 @@ export const deviceApi = {
     return res.data
   },
 
-  async listPoints(asset: string): Promise<PointConfig[]> {
-    const res = await api.get(`/api/devices/${asset}/points`)
+  async listPoints(asset: string, config?: AxiosRequestConfig): Promise<PointConfig[]> {
+    const res = await api.get(`/api/devices/${asset}/points`, config)
     return res.data
   },
 

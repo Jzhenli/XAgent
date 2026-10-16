@@ -73,10 +73,15 @@ const currentPanel = computed(() => scada.currentPanel)
 /** 加载遮罩状态：为 true 时 canvas 被完全遮住，避免闪显上一次残留的面板数据 */
 const loading = ref(true)
 
-/** 统一的面板加载入口：负责显示遮罩 → 加载面板 → 隐藏遮罩 */
+/** 统一的面板加载入口：负责显示遮罩 → 清理旧面板累积状态 → 加载面板 → 隐藏遮罩 */
 async function initPanel(panelId: string) {
   loading.value = true
   try {
+    // 切面板时主动清空上一面板的所有设备缓存 + abort 在途请求：
+    // 避免 skeletonCache / historyRequestCache / inflightDeviceFetches 累积到退出时一次性清理造成卡顿。
+    // clearDevices 内部会新建 AbortController，后续 loadPanel 触发的新轮询请求会使用新 controller 的 signal
+    pointReader.clearDevices()
+
     const panel = await scada.loadPanel(panelId)
     if (!panel) {
       // 加载失败：清空模块级 currentPanelId，让 currentPanel computed 返回 null，
@@ -118,8 +123,18 @@ onUnmounted(() => {
   stopPolling()
 })
 
+/** 退出预览：先显示全屏遮罩立即遮盖 canvas（避免清理阻塞时画面卡顿暴露），
+ * 用双 rAF 保证遮罩先被浏览器 paint 到屏幕（单 rAF 在 paint 前执行 router.push，
+ * 用户完全感知不到遮罩存在），再执行导航让组件卸载 + AbortController 取消请求
+ * 与新页面加载平滑衔接 */
 const handleGoBack = () => {
-  router.push({ name: 'ScadaList' })
+  loading.value = true
+  // 双 rAF：第 1 帧让 Vue 更新 DOM（遮罩 v-if 生效），第 2 帧在浏览器 paint 之后再导航
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      router.push({ name: 'ScadaList' })
+    })
+  })
 }
 </script>
 
