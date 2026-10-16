@@ -58,7 +58,8 @@
       <el-button @click="visible = false">{{ $t("common.cancel") }}</el-button>
       <el-button
         type="primary"
-        :disabled="selected.size === 0"
+        :disabled="selected.size === 0 || confirmLoading"
+        :loading="confirmLoading"
         @click="handleConfirm"
       >
         {{ confirmText }}<span v-if="selected.size > 0" class="confirm-count">({{ selected.size }})</span>
@@ -81,6 +82,8 @@ const props = defineProps<{
   items: ProjectSelectItem[];
   confirmText: string;
   emptyText: string;
+  /** 确认按钮 loading 状态：由父组件控制，导入/导出等异步提交时使用 */
+  confirmLoading?: boolean;
 }>();
 
 const visible = defineModel<boolean>({ required: true });
@@ -139,7 +142,8 @@ const handleRowClick = (index: number) => {
 
 const handleConfirm = () => {
   emit("confirm", [...selected.value]);
-  visible.value = false;
+  // 不再自动关闭弹窗：由父组件在异步提交完成后显式控制 visible，
+  // 以便 confirmLoading 期间用户仍可看到弹窗状态反馈
 };
 </script>
 
