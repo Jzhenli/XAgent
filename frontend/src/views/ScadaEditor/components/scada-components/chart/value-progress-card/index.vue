@@ -31,7 +31,7 @@
         <!-- 前沿光晕脉冲 -->
         <div class="vpc-bar-fill-glow" :style="glowStyle" />
       </div>
-      <div class="vpc-bar-scale">
+      <div class="vpc-bar-scale" :style="scaleStyle">
         <span>{{ config.min }}</span>
         <span>{{ config.max }}</span>
       </div>
@@ -135,6 +135,12 @@ const fillBaseStyle = computed(() => ({
 // ─── 前沿光晕位置（跟随进度条前沿） ─────────────────────────
 const glowStyle = computed(() => ({
   left: `${percent.value}%`,
+}))
+
+// ─── 进度条刻度标签样式（min/max） ─────────────────────────
+const scaleStyle = computed(() => ({
+  fontSize: `${config.value.scaleFontSize ?? 9}px`,
+  color: config.value.scaleFontColor ?? '#aaaaaa',
 }))
 </script>
 
@@ -295,8 +301,6 @@ const glowStyle = computed(() => ({
 .vpc-bar-scale {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
-  color: #aaa;
   line-height: 1;
   flex-shrink: 0;
 }

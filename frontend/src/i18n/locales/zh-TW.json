@@ -1789,6 +1789,8 @@
     "barRadius": "進度條圓角",
     "animationEnabled": "啟用動畫",
     "animationDuration": "動畫時長(秒)",
+    "scaleFontSize": "刻度字體大小",
+    "scaleFontColor": "刻度字體顏色",
     "barItemsSection": "柱體",
     "barItem": "柱體",
     "barLabel": "標籤",

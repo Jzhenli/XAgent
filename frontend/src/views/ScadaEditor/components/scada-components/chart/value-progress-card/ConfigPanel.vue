@@ -182,6 +182,25 @@
     </div>
     <div class="form-row">
       <div class="form-group">
+        <label>{{ t('componentConfig.scaleFontSize') }}</label>
+        <input
+          type="number"
+          min="6"
+          :value="config.scaleFontSize"
+          @change="updateConfig('scaleFontSize', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.scaleFontColor') }}</label>
+        <el-color-picker
+          :model-value="config.scaleFontColor"
+          show-alpha
+          @change="updateConfig('scaleFontColor', $event as string)"
+        />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label>{{ t('componentConfig.barColor') }}</label>
         <input
           type="text"

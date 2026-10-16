@@ -654,6 +654,12 @@ export interface ValueProgressCardComponentConfig extends BaseComponentConfig {
   animationEnabled: boolean
   /** 动画持续时长（秒） */
   animationDuration: number
+
+  // ── 进度条刻度标签（min/max） ──
+  /** 刻度标签字体大小 */
+  scaleFontSize?: number
+  /** 刻度标签字体颜色 */
+  scaleFontColor?: string
 }
 
 /** 弹框组件配置 */

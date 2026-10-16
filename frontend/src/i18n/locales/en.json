@@ -1789,6 +1789,8 @@
     "barRadius": "Bar Radius",
     "animationEnabled": "Animation",
     "animationDuration": "Duration (s)",
+    "scaleFontSize": "Scale Font Size",
+    "scaleFontColor": "Scale Font Color",
     "barItemsSection": "Bars",
     "barItem": "Bar",
     "barLabel": "Label",
