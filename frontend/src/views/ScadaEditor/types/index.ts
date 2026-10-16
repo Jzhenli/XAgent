@@ -229,6 +229,8 @@ export interface LineChartComponentConfig
   smooth?: boolean
   /** 是否显示图例 */
   showLegend?: boolean
+  /** 图例字体颜色 */
+  legendFontColor?: string
   /** 多序列配置（支持多条折线） */
   seriesItems?: LineChartSeriesItem[]
 }

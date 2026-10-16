@@ -483,7 +483,7 @@ export function useScadaLineChart(
       left: 'center',
       orient: 'horizontal',
       textStyle: {
-        color: cfg.xAxisLabelColor || 'var(--text-secondary)',
+        color: cfg.legendFontColor || cfg.xAxisLabelColor || 'var(--text-secondary)',
         fontSize: cfg.xAxisLabelFontSize ?? 12,
       },
       itemGap: 12,

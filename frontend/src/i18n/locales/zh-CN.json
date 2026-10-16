@@ -1903,6 +1903,7 @@
     "titleColor": "标题颜色",
     "titleFontSize": "标题字号",
     "showLegend": "显示图例",
+    "legendFontColor": "图例字体颜色",
     "legendPosition": "图例位置",
     "legendTop": "顶部",
     "legendBottom": "底部",

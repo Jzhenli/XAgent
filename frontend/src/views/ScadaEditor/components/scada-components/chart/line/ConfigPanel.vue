@@ -26,8 +26,16 @@
           @change="updateConfig('showLegend', $event as boolean)"
         />
       </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.legendFontColor') }}</label>
+        <el-color-picker
+          :model-value="config.legendFontColor"
+          show-alpha
+          @active-change="handleColorActiveChange('legendFontColor', $event)"
+          @change="handleColorChange('legendFontColor', $event)"
+        />
+      </div>
     </div>
-
     <!-- 序列与线条 -->
     <div class="subsection-title">{{ t('componentConfig.seriesLineSection') }}</div>
 
@@ -381,15 +389,16 @@ const handleSeriesNodeColorChange = (index: number, val: string | null) => {
 
 type ColorField = keyof Pick<
   LineChartComponentConfig,
-  'backgroundColor' | 'xAxisLabelColor' | 'yAxisLabelColor'
+  'backgroundColor' | 'xAxisLabelColor' | 'yAxisLabelColor' | 'legendFontColor'
 >
 
-const colorFields: ColorField[] = ['backgroundColor', 'xAxisLabelColor', 'yAxisLabelColor']
+const colorFields: ColorField[] = ['backgroundColor', 'xAxisLabelColor', 'yAxisLabelColor', 'legendFontColor']
 
 const latestColor = ref<Record<ColorField, string>>({
   backgroundColor: '',
   xAxisLabelColor: '',
   yAxisLabelColor: '',
+  legendFontColor: '',
 })
 
 watch(
