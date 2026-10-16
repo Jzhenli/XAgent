@@ -47,6 +47,12 @@
         </div>
       </el-progress>
     </div>
+
+    <!-- 量程范围标签（最小值/最大值） -->
+    <div v-if="showRange" class="gauge-range" :style="rangeTextStyle">
+      <span class="gauge-range-label">{{ formatNumber(min) }}</span>
+      <span class="gauge-range-label">{{ formatNumber(max) }}</span>
+    </div>
   </div>
 </template>
 
@@ -104,6 +110,15 @@ const unitFontWeight = computed(() => gaugeConfig.value?.unitFontWeight ?? 'norm
 const trackColor = computed(() => gaugeConfig.value?.trackColor ?? '#4a4a6a')
 const trackWidth = computed(() => gaugeConfig.value?.trackWidth ?? 12)
 const strokeLinecap = computed(() => gaugeConfig.value?.strokeLinecap ?? 'round')
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 量程范围标签配置
+// ═══════════════════════════════════════════════════════════════════════════════
+const showRange = computed(() => gaugeConfig.value?.showRange ?? true)
+const rangeLabelFontSize = computed(() => gaugeConfig.value?.rangeLabelFontSize ?? 12)
+const rangeLabelFontColor = computed(() => gaugeConfig.value?.rangeLabelFontColor ?? fontColor.value)
+const rangeLabelOffsetX = computed(() => gaugeConfig.value?.rangeLabelOffsetX ?? 0)
+const rangeLabelOffsetY = computed(() => gaugeConfig.value?.rangeLabelOffsetY ?? 0)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 填充色与渐变
@@ -240,6 +255,12 @@ const unitTextStyle = computed(() => ({
 const controlButtonStyle = computed(() => ({
   color: stepFontColor.value,
   fontSize: `${Math.max(12, stepFontSize.value) * sizeScale.value}px`,
+}))
+
+const rangeTextStyle = computed(() => ({
+  color: rangeLabelFontColor.value,
+  fontSize: `${rangeLabelFontSize.value * sizeScale.value}px`,
+  transform: `translate(${rangeLabelOffsetX.value * sizeScale.value}px, ${rangeLabelOffsetY.value * sizeScale.value}px)`,
 }))
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -385,5 +406,21 @@ const decrement = () => {
 /** ArrowRight 图标内部箭头偏左，需额外左间距使左右箭头到数值的视觉距离对称 */
 .gauge-icon-left {
   margin-right: 6px;
+}
+
+/** 量程范围标签行 */
+.gauge-range {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 2px 8px 0;
+  line-height: 1.2;
+  user-select: none;
+}
+
+.gauge-range-label {
+  white-space: nowrap;
 }
 </style>

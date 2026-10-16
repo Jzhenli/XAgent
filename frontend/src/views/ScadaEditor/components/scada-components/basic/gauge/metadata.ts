@@ -42,6 +42,13 @@ const defaultConfig: GaugeComponentConfig = {
   showButtons: true,
   stepFontSize: 24,
   stepFontColor: '#000000',
+
+  // 量程范围标签
+  showRange: true,
+  rangeLabelFontSize: 12,
+  rangeLabelFontColor: '#000000',
+  rangeLabelOffsetX: 0,
+  rangeLabelOffsetY: 0,
 }
 
 export const gaugeMeta: ScadaComponentMeta = {

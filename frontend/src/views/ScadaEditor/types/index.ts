@@ -180,6 +180,16 @@ export interface GaugeComponentConfig extends BaseComponentConfig {
   unitFontColor?: string
   /** 单位字体粗细 */
   unitFontWeight?: 'normal' | 'bold'
+  /** 是否显示量程范围（最小值/最大值标签） */
+  showRange?: boolean
+  /** 量程范围标签字体大小 */
+  rangeLabelFontSize?: number
+  /** 量程范围标签字体颜色 */
+  rangeLabelFontColor?: string
+  /** 量程范围标签水平偏移（像素，画布缩放时等比） */
+  rangeLabelOffsetX?: number
+  /** 量程范围标签垂直偏移（像素，画布缩放时等比） */
+  rangeLabelOffsetY?: number
 }
 
 /** 图表组件配置 */
