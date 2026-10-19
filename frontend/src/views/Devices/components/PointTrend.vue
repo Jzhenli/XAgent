@@ -7,7 +7,7 @@
           {{ pointStore.selectedDeviceAsset }} /
           {{ pointStore.selectedPoint.name }}
         </span>
-        <el-tag v-if="pointStore.pointTrendLoading" type="info" size="small">{{
+        <el-tag v-if="isTrendLoading" type="info" size="small">{{
           t("pointTrend.loading")
         }}</el-tag>
       </div>
@@ -75,19 +75,28 @@
     <div v-if="pointStore.selectedPoint" class="trend-content">
       <el-card shadow="never" class="search-result-card chart-card">
         <div class="chart-container">
-          <!-- 延迟到容器布局完成后再挂载，避免抽屉打开当帧尺寸为 0 触发 ECharts 告警 -->
+          <!-- 加载中：接口请求中 / 抽屉首次打开未就绪 -->
+          <div v-if="isTrendLoading" class="chart-loading">
+            <el-icon class="chart-loading__spinner">
+              <Loading />
+            </el-icon>
+            <span class="chart-loading__text">{{ t("pointTrend.loading") }}</span>
+          </div>
+          <!-- 空态：接口返回空数据或请求失败 -->
+          <div
+            v-else-if="pointStore.selectedPoint && trendData.length === 0"
+            class="chart-empty"
+          >
+            <span class="chart-empty__icon">📊</span>
+            <p>{{ t("pointTrend.noHistoryData") }}</p>
+          </div>
+          <!-- 图表 -->
           <v-chart
-            v-if="chartReady"
+            v-else
             :option="chartOption"
             class="trend-chart"
             autoresize
           />
-          <!-- 图表挂载前的占位 loading -->
-          <div v-else class="chart-loading">
-            <el-icon class="chart-loading__spinner">
-              <Loading />
-            </el-icon>
-          </div>
         </div>
       </el-card>
 
@@ -339,6 +348,16 @@ const showDataPoints = ref(false);
  */
 const chartReady = ref(false);
 
+/**
+ * 趋势数据 loading 判定：
+ * - 接口请求中 pointTrendLoading = true
+ * - 或抽屉初次打开时 chartReady = false
+ * 两者皆需显示 loading 遮罩。
+ */
+const isTrendLoading = computed(
+  () => pointStore.pointTrendLoading || !chartReady.value,
+);
+
 /* ========== 主题感知的 splitLine 颜色 ==========
  * 深色主题下使用半透明白色，浅色主题下使用半透明黑色，保证可见性。
  */
@@ -410,27 +429,25 @@ function startAutoRefresh() {
 
 /* ========== 数据源 ========== */
 /**
- * 趋势数据：优先使用服务端单点位趋势接口（轻量），缺失时回退到生成的模拟数据。
+ * 趋势数据：仅使用服务端单点位趋势接口返回的真实历史数据，
+ * 接口返回空数据 / 请求失败时直接返回空数组，不再回退到模拟数据。
  */
 const trendData = computed(() => {
   if (!pointStore.selectedPoint || !pointStore.selectedDeviceAsset) return [];
 
   const realData = pointStore.pointTrendData;
-  if (realData.length > 0) {
-    return realData
-      .filter(
-        (d): d is TrendPoint & { value: number | boolean } =>
-          typeof d.value === "number" || typeof d.value === "boolean",
-      )
-      .map((d) => ({
-        timestamp: d.timestamp,
-        value: typeof d.value === "boolean" ? (d.value ? 1 : 0) : d.value,
-        quality: d.quality,
-      }));
-  }
+  if (realData.length === 0) return [];
 
-  const hours = HOURS_MAP[pointStore.trendTimeRange] || 24;
-  return pointStore.generateTrendData(pointStore.selectedPoint, hours);
+  return realData
+    .filter(
+      (d): d is TrendPoint & { value: number | boolean } =>
+        typeof d.value === "number" || typeof d.value === "boolean",
+    )
+    .map((d) => ({
+      timestamp: d.timestamp,
+      value: typeof d.value === "boolean" ? (d.value ? 1 : 0) : d.value,
+      quality: d.quality,
+    }));
 });
 
 /**
@@ -959,14 +976,41 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
 }
 
 .chart-loading__spinner {
   font-size: 40px;
   color: var(--color-primary);
   animation: chart-loading-spin 1s linear infinite;
+}
+
+.chart-loading__text {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.chart-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.chart-empty__icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.chart-empty p {
+  margin: 0;
+  font-size: 14px;
 }
 
 @keyframes chart-loading-spin {

@@ -2233,7 +2233,8 @@
     "timeColumn": "Time",
     "valueColumn": "Value",
     "unitColumn": "Unit",
-    "sheetName": "Trend Data"
+    "sheetName": "Trend Data",
+    "noHistoryData": "No historical trend data"
   },
   "dragStart": "Drag Start",
   "cancel": "Cancel",

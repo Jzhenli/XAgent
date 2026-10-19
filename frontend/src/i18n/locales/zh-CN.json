@@ -2233,7 +2233,8 @@
     "timeColumn": "时间",
     "valueColumn": "数值",
     "unitColumn": "单位",
-    "sheetName": "趋势数据"
+    "sheetName": "趋势数据",
+    "noHistoryData": "暂无历史趋势数据"
   },
   "dragStart": "拖拽开始",
   "cancel": "取消",
