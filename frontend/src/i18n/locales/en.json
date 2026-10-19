@@ -1088,7 +1088,7 @@
     "smtpPortRequired": "SMTP port is required",
     "fromAddressRequired": "From address is required",
     "webhookUrlRequired": "Webhook URL is required",
-    "clearAllConfirm": "Confirm to clear all alerts?",
+    "clearAllConfirm": "Confirm to clear resolved alerts?",
     "clearConfirmTitle": "Confirm Clear",
     "channelEnabled": "Channel Enabled",
     "channelDisabled": "Channel Disabled",

@@ -1088,7 +1088,7 @@
     "smtpPortRequired": "SMTP 連接埠為必填",
     "fromAddressRequired": "寄件者位址為必填",
     "webhookUrlRequired": "Webhook URL 為必填",
-    "clearAllConfirm": "確認清除所有告警？",
+    "clearAllConfirm": "確認清除已解決告警？",
     "clearConfirmTitle": "確認清除",
     "channelEnabled": "管道已啟用",
     "channelDisabled": "管道已停用",

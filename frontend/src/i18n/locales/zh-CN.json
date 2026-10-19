@@ -1088,7 +1088,7 @@
     "smtpPortRequired": "SMTP 端口为必填",
     "fromAddressRequired": "发件人地址为必填",
     "webhookUrlRequired": "Webhook URL 为必填",
-    "clearAllConfirm": "确认清空所有告警?",
+    "clearAllConfirm": "确认清空已解决告警?",
     "clearConfirmTitle": "确认清空",
     "channelEnabled": "渠道已启用",
     "channelDisabled": "渠道已禁用",
