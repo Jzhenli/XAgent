@@ -169,31 +169,11 @@ export function usePointIO() {
         return
       }
 
-      // 检查与现有点位的冲突
+      // 直接清空设备上原有所有点位，使用 Excel 内容完全替换
       const existingPoints = pointStore.getDevicePoints(deviceAsset)
-      const existingNames = new Set(existingPoints.map(p => p.name))
-      const conflictNames = points.filter(p => existingNames.has(p.name)).map(p => p.name)
-
-      // 存在冲突时询问用户是否覆盖
-      if (conflictNames.length > 0) {
-        try {
-          await ElMessageBox.confirm(
-            t('devices.import.overwriteConfirm', { count: conflictNames.length }),
-            t('devices.import.importConfirmTitle'),
-            {
-              confirmButtonText: t('devices.import.overwrite'),
-              cancelButtonText: t('common.cancel'),
-              type: 'warning',
-              customClass: 'x-message-box'
-            }
-          )
-        } catch {
-          return
-        }
-
-        // 先删除冲突的点位（与 PointDiscovery 组件保持一致的策略）
-        const deletePromises = conflictNames.map(name => deviceApi.removePoint(deviceAsset, name))
-        await Promise.all(deletePromises)
+      if (existingPoints.length > 0) {
+        const allExistingNames = existingPoints.map(p => p.name)
+        await deviceApi.batchRemovePoints(deviceAsset, allExistingNames)
       }
 
       try {
