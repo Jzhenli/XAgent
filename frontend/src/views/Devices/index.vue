@@ -442,9 +442,9 @@ const filteredSouthDevices = computed(() => {
     );
   }
   if (statusFilter.value === "online") {
-    list = list.filter((d) => d.status === "active" && d.enabled);
+    list = list.filter((d) => d.connectionStatus === "online");
   } else if (statusFilter.value === "offline") {
-    list = list.filter((d) => d.status !== "active" || !d.enabled);
+    list = list.filter((d) => d.connectionStatus === "offline");
   }
   if (protocolFilter.value) {
     list = list.filter((d) => d.pluginName === protocolFilter.value);
