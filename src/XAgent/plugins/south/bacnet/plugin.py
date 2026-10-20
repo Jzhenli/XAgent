@@ -923,25 +923,70 @@ class BACnetPlugin(SouthPluginBase):
             logger.debug("Traceback", exc_info=True)
             return None
     
+    @staticmethod
+    def _normalize_write_priority(priority: Any, point_name: Any) -> Optional[int]:
+        """校验点位 write_priority 配置，合法返回 1-16 整数，否则返回 None
+
+        BACnet WriteProperty 请求不带 priority 参数时，设备按最低优先级 16 写入。
+        配置非法（非整数/越界）时仅告警并回落默认行为，不阻断写入。
+        """
+        if priority is None or priority == "":
+            return None
+        # 显式拒绝 bool 与非整值浮点，避免隐式转换的静默意外语义：
+        # int(True) == 1 会被当作最高写入优先级，int(8.9) == 8 静默截断
+        if isinstance(priority, bool) or (
+            isinstance(priority, float) and not priority.is_integer()
+        ):
+            logger.warning(
+                f"Point {point_name}: invalid write_priority {priority!r}, "
+                f"falling back to device default (16)"
+            )
+            return None
+        try:
+            normalized = int(priority)
+        except (TypeError, ValueError):
+            logger.warning(
+                f"Point {point_name}: invalid write_priority {priority!r}, "
+                f"falling back to device default (16)"
+            )
+            return None
+        if not 1 <= normalized <= 16:
+            logger.warning(
+                f"Point {point_name}: write_priority {normalized} out of range 1-16, "
+                f"falling back to device default (16)"
+            )
+            return None
+        return normalized
+
     async def _write_point_value(self, point_info: Dict[str, Any], value: Any) -> bool:
         """写入单个点位值 (bacpypes3)"""
         if not self._app:
             return False
-        
+
         try:
             object_type = point_info.get("object_type")
             object_instance = point_info.get("object_instance")
             property_id = point_info.get("property_id", "presentValue")
-            
+
             device_address = f"{self._host}:{self._port}"
             object_identifier = f"{object_type},{object_instance}"
-            
+
+            priority = self._normalize_write_priority(
+                self._get_point_config(point_info["config"], "write_priority"),
+                point_info.get("name"),
+            )
+            if priority is not None:
+                logger.debug(
+                    f"Writing {object_identifier}.{property_id} at priority {priority}"
+                )
+
             response = await asyncio.wait_for(
                 self._app.write_property(
                     device_address,
                     object_identifier,
                     property_id,
-                    value
+                    value,
+                    priority=priority
                 ),
                 timeout=self._write_timeout
             )
