@@ -322,12 +322,12 @@
           clearable
         />
       </el-form-item>
-      <el-form-item :label="t('devices.highAlarm')">
+      <!-- <el-form-item :label="t('devices.highAlarm')">
         <el-input-number v-model="batchEditForm.alarm_high" clearable />
       </el-form-item>
       <el-form-item :label="t('devices.lowAlarm')">
         <el-input-number v-model="batchEditForm.alarm_low" clearable />
-      </el-form-item>
+      </el-form-item> -->
     </el-form>
 
     <template #footer>
