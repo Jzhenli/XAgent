@@ -374,7 +374,10 @@
       "binaryValue": "binaryValue - 二進位值",
       "multiStateInput": "multiStateInput - 多狀態輸入",
       "multiStateOutput": "multiStateOutput - 多狀態輸出",
-      "multiStateValue": "multiStateValue - 多狀態值"
+      "multiStateValue": "multiStateValue - 多狀態值",
+      "integerValue": "integerValue - 整數值",
+      "positiveIntegerValue": "positiveIntegerValue - 正整數值",
+      "accumulator": "accumulator - 累加器"
     },
     "protocol": {
       "modbus_tcp": "Modbus TCP",

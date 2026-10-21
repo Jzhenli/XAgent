@@ -374,7 +374,10 @@
       "binaryValue": "binaryValue - Binary Value",
       "multiStateInput": "multiStateInput - Multi-State Input",
       "multiStateOutput": "multiStateOutput - Multi-State Output",
-      "multiStateValue": "multiStateValue - Multi-State Value"
+      "multiStateValue": "multiStateValue - Multi-State Value",
+      "integerValue": "integerValue - Integer Value",
+      "positiveIntegerValue": "positiveIntegerValue - Positive Integer Value",
+      "accumulator": "accumulator - Accumulator"
     },
     "protocol": {
       "modbus_tcp": "Modbus TCP",
