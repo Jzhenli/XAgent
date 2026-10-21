@@ -330,11 +330,14 @@ const POINT_BINDINGLESS_TYPES = new Set([
   "image",
   "nav-button",
   "chart-line",
+  "chart-bar",
+  "chart-pie",
   "line",
   "arc",
   "popup",
   "ac-controller",
   "ac-controller-2",
+  "chart-sankey",
 ]);
 
 const showPointBinding = computed(() => {

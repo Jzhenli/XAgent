@@ -47,6 +47,12 @@
         </div>
       </el-progress>
     </div>
+
+    <!-- 量程范围标签（最小值/最大值） -->
+    <div v-if="showRange" class="gauge-range" :style="rangeTextStyle">
+      <span class="gauge-range-label">{{ formatRangeValue(min) }}</span>
+      <span class="gauge-range-label">{{ formatRangeValue(max) }}</span>
+    </div>
   </div>
 </template>
 
@@ -86,6 +92,7 @@ const { updateValue } = useScadaConfig(props.component as ScadaComponent<'gauge'
 const min = computed(() => gaugeConfig.value?.min ?? 0)
 const max = computed(() => gaugeConfig.value?.max ?? 100)
 const step = computed(() => gaugeConfig.value?.step ?? 1)
+const decimalPlaces = computed(() => gaugeConfig.value?.decimalPlaces ?? 0)
 const unit = computed(() => gaugeConfig.value?.unit ?? '')
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -103,6 +110,15 @@ const unitFontWeight = computed(() => gaugeConfig.value?.unitFontWeight ?? 'norm
 const trackColor = computed(() => gaugeConfig.value?.trackColor ?? '#4a4a6a')
 const trackWidth = computed(() => gaugeConfig.value?.trackWidth ?? 12)
 const strokeLinecap = computed(() => gaugeConfig.value?.strokeLinecap ?? 'round')
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 量程范围标签配置
+// ═══════════════════════════════════════════════════════════════════════════════
+const showRange = computed(() => gaugeConfig.value?.showRange ?? true)
+const rangeLabelFontSize = computed(() => gaugeConfig.value?.rangeLabelFontSize ?? 12)
+const rangeLabelFontColor = computed(() => gaugeConfig.value?.rangeLabelFontColor ?? fontColor.value)
+const rangeLabelOffsetX = computed(() => gaugeConfig.value?.rangeLabelOffsetX ?? 0)
+const rangeLabelOffsetY = computed(() => gaugeConfig.value?.rangeLabelOffsetY ?? 0)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 填充色与渐变
@@ -205,9 +221,12 @@ const sizeScale = computed(() => gaugeSize.value / configMinSize.value)
 // ═══════════════════════════════════════════════════════════════════════════════
 // 文本显示
 // ═══════════════════════════════════════════════════════════════════════════════
-/** 整数直接显示，否则保留一位小数 */
+/** 按 decimalPlaces 配置格式化数值显示（用于中心当前值） */
 const formatNumber = (val: number): string =>
-  Number.isInteger(val) ? val.toString() : val.toFixed(1)
+  val.toFixed(Math.max(0, decimalPlaces.value))
+
+/** 量程标签格式化：按配置原始值自然输出，不受 decimalPlaces 影响 */
+const formatRangeValue = (val: number): string => String(val)
 
 /** 中心显示的当前值文本 */
 const displayValue = computed(() => formatNumber(currentValue.value ?? fallbackValue.value ?? 0))
@@ -239,6 +258,12 @@ const unitTextStyle = computed(() => ({
 const controlButtonStyle = computed(() => ({
   color: stepFontColor.value,
   fontSize: `${Math.max(12, stepFontSize.value) * sizeScale.value}px`,
+}))
+
+const rangeTextStyle = computed(() => ({
+  color: rangeLabelFontColor.value,
+  fontSize: `${rangeLabelFontSize.value * sizeScale.value}px`,
+  transform: `translate(${rangeLabelOffsetX.value * sizeScale.value}px, ${rangeLabelOffsetY.value * sizeScale.value}px)`,
 }))
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -384,5 +409,21 @@ const decrement = () => {
 /** ArrowRight 图标内部箭头偏左，需额外左间距使左右箭头到数值的视觉距离对称 */
 .gauge-icon-left {
   margin-right: 6px;
+}
+
+/** 量程范围标签行 */
+.gauge-range {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 2px 8px 0;
+  line-height: 1.2;
+  user-select: none;
+}
+
+.gauge-range-label {
+  white-space: nowrap;
 }
 </style>

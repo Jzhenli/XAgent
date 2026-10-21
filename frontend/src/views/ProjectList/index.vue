@@ -102,6 +102,7 @@
       :items="parsedImportProjects"
       :confirm-text="$t('scada.importSelected')"
       :empty-text="$t('scada.noProjectsToImport')"
+      :confirm-loading="importConfirmLoading"
       @confirm="handleImportConfirm"
     />
 
@@ -152,6 +153,8 @@ const editingProjectId = ref<string | null>(null);
 const showExportDialog = ref(false);
 const showImportDialog = ref(false);
 const parsedImportProjects = ref<ProjectCreateRequest[]>([]);
+/** 导入确认按钮 loading：防止重复提交，直到并行创建 + 刷新完成 */
+const importConfirmLoading = ref(false);
 
 // 导入文件输入
 const importInputRef = ref<HTMLInputElement | null>(null);
@@ -461,19 +464,25 @@ const handleImportFileChange = async (event: Event) => {
 
 /** 确认导入选中项目（并行创建，结束后统一反馈） */
 const handleImportConfirm = async (indices: number[]) => {
-  const requests = indices.map((i) => parsedImportProjects.value[i]);
-  const results = await Promise.allSettled(
-    requests.map((request) => projectApi.create(request)),
-  );
-  const success = results.filter((r) => r.status === "fulfilled").length;
-  const failed = results.length - success;
+  importConfirmLoading.value = true;
+  try {
+    const requests = indices.map((i) => parsedImportProjects.value[i]);
+    const results = await Promise.allSettled(
+      requests.map((request) => projectApi.create(request)),
+    );
+    const success = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.length - success;
 
-  await loadProjects();
+    await loadProjects();
 
-  if (failed === 0) {
-    ElMessage.success(t("scada.projectsImported", { count: success }));
-  } else {
-    ElMessage.warning(t("scada.projectsImportPartial", { success, failed }));
+    if (failed === 0) {
+      ElMessage.success(t("scada.projectsImported", { count: success }));
+    } else {
+      ElMessage.warning(t("scada.projectsImportPartial", { success, failed }));
+    }
+  } finally {
+    showImportDialog.value = false;
+    importConfirmLoading.value = false;
   }
 };
 
@@ -508,6 +517,8 @@ const handleExportConfirm = async (indices: number[]) => {
     ElMessage.success(t("scada.projectsExported", { count: selected.length }));
   } catch (error) {
     ElMessage.error(getErrorMessage(error, t("common.error")));
+  } finally {
+    showExportDialog.value = false;
   }
 };
 

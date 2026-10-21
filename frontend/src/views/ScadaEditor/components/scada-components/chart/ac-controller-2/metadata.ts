@@ -46,12 +46,14 @@ const defaultConfig: AcController2ComponentConfig = {
   gaugeFontSize: 20,
   gaugeFontColor: '#ffffff',
   gaugeStep: 1,
+  gaugeDecimalPlaces: 0,
 
   // 当前值显示
   currentValueLabel: '当前:',
   currentValueFontSize: 11,
   currentValueFontColor: 'rgba(255, 255, 255, 0.8)',
   currentValueUnit: '',
+  currentValueDecimalPlaces: 0,
 
   // 模式（单图标循环切换）
   modeIconSize: 22,

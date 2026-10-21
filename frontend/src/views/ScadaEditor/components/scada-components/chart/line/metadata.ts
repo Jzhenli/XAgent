@@ -9,6 +9,7 @@ const defaultConfig: LineChartComponentConfig = {
   timeRange: '1h',
   lineColor: '#3498db',
   areaFill: true,
+  showXAxis: true,
   showXAxisLabel: false,
   showYAxisLabel: false,
   showYAxisLine: true,

@@ -71,6 +71,9 @@
                 <el-checkbox value="multiStateInput">MI</el-checkbox>
                 <el-checkbox value="multiStateOutput">MO</el-checkbox>
                 <el-checkbox value="multiStateValue">MV</el-checkbox>
+                <el-checkbox value="integerValue">IV</el-checkbox>
+                <el-checkbox value="positiveIntegerValue">PIV</el-checkbox>
+                <el-checkbox value="accumulator">ACC</el-checkbox>
               </el-checkbox-group>
               <span class="object-type-hint">
                 {{ t("devices.objectTypeHint") }}
@@ -322,12 +325,12 @@
           clearable
         />
       </el-form-item>
-      <el-form-item :label="t('devices.highAlarm')">
+      <!-- <el-form-item :label="t('devices.highAlarm')">
         <el-input-number v-model="batchEditForm.alarm_high" clearable />
       </el-form-item>
       <el-form-item :label="t('devices.lowAlarm')">
         <el-input-number v-model="batchEditForm.alarm_low" clearable />
-      </el-form-item>
+      </el-form-item> -->
     </el-form>
 
     <template #footer>
@@ -466,6 +469,9 @@ const DEFAULT_OBJECT_TYPES = [
   "multiStateInput",
   "multiStateOutput",
   "multiStateValue",
+  "integerValue",
+  "positiveIntegerValue",
+  "accumulator",
 ];
 
 const selectedObjectTypes = ref<string[]>([...DEFAULT_OBJECT_TYPES]);

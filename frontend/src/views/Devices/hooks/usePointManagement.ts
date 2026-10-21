@@ -380,7 +380,10 @@ export function usePointManagement(
     { label: t('devices.bacnet.binaryValue'), value: 'binaryValue' },
     { label: t('devices.bacnet.multiStateInput'), value: 'multiStateInput' },
     { label: t('devices.bacnet.multiStateOutput'), value: 'multiStateOutput' },
-    { label: t('devices.bacnet.multiStateValue'), value: 'multiStateValue' }
+    { label: t('devices.bacnet.multiStateValue'), value: 'multiStateValue' },
+    { label: t('devices.bacnet.integerValue'), value: 'integerValue' },
+    { label: t('devices.bacnet.positiveIntegerValue'), value: 'positiveIntegerValue' },
+    { label: t('devices.bacnet.accumulator'), value: 'accumulator' }
   ]
 
   const registerTypes = [

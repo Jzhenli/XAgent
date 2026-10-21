@@ -49,6 +49,17 @@
         />
       </div>
       <div class="form-group">
+        <label>{{ t("componentConfig.decimalPlaces") }}</label>
+        <input
+          type="number"
+          min="0"
+          :value="config.decimalPlaces"
+          @change="updateConfig('decimalPlaces', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label>{{ t("componentConfig.step") }}</label>
         <input
           type="number"
@@ -207,6 +218,60 @@
         />
       </div>
     </div>
+
+    <!-- 量程范围标签配置 -->
+    <div class="subsection-title">{{ t("componentConfig.rangeLabelSection") }}</div>
+    <div class="form-row">
+      <div class="form-group form-group--switch">
+        <label>{{ t("componentConfig.showRange") }}</label>
+        <el-switch
+          :model-value="config.showRange"
+          @change="updateConfig('showRange', $event as boolean)"
+        />
+      </div>
+    </div>
+    <template v-if="config.showRange">
+      <div class="form-row">
+        <div class="form-group">
+          <label>{{ t("componentConfig.rangeLabelFontSize") }}</label>
+          <input
+            type="number"
+            min="1"
+            :value="config.rangeLabelFontSize"
+            @change="updateConfig('rangeLabelFontSize', +($event.target as HTMLInputElement).value)"
+          />
+        </div>
+        <div class="form-group">
+          <label>{{ t("componentConfig.rangeLabelFontColor") }}</label>
+          <el-color-picker
+            :model-value="config.rangeLabelFontColor"
+            show-alpha
+            @active-change="handleColorActiveChange('rangeLabelFontColor', $event)"
+            @change="handleColorChange('rangeLabelFontColor', $event)"
+          />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>{{ t("componentConfig.rangeLabelOffsetX") }}</label>
+          <input
+            type="number"
+            step="1"
+            :value="config.rangeLabelOffsetX"
+            @change="updateConfig('rangeLabelOffsetX', +($event.target as HTMLInputElement).value)"
+          />
+        </div>
+        <div class="form-group">
+          <label>{{ t("componentConfig.rangeLabelOffsetY") }}</label>
+          <input
+            type="number"
+            step="1"
+            :value="config.rangeLabelOffsetY"
+            @change="updateConfig('rangeLabelOffsetY', +($event.target as HTMLInputElement).value)"
+          />
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -229,7 +294,7 @@ const { config, updateConfig } = useScadaConfig(
 /** 支持颜色选择器清除/确认的单色字段 */
 type ColorField = keyof Pick<
   GaugeComponentConfig,
-  "trackColor" | "fontColor" | "stepFontColor" | "unitFontColor"
+  "trackColor" | "fontColor" | "stepFontColor" | "unitFontColor" | "rangeLabelFontColor"
 >;
 
 const colorFields: ColorField[] = [
@@ -237,6 +302,7 @@ const colorFields: ColorField[] = [
   "fontColor",
   "stepFontColor",
   "unitFontColor",
+  "rangeLabelFontColor",
 ];
 
 /** 颜色面板交互过程中缓存的最新值（用于处理清空色值时回写空字符串） */
@@ -245,6 +311,7 @@ const latestColor = ref<Record<ColorField, string>>({
   fontColor: "",
   stepFontColor: "",
   unitFontColor: "",
+  rangeLabelFontColor: "",
 });
 
 watch(

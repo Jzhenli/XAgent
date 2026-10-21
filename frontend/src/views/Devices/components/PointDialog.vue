@@ -267,7 +267,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
+        <!-- <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item :label="t('devices.highAlarm')">
               <el-input-number
@@ -288,7 +288,7 @@
               />
             </el-form-item>
           </el-col>
-        </el-row>
+        </el-row> -->
 
         <!-- 启用状态与标签 -->
         <el-form-item :label="t('devices.enabled')">

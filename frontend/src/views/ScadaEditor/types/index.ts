@@ -166,6 +166,8 @@ export interface GaugeComponentConfig extends BaseComponentConfig {
   fontWeight?: 'normal' | 'bold'
   /** 按钮调节步进值 */
   step?: number
+  /** 小数位数，未设置时默认 1（保持旧版行为兼容） */
+  decimalPlaces?: number
   /** 是否显示加减按钮 */
   showButtons?: boolean
   /** 步进按钮字体大小 */
@@ -178,6 +180,16 @@ export interface GaugeComponentConfig extends BaseComponentConfig {
   unitFontColor?: string
   /** 单位字体粗细 */
   unitFontWeight?: 'normal' | 'bold'
+  /** 是否显示量程范围（最小值/最大值标签） */
+  showRange?: boolean
+  /** 量程范围标签字体大小 */
+  rangeLabelFontSize?: number
+  /** 量程范围标签字体颜色 */
+  rangeLabelFontColor?: string
+  /** 量程范围标签水平偏移（像素，画布缩放时等比） */
+  rangeLabelOffsetX?: number
+  /** 量程范围标签垂直偏移（像素，画布缩放时等比） */
+  rangeLabelOffsetY?: number
 }
 
 /** 图表组件配置 */
@@ -191,6 +203,8 @@ export interface ChartComponentConfig extends BaseComponentConfig {
 /** 折线图组件配置 */
 export interface LineChartComponentConfig
   extends Omit<ChartComponentConfig, 'showLegend' | 'borderRadius'> {
+  /** 是否显示整个 X 轴（含轴线、刻度、标签） */
+  showXAxis?: boolean
   /** 是否显示 X 轴标签 */
   showXAxisLabel?: boolean
   /** 是否显示 Y 轴标签 */
@@ -215,14 +229,30 @@ export interface LineChartComponentConfig
   smooth?: boolean
   /** 是否显示图例 */
   showLegend?: boolean
+  /** 图例字体颜色 */
+  legendFontColor?: string
   /** 多序列配置（支持多条折线） */
   seriesItems?: LineChartSeriesItem[]
+}
+
+/** 柱状图序列项（每组柱子的配置） */
+export interface BarChartSeriesItem {
+  /** 序列名称（显示在图例中） */
+  name: string
+  /** 点位绑定 */
+  binding: PointBinding | null
+  /** 柱体颜色 */
+  barColor: string
 }
 
 /** 柱状图组件配置 */
 export interface BarChartComponentConfig extends BaseComponentConfig {
   /** 时间范围 */
   timeRange: '1h' | '6h' | '24h' | '7d'
+  /** 是否显示图例 */
+  showLegend?: boolean
+  /** 是否显示 X 轴线 */
+  showXAxisLine?: boolean
   /** 是否显示 X 轴标签 */
   showXAxisLabel?: boolean
   /** 是否显示 Y 轴标签 */
@@ -237,7 +267,7 @@ export interface BarChartComponentConfig extends BaseComponentConfig {
   yAxisLabelColor?: string
   /** Y 轴标签字号 */
   yAxisLabelFontSize?: number
-  /** 柱体颜色 */
+  /** 柱体颜色（旧版单序列兼容，有 seriesItems 时优先） */
   barColor?: string
   /** 柱体宽度（像素 或 百分比，如 '60%'） */
   barWidth?: number | string
@@ -245,6 +275,82 @@ export interface BarChartComponentConfig extends BaseComponentConfig {
   barBorderRadius?: number | number[]
   /** 柱状图显示的柱子个数（默认 20） */
   barCount?: number
+  /** 多序列配置（支持多组柱子） */
+  seriesItems?: BarChartSeriesItem[]
+}
+
+/** 饼状图单项配置 */
+export interface PieChartItemConfig {
+  /** 扇区名称（显示在图例上） */
+  name: string
+  /** 模拟值 */
+  value: number
+  /** 扇区颜色 */
+  color: string
+}
+
+/** 饼状图组件配置 */
+export interface PieChartComponentConfig extends BaseComponentConfig {
+  /** 饼图数据项 */
+  items: PieChartItemConfig[]
+  /** 是否显示图例 */
+  showLegend?: boolean
+  /** 图例字体颜色 */
+  legendColor?: string
+  /** 图例字体大小 */
+  legendFontSize?: number
+  /** 是否显示为环形饼图（Donut） */
+  showDonut?: boolean
+  /** 环形内半径（百分比，如 '40%'），showDonut=true 时生效 */
+  innerRadius?: number | string
+  /** 扇区标签是否显示 */
+  showLabel?: boolean
+  /** 扇区之间的角度间隙（度），通过 ECharts padAngle 实现 */
+  pieGap?: number
+  /** 扇区圆角（px） */
+  pieBorderRadius?: number
+}
+
+/** 桑基图节点配置 */
+export interface SankeyNodeConfig {
+  /** 节点名称（唯一标识） */
+  name: string
+  /** 节点颜色（可选，不填则自动分配渐变） */
+  color?: string
+}
+
+/** 桑基图连线配置 */
+export interface SankeyLinkConfig {
+  /** 源节点名称 */
+  source: string
+  /** 目标节点名称 */
+  target: string
+  /** 流量值 */
+  value: number
+}
+
+/** 桑基图组件配置 */
+export interface SankeyChartComponentConfig extends BaseComponentConfig {
+  /** 节点列表 */
+  nodes: SankeyNodeConfig[]
+  /** 连线列表 */
+  links: SankeyLinkConfig[]
+  /** 节点宽度 */
+  nodeWidth?: number
+  /** 节点垂直间距 */
+  nodeGap?: number
+  /** 节点圆角 */
+  nodeBorderRadius?: number
+  /** 连线颜色模式：gradient(渐变) / source(跟随源节点) / target(跟随目标节点) */
+  linkColorMode?: 'gradient' | 'source' | 'target'
+  /** 连线透明度 */
+  linkOpacity?: number
+  /** 是否悬停高亮关联流 */
+  hoverHighlight?: boolean
+  /** 是否启用 mock 数据自动刷新 */
+  autoRefresh?: boolean
+  /** mock 刷新间隔（毫秒） */
+  refreshInterval?: number
 }
 
 /** 折线图数据点 */
@@ -546,6 +652,16 @@ export interface ValueProgressCardComponentConfig extends BaseComponentConfig {
   barHeight: number
   /** 进度条圆角（px） */
   barRadius: number
+  /** 是否启用层层递进动画 */
+  animationEnabled: boolean
+  /** 动画持续时长（秒） */
+  animationDuration: number
+
+  // ── 进度条刻度标签（min/max） ──
+  /** 刻度标签字体大小 */
+  scaleFontSize?: number
+  /** 刻度标签字体颜色 */
+  scaleFontColor?: string
 }
 
 /** 弹框组件配置 */
@@ -662,12 +778,16 @@ export interface AcControllerComponentConfig extends BaseComponentConfig {
   gaugeFontSize: number
   gaugeFontColor: string
   gaugeStep: number
+  /** 仪表盘数值小数位数，未设置时默认 1 */
+  gaugeDecimalPlaces?: number
 
   // ── 当前值显示 ──
   currentValueLabel: string
   currentValueFontSize: number
   currentValueFontColor: string
   currentValueUnit: string
+  /** 当前值显示小数位数，未设置时默认 1 */
+  currentValueDecimalPlaces?: number
 
   // ── 模式按钮 ──
   modeIconSize: number
@@ -731,12 +851,16 @@ export interface AcController2ComponentConfig extends BaseComponentConfig {
   gaugeFontSize: number
   gaugeFontColor: string
   gaugeStep: number
+  /** 仪表盘数值小数位数，未设置时默认 1 */
+  gaugeDecimalPlaces?: number
 
   // ── 当前值 ──
   currentValueLabel: string
   currentValueFontSize: number
   currentValueFontColor: string
   currentValueUnit: string
+  /** 当前值显示小数位数，未设置时默认 1 */
+  currentValueDecimalPlaces?: number
 
   // ── 模式（单图标循环切换） ──
   modeIconSize: number
@@ -783,6 +907,7 @@ export interface ComponentConfigMap {
   gauge: GaugeComponentConfig
   'chart-line': LineChartComponentConfig
   'chart-bar': BarChartComponentConfig
+  'chart-pie': PieChartComponentConfig
   indicator: IndicatorComponentConfig
   switch: SwitchComponentConfig
   'light-button': LightButtonComponentConfig
@@ -802,6 +927,7 @@ export interface ComponentConfigMap {
   'ac-controller-2': AcController2ComponentConfig
   'info-card': InfoCardComponentConfig
   'value-progress-card': ValueProgressCardComponentConfig
+  'chart-sankey': SankeyChartComponentConfig
 }
 
 /** 组件统一配置类型 */

@@ -182,6 +182,25 @@
     </div>
     <div class="form-row">
       <div class="form-group">
+        <label>{{ t('componentConfig.scaleFontSize') }}</label>
+        <input
+          type="number"
+          min="6"
+          :value="config.scaleFontSize"
+          @change="updateConfig('scaleFontSize', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.scaleFontColor') }}</label>
+        <el-color-picker
+          :model-value="config.scaleFontColor"
+          show-alpha
+          @change="updateConfig('scaleFontColor', $event as string)"
+        />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
         <label>{{ t('componentConfig.barColor') }}</label>
         <input
           type="text"
@@ -218,6 +237,27 @@
           min="0"
           :value="config.barRadius"
           @change="updateConfig('barRadius', +($event.target as HTMLInputElement).value)"
+        />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{ t('componentConfig.animationEnabled') }}</label>
+        <el-switch
+          :model-value="config.animationEnabled"
+          @change="updateConfig('animationEnabled', $event as boolean)"
+        />
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.animationDuration') }}</label>
+        <input
+          type="number"
+          min="0.3"
+          max="5"
+          step="0.1"
+          :value="config.animationDuration"
+          :disabled="!config.animationEnabled"
+          @change="updateConfig('animationDuration', +($event.target as HTMLInputElement).value)"
         />
       </div>
     </div>

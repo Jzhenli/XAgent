@@ -26,8 +26,16 @@
           @change="updateConfig('showLegend', $event as boolean)"
         />
       </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.legendFontColor') }}</label>
+        <el-color-picker
+          :model-value="config.legendFontColor"
+          show-alpha
+          @active-change="handleColorActiveChange('legendFontColor', $event)"
+          @change="handleColorChange('legendFontColor', $event)"
+        />
+      </div>
     </div>
-
     <!-- 序列与线条 -->
     <div class="subsection-title">{{ t('componentConfig.seriesLineSection') }}</div>
 
@@ -174,12 +182,22 @@
     </div>
     <div class="form-row">
       <div class="form-group form-group--switch">
+        <label>{{ t('componentConfig.showXAxis') }}</label>
+        <el-switch
+          :model-value="config.showXAxis !== false"
+          @change="updateConfig('showXAxis', $event as boolean)"
+        />
+      </div>
+      <div class="form-group form-group--switch">
         <label>{{ t('componentConfig.showXAxisLabel') }}</label>
         <el-switch
           :model-value="config.showXAxisLabel"
+          :disabled="config.showXAxis === false"
           @change="updateConfig('showXAxisLabel', $event as boolean)"
         />
       </div>
+    </div>
+    <div class="form-row">
       <div class="form-group form-group--switch">
         <label>{{ t('componentConfig.showYAxisLabel') }}</label>
         <el-switch
@@ -187,8 +205,6 @@
           @change="updateConfig('showYAxisLabel', $event as boolean)"
         />
       </div>
-    </div>
-    <div class="form-row">
       <div class="form-group form-group--switch">
         <label>{{ t('componentConfig.showYAxisLine') }}</label>
         <el-switch
@@ -373,15 +389,16 @@ const handleSeriesNodeColorChange = (index: number, val: string | null) => {
 
 type ColorField = keyof Pick<
   LineChartComponentConfig,
-  'backgroundColor' | 'xAxisLabelColor' | 'yAxisLabelColor'
+  'backgroundColor' | 'xAxisLabelColor' | 'yAxisLabelColor' | 'legendFontColor'
 >
 
-const colorFields: ColorField[] = ['backgroundColor', 'xAxisLabelColor', 'yAxisLabelColor']
+const colorFields: ColorField[] = ['backgroundColor', 'xAxisLabelColor', 'yAxisLabelColor', 'legendFontColor']
 
 const latestColor = ref<Record<ColorField, string>>({
   backgroundColor: '',
   xAxisLabelColor: '',
   yAxisLabelColor: '',
+  legendFontColor: '',
 })
 
 watch(

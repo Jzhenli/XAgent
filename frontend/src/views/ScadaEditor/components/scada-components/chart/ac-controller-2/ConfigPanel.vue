@@ -517,6 +517,22 @@
             />
           </div>
           <div class="form-group">
+            <label>{{ t("componentConfig.decimalPlaces") }}</label>
+            <input
+              type="number"
+              min="0"
+              :value="config.gaugeDecimalPlaces"
+              @change="
+                updateConfig(
+                  'gaugeDecimalPlaces',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
             <label>{{ t("componentConfig.step") }}</label>
             <input
               type="number"
@@ -659,19 +675,6 @@
               "
             />
           </div>
-          <div class="form-group">
-            <label>{{ t("componentConfig.unit") }}</label>
-            <input
-              type="text"
-              :value="config.currentValueUnit"
-              @input="
-                updateConfig(
-                  'currentValueUnit',
-                  ($event.target as HTMLInputElement).value,
-                )
-              "
-            />
-          </div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -697,6 +700,35 @@
                 handleColorActiveChange('currentValueFontColor', $event)
               "
               @change="handleColorChange('currentValueFontColor', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.decimalPlaces") }}</label>
+            <input
+              type="number"
+              min="0"
+              :value="config.currentValueDecimalPlaces"
+              @change="
+                updateConfig(
+                  'currentValueDecimalPlaces',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.unit") }}</label>
+            <input
+              type="text"
+              :value="config.currentValueUnit"
+              @input="
+                updateConfig(
+                  'currentValueUnit',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
         </div>
@@ -837,7 +869,9 @@
         </div>
 
         <!-- 自定义循环模式组合 -->
-        <label class="cycle-modes-title">{{ t("componentConfig.acModeIconCycleModes") }}</label>
+        <label class="cycle-modes-title">{{
+          t("componentConfig.acModeIconCycleModes")
+        }}</label>
         <div class="cycle-modes">
           <label
             v-for="mode in allModes"
@@ -991,7 +1025,9 @@
         </div>
 
         <!-- 自定义循环风速档位组合 -->
-        <label class="cycle-modes-title">{{ t("componentConfig.acFanSpeedIconCycleModes") }}</label>
+        <label class="cycle-modes-title">{{
+          t("componentConfig.acFanSpeedIconCycleModes")
+        }}</label>
         <div class="cycle-modes">
           <label
             v-for="speed in allFanSpeeds"

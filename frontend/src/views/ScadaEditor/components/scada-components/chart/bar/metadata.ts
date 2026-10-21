@@ -6,8 +6,8 @@ const defaultConfig: BarChartComponentConfig = {
   width: 300,
   height: 200,
   backgroundColor: '#ffffff00',
-  value: 50,
   timeRange: '1h',
+  showLegend: false,
   showXAxisLabel: false,
   showYAxisLabel: false,
   showYAxisLine: true,
@@ -19,6 +19,13 @@ const defaultConfig: BarChartComponentConfig = {
   barWidth: 20,
   barBorderRadius: 4,
   barCount: 10,
+  seriesItems: [
+    {
+      name: '',
+      binding: null,
+      barColor: '#22D3EE',
+    },
+  ],
 }
 
 export const chartBarMeta: ScadaComponentMeta = {

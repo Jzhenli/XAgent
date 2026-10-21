@@ -1,4 +1,5 @@
 import api from './index'
+import type { AxiosRequestConfig } from 'axios'
 
 export interface Reading {
   asset: string
@@ -43,8 +44,8 @@ export const dataApi = {
     end_time?: number
     limit?: number
     active_only?: boolean
-  }): Promise<ReadingsResponse> {
-    const res = await api.get('/api/data/readings', { params })
+  }, config?: AxiosRequestConfig): Promise<ReadingsResponse> {
+    const res = await api.get('/api/data/readings', { params, ...config })
     return res.data
   },
 
@@ -76,10 +77,12 @@ export const dataApi = {
     point: string,
     startTime?: number,
     endTime?: number,
-    limit = 1000
+    limit = 1000,
+    config?: AxiosRequestConfig
   ): Promise<PointTrendResponse> {
     const res = await api.get('/api/data/trend', {
-      params: { asset, point, start_time: startTime, end_time: endTime, limit }
+      params: { asset, point, start_time: startTime, end_time: endTime, limit },
+      ...config
     })
     return res.data
   },

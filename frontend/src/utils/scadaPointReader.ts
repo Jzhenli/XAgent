@@ -149,6 +149,12 @@ const assetDemand = new Map<string, Set<string>>()
 /** 点位骨架缓存：asset → 点位定义（准静态数据，会话级缓存，clearDevices 清空），避免每轮重拉 listPoints */
 const skeletonCache = new Map<string, PointConfig[]>()
 
+/**
+ * 当前活跃请求的 AbortController：clearDevices 时 abort() 取消所有在途 HTTP 请求，
+ * 避免退出预览页面后浏览器 HTTP 连接池被占满，阻塞新页面的接口调用
+ */
+let currentAbortController: AbortController | null = null
+
 // ════════════════════════════ 转换工具 ════════════════════════════
 
 /** 将读数值归一为可图表化的数值：布尔 → 0/1，数值原样，其余（字符串/null/undefined）不可图表化返回 undefined */
@@ -247,20 +253,26 @@ export function useScadaPointReader(): ScadaPointReader {
   /** fetchDevicePoints 的实际实现（不含去重逻辑） */
   async function doFetchDevicePoints(asset: string): Promise<void> {
     const epoch = devicesEpoch
+    const signal = currentAbortController?.signal
     try {
       // 骨架命中缓存：只拉读数；未命中：并行拉骨架 + 读数
       const cachedSkeleton = skeletonCache.get(asset)
       const tasks: Promise<any>[] = [
-        dataApi.getReadings({ asset, limit: 1, active_only: false })
+        dataApi.getReadings({ asset, limit: 1, active_only: false }, { signal })
       ]
       if (!cachedSkeleton) {
-        tasks.push(deviceApi.listPoints(asset))
+        tasks.push(deviceApi.listPoints(asset, { signal }))
       }
 
       const [readingsResult, pointsResult] = await Promise.allSettled(tasks)
 
       // clearDevices 已发生：丢弃在途回包，避免离开页面后污染单例状态
       if (epoch !== devicesEpoch) return
+
+      // 如果请求是被 abort 取消的，静默返回（不打 console.error）
+      const isAborted = (r: PromiseSettledResult<any> | undefined) =>
+        r?.status === 'rejected' && (r.reason as any)?.name === 'CanceledError'
+      if (isAborted(readingsResult) || isAborted(pointsResult)) return
 
       const readings = readingsResult.status === 'fulfilled' ? readingsResult.value.readings : []
       const reading = readings[0]
@@ -313,7 +325,7 @@ export function useScadaPointReader(): ScadaPointReader {
       if (existingIndex !== -1) {
         devices.value[existingIndex] = { ...devices.value[existingIndex], points: mappedPoints }
       } else {
-        const device = await deviceApi.get(asset)
+        const device = await deviceApi.get(asset, { signal })
         // 二次守卫：deviceApi.get 期间可能已发生 clearDevices
         if (epoch !== devicesEpoch) return
         devices.value.push({
@@ -329,6 +341,8 @@ export function useScadaPointReader(): ScadaPointReader {
         appendLatestToBoundPoints(asset, readingData.timestamp, readingData)
       }
     } catch (e: unknown) {
+      // abort 取消的请求静默忽略，不打 error 日志
+      if ((e as any)?.name === 'CanceledError') return
       console.error(`Failed to fetch points for device ${asset}:`, e)
     }
   }
@@ -362,10 +376,13 @@ export function useScadaPointReader(): ScadaPointReader {
 
     const promise = (async () => {
       const epoch = devicesEpoch
+      const signal = currentAbortController?.signal
       try {
         const endTime = Date.now() / 1000
         const startTime = endTime - hours * 3600
-        const response = await dataApi.getPointTrend(asset, pointName, startTime, endTime, limit)
+        const response = await dataApi.getPointTrend(
+          asset, pointName, startTime, endTime, limit, { signal }
+        )
         // clearDevices 已发生：丢弃在途回包，避免离开页面后污染单例状态
         if (epoch !== devicesEpoch) return []
 
@@ -385,6 +402,8 @@ export function useScadaPointReader(): ScadaPointReader {
         applyPointHistory(asset, pointName, entries)
         return entries
       } catch (e: unknown) {
+        // abort 取消的请求静默忽略，不打 error 日志
+        if ((e as any)?.name === 'CanceledError') return []
         console.error(`Failed to fetch point history for ${asset}:${pointName}:`, e)
         return []
       }
@@ -460,7 +479,7 @@ export function useScadaPointReader(): ScadaPointReader {
       if (isDigital) {
         value = Math.random() > 0.5 ? 1 : 0
       } else {
-        value = 20 + (Math.random() - 0.5) * 10
+        value = Math.random() * 20
       }
 
       data.push({
@@ -590,6 +609,11 @@ export function useScadaPointReader(): ScadaPointReader {
    * 清空所有设备数据与状态
    */
   function clearDevices(): void {
+    // 先 abort 所有在途 HTTP 请求：退出页面或切换面板时立即释放浏览器 HTTP 连接池，
+    // 避免后续页面的接口请求被阻塞等待连接
+    currentAbortController?.abort()
+    currentAbortController = new AbortController()
+
     devicesEpoch++
     for (const timer of pendingFollowUpTimers.values()) {
       clearTimeout(timer)

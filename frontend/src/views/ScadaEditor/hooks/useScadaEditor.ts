@@ -326,6 +326,9 @@ export function useScadaEditor() {
 
     const component = panel.components.find(c => c.id === id)
     if (component) {
+      // 位置坐标最多保留 1 位小数，避免拖拽时鼠标精度累积出多位小数
+      if (updates.x !== undefined) updates.x = Math.round(updates.x * 10) / 10
+      if (updates.y !== undefined) updates.y = Math.round(updates.y * 10) / 10
       Object.assign(component, updates)
       panel.updatedAt = Date.now()
 

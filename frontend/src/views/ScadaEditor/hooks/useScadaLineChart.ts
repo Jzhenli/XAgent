@@ -145,11 +145,10 @@ export function useScadaLineChart(
       const bound = resolveBoundPoint(item.binding)
       let data: LineChartDataPoint[] = []
 
+      const mockPoint = { name: '', currentValue: 50, type: 'analog', standard_data_type: 'float' }
+
       if (scada.isEditing.value) {
-        data = generateTrendData(
-          { name: '', currentValue: 50, type: 'analog', standard_data_type: 'float' },
-          hours,
-        )
+        data = generateTrendData(mockPoint, hours).slice(-10)
       } else if (bound) {
         const realData = getPointTrendData(bound.name, item.binding?.deviceId)
         if (realData.length > 0) {
@@ -157,6 +156,9 @@ export function useScadaLineChart(
         } else {
           data = generateTrendData(bound, hours)
         }
+      } else {
+        // 运行时未绑定点位：也生成 mock 数据 + 周期性刷新随机值
+        data = generateTrendData(mockPoint, hours).slice(-10)
       }
 
       return { item, binding: item.binding, boundPoint: bound, data }
@@ -224,6 +226,24 @@ export function useScadaLineChart(
     paused: scada.isEditing.value,
   })
 
+  /** 是否存在未绑定点位的序列 → 需要周期性刷新 mock 随机数据 */
+  const hasUnboundSeries = computed(() => {
+    if (scada.isEditing.value) return false
+    return ensureSeriesItems(chartConfig.value).some((item) => !item.binding?.deviceId || !item.binding?.pointName)
+  })
+
+  const refreshMockData = () => {
+    if (hasUnboundSeries.value) {
+      updateChartOption()
+    }
+  }
+
+  const { start: startMockPolling, stop: stopMockPolling, pause: pauseMockPolling, resume: resumeMockPolling } = usePolling(refreshMockData, {
+    interval: 3000,
+    immediate: false,
+    paused: true, // 初始暂停，由 watch 控制
+  })
+
   /** 已就绪（设备数据已解析）但尚无历史缓存的绑定对 key 集合
    * 用逗号拼接字符串作 watch 源：轮询每轮重建设备对象但历史已跨轮携带，值不变则不触发，
    * 避免退化为"每轮轮询都全量拉取" */
@@ -264,12 +284,22 @@ export function useScadaLineChart(
     (isEditing) => {
       if (isEditing) {
         stopHistoryPolling()
+        pauseMockPolling()
       } else {
         void loadHistoryData()
         startHistoryPolling()
+        startMockPolling()
+        if (hasUnboundSeries.value) resumeMockPolling()
       }
     },
   )
+
+  /** 序列绑定状态变化 → 切换 mock 刷新的暂停/恢复 */
+  watch(hasUnboundSeries, (needMock) => {
+    if (!scada.isEditing.value) {
+      needMock ? resumeMockPolling() : pauseMockPolling()
+    }
+  })
 
   watch(
     () => chartConfig.value?.timeRange,
@@ -306,6 +336,7 @@ export function useScadaLineChart(
 
   const disposeChart = () => {
     stopHistoryPolling()
+    stopMockPolling()
 
     if (resizeObserver) {
       resizeObserver.disconnect()
@@ -331,6 +362,7 @@ export function useScadaLineChart(
     if (!scada.isEditing.value) {
       void loadHistoryData()
       startHistoryPolling()
+      startMockPolling()
     }
   })
 
@@ -408,6 +440,7 @@ export function useScadaLineChart(
     cfg: LineChartComponentConfig,
     data: string[],
   ): EChartsOption['xAxis'] => ({
+    show: cfg.showXAxis !== false,
     type: 'category',
     data,
     boundaryGap: false,
@@ -450,7 +483,7 @@ export function useScadaLineChart(
       left: 'center',
       orient: 'horizontal',
       textStyle: {
-        color: cfg.xAxisLabelColor || 'var(--text-secondary)',
+        color: cfg.legendFontColor || cfg.xAxisLabelColor || 'var(--text-secondary)',
         fontSize: cfg.xAxisLabelFontSize ?? 12,
       },
       itemGap: 12,
