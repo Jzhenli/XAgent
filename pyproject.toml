@@ -1,5 +1,5 @@
 [project]
-name = "XPlay"
+name = "XAgent"
 version = "3.1.0"
 description = "A cross-platform application built with PyApp"
 authors = [{name = "Developer", email = "dev@example.com"}]
