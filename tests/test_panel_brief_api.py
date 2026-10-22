@@ -5,6 +5,7 @@
 - type / enabled 筛选
 - enabled 列为 NULL（历史脏数据，表无 NOT NULL 约束）时回退为默认启用
 - /brief 路由必须注册在 /{panel_id} 之前（防止被路径参数路由静默吞掉）
+- POST /api/panels/ 创建响应不含 data 字段（大 data 回传会使导入传输翻倍）
 """
 import asyncio
 import json
@@ -15,9 +16,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import aiosqlite
 
-from XAgent.xcore.api.models.panel import PanelType
+from XAgent.xcore.api.models.panel import (
+    PanelBriefResponse,
+    PanelCreate,
+    PanelType
+)
 from XAgent.xcore.api.repositories.panel_repository import PanelRepository
-from XAgent.xcore.api.routers.panels import router
+from XAgent.xcore.api.routers.panels import panel_to_brief, router
+from XAgent.xcore.api.services.panel_service import PanelService
 
 # 与 src/XAgent/xcore/storage/sqlite.py 中 panel_registry 建表语句保持一致
 DDL = """
@@ -132,9 +138,49 @@ def test_brief_route_registered_before_panel_id():
         "/brief 必须注册在 /{panel_id} 之前，否则会被路径参数路由拦截"
 
 
+async def _create_response_excludes_data():
+    db, _repo = await _make_repo()
+    try:
+        service = PanelService(db)
+        created = await service.create_panel(PanelCreate(
+            id="panel-100",
+            name="big",
+            type=PanelType.DASHBOARD,
+            description=None,
+            data=BIG_DATA,
+            createdAt=1.0,
+            updatedAt=2.0,
+        ))
+
+        # 服务层返回完整响应（含 data），瘦身由路由层的共用辅助函数完成
+        assert created.data is not None, "服务层 create_panel 应返回完整 PanelResponse"
+
+        brief = panel_to_brief(created)
+        assert "data" not in brief.model_dump(), "create 响应不应包含 data 字段"
+        assert (brief.id, brief.name, brief.type, brief.enabled, brief.createdAt, brief.updatedAt) == \
+               ("panel-100", "big", PanelType.DASHBOARD, True, 1.0, 2.0)
+    finally:
+        await db.close()
+
+
+def test_create_response_excludes_data():
+    asyncio.run(_create_response_excludes_data())
+
+
+def test_create_route_response_model_is_brief():
+    for r in router.routes:
+        if getattr(r, "path", "") == "/api/panels/" and "POST" in getattr(r, "methods", set()):
+            assert r.response_model is PanelBriefResponse, \
+                "POST /api/panels/ 响应模型应为 PanelBriefResponse（不含 data）"
+            return
+    raise AssertionError(f"POST /api/panels/ 路由未注册: {[getattr(r, 'path', '') for r in router.routes]}")
+
+
 if __name__ == "__main__":
     test_brief_excludes_data()
     test_brief_filters()
     test_null_enabled_falls_back_to_true()
     test_brief_route_registered_before_panel_id()
+    test_create_response_excludes_data()
+    test_create_route_response_model_is_brief()
     print("ALL PANEL BRIEF TESTS PASSED")

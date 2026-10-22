@@ -72,9 +72,10 @@ class PanelResponse(PanelBase):
 
 
 class PanelBriefResponse(PanelBase):
-    """项目概要响应模型（不含 data 字段）
+    """项目概要（不含 data 字段）
 
-    用于项目概览/列表场景，避免返回体积较大的 data 数据。
+    用于项目概览/列表场景（GET /api/panels/brief）以及创建接口响应（POST /api/panels/，
+    避免大 data 回传使导入/创建传输体积翻倍）。
     需要完整数据时请使用 PanelResponse（GET /api/panels/{panel_id}）。
     """
 

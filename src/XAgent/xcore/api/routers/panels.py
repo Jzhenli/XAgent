@@ -8,6 +8,7 @@ from ..models.panel import (
     PanelCreate,
     PanelUpdate,
     PanelResponse,
+    PanelBriefResponse,
     PanelListResponse,
     PanelBriefListResponse,
     PanelType
@@ -32,7 +33,15 @@ def get_panel_service(state = Depends(get_app_state)):
     return PanelService(state.metadata_manager.db)
 
 
-@router.post("/", response_model=PanelResponse, status_code=status.HTTP_201_CREATED)
+def panel_to_brief(panel: PanelResponse) -> PanelBriefResponse:
+    """将完整项目响应转换为概要响应（不含 data 字段）
+
+    供 POST /api/panels/ 创建接口与离线单测共用，避免测试复刻转换逻辑产生漂移。
+    """
+    return PanelBriefResponse(**panel.model_dump(exclude={"data"}))
+
+
+@router.post("/", response_model=PanelBriefResponse, status_code=status.HTTP_201_CREATED)
 async def create_panel(
     panel: PanelCreate,
     service: PanelService = Depends(get_panel_service),
@@ -40,15 +49,17 @@ async def create_panel(
 ):
     """创建新项目
 
-    Returns:
-        创建的项目
+    响应为项目概要（不含 data 字段）：data 可达数 MB（内嵌 base64 图片），
+    回传完整 data 会使导入/创建场景的传输体积翻倍，且前端创建/导入流程
+    不消费响应中的 data。需要完整数据时请调用 GET /api/panels/{panel_id}。
 
     Raises:
         HTTPException: 409 - 项目已存在
         HTTPException: 400 - 参数无效
     """
     try:
-        return await service.create_panel(panel)
+        created = await service.create_panel(panel)
+        return panel_to_brief(created)
     except ValueError as e:
         error_msg = str(e)
         if "already exists" in error_msg:
