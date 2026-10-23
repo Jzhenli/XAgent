@@ -38,11 +38,6 @@ export interface ProjectUpdateRequest {
   data?: Record<string, unknown>
 }
 
-export interface ProjectCreateResponse {
-  success: boolean
-  project: Project
-}
-
 export interface ProjectUpdateResponse {
   success: boolean
   project: Project
@@ -70,7 +65,7 @@ export const projectApi = {
     return res.data
   },
 
-  async create(request: ProjectCreateRequest): Promise<any> {
+  async create(request: ProjectCreateRequest): Promise<ProjectBrief> {
     const res = await api.post('/api/panels/', request)
     return res.data
   },
