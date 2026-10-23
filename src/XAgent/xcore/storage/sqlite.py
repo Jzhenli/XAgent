@@ -10,6 +10,7 @@ import aiosqlite
 
 from .interface import StorageInterface, Reading
 from ..utils.constants import DataConstants
+from ..transform.standard_point import to_storage_point
 
 logger = logging.getLogger(__name__)
 
@@ -330,13 +331,33 @@ class SQLiteStorage(StorageInterface):
         skipped = 0
         for reading in readings:
             try:
+                # 瘦身落库：data 列不再存储（可从 standard_points 派生），写入空字符串
+                # 占位（表结构为 NOT NULL，不能用 NULL）；standard_points 仅保留
+                # point_name/value/quality（异常行附 error_code）。
+                # 仅当 standard_points 为空时保留 data，避免信息丢失（如离线兜底路径）。
+                if reading.standard_points:
+                    # 剔除无法识别的脏元素，保留好点；全为脏元素时退回保留 data
+                    slim_points = [
+                        to_storage_point(p)
+                        for p in reading.standard_points
+                        if isinstance(p, dict)
+                    ]
+                    if slim_points:
+                        standard_points_json = json.dumps(slim_points)
+                        data_json = ""
+                    else:
+                        standard_points_json = None
+                        data_json = json.dumps(reading.data) if reading.data else ""
+                else:
+                    standard_points_json = None
+                    data_json = json.dumps(reading.data) if reading.data else ""
                 values.append((
                     reading.asset,
                     reading.timestamp,
                     reading.service_name,
-                    json.dumps(reading.data),
+                    data_json,
                     json.dumps(reading.tags),
-                    json.dumps(reading.standard_points) if reading.standard_points else None,
+                    standard_points_json,
                     reading.device_status
                 ))
             except Exception as e:
@@ -418,17 +439,50 @@ class SQLiteStorage(StorageInterface):
         readings = []
         async with self._db.execute(query, params) as cursor:
             async for row in cursor:
-                readings.append(Reading(
-                    asset=row[0],
-                    timestamp=row[1],
-                    service_name=row[2],
-                    data=json.loads(row[3]),
-                    tags=json.loads(row[4]) if row[4] else [],
-                    standard_points=json.loads(row[5]) if row[5] else [],
-                    device_status=row[6]
-                ))
-        
+                readings.append(self._parse_reading_row(row))
+
         return readings
+
+    @staticmethod
+    def _parse_reading_row(row) -> Reading:
+        """将 readings 行转换为 Reading（单次解析，新旧格式兼容）
+
+        新格式行 data 列为空字符串占位（表结构 NOT NULL），从 standard_points
+        派生 {point_name: value}；旧格式行（含 data 列）直接使用原值。
+        """
+        standard_points: List[Dict[str, Any]] = []
+        if row[5]:
+            try:
+                parsed = json.loads(row[5])
+                if isinstance(parsed, list):
+                    standard_points = parsed
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        data: Dict[str, Any] = {}
+        if row[3]:
+            try:
+                parsed_data = json.loads(row[3])
+                if isinstance(parsed_data, dict):
+                    data = parsed_data
+            except (json.JSONDecodeError, TypeError):
+                pass
+        if not data and standard_points:
+            data = {
+                (p.get("point_name") or p.get("name")): p.get("value")
+                for p in standard_points
+                if isinstance(p, dict) and (p.get("point_name") or p.get("name"))
+            }
+
+        return Reading(
+            asset=row[0],
+            timestamp=row[1],
+            service_name=row[2],
+            data=data,
+            tags=json.loads(row[4]) if row[4] else [],
+            standard_points=standard_points,
+            device_status=row[6]
+        )
 
     async def query_point_trend(
         self,
@@ -667,18 +721,10 @@ class SQLiteStorage(StorageInterface):
         readings = []
         async with self._db.execute(query) as cursor:
             async for row in cursor:
-                readings.append(Reading(
-                    asset=row[0],
-                    timestamp=row[1],
-                    service_name=row[2],
-                    data=json.loads(row[3]),
-                    tags=json.loads(row[4]) if row[4] else [],
-                    standard_points=json.loads(row[5]) if row[5] else [],
-                    device_status=row[6]
-                ))
-        
+                readings.append(self._parse_reading_row(row))
+
         return readings
-    
+
     async def get_quality_stats(self) -> Dict[str, Any]:
         """获取数据质量统计
 

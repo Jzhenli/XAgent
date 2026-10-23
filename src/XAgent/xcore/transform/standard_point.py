@@ -121,6 +121,27 @@ class StandardDataPoint:
         )
 
 
+def to_storage_point(point: Dict[str, Any]) -> Dict[str, Any]:
+    """将标准点位字典精简为落库格式（readings.standard_points）
+
+    仅保留动态字段 point_name/value/quality；device_id、timestamp、unit、
+    data_type 等为行级冗余或静态配置，不落库（静态信息从点位配置按需获取）。
+    异常点位保留 metadata.error_code，供北向上报区分故障类型。
+    兼容旧数据中的 name 键。
+    """
+    result = {
+        "point_name": point.get("point_name") or point.get("name") or "",
+        "value": point.get("value"),
+        # or 而非 get 默认值：quality 键存在但为 None 时也要回退 good
+        "quality": point.get("quality") or DataQuality.GOOD.value,
+    }
+    if result["quality"] != DataQuality.GOOD.value:
+        error_code = (point.get("metadata") or {}).get("error_code")
+        if error_code is not None:
+            result["metadata"] = {"error_code": error_code}
+    return result
+
+
 @dataclass
 class DeviceData:
     """[DEPRECATED] DeviceData is not used internally. Use StandardDataPoint directly."""

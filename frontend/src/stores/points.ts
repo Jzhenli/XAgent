@@ -54,7 +54,8 @@ export interface DeviceWithPoints {
  */
 function parseReading(reading: Reading): ReadingData {
   const { standardPoints, timestamp } = parseStandardPoints(reading.standard_points)
-  return { data: reading.data || {}, standardPoints, timestamp }
+  // 优先使用行级时间戳（standard_points 瘦身后点位级 timestamp 不再落库）
+  return { data: reading.data || {}, standardPoints, timestamp: reading.timestamp ?? timestamp }
 }
 
 /**
