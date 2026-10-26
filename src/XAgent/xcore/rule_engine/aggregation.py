@@ -345,16 +345,22 @@ class AggregationEngine:
 
         if self.storage:
             try:
+                # 每行是全设备快照（data 含所有点位），查 asset 最新一行后按点位名取值。
+                # 注意 storage.query 无 point_name 参数，传了会 TypeError 被下方吞掉。
                 readings = await self.storage.query(
                     asset=sub.asset,
-                    point_name=sub.point_name,
                     limit=1
                 )
                 if readings:
                     reading = readings[0]
                     latest = reading.data.get(sub.point_name)
                     timestamp = reading.timestamp
-                    quality = getattr(reading, 'quality', None) or "good"
+                    # Reading 无行级 quality，按模型约定从 standard_points 按点位名取
+                    quality = "good"
+                    for p in reading.standard_points:
+                        if isinstance(p, dict) and (p.get("point_name") or p.get("name")) == sub.point_name:
+                            quality = p.get("quality") or "good"
+                            break
             except Exception as e:
                 logger.error(
                     f"Failed to query storage for {sub.asset}:"

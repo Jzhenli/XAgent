@@ -19,11 +19,14 @@ import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
+import aiosqlite
 import pytest
 
 from XAgent.xcore.storage.sqlite import SQLiteStorage
 from XAgent.xcore.transform.standard_point import to_storage_point
 from XAgent.xcore.domain.models.reading import Reading
+from XAgent.xcore.rule_engine.aggregation import AggregationEngine
+from XAgent.xcore.rule_engine.base import AggregationSubscription
 
 
 def _full_point(name: str, value, quality: str = "good", error_code=None) -> dict:
@@ -72,7 +75,6 @@ async def _insert_legacy_row(db_path: str, ts: float, data: dict, sp):
     旧格式无法经由公开 API 产生（save_batch 现在恒定瘦身），因此测试
     直接落库模拟迁移期共存；sp 可传非 JSON 字符串模拟损坏行。
     """
-    import aiosqlite
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             "INSERT INTO readings (asset, timestamp, service_name, data, tags, standard_points, device_status)"
@@ -258,3 +260,54 @@ def test_corrupted_json_rows_do_not_break_query(storage):
     assert by_ts[1500.5].data == {"p1": 5}
     # 正常新格式行不受影响
     assert by_ts[2000.0].data == {"p1": 99}
+
+
+# ---------- 聚合单点回查（regression: query 误传 point_name 参数） ----------
+
+def test_aggregation_single_result_queries_latest_snapshot(storage):
+    """规则引擎 aggregation=none 单点回查：从 asset 最新快照按点位名取值。
+
+    旧代码向 storage.query 传不存在的 point_name 参数，TypeError 被
+    _get_single_result 的 except 吞掉，导致回查值恒为 None。
+    """
+    s, _ = storage
+    asyncio.run(s.save_batch([_reading(1000.0, [_full_point("p1", 42)])]))
+
+    engine = AggregationEngine(storage=s, cache_ttl=0)
+    sub = AggregationSubscription(
+        subscription_id="sub_1",
+        rule_id="rule_1",
+        asset="dev_1",
+        point_name="p1",
+    )
+    result = asyncio.run(engine._get_single_result(sub))
+    assert result.value == 42
+    assert result.asset == "dev_1"
+    assert result.point_name == "p1"
+    assert result.quality == "good"
+
+
+def test_aggregation_single_result_reads_point_quality(storage):
+    """单点回查的 quality 取自点位级 standard_points，而非恒为 good。
+
+    旧代码 getattr(reading, 'quality', None) 读不存在的行级属性，
+    异常点位被误标为 good。
+    """
+    s, _ = storage
+    points = [_full_point("ok", 1.0), _full_point("err", None, quality="bad", error_code=3)]
+    asyncio.run(s.save_batch([_reading(1000.0, points)]))
+
+    engine = AggregationEngine(storage=s, cache_ttl=0)
+    err_sub = AggregationSubscription(
+        subscription_id="sub_err", rule_id="rule_1",
+        asset="dev_1", point_name="err",
+    )
+    result = asyncio.run(engine._get_single_result(err_sub))
+    assert result.quality == "bad"
+
+    ok_sub = AggregationSubscription(
+        subscription_id="sub_ok", rule_id="rule_1",
+        asset="dev_1", point_name="ok",
+    )
+    result = asyncio.run(engine._get_single_result(ok_sub))
+    assert result.quality == "good"
