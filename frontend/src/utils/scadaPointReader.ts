@@ -184,9 +184,12 @@ function appendLatestToBoundPoints(asset: string, timestamp: number, readingData
   let appended = false
   for (const point of device.points) {
     const series = point.historyCache
-    // 空缓存（未加载或加载为空）不追加：与原「无全量基线跳过」语义一致
-    if (!series || series.length === 0) continue
-    if (timestamp <= series[series.length - 1].timestamp) continue
+    // 仅对非图表绑定点位（无 historyCache 属性）跳过；
+    // 图表绑定点位即使 historyCache 为空（历史 API 返回空），也将实时读数写入作为初始基线，
+    // 既打破"空缓存无法追加 → 图表永远空数据"的功能死锁，
+    // 也让 hasPointHistory() 返回 true 停止 30s 兜底轮询的无限重试
+    if (!series) continue
+    if (series.length > 0 && timestamp <= series[series.length - 1].timestamp) continue
 
     const value = normalizeChartValue(
       readingData.standardPoints.get(point.name)?.value ?? readingData.data[point.name]
@@ -621,6 +624,7 @@ export function useScadaPointReader(): ScadaPointReader {
     pendingFollowUpTimers.clear()
     writeProtectionMap.clear()
     devices.value = []
+    historyVersion.value = 0
     historyRequestCache.clear()
     inflightDeviceFetches.clear()
     assetDemand.clear()

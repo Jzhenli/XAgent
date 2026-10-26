@@ -115,8 +115,12 @@ const percent = computed(() => {
   return Math.max(0, Math.min(1, ratio)) * 100
 })
 
-// ─── 动画配置 ───────────────────────────────────────────────
-const animationEnabled = computed(() => config.value.animationEnabled ?? true)
+// ─── 动画配置：编辑模式默认开启，预览模式默认关闭 ──────────────
+const animationEnabled = computed(() => {
+  const cfg = config.value.animationEnabled
+  if (cfg !== undefined) return cfg
+  return props.editing ?? false
+})
 const animationDuration = computed(() => config.value.animationDuration ?? 1.5)
 
 // ─── 进度条轨道样式 ─────────────────────────────────────────

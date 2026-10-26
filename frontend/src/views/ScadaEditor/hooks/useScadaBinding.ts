@@ -246,17 +246,6 @@ export interface UseScadaPollingOptions {
 }
 
 /**
- * 调试日志：每轮轮询刷新完成后，向控制台打印读值中枢保存在内存中的缓存结构
- * （devices、O(1) 索引、历史/骨架/去重/需求注册等全部缓存，devtools 中可逐层展开查看）
- */
-function logPollingCache(reader: ScadaPointReader, targets: string[]): void {
-  console.log(
-    `[Scada轮询] 刷新完成 | 目标设备 ${targets.length} 台 | 内存缓存结构：`,
-    reader.getCacheSnapshot()
-  )
-}
-
-/**
  * Scada 统一数据轮询 Hook
  *
  * 根据当前面板中已绑定点位的组件，自动收集涉及的设备 asset，
@@ -299,9 +288,6 @@ export function useScadaPolling(options: UseScadaPollingOptions = {}) {
 
     // 历史增量追加在 fetchDevicePoints 内部完成：仅图表绑定（持有 historyCache）的点位被追加，
     // 内含 timestamp 去重与基线检查，成功追加后 historyVersion 自动递增触发图表增量刷新
-    if (effectiveReader) {
-      logPollingCache(effectiveReader, targets)
-    }
   }
 
   const { start, stop, isRunning, pause, resume } = usePolling(refreshBoundDevices, {

@@ -98,7 +98,10 @@ export function useScadaPieChart(
     const el = containerRef.value
     if (!el || chartInstance) return
 
-    chartInstance = init(el)
+    chartInstance = init(el, null, { renderer: 'canvas' })
+    // 禁用 ECharts 过渡动画：监控场景下实时更新优先级高于过渡效果，
+    // 持续的 1000ms setOption 动画在 Android WebView 上造成 CrRendererMain 高负载
+    chartInstance.setOption({ animation: false })
     updateChartOption()
   }
 
@@ -237,6 +240,7 @@ export function useScadaPieChart(
     // 首次渲染 / 配置变更：完整 option + notMerge
     if (full || !hasInitialized) {
       const option: EChartsOption = {
+        animation: false,
         tooltip: buildTooltip(),
         legend: buildLegend(cfg),
         series: buildSeries(cfg),

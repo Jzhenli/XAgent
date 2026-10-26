@@ -10,13 +10,17 @@ export default defineConfig({
       '@': resolve(__dirname, 'src')
     }
   },
-   css: {
+  css: {
     preprocessorOptions: {
       scss: {
         api: 'modern'
       }
     }
   },
+  esbuild: {
+    pure: ['console.log', 'console.info', 'console.debug']
+  },
+  // 开发服务器代理
   server: {
     port: 3000,
     open: true,
