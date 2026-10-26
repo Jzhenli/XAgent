@@ -29,7 +29,7 @@ pip_index_url = "https://jzhenli.github.io/my-pypi/"
 pip_extra_index_urls = ["https://pypi.org/simple"]
 
 [tool.pyapp.android]
-package_name = "com.example.xagent"
+package_name = "com.adveco.xagent"
 min_sdk = 24
 target_sdk = 34
 permissions = [
