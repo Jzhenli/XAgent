@@ -238,6 +238,13 @@ export function useScadaPointReader(): ScadaPointReader {
    * @param asset 设备 asset
    */
   async function fetchDevicePoints(asset: string): Promise<void> {
+    // P2-1：顺带清理过期条目 —— Map 长期持有过期 Promise 会累积，
+    // clearDevices 时才清空；每次进入清理一次，O(n) 极小
+    const now = Date.now()
+    for (const [key, entry] of inflightDeviceFetches) {
+      if (entry.expiresAt <= now) inflightDeviceFetches.delete(key)
+    }
+
     // 进行中或 1s 复用窗口内的相同请求 → 直接共享，不发新请求
     const existing = inflightDeviceFetches.get(asset)
     if (existing && Date.now() < existing.expiresAt) return existing.promise
@@ -297,17 +304,14 @@ export function useScadaPointReader(): ScadaPointReader {
       } else {
         const existing = devices.value.find(d => d.asset === asset)
         if (existing) {
-          // listPoints 失败但有旧点位：仅用新读数刷新当前值，其余字段全部保留（含 historyCache）
-          devices.value = devices.value.map(d => {
-            if (d.asset !== asset) return d
-            return {
-              ...d,
-              points: d.points.map(p => ({
-                ...p,
-                currentValue: readingData?.standardPoints.get(p.name)?.value ?? p.currentValue
-              }))
+          // listPoints 失败但有旧点位：原地刷新 currentValue，其余字段全部保留（含 historyCache）
+          // 同样遵循 P0-2 原地更新策略，不重建对象
+          for (const p of existing.points) {
+            const newValue = readingData?.standardPoints.get(p.name)?.value
+            if (newValue !== undefined && !Object.is(p.currentValue, newValue)) {
+              p.currentValue = newValue
             }
-          })
+          }
           if (readingData) appendLatestToBoundPoints(asset, readingData.timestamp, readingData)
           return
         }
@@ -316,18 +320,32 @@ export function useScadaPointReader(): ScadaPointReader {
       }
 
       const existingIndex = devices.value.findIndex(d => d.asset === asset)
-      // 保留图表点位已加载的历史缓存：点位对象每轮重建，历史缓存需跨轮携带
-      const oldPoints = existingIndex !== -1 ? devices.value[existingIndex].points : undefined
-      const mappedPoints = points.map(point => {
-        const pointValue = toPointValue(asset, point, readingData)
-        const historyCache = oldPoints?.find(p => p.name === point.name)?.historyCache
-        if (historyCache) pointValue.historyCache = historyCache
-        return pointValue
-      })
 
       if (existingIndex !== -1) {
-        devices.value[existingIndex] = { ...devices.value[existingIndex], points: mappedPoints }
+        // ── 原地更新已有设备：仅当 currentValue 真正变化时才赋值 ──
+        // 保留点位对象引用、device 对象引用、points 数组引用不变，
+        // 使下游 boundPoint computed 与 watch 在值未变时不触发，
+        // 直接削减 GC 抖动与整屏重栅格化次数（P0-2 优化）
+        const device = devices.value[existingIndex]
+        const oldPointMap = new Map(device.points.map(p => [p.name, p]))
+
+        for (const pointConfig of points) {
+          const newValue = toPointValue(asset, pointConfig, readingData).currentValue
+          const oldPoint = oldPointMap.get(pointConfig.name)
+          if (oldPoint) {
+            // 点位存在：Object.is 比较新旧值，不同才原地更新 currentValue
+            // 原地赋值不影响 historyCache 等其他属性
+            if (!Object.is(oldPoint.currentValue, newValue)) {
+              oldPoint.currentValue = newValue
+            }
+          } else {
+            // 骨架新增点位：创建新对象加入
+            device.points.push(toPointValue(asset, pointConfig, readingData))
+          }
+        }
+        // 注意：旧点位中存在但骨架中已删除的点位暂保留不动（兼容处理）
       } else {
+        // ── 新设备：首次出现，拉取设备元信息后初始化 ──
         const device = await deviceApi.get(asset, { signal })
         // 二次守卫：deviceApi.get 期间可能已发生 clearDevices
         if (epoch !== devicesEpoch) return
@@ -335,7 +353,7 @@ export function useScadaPointReader(): ScadaPointReader {
           asset: device.asset,
           name: device.name || device.asset,
           pluginName: device.plugin?.name || '',
-          points: (device.points || []).map(point => toPointValue(asset, point, readingData))
+          points: points.map(point => toPointValue(asset, point, readingData))
         })
       }
 

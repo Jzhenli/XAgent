@@ -114,10 +114,16 @@ export function useScadaBinding(
     }
   }
 
-  // 监听绑定点位引用变化（组件绑定的设备/点位变了）
-  watch(boundPoint, updateCurrentValue)
-  // 监听点位当前值变化（原始值比较，只有值真正变了才触发；
-  //   devices 整体替换时 boundPoint computed 返回的 currentValue 若未变化则不触发）
+  // 监听绑定关系变化（组件绑定的设备/点位标识变了）
+  // 改为监听 [deviceId, pointName] 元组，而非 boundPoint 引用：
+  // boundPoint 是 resolvePoint 返回的对象引用，在轮询全量重建点位时每轮都是新引用 →
+  // 原 watch(boundPoint, ...) 每轮冗余触发 updateCurrentValue；
+  // 现在绑定标识不变则不触发，值变化由下一个 watch 精准覆盖（P1-1 优化）
+  watch(
+    () => [binding.value?.deviceId, binding.value?.pointName],
+    updateCurrentValue
+  )
+  // 监听点位当前值变化（原始值比较，只有值真正变了才触发）
   watch(
     () => boundPoint.value?.currentValue,
     updateCurrentValue

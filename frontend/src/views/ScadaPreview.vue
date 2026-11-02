@@ -189,13 +189,21 @@ const handleGoBack = () => {
 }
 
 .canvas-frame {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  /* P1-2：移除 box-shadow 模糊阴影 —— 低端平板 GPU 栅格化代价高，
+     整屏画布上的阴影模糊会在每次子组件变更时触发大范围重栅格化，
+     与 System 74% 的重合成直接相关；改用轻量 outline 保留面板边界感 */
+  outline: 1px solid rgba(255, 255, 255, 0.08);
   /* 禁止 flex 收缩，保证滚动模式下的布局尺寸正确 */
   flex-shrink: 0;
 }
 
 .canvas-scale {
   transform-origin: top left;
+  /* P1-2：稳定合成层 —— 显式告知浏览器该层会做 transform 动画，
+     避免子组件每次变更都触发整层栅格化重绘；
+     contain: layout paint 限制子树独立渲染域，进一步降低 paint 扇出 */
+  will-change: transform;
+  contain: layout paint;
 }
 
 .empty-state {
