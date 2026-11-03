@@ -127,11 +127,14 @@
             >
               <div class="device-card-name">{{ device.name }}</div>
             </el-tooltip>
+            <div v-if="formatHost(device)" class="meta-host-line" :title="formatHost(device)">
+              {{ formatHost(device) }}
+            </div>
             <div class="device-card-meta">
               <div class="meta-plugin-name">{{ device.pluginName }}</div>
-              <span class="meta-point-count"
-                >{{ device.pointCount }} {{ t("devices.devicePoints") }}</span
-              >
+              <span class="meta-point-count">
+                {{ device.pointCount }} {{ t("devices.devicePoints") }}
+              </span>
             </div>
           </div>
         </div>
@@ -258,13 +261,12 @@
 
         <!-- 设备基本信息 -->
         <div class="device-item-content">
-          <el-tooltip
-            :content="device.name"
-            placement="top"
-            :show-after="300"
-          >
+          <el-tooltip :content="device.name" placement="top" :show-after="300">
             <div class="device-item-name">{{ device.name }}</div>
           </el-tooltip>
+          <div v-if="formatHost(device)" class="meta-host-line" :title="formatHost(device)">
+            {{ formatHost(device) }}
+          </div>
           <div class="device-item-meta">
             <div class="meta-plugin-name">{{ device.pluginName }}</div>
             <span class="meta-point-count"
@@ -385,6 +387,21 @@ const canDelete = computed(() => userStore.hasPermission("devices", "delete"));
 const canCreate = computed(() => userStore.hasPermission("devices", "create"));
 
 /**
+ * 从设备中提取主机地址用于展示
+ * - modbus_rtu 使用 serial_port
+ * - 其他 TCP 类设备使用 connection.host
+ * - 拼接 host:port（若 port 存在）
+ */
+function formatHost(device: DeviceListItem): string {
+  const conn = device.connection;
+  if (!conn) return "";
+  if (conn.serial_port) return conn.serial_port;
+  const host = conn.host || "";
+  if (!host) return "";
+  return conn.port ? `${host}:${conn.port}` : host;
+}
+
+/**
  * 处理桌面端「更多操作」下拉菜单的命令分发
  */
 const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
@@ -488,7 +505,7 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 12px 0 12px 12px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -524,11 +541,22 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   white-space: nowrap;
 }
 
+.meta-host-line {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .device-item-meta {
   display: flex;
   gap: 12px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+  margin-top: 2px;
 }
 
 .device-item-meta .meta-plugin-name {
@@ -555,6 +583,10 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   padding: 6px;
   border-radius: 8px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.more-btn :deep(.el-icon) {
+  transform: rotate(90deg);
 }
 
 .more-btn:hover {
@@ -706,6 +738,7 @@ const handleDropdownCommand = (cmd: string, device: DeviceListItem) => {
   gap: 12px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+  margin-top: 2px;
 }
 
 .device-card-meta .meta-plugin-name {
