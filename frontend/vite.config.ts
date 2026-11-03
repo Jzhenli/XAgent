@@ -21,10 +21,10 @@ export default defineConfig({
     pure: ['console.log', 'console.info', 'console.debug']
   },
   build: {
-    // 生产构建开启 sourcemap：生成独立 .map 文件（JS 末尾带注释链接），
-    // 方便在 DevTools 里查看源码、定位错误堆栈；
-    // 若后续接入 Sentry 等错误监控，可改为 'hidden'（生成 .map 但不在 JS 里暴露链接）
-    sourcemap: true
+    // sourcemap: true        // 开启：生成独立 .map 文件
+    // sourcemap: 'inline'    // 开启：Base64 内嵌到 JS
+    // sourcemap: 'hidden'    // 开启：生成 .map 但不在 JS 里暴露链接（适合 Sentry）
+    sourcemap: false         // 关闭：生产构建不生成 .map 文件（默认值）
   },
   // 开发服务器代理
   server: {
