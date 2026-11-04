@@ -1,5 +1,5 @@
 <template>
-  <div class="ac-controller" :style="containerStyle">
+  <div class="ac-controller" :style="[containerStyle, scaleStyle]">
     <!-- 标题 -->
     <div
       class="zone zone-title"
@@ -204,6 +204,27 @@ const { currentValue: currentVal } = useScadaBinding(
   { transform: (v) => (typeof v === 'number' ? v : Number(v) || 0) },
   computed(() => 25),
 )
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 整体缩放（方案 A：transform scale）
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** 基准尺寸 —— 与 metadata.ts 中 defaultConfig.width/height 一致 */
+const BASE_W = 260
+const BASE_H = 300
+
+/** 根据外层 wrapper 的实际尺寸，计算根元素的 scaleX/scaleY
+ *  根元素固定 BASE_W × BASE_H，整体 transform: scale 后填满外层 wrapper */
+const scaleStyle = computed(() => {
+  const sx = config.value.width / BASE_W
+  const sy = config.value.height / BASE_H
+  return {
+    width: `${BASE_W}px`,
+    height: `${BASE_H}px`,
+    transform: `scale(${sx}, ${sy})`,
+    transformOrigin: 'top left',
+  }
+})
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 基础样式配置
@@ -587,8 +608,6 @@ const fanZoneStyle = computed(() => ({
 
 <style scoped>
 .ac-controller {
-  width: 100%;
-  height: 100%;
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
