@@ -28,8 +28,8 @@
         <div class="vpc-bar-fill-shimmer">
           <span v-for="i in 5" :key="i" class="shimmer-segment" :style="{ animationDelay: `${(i - 1) * 0.12}s` }" />
         </div>
-        <!-- 前沿光晕脉冲 -->
-        <div class="vpc-bar-fill-glow" :style="glowStyle" />
+        <!-- 前沿光晕脉冲：left 已由 track 的 --progress-percent 变量注入，不再需要 glowStyle -->
+        <div class="vpc-bar-fill-glow" />
       </div>
       <div class="vpc-bar-scale" :style="scaleStyle">
         <span>{{ config.min }}</span>
@@ -136,10 +136,7 @@ const fillBaseStyle = computed(() => ({
   borderRadius: `${config.value.barRadius ?? 3}px`,
 }))
 
-// ─── 前沿光晕位置（跟随进度条前沿） ─────────────────────────
-const glowStyle = computed(() => ({
-  left: `${percent.value}%`,
-}))
+// ─── 前沿光晕位置：已由 track 的 --progress-percent CSS 变量驱动，无需 glowStyle ─────────────────────
 
 // ─── 进度条刻度标签样式（min/max） ─────────────────────────
 const scaleStyle = computed(() => ({
@@ -248,10 +245,11 @@ const scaleStyle = computed(() => ({
   animation: shimmer-pulse var(--anim-duration, 1.5s) ease-in-out infinite;
 }
 
-/* ── 前沿光晕脉冲 ── */
+/* ── 前沿光晕脉冲：left 由父级 --progress-percent CSS 变量注入，不经过 inline style ── */
 .vpc-bar-fill-glow {
   position: absolute;
   top: 50%;
+  left: var(--progress-percent, 0%);
   width: 14px;
   height: 14px;
   background: radial-gradient(

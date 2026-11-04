@@ -38,11 +38,21 @@ const { currentValue, writeValue } = useScadaBinding(binding, {
 
 const writing = ref(false)
 
-const containerStyle = computed(() => ({
-  '--thumb-color': switchConfig.value?.thumbColor || '#ffffff',
-  '--track-off-color': switchConfig.value?.offColor || '#95a5a6',
-  '--track-on-color': switchConfig.value?.onColor || '#27ae60'
-}))
+const containerStyle = computed(() => {
+  const config = switchConfig.value
+  const width = config?.width ?? 60
+  const height = config?.height ?? 30
+  const padding = Math.min(width, height) * 0.08
+  const thumbSize = height - 2 * padding
+  const translateX = width - thumbSize - 2 * padding
+  return {
+    '--thumb-color': switchConfig.value?.thumbColor || '#ffffff',
+    '--track-off-color': switchConfig.value?.offColor || '#95a5a6',
+    '--track-on-color': switchConfig.value?.onColor || '#27ae60',
+    // 注入 thumb 位移值（稳定，只由配置决定）
+    '--thumb-x': `${translateX}px`,
+  }
+})
 
 const trackStyle = computed(() => {
   const config = switchConfig.value
@@ -56,18 +66,20 @@ const trackStyle = computed(() => {
   }
 })
 
+/**
+ * thumbStyle：只保留稳定布局属性
+ * transform 由 CSS 变量 --thumb-x + .switch-track.on class 驱动 transition
+ */
 const thumbStyle = computed(() => {
   const config = switchConfig.value
-  const width = config?.width ?? 60
   const height = config?.height ?? 30
-  const padding = Math.min(width, height) * 0.08
+  const padding = Math.min((config?.width ?? 60), height) * 0.08
   const thumbSize = height - 2 * padding
-  const translateX = width - thumbSize - 2 * padding
   return {
     width: `${thumbSize}px`,
     height: `${thumbSize}px`,
     marginTop: `${-thumbSize / 2}px`,
-    transform: currentValue.value ? `translateX(${translateX}px)` : 'translateX(0)'
+    // transform 移除（由 CSS class + 变量驱动）
   }
 })
 
@@ -140,7 +152,14 @@ const handleToggle = async () => {
   border-radius: 50%;
   top: 50%;
   left: 0;
+  /* 默认态 transform 由 CSS 变量 --thumb-x 控制，.on class 切换驱动 transition */
+  transform: translateX(0);
   transition: transform 0.3s;
   box-shadow: var(--shadow-light);
+}
+
+/* 激活态：transform 由 class 切换驱动 transition */
+.switch-track.on .switch-thumb {
+  transform: translateX(var(--thumb-x));
 }
 </style>

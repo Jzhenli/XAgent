@@ -44,7 +44,7 @@ const defaultConfig: GaugeComponentConfig = {
   stepFontColor: '#000000',
 
   // 量程范围标签
-  showRange: true,
+  showRange: false,
   rangeLabelFontSize: 12,
   rangeLabelFontColor: '#000000',
   rangeLabelOffsetX: 0,

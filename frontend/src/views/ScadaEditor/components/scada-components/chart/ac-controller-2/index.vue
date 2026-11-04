@@ -554,10 +554,16 @@ const titleZoneStyle = computed(() => ({
 const powerZoneStyle = computed(() => ({
   left: `${config.value.powerPosition.x}px`,
   top: `${config.value.powerPosition.y}px`,
+  // CSS 变量注入状态色（供 .power-icon class 切换使用）
+  '--power-color-off': powerIconColor.value,
+  '--power-color-on': powerActiveColor.value,
 }))
 
+/**
+ * powerIconStyle：只保留稳定布局属性（fontSize）
+ * color 由 CSS 变量 + .active class 驱动 transition
+ */
 const powerIconStyle = computed(() => ({
-  color: isOn.value ? powerActiveColor.value : powerIconColor.value,
   fontSize: `${powerIconSize.value}px`,
 }))
 
@@ -612,7 +618,13 @@ const currentZoneStyle = computed(() => ({
 }
 
 .power-icon {
-  transition: color 0.2s;
+  transition: color 0.2s ease;
+  /* 默认态 color 由 CSS 变量控制，.active 类切换驱动 transition */
+  color: var(--power-color-off);
+}
+
+.power-icon.active {
+  color: var(--power-color-on);
 }
 
 .power-icon.disabled {

@@ -1,9 +1,6 @@
 <template>
   <div class="indicator-container">
-    <div class="indicator-light" :style="indicatorStyle"></div>
-    <!-- <div v-if="binding" class="indicator-label">
-      {{ binding.pointDescription || binding.pointName }}
-    </div> -->
+    <div class="indicator-light" :class="{ on: currentValue }" :style="staticStyle"></div>
   </div>
 </template>
 
@@ -55,14 +52,21 @@ const colorWithAlpha = (color: string | undefined, alpha: number): string => {
   return color
 }
 
-const indicatorStyle = computed(() => ({
-  backgroundColor: currentValue.value
-    ? indicatorConfig.value?.onColor || '#27ae60'
-    : indicatorConfig.value?.offColor || '#95a5a6',
-  boxShadow: currentValue.value
-    ? `0 0 20px ${colorWithAlpha(indicatorConfig.value?.onColor, 0.5)}`
-    : 'none'
-}))
+/**
+ * 静态样式：注入 CSS 变量供 class 切换使用
+ * 不包含 transition 目标属性（background-color, box-shadow）
+ */
+const staticStyle = computed(() => {
+  const cfg = indicatorConfig.value
+  const onColor = cfg?.onColor || '#27ae60'
+  const offColor = cfg?.offColor || '#95a5a6'
+  return {
+    '--bg-off': offColor,
+    '--bg-on': onColor,
+    '--glow-on': colorWithAlpha(onColor, 0.5),
+    '--glow-off': colorWithAlpha(offColor, 0.3),
+  }
+})
 </script>
 
 <style scoped>
@@ -80,17 +84,16 @@ const indicatorStyle = computed(() => ({
   width: 70%;
   height: 70%;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  /* transition 属性明确列出，禁止 all 通配 */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  /* 默认态（off）：背景色由 CSS 变量控制，box-shadow 无 */
+  background-color: var(--bg-off);
+  box-shadow: none;
 }
 
-.indicator-label {
-  font-size: 10px;
-  color: var(--text-secondary);
-  margin-top: 4px;
-  text-align: center;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* 激活态：background-color / box-shadow 由 class 切换驱动 transition */
+.indicator-light.on {
+  background-color: var(--bg-on);
+  box-shadow: 0 0 20px var(--glow-on);
 }
 </style>

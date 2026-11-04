@@ -359,10 +359,8 @@ interface ModeItem {
   wrapperStyle: {
     width: string
     height: string
-    backgroundColor: string
-    borderColor: string
   }
-  labelStyle: { color: string; fontSize: string }
+  labelStyle: { fontSize: string }
 }
 
 const modeList = computed<ModeItem[]>(() => {
@@ -380,14 +378,13 @@ const modeList = computed<ModeItem[]>(() => {
       isActive: active,
       iconColor: modeIconColor.value,
       activeIconColor: modeActiveIconColor.value,
+      // backgroundColor / borderColor 移除（由 CSS 变量 + .active class 驱动）
       wrapperStyle: {
         width: `${size + 20}px`,
         height: `${size + 20}px`,
-        backgroundColor: active ? 'rgba(0, 212, 255, 0.1)' : 'rgba(255, 255, 255, 0)',
-        borderColor: active ? modeActiveIconColor.value : modeIconColor.value,
       },
+      // color 移除（由 CSS 变量 + .active class 驱动）
       labelStyle: {
-        color: active ? modeActiveFontColor.value : modeFontColor.value,
         fontSize: `${Math.max(10, size * 0.55)}px`,
       },
     }
@@ -410,8 +407,8 @@ interface FanItem {
   label: string
   value: number | string
   isActive: boolean
-  itemStyle: { backgroundColor: string; borderRadius: string }
-  labelStyle: { color: string; fontSize: string }
+  itemStyle: { borderRadius: string }
+  labelStyle: { fontSize: string }
 }
 
 const fanList = computed<FanItem[]>(() => {
@@ -426,12 +423,12 @@ const fanList = computed<FanItem[]>(() => {
       label,
       value,
       isActive: active,
+      // backgroundColor 移除（由 CSS 变量 + .active class 驱动）
       itemStyle: {
-        backgroundColor: active ? fanActiveBackgroundColor.value : fanBackgroundColor.value,
         borderRadius: '6px',
       },
+      // color 移除（由 CSS 变量 + .active class 驱动）
       labelStyle: {
-        color: active ? fanActiveFontColor.value : fanFontColor.value,
         fontSize: `${fontSize}px`,
       },
     }
@@ -572,10 +569,16 @@ const titleZoneStyle = computed(() => ({
 const powerZoneStyle = computed(() => ({
   left: `${config.value.powerPosition.x}px`,
   top: `${config.value.powerPosition.y}px`,
+  // CSS 变量注入状态色（供 .power-icon class 切换使用）
+  '--power-color-off': powerIconColor.value,
+  '--power-color-on': powerActiveColor.value,
 }))
 
+/**
+ * powerIconStyle：只保留稳定布局属性（fontSize）
+ * color 由 CSS 变量 + .active class 驱动 transition
+ */
 const powerIconStyle = computed(() => ({
-  color: isOn.value ? powerActiveColor.value : powerIconColor.value,
   fontSize: `${powerIconSize.value}px`,
 }))
 
@@ -597,12 +600,24 @@ const modeZoneStyle = computed(() => ({
   left: `${config.value.modePosition.x}px`,
   right: `${config.value.modePosition.x}px`,
   top: `${config.value.modePosition.y}px`,
+  // CSS 变量注入状态色（供子项 class 切换使用）
+  '--mode-bg-off': 'rgba(255, 255, 255, 0)',
+  '--mode-bg-on': 'rgba(0, 212, 255, 0.1)',
+  '--mode-border-off': modeIconColor.value,
+  '--mode-border-on': modeActiveIconColor.value,
+  '--mode-fg-off': modeFontColor.value,
+  '--mode-fg-on': modeActiveFontColor.value,
 }))
 
 const fanZoneStyle = computed(() => ({
   left: `${config.value.fanSpeedPosition.x}px`,
   right: `${config.value.fanSpeedPosition.x}px`,
   top: `${config.value.fanSpeedPosition.y}px`,
+  // CSS 变量注入状态色（供子项 class 切换使用）
+  '--fan-bg-off': fanBackgroundColor.value,
+  '--fan-bg-on': fanActiveBackgroundColor.value,
+  '--fan-fg-off': fanFontColor.value,
+  '--fan-fg-on': fanActiveFontColor.value,
 }))
 </script>
 
@@ -632,7 +647,13 @@ const fanZoneStyle = computed(() => ({
 }
 
 .power-icon {
-  transition: color 0.2s;
+  transition: color 0.2s ease;
+  /* 默认态 color 由 CSS 变量控制，.active 类切换驱动 transition */
+  color: var(--power-color-off);
+}
+
+.power-icon.active {
+  color: var(--power-color-on);
 }
 
 .power-icon.disabled {
@@ -736,13 +757,27 @@ const fanZoneStyle = computed(() => ({
   justify-content: center;
   border-radius: 50%;
   border: 1px solid;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
   margin-bottom: 4px;
+  /* 默认态 border-color / background-color 由 CSS 变量控制 */
+  border-color: var(--mode-border-off);
+  background-color: var(--mode-bg-off);
+}
+
+/* 激活态：class 切换驱动 transition */
+.mode-item.active .mode-icon-wrapper {
+  border-color: var(--mode-border-on);
+  background-color: var(--mode-bg-on);
 }
 
 .mode-label {
   line-height: 1;
   white-space: nowrap;
+  color: var(--mode-fg-off);
+}
+
+.mode-item.active .mode-label {
+  color: var(--mode-fg-on);
 }
 
 /* 风速按钮 */
@@ -760,7 +795,14 @@ const fanZoneStyle = computed(() => ({
   flex: 1;
   padding: 4px 0;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  /* 默认态 background-color 由 CSS 变量控制 */
+  background-color: var(--fan-bg-off);
+}
+
+/* 激活态：class 切换驱动 background-color transition */
+.fan-item.active {
+  background-color: var(--fan-bg-on);
 }
 
 .fan-item.disabled {
@@ -776,6 +818,11 @@ const fanZoneStyle = computed(() => ({
 .fan-label {
   line-height: 1;
   white-space: nowrap;
+  color: var(--fan-fg-off);
+}
+
+.fan-item.active .fan-label {
+  color: var(--fan-fg-on);
 }
 
 /* 渐变定义占位 */
