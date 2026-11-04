@@ -96,3 +96,18 @@ class PanelQuery(BaseModel):
     """项目查询参数（简化版，不支持分页和搜索）"""
     type: Optional[PanelType] = Field(None, description="按类型筛选")
     enabled: Optional[bool] = Field(None, description="按启用状态筛选")
+
+
+class HomepageSetRequest(BaseModel):
+    """设置首页请求"""
+    panelId: str = Field(..., pattern=r"^panel-[0-9]+$", description="面板ID")
+
+
+class HomepageResponse(BaseModel):
+    """首页设置响应
+
+    panelId/panel 为 null 表示未设置（或设置已失效被自动清理），
+    前端应回退默认首页。
+    """
+    panelId: Optional[str] = None
+    panel: Optional[PanelBriefResponse] = None

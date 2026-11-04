@@ -199,6 +199,12 @@ class SQLiteStorage(StorageInterface):
             CREATE INDEX IF NOT EXISTS idx_panel_type ON panel_registry(type);
             CREATE INDEX IF NOT EXISTS idx_panel_created ON panel_registry(created_at);
             CREATE INDEX IF NOT EXISTS idx_panel_updated ON panel_registry(updated_at);
+
+            CREATE TABLE IF NOT EXISTS app_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at REAL NOT NULL
+            );
             
             CREATE TABLE IF NOT EXISTS mapping_registry (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

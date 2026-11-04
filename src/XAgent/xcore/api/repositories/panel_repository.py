@@ -2,6 +2,7 @@
 
 import logging
 import json
+import time
 import aiosqlite
 from typing import Any, Callable, List, Optional, Tuple
 
@@ -224,6 +225,110 @@ class PanelRepository:
             type=type,
             enabled=enabled
         )
+
+    async def get_brief(self, panel_id: str) -> Optional[PanelBriefResponse]:
+        """获取单个项目概要（不查询 data 字段，用于轻量校验/展示）
+
+        Args:
+            panel_id: 项目ID
+
+        Returns:
+            项目概要，不存在返回None
+        """
+        async with self._db.execute(
+            """
+            SELECT panel_id, name, type, description, enabled, created_at, updated_at
+            FROM panel_registry
+            WHERE panel_id = ?
+            """,
+            [panel_id]
+        ) as cursor:
+            row = await cursor.fetchone()
+
+        if not row:
+            return None
+
+        return self._parse_brief_row(row)
+
+    # ---------- app_settings 键值设置 ----------
+
+    async def get_setting(self, key: str) -> Optional[str]:
+        """读取全局设置
+
+        Args:
+            key: 设置键
+
+        Returns:
+            设置值，不存在返回None
+        """
+        async with self._db.execute(
+            "SELECT value FROM app_settings WHERE key = ?",
+            [key]
+        ) as cursor:
+            row = await cursor.fetchone()
+
+        return row[0] if row else None
+
+    async def set_setting(self, key: str, value: str) -> None:
+        """写入全局设置（upsert）
+
+        Args:
+            key: 设置键
+            value: 设置值
+        """
+        await self._db.execute(
+            """
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+            """,
+            [key, value, time.time()]
+        )
+        await self._db.commit()
+
+    async def delete_setting(self, key: str) -> None:
+        """删除全局设置（不存在时静默）
+
+        Args:
+            key: 设置键
+        """
+        await self._db.execute(
+            "DELETE FROM app_settings WHERE key = ?",
+            [key]
+        )
+        await self._db.commit()
+
+    async def delete_and_clear_setting(self, panel_id: str, setting_key: str) -> bool:
+        """单事务内删除面板并清除指向它的全局设置（原子操作）
+
+        仅当 setting_key 对应的值等于 panel_id 时才清除该设置，
+        避免误清其他键值；面板不存在时不做任何修改。
+
+        Args:
+            panel_id: 面板ID
+            setting_key: 需要联动清理的全局设置键
+
+        Returns:
+            面板存在且已删除返回True，面板不存在返回False
+        """
+        async with self._db.execute(
+            "SELECT 1 FROM panel_registry WHERE panel_id = ?",
+            [panel_id]
+        ) as cursor:
+            if not await cursor.fetchone():
+                return False
+
+        # 两次 DELETE 处于同一事务，commit 前对其他连接不可见
+        await self._db.execute(
+            "DELETE FROM panel_registry WHERE panel_id = ?",
+            [panel_id]
+        )
+        await self._db.execute(
+            "DELETE FROM app_settings WHERE key = ? AND value = ?",
+            [setting_key, panel_id]
+        )
+        await self._db.commit()
+        return True
     
     async def update(
         self,

@@ -11,7 +11,9 @@ from ..models.panel import (
     PanelBriefResponse,
     PanelListResponse,
     PanelBriefListResponse,
-    PanelType
+    PanelType,
+    HomepageSetRequest,
+    HomepageResponse
 )
 from ..services.panel_service import PanelService
 from ..dependencies import get_app_state
@@ -122,6 +124,60 @@ async def list_panels_brief(
         total=len(panels),
         items=panels
     )
+
+
+@router.get("/homepage", response_model=HomepageResponse)
+async def get_homepage(
+    service: PanelService = Depends(get_panel_service),
+    token: str = Depends(verify_api_token)
+):
+    """获取首页设置
+
+    应用重启后前端调用此接口获取首页地址。
+    未设置、或设置指向的面板已被删除/禁用时，panelId 与 panel 均为 null，
+    前端应回退默认首页。
+
+    Note:
+        与 /brief 同理，必须定义在 /{panel_id} 之前；
+        "homepage" 不匹配 ^panel-[0-9]+$ 约束，顺序错乱会以 422 暴露而非静默 404。
+    """
+    panel_id, panel = await service.get_homepage()
+    return HomepageResponse(panelId=panel_id, panel=panel)
+
+
+@router.put("/homepage", response_model=HomepageResponse)
+async def set_homepage(
+    request: HomepageSetRequest,
+    service: PanelService = Depends(get_panel_service),
+    token: str = Depends(verify_api_token)
+):
+    """设置首页面板
+
+    Raises:
+        HTTPException: 404 - 面板不存在
+        HTTPException: 400 - 面板已禁用
+    """
+    try:
+        panel = await service.set_homepage(request.panelId)
+        return HomepageResponse(panelId=panel.id, panel=panel)
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg:
+            raise HTTPException(status_code=404, detail=error_msg)
+        raise HTTPException(status_code=400, detail=error_msg)
+    except Exception as e:
+        logger.error(f"Failed to set homepage: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.delete("/homepage")
+async def clear_homepage(
+    service: PanelService = Depends(get_panel_service),
+    token: str = Depends(verify_api_token)
+):
+    """取消首页设置"""
+    await service.clear_homepage()
+    return {"success": True, "message": "Homepage setting cleared"}
 
 
 @router.get("/{panel_id}", response_model=PanelResponse)
