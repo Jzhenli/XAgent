@@ -27,6 +27,7 @@ from XAgent.xcore.transform.standard_point import to_storage_point
 from XAgent.xcore.domain.models.reading import Reading
 from XAgent.xcore.rule_engine.aggregation import AggregationEngine
 from XAgent.xcore.rule_engine.base import AggregationSubscription
+from XAgent.plugins.north.xnc_client.mapping import DeviceMapper
 
 
 def _full_point(name: str, value, quality: str = "good", error_code=None) -> dict:
@@ -311,3 +312,60 @@ def test_aggregation_single_result_reads_point_quality(storage):
     )
     result = asyncio.run(engine._get_single_result(ok_sub))
     assert result.quality == "good"
+
+
+# ---------- 集成链路验证（复刻生产消费方代码主体） ----------
+
+def test_integration_devices_latest_api_shape(storage):
+    """链路1：设备页最新读数 API。
+
+    复刻 devices.py get_devices_latest 的处理主体：
+    storage.get_latest_readings_by_device() → [r.to_dict() ...]，
+    验证 slim 行经读取侧重建后 API 输出形状完整（data 非 0、含点位值）。
+    """
+    s, _ = storage
+    points = [_full_point("p1", 42.5), _full_point("p2", "online")]
+    asyncio.run(s.save_batch([_reading(1000.0, points)]))
+
+    readings = asyncio.run(s.get_latest_readings_by_device(active_only=True))
+    assert len(readings) == 1
+    r = readings[0]
+
+    payload = r.to_dict()  # 与路由输出一致
+    assert payload["data"]["p1"] == 42.5
+    assert payload["data"]["p2"] == "online"
+    assert {sp["point_name"] for sp in payload["standard_points"]} == {"p1", "p2"}
+    assert payload["timestamp"] == 1000.0
+
+
+def test_integration_xnc_encode_reading_with_error_code(storage):
+    """链路3：北向 xnc 上报。
+
+    落库（slim，异常点附 metadata.error_code=3）→ query 读取 →
+    DeviceMapper.encode_reading 组包。验证：
+    - 正常点 pid=PID_POINT_VALUE(85)，value 保真
+    - 异常点 pid=PID_POINT_ERROR(103)，value=error_code=3（而非默认 10）
+    """
+    s, _ = storage
+    points = [
+        _full_point("ok", 7.5),
+        _full_point("err", None, quality="bad", error_code=3),
+    ]
+    asyncio.run(s.save_batch([_reading(1000.0, points)]))
+
+    reading = asyncio.run(s.query(asset="dev_1", limit=1))[0]
+
+    mapper = DeviceMapper()  # 无 db：自动分配 vdid/OID
+    encoded = mapper.encode_reading(reading)
+
+    assert encoded.vdid == 1
+    by_oid = {p["oid"]: p for p in encoded.points}
+    decoded_names = {oid: mapper.decode_point(oid)["point_name"] for oid in by_oid}
+
+    ok_pid = by_oid[mapper.encode_point("ok", "dev_1")]["pid"]
+    err_pid = by_oid[mapper.encode_point("err", "dev_1")]["pid"]
+    assert ok_pid == DeviceMapper.PID_POINT_VALUE
+    assert by_oid[mapper.encode_point("ok", "dev_1")]["value"] == 7.5
+    assert err_pid == DeviceMapper.PID_POINT_ERROR
+    assert by_oid[mapper.encode_point("err", "dev_1")]["value"] == 3
+    assert set(decoded_names.values()) == {"ok", "err"}
