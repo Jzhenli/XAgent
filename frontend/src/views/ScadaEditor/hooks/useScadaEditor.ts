@@ -581,32 +581,54 @@ export function useScadaEditor() {
     }
   }
 
-  /** 调整组件在图层中的顺序 */
-  function reorderComponent(id: string, toFront: boolean): void {
+  /** 图层移动方向 */
+  type LayerDirection = 'to-front' | 'to-back' | 'forward' | 'backward'
+
+  /** 通用图层移动（置于顶层/底层/上移一层/下移一层） */
+  function moveComponentLayer(id: string, direction: LayerDirection): void {
     const panel = getEditablePanel()
     if (!panel) return
 
     const index = panel.components.findIndex(c => c.id === id)
     if (index === -1) return
 
-    undo.pushOperation('reorder', toFront ? t('scada.undoOperations.bringToFront') : t('scada.undoOperations.sendToBack'), [id])
+    const lastIndex = panel.components.length - 1
+    // 边界检查：已经在目标位置时静默返回，不记录撤销
+    if (direction === 'to-front' && index === lastIndex) return
+    if (direction === 'to-back' && index === 0) return
+    if (direction === 'forward' && index === lastIndex) return
+    if (direction === 'backward' && index === 0) return
+
+    const undoLabels: Record<LayerDirection, string> = {
+      'to-front': t('scada.undoOperations.bringToFront'),
+      'to-back': t('scada.undoOperations.sendToBack'),
+      'forward': t('scada.undoOperations.bringForward'),
+      'backward': t('scada.undoOperations.sendBackward'),
+    }
+    undo.pushOperation('reorder', undoLabels[direction], [id])
 
     const [component] = panel.components.splice(index, 1)
-    if (toFront) {
-      panel.components.push(component)
-    } else {
-      panel.components.unshift(component)
+    switch (direction) {
+      case 'to-front':
+        panel.components.push(component)
+        break
+      case 'to-back':
+        panel.components.unshift(component)
+        break
+      case 'forward':
+        panel.components.splice(Math.min(index + 1, lastIndex), 0, component)
+        break
+      case 'backward':
+        panel.components.splice(Math.max(index - 1, 0), 0, component)
+        break
     }
     panel.updatedAt = Date.now()
   }
 
-  function bringToFront(id: string): void {
-    reorderComponent(id, true)
-  }
-
-  function sendToBack(id: string): void {
-    reorderComponent(id, false)
-  }
+  function bringToFront(id: string): void   { moveComponentLayer(id, 'to-front') }
+  function sendToBack(id: string): void    { moveComponentLayer(id, 'to-back') }
+  function bringForward(id: string): void  { moveComponentLayer(id, 'forward') }
+  function sendBackward(id: string): void  { moveComponentLayer(id, 'backward') }
 
   /** 将选中的多个组件组合为一组 */
   function groupComponents(): void {
@@ -759,6 +781,8 @@ export function useScadaEditor() {
     toggleLock,
     bringToFront,
     sendToBack,
+    bringForward,
+    sendBackward,
     groupComponents,
     ungroupComponents,
     getGroupMemberIds,
@@ -939,6 +963,8 @@ export function useScadaElement(componentId: string) {
   const toggleLock = () => scada.toggleLock(componentId)
   const bringToFront = () => scada.bringToFront(componentId)
   const sendToBack = () => scada.sendToBack(componentId)
+  const bringForward = () => scada.bringForward(componentId)
+  const sendBackward = () => scada.sendBackward(componentId)
 
   return {
     component,
@@ -950,7 +976,9 @@ export function useScadaElement(componentId: string) {
     deleteElement,
     toggleLock,
     bringToFront,
-    sendToBack
+    sendToBack,
+    bringForward,
+    sendBackward
   }
 }
 

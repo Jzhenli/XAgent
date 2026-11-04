@@ -1116,6 +1116,8 @@ export type ContextAction =
   | 'delete'
   | 'bringToFront'
   | 'sendToBack'
+  | 'bringForward'
+  | 'sendBackward'
   | 'group'
   | 'ungroup'
 

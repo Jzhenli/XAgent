@@ -42,6 +42,14 @@
           <Unlock v-else :size="12" />
           <span>{{ targetComponent?.locked ? t('scada.contextMenu.unlock') : t('scada.contextMenu.lock') }}</span>
         </div>
+        <div class="menu-item" @click="handleBringForward">
+          <ArrowUp :size="12" />
+          <span>{{ t('scada.contextMenu.bringForward') }}</span>
+        </div>
+        <div class="menu-item" @click="handleSendBackward">
+          <ArrowDown :size="12" />
+          <span>{{ t('scada.contextMenu.sendBackward') }}</span>
+        </div>
         <div class="menu-item" @click="handleBringToFront">
           <Top :size="12" />
           <span>{{ t('scada.contextMenu.bringToFront') }}</span>
@@ -63,7 +71,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Delete, Lock, Unlock, Top, Bottom } from '@element-plus/icons-vue'
+import { Delete, Lock, Unlock, Top, Bottom, ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 import { useScadaEditor } from '../hooks/useScadaEditor'
 import { getComponentMeta } from '../registry'
 import type { ScadaComponent } from '../types'
@@ -135,6 +143,20 @@ function closeMenu() {
 function handleToggleLock() {
   if (!targetComponent.value) return
   scada.toggleLock(targetComponent.value.id)
+  closeMenu()
+}
+
+/** 上移一层 */
+function handleBringForward() {
+  if (!targetComponent.value) return
+  scada.bringForward(targetComponent.value.id)
+  closeMenu()
+}
+
+/** 下移一层 */
+function handleSendBackward() {
+  if (!targetComponent.value) return
+  scada.sendBackward(targetComponent.value.id)
   closeMenu()
 }
 
