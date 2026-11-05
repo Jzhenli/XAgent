@@ -384,6 +384,12 @@ export function useScadaPointReader(): ScadaPointReader {
     hours: number = 24,
     limit: number = 100
   ): Promise<ScadaPointHistoryEntry[]> {
+    // 顺带清理过期历史缓存条目 —— 与 inflightDeviceFetches 的清理逻辑对齐
+    const now = Date.now()
+    for (const [key, entry] of historyRequestCache) {
+      if (entry.expiresAt && entry.expiresAt <= now) historyRequestCache.delete(key)
+    }
+
     const cacheKey = `${asset}:${pointName}:${hours}:${limit}`
     const cached = historyRequestCache.get(cacheKey)
 
@@ -557,10 +563,13 @@ export function useScadaPointReader(): ScadaPointReader {
         // 立即将保护值写入实时缓存，避免回读延迟期间显示旧值
         const existingIndex = devices.value.findIndex(d => d.asset === deviceAsset)
         if (existingIndex !== -1) {
+          // 原地更新：与 doFetchDevicePoints 的 P0-2 策略保持一致，
+          // 保留 device 引用、points 数组引用、其他点位引用不变，
+          // 避免 deviceIndex 重建和全组件 watcher 触发
           const device = devices.value[existingIndex]
-          devices.value[existingIndex] = {
-            ...device,
-            points: device.points.map(p => (p.name === pointName ? { ...p, currentValue: value } : p))
+          const pointIndex = device.points.findIndex(p => p.name === pointName)
+          if (pointIndex !== -1) {
+            device.points[pointIndex].currentValue = value
           }
         }
 
