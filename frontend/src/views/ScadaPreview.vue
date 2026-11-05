@@ -123,11 +123,12 @@ onUnmounted(() => {
   stopPolling()
 })
 
-/** 退出预览：先显示全屏遮罩立即遮盖 canvas（避免清理阻塞时画面卡顿暴露），
- * 用双 rAF 保证遮罩先被浏览器 paint 到屏幕（单 rAF 在 paint 前执行 router.push，
- * 用户完全感知不到遮罩存在），再执行导航让组件卸载 + AbortController 取消请求
+/** 退出预览：先彻底清空所有设备缓存（防内存泄漏），再显示遮罩遮盖 canvas，
+ * 用双 rAF 保证遮罩先被浏览器 paint 到屏幕，再执行导航让组件卸载 + AbortController 取消请求
  * 与新页面加载平滑衔接 */
 const handleGoBack = () => {
+  pointReader.clearAll()   // 用户主动退出预览态 → 彻底清空所有数据缓存
+
   loading.value = true
   // 双 rAF：第 1 帧让 Vue 更新 DOM（遮罩 v-if 生效），第 2 帧在浏览器 paint 之后再导航
   requestAnimationFrame(() => {

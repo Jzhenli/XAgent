@@ -77,7 +77,10 @@ export interface ScadaPointReader {
   getDemandedAssets: () => string[]
   /** 调试用：导出读值中枢保存在内存中的全部缓存结构（原始引用，devtools 可展开查看） */
   getCacheSnapshot: () => Record<string, unknown>
+  /** 轻量重置：abort 在途请求 + 清运行时状态，保留数据缓存（跨面板复用） */
   clearDevices: () => void
+  /** 彻底清空：clearDevices + 清空所有数据缓存（用户主动退出预览态时调用） */
+  clearAll: () => void
 }
 
 export const ScadaPointReaderKey: InjectionKey<ScadaPointReader> = Symbol('scadaPointReader')
@@ -636,26 +639,45 @@ export function useScadaPointReader(): ScadaPointReader {
   }
 
   /**
-   * 清空所有设备数据与状态
+   * 轻量重置：abort 在途请求 + 清运行时状态，保留数据缓存（跨面板/跨类型预览复用）
+   * 调用时机: 面板间 nav-button 跳转（留在预览态，不是彻底退出）
    */
   function clearDevices(): void {
-    // 先 abort 所有在途 HTTP 请求：退出页面或切换面板时立即释放浏览器 HTTP 连接池，
-    // 避免后续页面的接口请求被阻塞等待连接
+    // 1. abort 所有在途 HTTP 请求：释放浏览器连接池，避免阻塞后续页面
     currentAbortController?.abort()
     currentAbortController = new AbortController()
 
+    // 2. 代际号递增：防止 abort 期间漏网的在途回包污染单例状态
     devicesEpoch++
+
+    // 3. 重置轮询相关运行时状态
+    inflightDeviceFetches.clear()
+    assetDemand.clear()
+    historyVersion.value = 0
+
+    // 4. 清除延迟定时器（旧面板的写值回读不应触发）
     for (const timer of pendingFollowUpTimers.values()) {
       clearTimeout(timer)
     }
     pendingFollowUpTimers.clear()
-    writeProtectionMap.clear()
-    devices.value = []
-    historyVersion.value = 0
-    historyRequestCache.clear()
-    inflightDeviceFetches.clear()
-    assetDemand.clear()
-    skeletonCache.clear()
+
+    // ── 以下全部保留，跨面板复用 ──
+    // devices.value                    ← 保留！同设备已加载的实时点位数据
+    // skeletonCache                    ← 保留！准静态点位骨架，省 listPoints 请求
+    // historyRequestCache              ← 保留！历史查询结果 5s TTL 自然过期
+    // writeProtectionMap               ← 保留！全局写值保护
+  }
+
+  /**
+   * 彻底清空：先执行 clearDevices 轻量重置，再清空所有数据缓存释放内存
+   * 调用时机: 用户主动退出预览态（返回按钮）
+   */
+  function clearAll(): void {
+    clearDevices()               // 先 abort + 清运行时
+    devices.value = []           // 彻底清空所有设备实时点位
+    skeletonCache.clear()        // 彻底清空骨架
+    historyRequestCache.clear()  // 彻底清空历史查询缓存
+    writeProtectionMap.clear()   // 彻底清空写值保护
   }
 
   /**
@@ -697,6 +719,7 @@ export function useScadaPointReader(): ScadaPointReader {
     unregisterAssets,
     getDemandedAssets,
     getCacheSnapshot,
-    clearDevices
+    clearDevices,
+    clearAll
   }
 }

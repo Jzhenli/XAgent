@@ -108,6 +108,7 @@ const loadPanelData = async () => {
 };
 
 const handleGoBack = () => {
+  pointReader.clearAll();   // 用户主动退出预览态 → 彻底清空所有数据缓存
   router.push({ name: "ScadaList" });
 };
 </script>
