@@ -46,6 +46,7 @@ import { useScadaEditor } from "@/views/ScadaEditor/hooks/useScadaEditor";
 import { useScadaPolling } from "@/views/ScadaEditor/hooks/useScadaBinding";
 import { useScadaPointReader, ScadaPointReaderKey } from "@/utils/scadaPointReader";
 import { useSystemStore } from "@/stores/system";
+import { panelStore } from "@/utils/panelStore";
 
 const route = useRoute();
 const router = useRouter();
@@ -71,6 +72,9 @@ onMounted(async () => {
   // isEditing 默认 true 会短路 refreshBoundDevices，预览态需显式关闭
   scada.isEditing.value = false;
   await loadPanelData();
+
+  // 🆕 首屏加载完后，后台预加载所有项目进 IndexedDB（不阻塞遮罩）
+  panelStore.preloadAll();
 });
 
 onUnmounted(() => {
@@ -79,7 +83,7 @@ onUnmounted(() => {
   pointReader.clearDevices();
 });
 
-/** 加载路由参数指定 id 的 Graphic 面板数据（仅面板结构，点位值由轮询链路负责） */
+/** 加载路由参数指定 id 的 Graphic 面板数据 —— IndexedDB 优先，miss 走网络 + 回填 */
 const loadPanelData = async () => {
   const panelId = route.params.id as string;
   if (!panelId) {
@@ -91,7 +95,19 @@ const loadPanelData = async () => {
   error.value = "";
 
   try {
-    const project = await projectApi.get(panelId);
+    let project: Project | null = null;
+
+    // 1️⃣ 优先从 IndexedDB 读 —— 绕开 base64 图片导致的 ~1s 网络+JSON 序列化瓶颈
+    project = await panelStore.get(panelId);
+
+    // 2️⃣ 未命中 → 走网络，成功后回填 IndexedDB
+    if (!project) {
+      project = await projectApi.get(panelId);
+      if (project) {
+        await panelStore.set(project);
+      }
+    }
+
     if (!project || !project.data) {
       error.value = t("scada.loadPanelFailed");
       ElMessage.error(t("scada.loadPanelFailed"));
@@ -109,6 +125,7 @@ const loadPanelData = async () => {
 
 const handleGoBack = () => {
   pointReader.clearAll();   // 用户主动退出预览态 → 彻底清空所有数据缓存
+  panelStore.clear();       // 🆕 清空 IndexedDB（退出预览会话）
   router.push({ name: "ScadaList" });
 };
 </script>

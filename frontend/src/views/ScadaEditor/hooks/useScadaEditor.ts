@@ -2,6 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { projectApi } from '@/api/projects'
 import { usePointStore } from '@/stores/points'
+import { panelStore } from '@/utils/panelStore'
 
 import type { Ref } from 'vue'
 import type { Project } from '@/types/project'
@@ -221,13 +222,23 @@ export function useScadaEditor() {
     return panel
   }
 
-  /** 从网络加载指定项目对应的面板数据 */
+  /** 加载指定项目对应的面板数据 —— IndexedDB 优先，miss 走网络 + 回填 */
   async function loadPanel(projectId: string): Promise<ScadaPanel | null> {
     let project: Project | null = null
-    try {
-      project = await projectApi.get(projectId)
-    } catch (e) {
-      console.error('Failed to fetch project:', e)
+
+    // 1️⃣ 优先从 IndexedDB 读 —— 绕开 base64 图片导致的 ~1s 网络+JSON 序列化瓶颈
+    project = await panelStore.get(projectId)
+
+    // 2️⃣ 未命中 → 走网络，成功后回填 IndexedDB（供后续面板切换复用）
+    if (!project) {
+      try {
+        project = await projectApi.get(projectId)
+        if (project) {
+          await panelStore.set(project)
+        }
+      } catch (e) {
+        console.error('Failed to fetch project:', e)
+      }
     }
 
     if (!project) {
