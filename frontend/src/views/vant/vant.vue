@@ -29,14 +29,16 @@
       @touchend.passive="handleTouchEnd"
       @touchcancel.passive="handleTouchCancel"
     >
-      <div
-        ref="adaptContainerRef"
-        class="slide-page"
-        :style="currentPanel?.type === 'Dashboard' ? adaptContainerStyle : undefined"
-      >
-        <template v-if="isPanelRendered">
+      <Transition :name="transitionName" mode="out-in">
+        <div
+          v-if="isPanelRendered"
+          :key="renderedPanelId"
+          ref="adaptContainerRef"
+          class="slide-page"
+          :style="renderedPanel?.type === 'Dashboard' ? adaptContainerStyle : undefined"
+        >
           <div
-            v-if="currentPanel?.type === 'Dashboard'"
+            v-if="renderedPanel?.type === 'Dashboard'"
             class="adapt-canvas-frame"
             :style="adaptFrameStyle"
           >
@@ -48,10 +50,10 @@
           <!-- 同上，去掉整体 key，让 Vue diff 内部组件 -->
           <GraphicSingle
             v-else
-            :project="currentPanel"
+            :project="renderedPanel"
           />
-        </template>
-      </div>
+        </div>
+      </Transition>
     </div>
 
     <div v-else class="empty-state">
@@ -115,13 +117,36 @@ const tabs = computed(() =>
 
 const currentPanel = computed(() => panels.value[activeTab.value] ?? null);
 
-/** 已渲染（挂载）的面板 ID：切换时先卸载旧面板内容，下一帧再挂载新面板 */
+/** 上一个 tab 索引：用于判断切换方向，选择不同的滑入/滑出动画 */
+const prevTab = ref(0);
+
+/** 根据 tab 切换方向动态返回过渡动画名称 */
+const transitionName = computed(() => {
+  if (activeTab.value > prevTab.value) return "slide-left";   // 向左滑动（下一页）
+  if (activeTab.value < prevTab.value) return "slide-right";  // 向右滑动（上一页）
+  return "";  // 初始加载无动画
+});
+
+/** 监听 tab 变化，更新 prevTab */
+watch(activeTab, (_newVal, oldVal) => {
+  prevTab.value = oldVal;
+});
+
+/** 已渲染的面板 ID：切换时先卸载旧面板内容，下一帧再挂载新面板 */
 const renderedPanelId = ref<string | null>(null);
 
-/** 面板内容渲染条件：目标面板已加载完成才挂载，切换期间保持卸载态 */
-const isPanelRendered = computed(
-  () => currentPanel.value !== null && currentPanel.value.id === renderedPanelId.value,
+/** 已渲染面板的完整 Project 对象：模板用这个而非 currentPanel，
+ *  避免 activeTab 变化时 currentPanel 立即更新导致旧页 DOM 提前卸载
+ *  （currentPanel 跟着 activeTab 走 = 目标面板，renderedPanelId 跟着数据加载走 = 实际已就绪面板）
+ */
+const renderedPanel = computed(
+  () => panels.value.find((p) => p.id === renderedPanelId.value) ?? null,
 );
+
+/** 面板内容渲染条件：只要有已就绪的面板就显示，保持旧 DOM 持续存在，
+ *  直到新面板数据完全加载好（scada.loadPanelFromProject 执行后）再切换
+ */
+const isPanelRendered = computed(() => renderedPanelId.value !== null);
 
 /** 等待下一帧：把"卸载旧面板"与"挂载新面板"拆到不同帧，避免单帧长任务造成滑动卡顿 */
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -164,8 +189,8 @@ const loadCurrentPanel = async () => {
       const id = pendingPanelId;
       pendingPanelId = null;
       if (renderedPanelId.value !== id) {
-        // 第一帧：卸载旧面板内容（快）
-        renderedPanelId.value = null;
+        // 不再提前清空 renderedPanelId —— 旧 DOM 保持存在，避免切换期间黑屏
+        // 直接从 IndexedDB 读取新数据，加载完成后再一次性更新 renderedPanelId
         await nextFrame();
         // 卸载竞态防护：滑动后立即退出页面时，中止后续挂载与 store 写入
         if (isUnmounted) break;
@@ -382,6 +407,36 @@ watch(activeTab, async () => {
   justify-content: center;
   overflow: hidden;
   background: #000;
+}
+
+/* ===== 面板切换过渡动画（纯 transform/opacity，GPU 合成层零开销） ===== */
+.slide-left-enter-active,
+.slide-left-leave-active,
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, opacity;
+}
+
+/* 向左切换：新页从右侧滑入，旧页向左滑出 */
+.slide-left-enter-from {
+  transform: translateX(80%);
+  opacity: 0.7;
+}
+.slide-left-leave-to {
+  transform: translateX(-25%);
+  opacity: 0.4;
+}
+
+/* 向右切换：新页从左侧滑入，旧页向右滑出 */
+.slide-right-enter-from {
+  transform: translateX(-80%);
+  opacity: 0.7;
+}
+.slide-right-leave-to {
+  transform: translateX(25%);
+  opacity: 0.4;
 }
 
 /* 适配画布布局框：禁止 flex 收缩，保证滚动模式下的布局尺寸正确 */
