@@ -41,13 +41,14 @@
             :style="adaptFrameStyle"
           >
             <div class="adapt-canvas-scale" :style="adaptScaleStyle">
-              <ScadaCanvas :key="`dashboard-${currentPanel.id}`" />
+              <!-- key 去掉：让 Vue 按组件自身 comp.id 做 diff 复用，而非整个组件树重建 -->
+              <ScadaCanvas />
             </div>
           </div>
+          <!-- 同上，去掉整体 key，让 Vue diff 内部组件 -->
           <GraphicSingle
             v-else
             :project="currentPanel"
-            :key="`graphic-${currentPanel.id}`"
           />
         </template>
       </div>

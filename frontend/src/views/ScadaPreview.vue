@@ -1,30 +1,34 @@
 <template>
   <div class="preview-page">
-    <!-- 加载遮罩：彻底覆盖 canvas 区域，防止闪显上一次残留的面板数据 -->
-    <div v-if="loading" class="loading-overlay">
-      <div class="loading-content">
-        <el-icon class="loading-spinner" :size="36"><Loading /></el-icon>
-        <span class="loading-text">{{ $t('common.loading') }}</span>
-      </div>
-    </div>
-
+    <!-- 画布常驻区：只要 currentPanel 存在就渲染，不随 loading 遮罩互斥销毁 -->
+    <!-- key 去掉：让 Vue 按组件自身 comp.id 做 diff 复用，而非整个组件树重建 -->
     <div
-      v-else-if="currentPanel"
+      v-if="currentPanel"
       ref="adaptContainerRef"
       class="preview-content"
       :style="adaptContainerStyle"
     >
       <div class="canvas-frame" :style="adaptFrameStyle">
         <div class="canvas-scale" :style="adaptScaleStyle">
-          <ScadaCanvas :key="`preview-${currentPanel.value?.id || 'unknown'}`" />
+          <ScadaCanvas />
         </div>
       </div>
     </div>
 
-    <div v-else class="empty-state">
+    <!-- 空状态 -->
+    <div v-else-if="!loading" class="empty-state">
       <el-empty :description="$t('scada.projectNotExist')">
         <el-button type="primary" @click="handleGoBack">{{ $t('scada.backToProjectList') }}</el-button>
       </el-empty>
+    </div>
+
+    <!-- 加载遮罩：覆盖层 z-index 在 canvas 之上，不销毁 canvas DOM -->
+    <!-- 好处: canvas 在遮罩下继续响应式渲染新数据，loading=false 时可立即 paint -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-content">
+        <el-icon class="loading-spinner" :size="36"><Loading /></el-icon>
+        <span class="loading-text">{{ $t('common.loading') }}</span>
+      </div>
     </div>
 
     <div class="floating-back" @click="handleGoBack">
@@ -34,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScadaEditor } from '@/views/ScadaEditor/hooks/useScadaEditor'
@@ -74,23 +78,21 @@ const currentPanel = computed(() => scada.currentPanel)
 /** 加载遮罩状态：为 true 时 canvas 被完全遮住，避免闪显上一次残留的面板数据 */
 const loading = ref(true)
 
-/** 统一的面板加载入口：负责显示遮罩 → 清理旧面板累积状态 → 加载面板 → 隐藏遮罩 */
+/** 统一的面板加载入口：显示遮罩 → 清理旧状态 → 加载面板 → 等 canvas 渲染完 → 移除遮罩 */
 async function initPanel(panelId: string) {
   loading.value = true
   try {
-    // 切面板时主动清空上一面板的所有设备缓存 + abort 在途请求：
-    // 避免 skeletonCache / historyRequestCache / inflightDeviceFetches 累积到退出时一次性清理造成卡顿。
-    // clearDevices 内部会新建 AbortController，后续 loadPanel 触发的新轮询请求会使用新 controller 的 signal
-    pointReader.clearDevices()
-
-    const panel = await scada.loadPanel(panelId)
+    pointReader.clearDevices()   // 轻量重置：abort 在途请求 + 清运行时状态，保留 devices/skeletonCache
+    const panel = await scada.loadPanel(panelId)  // IndexedDB 优先 (~10ms)，miss 走网络
     if (!panel) {
-      // 加载失败：清空模块级 currentPanelId，让 currentPanel computed 返回 null，
-      // 避免遮罩收起后 v-else-if 匹配到上一次残留的面板数据
-      scada.currentPanelId.value = null
+      scada.currentPanelId.value = null  // 加载失败让 currentPanel computed 返回 null
     }
-    // loadPanel 后 boundAssets 变化 → boundAssets watch 自动触发 refreshBoundDevices
+    // loadPanel 内部 applyProjectData 已经更新 sourcePanel → ScadaCanvas 响应式拿到新数据
+    // boundAssets 变化 → boundAssets watch 自动触发 refreshBoundDevices
   } finally {
+    // 🆕 等 Vue 完成 canvas DOM 更新（v-for diff 新组件）再移除遮罩
+    // 去掉 :key 后是组件级 diff 而非完全重建，安卓平板上 ~300ms → ~100ms
+    await nextTick()
     loading.value = false
   }
 }
