@@ -29,31 +29,29 @@
       @touchend.passive="handleTouchEnd"
       @touchcancel.passive="handleTouchCancel"
     >
-      <Transition :name="transitionName" mode="out-in">
+      <div
+        v-if="isPanelRendered"
+        :key="renderedPanelId"
+        ref="adaptContainerRef"
+        class="slide-page"
+        :style="renderedPanel?.type === 'Dashboard' ? adaptContainerStyle : undefined"
+      >
         <div
-          v-if="isPanelRendered"
-          :key="renderedPanelId"
-          ref="adaptContainerRef"
-          class="slide-page"
-          :style="renderedPanel?.type === 'Dashboard' ? adaptContainerStyle : undefined"
+          v-if="renderedPanel?.type === 'Dashboard'"
+          class="adapt-canvas-frame"
+          :style="adaptFrameStyle"
         >
-          <div
-            v-if="renderedPanel?.type === 'Dashboard'"
-            class="adapt-canvas-frame"
-            :style="adaptFrameStyle"
-          >
-            <div class="adapt-canvas-scale" :style="adaptScaleStyle">
-              <!-- key 去掉：让 Vue 按组件自身 comp.id 做 diff 复用，而非整个组件树重建 -->
-              <ScadaCanvas />
-            </div>
+          <div class="adapt-canvas-scale" :style="adaptScaleStyle">
+            <!-- key 去掉：让 Vue 按组件自身 comp.id 做 diff 复用，而非整个组件树重建 -->
+            <ScadaCanvas />
           </div>
-          <!-- 同上，去掉整体 key，让 Vue diff 内部组件 -->
-          <GraphicSingle
-            v-else
-            :project="renderedPanel"
-          />
         </div>
-      </Transition>
+        <!-- 同上，去掉整体 key，让 Vue diff 内部组件 -->
+        <GraphicSingle
+          v-else
+          :project="renderedPanel"
+        />
+      </div>
     </div>
 
     <div v-else class="empty-state">
@@ -117,22 +115,7 @@ const tabs = computed(() =>
 
 const currentPanel = computed(() => panels.value[activeTab.value] ?? null);
 
-/** 上一个 tab 索引：用于判断切换方向，选择不同的滑入/滑出动画 */
-const prevTab = ref(0);
-
-/** 根据 tab 切换方向动态返回过渡动画名称 */
-const transitionName = computed(() => {
-  if (activeTab.value > prevTab.value) return "slide-left";   // 向左滑动（下一页）
-  if (activeTab.value < prevTab.value) return "slide-right";  // 向右滑动（上一页）
-  return "";  // 初始加载无动画
-});
-
-/** 监听 tab 变化，更新 prevTab */
-watch(activeTab, (_newVal, oldVal) => {
-  prevTab.value = oldVal;
-});
-
-/** 已渲染的面板 ID：切换时先卸载旧面板内容，下一帧再挂载新面板 */
+/** 已渲染的面板 ID：切换时保持旧 DOM 存在，新数据就绪后再一次性替换 */
 const renderedPanelId = ref<string | null>(null);
 
 /** 已渲染面板的完整 Project 对象：模板用这个而非 currentPanel，
@@ -407,36 +390,6 @@ watch(activeTab, async () => {
   justify-content: center;
   overflow: hidden;
   background: #000;
-}
-
-/* ===== 面板切换过渡动画（纯 transform/opacity，GPU 合成层零开销） ===== */
-.slide-left-enter-active,
-.slide-left-leave-active,
-.slide-right-enter-active,
-.slide-right-leave-active {
-  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              opacity 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform, opacity;
-}
-
-/* 向左切换：新页从右侧滑入，旧页向左滑出 */
-.slide-left-enter-from {
-  transform: translateX(80%);
-  opacity: 0.7;
-}
-.slide-left-leave-to {
-  transform: translateX(-25%);
-  opacity: 0.4;
-}
-
-/* 向右切换：新页从左侧滑入，旧页向右滑出 */
-.slide-right-enter-from {
-  transform: translateX(-80%);
-  opacity: 0.7;
-}
-.slide-right-leave-to {
-  transform: translateX(25%);
-  opacity: 0.4;
 }
 
 /* 适配画布布局框：禁止 flex 收缩，保证滚动模式下的布局尺寸正确 */
