@@ -77,8 +77,6 @@ import ScadaCanvas from "@/views/ScadaEditor/components/ScadaCanvas.vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
 import { useSwipe } from "./composables/useSwipe";
 import { useKeyboardShortcuts } from "./composables/useKeyboardShortcuts";
-import { panelStore } from "@/utils/panelStore";
-
 const router = useRouter();
 const { t } = useI18n();
 const scada = useScadaEditor();
@@ -139,12 +137,6 @@ const fetchPanels = async () => {
     const res = await projectApi.list();
     const sorted = (res.items ?? []).sort((a, b) => a.createdAt - b.createdAt);
     panels.value = sorted;
-
-    // 🆕 写入 IndexedDB（替代原来的内存 panelCache）
-    // 好处: 1. 切面板时不占 JS 堆（5-6MB × 7 = 42MB 省掉）
-    //       2. 跨页面 nav-button 跳转也能命中（vant → ScadaPreview）
-    //       3. 不会触发 GC pause
-    await panelStore.setMany(sorted);
   } catch {
     ElMessage.error(t('vant.loadPanelsFailed'));
   }
@@ -178,19 +170,8 @@ const loadCurrentPanel = async () => {
         // 卸载竞态防护：滑动后立即退出页面时，中止后续挂载与 store 写入
         if (isUnmounted) break;
 
-        // 🆕 从 IndexedDB 读（替代原来的内存 panelCache）
-        let project: Project | null = await panelStore.get(id);
-
-        // IndexedDB 没命中（极端情况：面板被并发删除 / 磁盘满）：走网络 + 回填
-        if (!project) {
-          try {
-            project = await projectApi.get(id);
-            if (project) await panelStore.set(project);
-          } catch {
-            // 面板加载失败：跳过本次，保持卸载态
-            continue;
-          }
-        }
+        // 直接从内存 panels 数组取（fetchPanels 已加载全部完整数据）
+        const project: Project | null = panels.value.find(p => p.id === id) ?? null;
         if (!project) continue;
 
         // 下一帧：list 接口保证返回完整 data，直接从缓存加载，零网络延迟
@@ -214,7 +195,6 @@ const switchTab = (dir: -1 | 1) => {
 };
 
 const exit = () => {
-  panelStore.clear();  // 🆕 退出清空 IndexedDB（vant 退出就退出预览会话）
   router.push({ name: "ScadaList" });
 };
 
@@ -284,7 +264,6 @@ onUnmounted(() => {
 
   stopPolling();
   pointReader.clearDevices(); // 离开 vant 页面时清空读值中枢全部缓存（实时值/历史/骨架/去重表）
-  panelStore.clear();          // 🆕 退出预览会话时清空 IndexedDB
 });
 
 watch(activeTab, async () => {
