@@ -263,7 +263,7 @@ export interface UseScadaPollingOptions {
  * @param options 轮询配置
  */
 export function useScadaPolling(options: UseScadaPollingOptions = {}) {
-  const { interval = 5000, immediate = true, assets, reader } = options
+  const { interval = 5000, immediate = false, assets, reader } = options
 
   const scada = useScadaEditor()
   const pointStore = usePointStore()
