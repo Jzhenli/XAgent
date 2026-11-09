@@ -72,7 +72,8 @@
     "lightTheme": "淺色主題",
     "darkTheme": "深色主題",
     "aboutUs": "關於我們",
-    "softwareVersion": "軟體版本"
+    "softwareVersion": "軟體版本",
+    "refresh": "重新整理頁面"
   },
   "route": {
     "login": "登入",

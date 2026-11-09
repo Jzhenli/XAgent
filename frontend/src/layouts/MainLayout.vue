@@ -177,7 +177,10 @@
                 <el-dropdown-item @click="router.push('/settings?tab=users')">{{
                   $t("layout.personalSettings")
                 }}</el-dropdown-item>
-                <el-dropdown-item divided @click="openAboutDialog">{{
+                <el-dropdown-item divided @click="handleRefresh">{{
+                  $t("layout.refresh")
+                }}</el-dropdown-item>
+                <el-dropdown-item @click="openAboutDialog">{{
                   $t("layout.aboutUs")
                 }}</el-dropdown-item>
                 <el-dropdown-item divided @click="handleLogout">{{
@@ -454,6 +457,10 @@ const showDrawer = computed(
     !isFullscreenMode.value,
 );
 const isLoginPage = computed(() => route.path === "/login");
+
+function handleRefresh() {
+  window.location.reload();
+}
 
 function handleLogout() {
   userStore.logout();

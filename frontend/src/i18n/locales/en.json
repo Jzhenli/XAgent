@@ -72,7 +72,8 @@
     "lightTheme": "Light Theme",
     "darkTheme": "Dark Theme",
     "aboutUs": "About Us",
-    "softwareVersion": "Software Version"
+    "softwareVersion": "Software Version",
+    "refresh": "Refresh Page"
   },
   "route": {
     "login": "Login",
