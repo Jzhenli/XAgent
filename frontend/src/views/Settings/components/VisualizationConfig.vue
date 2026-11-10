@@ -45,9 +45,14 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useVisualizationConfig } from '../composables/useVisualizationConfig'
 
-const { systemStore, configLoading, handleSaveVisualization } = useVisualizationConfig()
+const { systemStore, configLoading, handleSaveVisualization, loadVisualizationConfig } = useVisualizationConfig()
+
+onMounted(() => {
+  loadVisualizationConfig()
+})
 </script>
 
 <style scoped>

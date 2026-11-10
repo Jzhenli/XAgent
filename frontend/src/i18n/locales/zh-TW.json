@@ -908,16 +908,16 @@
       "update_success": "權限更新成功",
       "update_failed": "權限更新失敗"
     },
+    "visualization": {
+      "polling_interval": "輪詢間隔",
+      "milliseconds": "ms",
+      "config_hint": "視覺化設定立即生效"
+    },
     "config_saved": "設定已儲存",
-    "operation_failed": "操作失敗",
-    "delete_confirm": "確認刪除",
     "config_load_failed": "設定載入失敗",
     "config_save_failed": "設定儲存失敗",
-    "visualization": {
-      "config_hint": "視覺化設定立即生效",
-      "milliseconds": "ms",
-      "polling_interval": "輪詢間隔"
-    }
+    "operation_failed": "操作失敗",
+    "delete_confirm": "確認刪除"
   },
   "alerts": {
     "title": "告警紀錄",

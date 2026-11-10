@@ -182,6 +182,6 @@ export const useSystemStore = defineStore('system', () => {
     storage: sessionStorage,
     // 系统统计数据时效性较短，可选择不持久化
     // 但为了优化页面切换体验，保留持久化
-    paths: ['stats', 'dataQuality', 'visualizationConfig']
+    paths: ['stats', 'dataQuality']
   }
 })
