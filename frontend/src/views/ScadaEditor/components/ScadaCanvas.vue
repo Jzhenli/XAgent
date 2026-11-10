@@ -125,6 +125,12 @@
             <span class="context-menu-shortcut">Ctrl+Shift+G</span>
           </div>
           <div class="context-menu-divider" />
+          <div class="context-menu-item" @click="handleContextAction('bringForward')">
+            <span>{{ $t('scada.contextMenu.bringForward') }}</span>
+          </div>
+          <div class="context-menu-item" @click="handleContextAction('sendBackward')">
+            <span>{{ $t('scada.contextMenu.sendBackward') }}</span>
+          </div>
           <div class="context-menu-item" @click="handleContextAction('bringToFront')">
             <span>{{ $t('scada.contextMenu.bringToFront') }}</span>
           </div>
@@ -424,10 +430,6 @@ const getComponentStyle = (comp: { x: number; y: number; config: { width: number
 
 .component-wrapper.component-locked {
   cursor: not-allowed;
-}
-
-.component-wrapper.component-selected {
-  z-index: 10;
 }
 
 .selection-border {

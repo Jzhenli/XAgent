@@ -337,6 +337,7 @@ const POINT_BINDINGLESS_TYPES = new Set([
   "popup",
   "ac-controller",
   "ac-controller-2",
+  "ac-controller-3",
   "chart-sankey",
 ]);
 

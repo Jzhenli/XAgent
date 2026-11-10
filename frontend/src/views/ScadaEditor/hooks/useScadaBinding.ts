@@ -114,10 +114,16 @@ export function useScadaBinding(
     }
   }
 
-  // 监听绑定点位引用变化（组件绑定的设备/点位变了）
-  watch(boundPoint, updateCurrentValue)
-  // 监听点位当前值变化（原始值比较，只有值真正变了才触发；
-  //   devices 整体替换时 boundPoint computed 返回的 currentValue 若未变化则不触发）
+  // 监听绑定关系变化（组件绑定的设备/点位标识变了）
+  // 改为监听 [deviceId, pointName] 元组，而非 boundPoint 引用：
+  // boundPoint 是 resolvePoint 返回的对象引用，在轮询全量重建点位时每轮都是新引用 →
+  // 原 watch(boundPoint, ...) 每轮冗余触发 updateCurrentValue；
+  // 现在绑定标识不变则不触发，值变化由下一个 watch 精准覆盖（P1-1 优化）
+  watch(
+    () => [binding.value?.deviceId, binding.value?.pointName],
+    updateCurrentValue
+  )
+  // 监听点位当前值变化（原始值比较，只有值真正变了才触发）
   watch(
     () => boundPoint.value?.currentValue,
     updateCurrentValue
@@ -246,17 +252,6 @@ export interface UseScadaPollingOptions {
 }
 
 /**
- * 调试日志：每轮轮询刷新完成后，向控制台打印读值中枢保存在内存中的缓存结构
- * （devices、O(1) 索引、历史/骨架/去重/需求注册等全部缓存，devtools 中可逐层展开查看）
- */
-function logPollingCache(reader: ScadaPointReader, targets: string[]): void {
-  console.log(
-    `[Scada轮询] 刷新完成 | 目标设备 ${targets.length} 台 | 内存缓存结构：`,
-    reader.getCacheSnapshot()
-  )
-}
-
-/**
  * Scada 统一数据轮询 Hook
  *
  * 根据当前面板中已绑定点位的组件，自动收集涉及的设备 asset，
@@ -268,7 +263,7 @@ function logPollingCache(reader: ScadaPointReader, targets: string[]): void {
  * @param options 轮询配置
  */
 export function useScadaPolling(options: UseScadaPollingOptions = {}) {
-  const { interval = 5000, immediate = true, assets, reader } = options
+  const { interval = 5000, immediate = false, assets, reader } = options
 
   const scada = useScadaEditor()
   const pointStore = usePointStore()
@@ -299,9 +294,6 @@ export function useScadaPolling(options: UseScadaPollingOptions = {}) {
 
     // 历史增量追加在 fetchDevicePoints 内部完成：仅图表绑定（持有 historyCache）的点位被追加，
     // 内含 timestamp 去重与基线检查，成功追加后 historyVersion 自动递增触发图表增量刷新
-    if (effectiveReader) {
-      logPollingCache(effectiveReader, targets)
-    }
   }
 
   const { start, stop, isRunning, pause, resume } = usePolling(refreshBoundDevices, {

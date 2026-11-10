@@ -751,6 +751,16 @@ export function useScadaCanvas() {
           scada.deleteSelectedComponents()
         }
         break
+      case 'bringForward':
+        if (contextMenu.value.targetId) {
+          scada.bringForward(contextMenu.value.targetId)
+        }
+        break
+      case 'sendBackward':
+        if (contextMenu.value.targetId) {
+          scada.sendBackward(contextMenu.value.targetId)
+        }
+        break
       case 'bringToFront':
         if (contextMenu.value.targetId) {
           scada.bringToFront(contextMenu.value.targetId)

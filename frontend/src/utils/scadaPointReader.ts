@@ -77,7 +77,10 @@ export interface ScadaPointReader {
   getDemandedAssets: () => string[]
   /** 调试用：导出读值中枢保存在内存中的全部缓存结构（原始引用，devtools 可展开查看） */
   getCacheSnapshot: () => Record<string, unknown>
+  /** 轻量重置：abort 在途请求 + 清运行时状态，保留数据缓存（跨面板复用） */
   clearDevices: () => void
+  /** 彻底清空：clearDevices + 清空所有数据缓存（用户主动退出预览态时调用） */
+  clearAll: () => void
 }
 
 export const ScadaPointReaderKey: InjectionKey<ScadaPointReader> = Symbol('scadaPointReader')
@@ -184,9 +187,12 @@ function appendLatestToBoundPoints(asset: string, timestamp: number, readingData
   let appended = false
   for (const point of device.points) {
     const series = point.historyCache
-    // 空缓存（未加载或加载为空）不追加：与原「无全量基线跳过」语义一致
-    if (!series || series.length === 0) continue
-    if (timestamp <= series[series.length - 1].timestamp) continue
+    // 仅对非图表绑定点位（无 historyCache 属性）跳过；
+    // 图表绑定点位即使 historyCache 为空（历史 API 返回空），也将实时读数写入作为初始基线，
+    // 既打破"空缓存无法追加 → 图表永远空数据"的功能死锁，
+    // 也让 hasPointHistory() 返回 true 停止 30s 兜底轮询的无限重试
+    if (!series) continue
+    if (series.length > 0 && timestamp <= series[series.length - 1].timestamp) continue
 
     const value = normalizeChartValue(
       readingData.standardPoints.get(point.name)?.value ?? readingData.data[point.name]
@@ -235,6 +241,13 @@ export function useScadaPointReader(): ScadaPointReader {
    * @param asset 设备 asset
    */
   async function fetchDevicePoints(asset: string): Promise<void> {
+    // P2-1：顺带清理过期条目 —— Map 长期持有过期 Promise 会累积，
+    // clearDevices 时才清空；每次进入清理一次，O(n) 极小
+    const now = Date.now()
+    for (const [key, entry] of inflightDeviceFetches) {
+      if (entry.expiresAt <= now) inflightDeviceFetches.delete(key)
+    }
+
     // 进行中或 1s 复用窗口内的相同请求 → 直接共享，不发新请求
     const existing = inflightDeviceFetches.get(asset)
     if (existing && Date.now() < existing.expiresAt) return existing.promise
@@ -294,17 +307,14 @@ export function useScadaPointReader(): ScadaPointReader {
       } else {
         const existing = devices.value.find(d => d.asset === asset)
         if (existing) {
-          // listPoints 失败但有旧点位：仅用新读数刷新当前值，其余字段全部保留（含 historyCache）
-          devices.value = devices.value.map(d => {
-            if (d.asset !== asset) return d
-            return {
-              ...d,
-              points: d.points.map(p => ({
-                ...p,
-                currentValue: readingData?.standardPoints.get(p.name)?.value ?? p.currentValue
-              }))
+          // listPoints 失败但有旧点位：原地刷新 currentValue，其余字段全部保留（含 historyCache）
+          // 同样遵循 P0-2 原地更新策略，不重建对象
+          for (const p of existing.points) {
+            const newValue = readingData?.standardPoints.get(p.name)?.value
+            if (newValue !== undefined && !Object.is(p.currentValue, newValue)) {
+              p.currentValue = newValue
             }
-          })
+          }
           if (readingData) appendLatestToBoundPoints(asset, readingData.timestamp, readingData)
           return
         }
@@ -313,18 +323,32 @@ export function useScadaPointReader(): ScadaPointReader {
       }
 
       const existingIndex = devices.value.findIndex(d => d.asset === asset)
-      // 保留图表点位已加载的历史缓存：点位对象每轮重建，历史缓存需跨轮携带
-      const oldPoints = existingIndex !== -1 ? devices.value[existingIndex].points : undefined
-      const mappedPoints = points.map(point => {
-        const pointValue = toPointValue(asset, point, readingData)
-        const historyCache = oldPoints?.find(p => p.name === point.name)?.historyCache
-        if (historyCache) pointValue.historyCache = historyCache
-        return pointValue
-      })
 
       if (existingIndex !== -1) {
-        devices.value[existingIndex] = { ...devices.value[existingIndex], points: mappedPoints }
+        // ── 原地更新已有设备：仅当 currentValue 真正变化时才赋值 ──
+        // 保留点位对象引用、device 对象引用、points 数组引用不变，
+        // 使下游 boundPoint computed 与 watch 在值未变时不触发，
+        // 直接削减 GC 抖动与整屏重栅格化次数（P0-2 优化）
+        const device = devices.value[existingIndex]
+        const oldPointMap = new Map(device.points.map(p => [p.name, p]))
+
+        for (const pointConfig of points) {
+          const newValue = toPointValue(asset, pointConfig, readingData).currentValue
+          const oldPoint = oldPointMap.get(pointConfig.name)
+          if (oldPoint) {
+            // 点位存在：Object.is 比较新旧值，不同才原地更新 currentValue
+            // 原地赋值不影响 historyCache 等其他属性
+            if (!Object.is(oldPoint.currentValue, newValue)) {
+              oldPoint.currentValue = newValue
+            }
+          } else {
+            // 骨架新增点位：创建新对象加入
+            device.points.push(toPointValue(asset, pointConfig, readingData))
+          }
+        }
+        // 注意：旧点位中存在但骨架中已删除的点位暂保留不动（兼容处理）
       } else {
+        // ── 新设备：首次出现，拉取设备元信息后初始化 ──
         const device = await deviceApi.get(asset, { signal })
         // 二次守卫：deviceApi.get 期间可能已发生 clearDevices
         if (epoch !== devicesEpoch) return
@@ -332,7 +356,7 @@ export function useScadaPointReader(): ScadaPointReader {
           asset: device.asset,
           name: device.name || device.asset,
           pluginName: device.plugin?.name || '',
-          points: (device.points || []).map(point => toPointValue(asset, point, readingData))
+          points: points.map(point => toPointValue(asset, point, readingData))
         })
       }
 
@@ -363,6 +387,12 @@ export function useScadaPointReader(): ScadaPointReader {
     hours: number = 24,
     limit: number = 100
   ): Promise<ScadaPointHistoryEntry[]> {
+    // 顺带清理过期历史缓存条目 —— 与 inflightDeviceFetches 的清理逻辑对齐
+    const now = Date.now()
+    for (const [key, entry] of historyRequestCache) {
+      if (entry.expiresAt && entry.expiresAt <= now) historyRequestCache.delete(key)
+    }
+
     const cacheKey = `${asset}:${pointName}:${hours}:${limit}`
     const cached = historyRequestCache.get(cacheKey)
 
@@ -536,10 +566,13 @@ export function useScadaPointReader(): ScadaPointReader {
         // 立即将保护值写入实时缓存，避免回读延迟期间显示旧值
         const existingIndex = devices.value.findIndex(d => d.asset === deviceAsset)
         if (existingIndex !== -1) {
+          // 原地更新：与 doFetchDevicePoints 的 P0-2 策略保持一致，
+          // 保留 device 引用、points 数组引用、其他点位引用不变，
+          // 避免 deviceIndex 重建和全组件 watcher 触发
           const device = devices.value[existingIndex]
-          devices.value[existingIndex] = {
-            ...device,
-            points: device.points.map(p => (p.name === pointName ? { ...p, currentValue: value } : p))
+          const pointIndex = device.points.findIndex(p => p.name === pointName)
+          if (pointIndex !== -1) {
+            device.points[pointIndex].currentValue = value
           }
         }
 
@@ -606,25 +639,45 @@ export function useScadaPointReader(): ScadaPointReader {
   }
 
   /**
-   * 清空所有设备数据与状态
+   * 轻量重置：abort 在途请求 + 清运行时状态，保留数据缓存（跨面板/跨类型预览复用）
+   * 调用时机: 面板间 nav-button 跳转（留在预览态，不是彻底退出）
    */
   function clearDevices(): void {
-    // 先 abort 所有在途 HTTP 请求：退出页面或切换面板时立即释放浏览器 HTTP 连接池，
-    // 避免后续页面的接口请求被阻塞等待连接
+    // 1. abort 所有在途 HTTP 请求：释放浏览器连接池，避免阻塞后续页面
     currentAbortController?.abort()
     currentAbortController = new AbortController()
 
+    // 2. 代际号递增：防止 abort 期间漏网的在途回包污染单例状态
     devicesEpoch++
+
+    // 3. 重置轮询相关运行时状态
+    inflightDeviceFetches.clear()
+    assetDemand.clear()
+    historyVersion.value = 0
+
+    // 4. 清除延迟定时器（旧面板的写值回读不应触发）
     for (const timer of pendingFollowUpTimers.values()) {
       clearTimeout(timer)
     }
     pendingFollowUpTimers.clear()
-    writeProtectionMap.clear()
-    devices.value = []
-    historyRequestCache.clear()
-    inflightDeviceFetches.clear()
-    assetDemand.clear()
-    skeletonCache.clear()
+
+    // ── 以下全部保留，跨面板复用 ──
+    // devices.value                    ← 保留！同设备已加载的实时点位数据
+    // skeletonCache                    ← 保留！准静态点位骨架，省 listPoints 请求
+    // historyRequestCache              ← 保留！历史查询结果 5s TTL 自然过期
+    // writeProtectionMap               ← 保留！全局写值保护
+  }
+
+  /**
+   * 彻底清空：先执行 clearDevices 轻量重置，再清空所有数据缓存释放内存
+   * 调用时机: 用户主动退出预览态（返回按钮）
+   */
+  function clearAll(): void {
+    clearDevices()               // 先 abort + 清运行时
+    devices.value = []           // 彻底清空所有设备实时点位
+    skeletonCache.clear()        // 彻底清空骨架
+    historyRequestCache.clear()  // 彻底清空历史查询缓存
+    writeProtectionMap.clear()   // 彻底清空写值保护
   }
 
   /**
@@ -666,6 +719,7 @@ export function useScadaPointReader(): ScadaPointReader {
     unregisterAssets,
     getDemandedAssets,
     getCacheSnapshot,
-    clearDevices
+    clearDevices,
+    clearAll
   }
 }

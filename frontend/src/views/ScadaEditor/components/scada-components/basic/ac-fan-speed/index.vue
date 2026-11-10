@@ -54,19 +54,20 @@ const isOperating = ref(false);
 const pendingValue = ref<number | string | null>(null);
 
 /**
- * 风速项结构（显式声明，避免 any 导致类型推断自引用）
+ * 风速项结构：itemStyle / labelStyle 只含稳定值
+ * 状态色（background-color, color）由 CSS class + CSS 变量驱动
  */
 interface FanSpeedItem {
   key: string;
   label: string;
   value: number | string;
   isActive: boolean;
+  /** 只含稳定布局属性（不随 active 切换变化，也不在 transition 列表中） */
   itemStyle: {
-    backgroundColor: string;
     borderRadius: string;
   };
+  /** 只含稳定布局属性 */
   labelStyle: {
-    color: string;
     fontSize: string;
   };
 }
@@ -82,7 +83,7 @@ const fanSpeedValueMap = computed(() => ({
 }));
 
 /**
- * 构建单个风速项（包含样式）
+ * 构建单个风速项（itemStyle/labelStyle 只放稳定值）
  */
 const buildFanSpeedItem = (
   key: string,
@@ -99,31 +100,33 @@ const buildFanSpeedItem = (
     label,
     value,
     isActive: active,
+    // backgroundColor 移除（由 CSS class + 变量 --bg-active/--bg-normal 驱动）
     itemStyle: {
-      backgroundColor: active
-        ? cfg.activeBackgroundColor
-        : cfg.backgroundColor || "transparent",
       borderRadius: `${cfg.borderRadius ?? 8}px`,
     },
+    // color 移除（由 CSS class + 变量 --fg-active/--fg-normal 驱动）
     labelStyle: {
-      color: active
-        ? cfg.activeFontColor || "#ffffff"
-        : cfg.fontColor || "rgba(255,255,255,0.7)",
       fontSize: `${cfg.fontSize ?? 11}px`,
     },
   };
 };
 
 /**
- * 容器样式
+ * 容器样式：注入 CSS 变量供子项使用（稳定值）
  */
-const containerStyle = computed(() => ({
-  backgroundColor: "transparent",
-  borderRadius: `${acConfig.value?.borderRadius ?? 8}px`,
-}));
+const containerStyle = computed(() => {
+  const cfg = acConfig.value;
+  return {
+    borderRadius: `${cfg.borderRadius ?? 8}px`,
+    '--bg-normal': cfg.backgroundColor || 'transparent',
+    '--bg-active': cfg.activeBackgroundColor || cfg.backgroundColor || 'transparent',
+    '--fg-normal': cfg.fontColor || 'rgba(255,255,255,0.7)',
+    '--fg-active': cfg.activeFontColor || '#ffffff',
+  };
+});
 
 /**
- * 风速列表（整合国际化、数值、激活状态、样式）
+ * 风速列表（每轮 currentValue 变化时重算，但 itemStyle/labelStyle 只含稳定值）
  */
 const fanSpeedList = computed<FanSpeedItem[]>(() => {
   const cfg = acConfig.value;
@@ -131,40 +134,15 @@ const fanSpeedList = computed<FanSpeedItem[]>(() => {
   const currVal = currentValue.value;
 
   return [
-    buildFanSpeedItem(
-      "auto",
-      t("scadaComponents.acFanSpeedAuto"),
-      valueMap.auto,
-      cfg,
-      currVal,
-    ),
-    buildFanSpeedItem(
-      "low",
-      t("scadaComponents.acFanSpeedLow"),
-      valueMap.low,
-      cfg,
-      currVal,
-    ),
-    buildFanSpeedItem(
-      "medium",
-      t("scadaComponents.acFanSpeedMedium"),
-      valueMap.medium,
-      cfg,
-      currVal,
-    ),
-    buildFanSpeedItem(
-      "high",
-      t("scadaComponents.acFanSpeedHigh"),
-      valueMap.high,
-      cfg,
-      currVal,
-    ),
+    buildFanSpeedItem("auto", t("scadaComponents.acFanSpeedAuto"), valueMap.auto, cfg, currVal),
+    buildFanSpeedItem("low", t("scadaComponents.acFanSpeedLow"), valueMap.low, cfg, currVal),
+    buildFanSpeedItem("medium", t("scadaComponents.acFanSpeedMedium"), valueMap.medium, cfg, currVal),
+    buildFanSpeedItem("high", t("scadaComponents.acFanSpeedHigh"), valueMap.high, cfg, currVal),
   ];
 });
 
 /**
  * 点击切换空调风速
- * @param mode 选中的风速项
  */
 const handleSelectMode = async (mode: FanSpeedItem) => {
   // 编辑态或下发中直接拦截
@@ -220,9 +198,18 @@ const handleSelectMode = async (mode: FanSpeedItem) => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
   padding: 4px 2px;
-  background: transparent;
+
+  /* transition 属性明确列出，不与 inline style 重叠 */
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+
+  /* 默认态（非激活）：background-color 由 CSS 变量控制 */
+  background-color: var(--bg-normal);
+}
+
+/* 激活态：background-color 切换由 class 驱动 transition */
+.ac-fan-speed-item.active {
+  background-color: var(--bg-active);
 }
 
 .ac-fan-speed-item:hover:not(.writing) {
@@ -238,5 +225,12 @@ const handleSelectMode = async (mode: FanSpeedItem) => {
   line-height: 1;
   font-weight: 400;
   white-space: nowrap;
+
+  /* color 由 CSS 变量控制，不写在 inline style 里 */
+  color: var(--fg-normal);
+}
+
+.ac-fan-speed-item.active .ac-fan-speed-label {
+  color: var(--fg-active);
 }
 </style>

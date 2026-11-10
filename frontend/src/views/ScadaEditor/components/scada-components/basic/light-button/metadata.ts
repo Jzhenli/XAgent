@@ -16,6 +16,7 @@ const defaultConfig: LightButtonComponentConfig = {
   activeFontColor: 'rgba(255, 255, 255, 1)',
   activeBackgroundColor: 'rgba(102, 102, 255, 1)',
   fontSize: 12,
+  opacity: 1,
   onValue: 1,
   offValue: 0,
   confirmRequired: false,

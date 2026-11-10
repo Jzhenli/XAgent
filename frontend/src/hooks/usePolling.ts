@@ -11,7 +11,7 @@ export type PollingTask = () => Promise<void> | void
 export interface UsePollingOptions {
   /** 轮询间隔（毫秒），默认 5000 */
   interval?: number
-  /** 启动时是否立即执行一次任务，默认 true */
+  /** 启动时是否立即执行一次任务，默认 false（等一个周期后首次刷新） */
   immediate?: boolean
   /** 初始是否处于暂停状态，默认 false */
   paused?: boolean
@@ -42,19 +42,24 @@ export interface UsePollingReturn {
 /**
  * 通用轮询 Hook
  *
- * 封装 setInterval 的启动、停止、暂停、恢复逻辑，并在组件卸载时自动清理。
+ * 封装"上一轮完成后再安排下一轮"的递归 setTimeout 轮询逻辑，
+ * 避免 setInterval 在任务耗时 > interval 时产生事件循环堆积，
+ * 防止密集 watcher 触发与用户交互竞争主线程。
+ *
  * 当浏览器标签页不可见时自动暂停，重新可见时恢复，避免后台无效请求。
  *
  * @param task 要周期性执行的任务
  * @param options 轮询配置
  */
 export function usePolling(task: PollingTask, options: UsePollingOptions = {}): UsePollingReturn {
-  const { interval = 5000, immediate = true, paused = false, onError } = options
+  const { interval = 5000, immediate = false, paused = false, onError } = options
 
   const isRunning = ref(false)
   const isPaused = ref(paused)
+  const isExecuting = ref(false)
 
-  let timer: ReturnType<typeof setInterval> | null = null
+  // 使用 setTimeout（而非 setInterval），防止任务耗时 > interval 时堆积
+  let timer: ReturnType<typeof setTimeout> | null = null
 
   /**
    * 执行一次任务，并捕获异常交给 onError
@@ -68,11 +73,22 @@ export function usePolling(task: PollingTask, options: UsePollingOptions = {}): 
   }
 
   /**
-   * 单次 tick：仅在未暂停时执行任务
+   * 单次 tick：暂停中或执行中直接跳过，否则执行任务；
+   * 任务结束后在 finally 里递归安排下一轮（上一轮完了才排下一轮，永不堆积）
    */
   const tick = async (): Promise<void> => {
     if (isPaused.value) return
-    await runOnce()
+    if (isExecuting.value) return  // 并发守卫（理论上 finally 串行但双保险）
+    isExecuting.value = true
+    try {
+      await runOnce()
+    } finally {
+      isExecuting.value = false
+      // stop() 时 timer 已被置 null，这里判断后不会排新任务
+      if (isRunning.value && timer !== null) {
+        timer = setTimeout(tick, interval)
+      }
+    }
   }
 
   /**
@@ -80,18 +96,16 @@ export function usePolling(task: PollingTask, options: UsePollingOptions = {}): 
    * 若当前页面处于隐藏状态，则先保持暂停，避免后台无效请求
    */
   const start = (): void => {
-    if (timer) return
+    if (timer) return  // 已在运行或已排好下一轮，跳过
 
     isRunning.value = true
     isPaused.value = document.hidden
 
     if (immediate && !isPaused.value) {
-      void tick()
+      void tick()  // 第一帧执行，后续由 tick 的 finally 递归安排
+    } else if (!isPaused.value) {
+      timer = setTimeout(tick, interval)
     }
-
-    timer = setInterval(() => {
-      void tick()
-    }, interval)
   }
 
   /**
@@ -99,26 +113,34 @@ export function usePolling(task: PollingTask, options: UsePollingOptions = {}): 
    */
   const stop = (): void => {
     if (timer) {
-      clearInterval(timer)
+      clearTimeout(timer)
       timer = null
     }
     isRunning.value = false
+    isExecuting.value = false
   }
 
   /**
-   * 暂停轮询（仅在运行状态下生效）
+   * 暂停轮询（清除排队的 setTimeout，避免恢复后堆积）
    */
   const pause = (): void => {
     if (isRunning.value) {
       isPaused.value = true
+      if (timer) {
+        clearTimeout(timer)
+        timer = null
+      }
     }
   }
 
   /**
-   * 恢复轮询
+   * 恢复轮询（安排下一轮在 interval 后执行，避免堆积）
    */
   const resume = (): void => {
     isPaused.value = false
+    if (isRunning.value && !timer) {
+      timer = setTimeout(tick, interval)
+    }
   }
 
   /**

@@ -1,5 +1,5 @@
 <template>
-  <div class="ac-controller-2" :style="containerStyle">
+  <div class="ac-controller-2" :style="[containerStyle, scaleStyle]">
     <!-- 标题 -->
     <div
       class="zone zone-title"
@@ -197,6 +197,27 @@ const { currentValue: currentVal } = useScadaBinding(
   { transform: (v) => (typeof v === 'number' ? v : Number(v) || 0) },
   computed(() => 25),
 )
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 整体缩放（方案 A：transform scale）
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** 基准尺寸 —— 与 metadata.ts 中 defaultConfig.width/height 一致 */
+const BASE_W = 160
+const BASE_H = 180
+
+/** 根据外层 wrapper 的实际尺寸，计算根元素的 scaleX/scaleY
+ *  根元素固定 BASE_W × BASE_H，整体 transform: scale 后填满外层 wrapper */
+const scaleStyle = computed(() => {
+  const sx = config.value.width / BASE_W
+  const sy = config.value.height / BASE_H
+  return {
+    width: `${BASE_W}px`,
+    height: `${BASE_H}px`,
+    transform: `scale(${sx}, ${sy})`,
+    transformOrigin: 'top left',
+  }
+})
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 基础样式配置
@@ -533,10 +554,16 @@ const titleZoneStyle = computed(() => ({
 const powerZoneStyle = computed(() => ({
   left: `${config.value.powerPosition.x}px`,
   top: `${config.value.powerPosition.y}px`,
+  // CSS 变量注入状态色（供 .power-icon class 切换使用）
+  '--power-color-off': powerIconColor.value,
+  '--power-color-on': powerActiveColor.value,
 }))
 
+/**
+ * powerIconStyle：只保留稳定布局属性（fontSize）
+ * color 由 CSS 变量 + .active class 驱动 transition
+ */
 const powerIconStyle = computed(() => ({
-  color: isOn.value ? powerActiveColor.value : powerIconColor.value,
   fontSize: `${powerIconSize.value}px`,
 }))
 
@@ -567,8 +594,6 @@ const currentZoneStyle = computed(() => ({
 
 <style scoped>
 .ac-controller-2 {
-  width: 100%;
-  height: 100%;
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
@@ -593,7 +618,13 @@ const currentZoneStyle = computed(() => ({
 }
 
 .power-icon {
-  transition: color 0.2s;
+  transition: color 0.2s ease;
+  /* 默认态 color 由 CSS 变量控制，.active 类切换驱动 transition */
+  color: var(--power-color-off);
+}
+
+.power-icon.active {
+  color: var(--power-color-on);
 }
 
 .power-icon.disabled {

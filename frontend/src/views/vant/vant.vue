@@ -30,26 +30,27 @@
       @touchcancel.passive="handleTouchCancel"
     >
       <div
+        v-if="isPanelRendered"
+        :key="renderedPanelId"
         ref="adaptContainerRef"
         class="slide-page"
-        :style="currentPanel?.type === 'Dashboard' ? adaptContainerStyle : undefined"
+        :style="renderedPanel?.type === 'Dashboard' ? adaptContainerStyle : undefined"
       >
-        <template v-if="isPanelRendered">
-          <div
-            v-if="currentPanel?.type === 'Dashboard'"
-            class="adapt-canvas-frame"
-            :style="adaptFrameStyle"
-          >
-            <div class="adapt-canvas-scale" :style="adaptScaleStyle">
-              <ScadaCanvas :key="`dashboard-${currentPanel.id}`" />
-            </div>
+        <div
+          v-if="renderedPanel?.type === 'Dashboard'"
+          class="adapt-canvas-frame"
+          :style="adaptFrameStyle"
+        >
+          <div class="adapt-canvas-scale" :style="adaptScaleStyle">
+            <!-- key 去掉：让 Vue 按组件自身 comp.id 做 diff 复用，而非整个组件树重建 -->
+            <ScadaCanvas />
           </div>
-          <GraphicSingle
-            v-else
-            :project="currentPanel"
-            :key="`graphic-${currentPanel.id}`"
-          />
-        </template>
+        </div>
+        <!-- 同上，去掉整体 key，让 Vue diff 内部组件 -->
+        <GraphicSingle
+          v-else
+          :project="renderedPanel"
+        />
       </div>
     </div>
 
@@ -76,7 +77,6 @@ import ScadaCanvas from "@/views/ScadaEditor/components/ScadaCanvas.vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
 import { useSwipe } from "./composables/useSwipe";
 import { useKeyboardShortcuts } from "./composables/useKeyboardShortcuts";
-
 const router = useRouter();
 const { t } = useI18n();
 const scada = useScadaEditor();
@@ -96,9 +96,6 @@ const activeTab = ref(0);
 const panels = ref<Project[]>([]);
 const isInitializing = ref(true);
 
-/** 面板缓存：panelId → Project（含 data 字段），进入页面时一次 list 全部存入，离开时随组件回收 */
-const panelCache = new Map<string, Project>();
-
 /** 预览适配容器：按面板适配模式计算容器、布局框、缩放层样式 */
 const adaptContainerRef = ref<HTMLElement | null>(null);
 const {
@@ -116,13 +113,21 @@ const tabs = computed(() =>
 
 const currentPanel = computed(() => panels.value[activeTab.value] ?? null);
 
-/** 已渲染（挂载）的面板 ID：切换时先卸载旧面板内容，下一帧再挂载新面板 */
+/** 已渲染的面板 ID：切换时保持旧 DOM 存在，新数据就绪后再一次性替换 */
 const renderedPanelId = ref<string | null>(null);
 
-/** 面板内容渲染条件：目标面板已加载完成才挂载，切换期间保持卸载态 */
-const isPanelRendered = computed(
-  () => currentPanel.value !== null && currentPanel.value.id === renderedPanelId.value,
+/** 已渲染面板的完整 Project 对象：模板用这个而非 currentPanel，
+ *  避免 activeTab 变化时 currentPanel 立即更新导致旧页 DOM 提前卸载
+ *  （currentPanel 跟着 activeTab 走 = 目标面板，renderedPanelId 跟着数据加载走 = 实际已就绪面板）
+ */
+const renderedPanel = computed(
+  () => panels.value.find((p) => p.id === renderedPanelId.value) ?? null,
 );
+
+/** 面板内容渲染条件：只要有已就绪的面板就显示，保持旧 DOM 持续存在，
+ *  直到新面板数据完全加载好（scada.loadPanelFromProject 执行后）再切换
+ */
+const isPanelRendered = computed(() => renderedPanelId.value !== null);
 
 /** 等待下一帧：把"卸载旧面板"与"挂载新面板"拆到不同帧，避免单帧长任务造成滑动卡顿 */
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -132,12 +137,6 @@ const fetchPanels = async () => {
     const res = await projectApi.list();
     const sorted = (res.items ?? []).sort((a, b) => a.createdAt - b.createdAt);
     panels.value = sorted;
-
-    // 把 list 返回的所有项目存入缓存，后续 loadCurrentPanel 直接从缓存取
-    panelCache.clear();
-    for (const p of sorted) {
-      panelCache.set(p.id, p);
-    }
   } catch {
     ElMessage.error(t('vant.loadPanelsFailed'));
   }
@@ -165,16 +164,18 @@ const loadCurrentPanel = async () => {
       const id = pendingPanelId;
       pendingPanelId = null;
       if (renderedPanelId.value !== id) {
-        // 第一帧：卸载旧面板内容（快）
-        renderedPanelId.value = null;
+        // 不再提前清空 renderedPanelId —— 旧 DOM 保持存在，避免切换期间黑屏
+        // 直接从 IndexedDB 读取新数据，加载完成后再一次性更新 renderedPanelId
         await nextFrame();
         // 卸载竞态防护：滑动后立即退出页面时，中止后续挂载与 store 写入
         if (isUnmounted) break;
-        const cached = panelCache.get(id);
-        // 缓存未命中（面板被并发删除）：跳过本次加载，避免空引用崩溃白屏
-        if (!cached) continue;
+
+        // 直接从内存 panels 数组取（fetchPanels 已加载全部完整数据）
+        const project: Project | null = panels.value.find(p => p.id === id) ?? null;
+        if (!project) continue;
+
         // 下一帧：list 接口保证返回完整 data，直接从缓存加载，零网络延迟
-        scada.loadPanelFromProject(cached);
+        scada.loadPanelFromProject(project);
         renderedPanelId.value = id;
         // 等待 Vue 完成 DOM 更新，确保面板完全挂载后再恢复轮询
         await nextTick();
@@ -193,7 +194,9 @@ const switchTab = (dir: -1 | 1) => {
   }
 };
 
-const exit = () => router.push({ name: "ScadaList" });
+const exit = () => {
+  router.push({ name: "ScadaList" });
+};
 
 // ============== 滑动手势检测 ==============
 const { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel } = useSwipe(
@@ -261,7 +264,6 @@ onUnmounted(() => {
 
   stopPolling();
   pointReader.clearDevices(); // 离开 vant 页面时清空读值中枢全部缓存（实时值/历史/骨架/去重表）
-  panelCache.clear(); // 离开 vant 页面时清空面板缓存，释放内存
 });
 
 watch(activeTab, async () => {

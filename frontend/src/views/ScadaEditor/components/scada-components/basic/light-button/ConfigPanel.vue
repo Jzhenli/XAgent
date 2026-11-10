@@ -185,6 +185,19 @@
           "
         />
       </div>
+      <div class="form-group">
+        <label>{{ t("componentConfig.opacity") }}</label>
+        <input
+          type="number"
+          min="0"
+          max="1"
+          step="0.05"
+          :value="config.opacity"
+          @change="
+            updateConfig('opacity', +($event.target as HTMLInputElement).value)
+          "
+        />
+      </div>
     </div>
   </div>
 </template>

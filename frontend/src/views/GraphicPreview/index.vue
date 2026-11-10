@@ -1,9 +1,14 @@
 <template>
   <div class="preview-page">
-    <div v-if="loading" class="loading-state" v-loading="true" :element-loading-text="$t('common.loading')" :element-loading-spinner-size="48">
+    <!-- 画布常驻区：只在 currentPanel 存在时渲染，不随 loading 遮罩互斥销毁 -->
+    <div v-if="currentPanel" class="preview-content">
+      <div class="canvas-wrapper">
+        <GraphicSingle ref="graphicSingle" :project="currentPanel" />
+      </div>
     </div>
 
-    <div v-else-if="error" class="error-state">
+    <!-- 错误态 -->
+    <div v-else-if="error && !loading" class="error-state">
       <el-empty :description="error">
         <el-button type="primary" @click="loadPanelData">{{
           $t("common.retry")
@@ -11,18 +16,21 @@
       </el-empty>
     </div>
 
-    <div v-else-if="currentPanel" class="preview-content">
-      <div class="canvas-wrapper">
-        <GraphicSingle ref="graphicSingle" :project="currentPanel" />
-      </div>
-    </div>
-
-    <div v-else class="empty-state">
+    <!-- 空状态 -->
+    <div v-else-if="!loading" class="empty-state">
       <el-empty :description="$t('scada.projectNotExist')">
         <el-button type="primary" @click="handleGoBack">
           {{ $t("scada.backToProjectList") }}
         </el-button>
       </el-empty>
+    </div>
+
+    <!-- 加载遮罩：覆盖层 z-index 在 canvas 之上，不销毁 canvas DOM -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-content">
+        <el-icon class="loading-spinner" :size="36"><Loading /></el-icon>
+        <span class="loading-text">{{ $t("common.loading") }}</span>
+      </div>
     </div>
 
     <div v-if="currentPanel" class="floating-tools">
@@ -34,18 +42,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, provide } from "vue";
+import { ref, nextTick, onMounted, onUnmounted, provide, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import { projectApi } from "@/api/projects";
-import { ArrowLeft } from "@element-plus/icons-vue";
+import { ArrowLeft, Loading } from "@element-plus/icons-vue";
 import GraphicSingle from "@/views/GraphicPreview/GraphicSingle.vue";
 import type { Project } from "@/types/project";
 import { useScadaEditor } from "@/views/ScadaEditor/hooks/useScadaEditor";
 import { useScadaPolling } from "@/views/ScadaEditor/hooks/useScadaBinding";
 import { useScadaPointReader, ScadaPointReaderKey } from "@/utils/scadaPointReader";
 import { useSystemStore } from "@/stores/system";
+import { panelStore } from "@/utils/panelStore";
 
 const route = useRoute();
 const router = useRouter();
@@ -70,7 +79,10 @@ const currentPanel = ref<Project | null>(null);
 onMounted(async () => {
   // isEditing 默认 true 会短路 refreshBoundDevices，预览态需显式关闭
   scada.isEditing.value = false;
-  await loadPanelData();
+  await loadPanelData(true);  // 首次进入预览：强制从后端拿最新数据
+
+  // 🆕 首屏加载完后，后台预加载所有项目进 IndexedDB（不阻塞遮罩）
+  panelStore.preloadAll();
 });
 
 onUnmounted(() => {
@@ -79,8 +91,8 @@ onUnmounted(() => {
   pointReader.clearDevices();
 });
 
-/** 加载路由参数指定 id 的 Graphic 面板数据（仅面板结构，点位值由轮询链路负责） */
-const loadPanelData = async () => {
+/** 加载路由参数指定 id 的 Graphic 面板数据 —— 默认 IndexedDB 优先，miss 走网络 + 回填 */
+const loadPanelData = async (forceNetwork = false) => {
   const panelId = route.params.id as string;
   if (!panelId) {
     error.value = t("scada.invalidPanelId");
@@ -91,7 +103,21 @@ const loadPanelData = async () => {
   error.value = "";
 
   try {
-    const project = await projectApi.get(panelId);
+    let project: Project | null = null;
+
+    // 1️⃣ forceNetwork=true 时跳过缓存直接走网络；否则优先从 IndexedDB 读
+    if (!forceNetwork) {
+      project = await panelStore.get(panelId);
+    }
+
+    // 2️⃣ 未命中 → 走网络，成功后回填 IndexedDB
+    if (!project) {
+      project = await projectApi.get(panelId);
+      if (project) {
+        await panelStore.set(project);
+      }
+    }
+
     if (!project || !project.data) {
       error.value = t("scada.loadPanelFailed");
       ElMessage.error(t("scada.loadPanelFailed"));
@@ -103,11 +129,22 @@ const loadPanelData = async () => {
     console.error("Failed to load panel:", err);
     ElMessage.error(t("common.error"));
   } finally {
-    loading.value = false;
+    // 🆕 等 Vue 完成 DOM 更新（GraphicSingle 响应式拿到新 project 后渲染完）再移除遮罩
+    await nextTick()
+    loading.value = false
   }
 };
 
+/** 监听路由参数变化（nav-button 跳转同路由不同面板时手动重载） */
+watch(() => route.params.id, async (newId) => {
+  if (newId) {
+    await loadPanelData(false);  // 预览内跳转：用 IndexedDB 缓存
+  }
+});
+
 const handleGoBack = () => {
+  pointReader.clearAll();   // 用户主动退出预览态 → 彻底清空所有数据缓存
+  panelStore.clear();       // 🆕 清空 IndexedDB（退出预览会话）
   router.push({ name: "ScadaList" });
 };
 </script>
@@ -121,7 +158,39 @@ const handleGoBack = () => {
   background: #1a1a2e;
 }
 
-.loading-state,
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #1a1a2e;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+}
+
+.loading-spinner {
+  animation: graphic-preview-spin 1s linear infinite;
+}
+
+@keyframes graphic-preview-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 14px;
+  opacity: 0.7;
+  letter-spacing: 1px;
+}
+
 .error-state {
   flex: 1;
   display: flex;
