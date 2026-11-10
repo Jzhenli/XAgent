@@ -666,14 +666,11 @@ const handleWriteFan = async (f: FanItem) => {
   opacity: 0.75;
 }
 
-/* 遮罩层：position:fixed 由内联 style 动态设置（覆盖画布容器） */
+/* 弹框容器：无遮罩，仅作为弹框定位容器 */
 .ac3-overlay {
-  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(2px);
-  /* 确保不被画布滚动条裁掉 */
   overflow: auto;
 }
 
