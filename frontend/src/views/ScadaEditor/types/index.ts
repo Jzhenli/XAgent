@@ -891,6 +891,98 @@ export interface AcController2ComponentConfig extends BaseComponentConfig {
   currentValuePosition: ZonePosition
 }
 
+/** 空调面板3组件配置（按钮触发弹框版） */
+export interface AcController3ComponentConfig extends BaseComponentConfig {
+  // ── 点位绑定（复用 AcControllerBindings）──
+  bindings: AcControllerBindings
+
+  // ── 行为控制 ──
+  /** 编辑模式下点击按钮是否打开弹框预览（默认 false） */
+  editModeOpenDialog: boolean
+
+  // ── 画布卡片外观 ──
+  cardTitle: string
+  cardTitleFontSize: number
+  cardBackgroundColor: string
+  cardTitleColor: string
+  activeAccentColor: string
+  cardBorderRadius: number
+
+  // ── 卡片数值区 ──
+  cardValueFontSize: number
+  cardUnitFontSize: number
+  cardValueDecimalPlaces: number
+
+  // ── 弹框外观 ──
+  dialogTitle: string
+  dialogSubtitle: string
+  dialogWidth: number
+  dialogBackgroundColor: string
+  dialogBorderRadius: number
+
+  // ── 主区域（蓝色渐变区）──
+  mainAreaGradient: [string, string]
+  mainAreaGradientAngle: number
+  mainAreaFontSize: number
+  mainAreaTextColor: string
+  currentValueLabel: string
+  gaugeUnit: string
+
+  // ── 温度调节 ──
+  gaugeMin: number
+  gaugeMax: number
+  gaugeStep: number
+
+  // ── 电源按钮 ──
+  powerButtonSize: number
+  powerButtonOnColor: string
+  powerButtonOffColor: string
+
+  // ── 模式配置 ──
+  modeSectionTitle: string
+  modeBackgroundColor: string
+  modeActiveBackgroundColor: string
+  modeIconColor: string
+  modeActiveIconColor: string
+  modeFontColor: string
+  modeActiveFontColor: string
+  modeAutoVisible: boolean
+  modeAutoLabel: string
+  modeAutoValue: number | string
+  modeCoolVisible: boolean
+  modeCoolLabel: string
+  modeCoolValue: number | string
+  modeHeatVisible: boolean
+  modeHeatLabel: string
+  modeHeatValue: number | string
+  modeFanVisible: boolean
+  modeFanLabel: string
+  modeFanValue: number | string
+
+  // ── 风速配置 ──
+  fanSectionTitle: string
+  fanBackgroundColor: string
+  fanActiveBackgroundColor: string
+  fanIconColor: string
+  fanActiveIconColor: string
+  fanFontColor: string
+  fanActiveFontColor: string
+  fanAutoVisible: boolean
+  fanAutoLabel: string
+  fanAutoValue: number | string
+  fanLowVisible: boolean
+  fanLowLabel: string
+  fanLowValue: number | string
+  fanMediumVisible: boolean
+  fanMediumLabel: string
+  fanMediumValue: number | string
+  fanHighVisible: boolean
+  fanHighLabel: string
+  fanHighValue: number | string
+
+  // [ac3-type-refresh] ensure IDE picks up latest fields
+}
+
 import type { ComponentType } from '../registry'
 
 /** 组件类型到统一配置的映射 */
@@ -925,6 +1017,7 @@ export interface ComponentConfigMap {
   popup: PopupComponentConfig
   'ac-controller': AcControllerComponentConfig
   'ac-controller-2': AcController2ComponentConfig
+  'ac-controller-3': AcController3ComponentConfig
   'info-card': InfoCardComponentConfig
   'value-progress-card': ValueProgressCardComponentConfig
   'chart-sankey': SankeyChartComponentConfig
