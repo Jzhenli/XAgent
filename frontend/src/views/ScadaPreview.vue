@@ -79,11 +79,11 @@ const currentPanel = computed(() => scada.currentPanel)
 const loading = ref(true)
 
 /** 统一的面板加载入口：显示遮罩 → 清理旧状态 → 加载面板 → 等 canvas 渲染完 → 移除遮罩 */
-async function initPanel(panelId: string) {
+async function initPanel(panelId: string, forceNetwork = false) {
   loading.value = true
   try {
     pointReader.clearDevices()   // 轻量重置：abort 在途请求 + 清运行时状态，保留 devices/skeletonCache
-    const panel = await scada.loadPanel(panelId)  // IndexedDB 优先 (~10ms)，miss 走网络
+    const panel = await scada.loadPanel(panelId, forceNetwork)  // forceNetwork=true 跳过缓存，默认 IndexedDB 优先
     if (!panel) {
       scada.currentPanelId.value = null  // 加载失败让 currentPanel computed 返回 null
     }
@@ -105,7 +105,7 @@ onMounted(async () => {
     scada.isEditing.value = false
     // 预览模式重置编辑器 zoom，由 useScadaAdapt 负责适配缩放
     scada.zoom.value = 1
-    await initPanel(panelId)
+    await initPanel(panelId, true)  // 首次进入预览：强制从后端拿最新数据
 
     // 🆕 首屏加载完后，后台预加载所有项目进 IndexedDB（不阻塞遮罩，让用户先看到画面）
     // 后续 nav-button 面板间跳转直接命中 IndexedDB，遮罩可见从 ~1.3s 降到 ~310ms
@@ -118,7 +118,7 @@ onMounted(async () => {
 /** 监听路由参数变化（导航按钮跳转到同路由不同面板时，组件不会重新挂载，需手动重载） */
 watch(() => route.params.id, async (newId) => {
   if (newId && newId !== scada.currentPanelId.value) {
-    await initPanel(newId as string)
+    await initPanel(newId as string, false)  // 预览内跳转：用 IndexedDB 缓存
     // loadPanel 后 boundAssets 变化 → boundAssets watch 自动触发 refreshBoundDevices
   }
 })

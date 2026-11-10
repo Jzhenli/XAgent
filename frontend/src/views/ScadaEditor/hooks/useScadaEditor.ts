@@ -222,12 +222,14 @@ export function useScadaEditor() {
     return panel
   }
 
-  /** 加载指定项目对应的面板数据 —— IndexedDB 优先，miss 走网络 + 回填 */
-  async function loadPanel(projectId: string): Promise<ScadaPanel | null> {
+  /** 加载指定项目对应的面板数据 —— 默认 IndexedDB 优先，miss 走网络 + 回填 */
+  async function loadPanel(projectId: string, skipCache = false): Promise<ScadaPanel | null> {
     let project: Project | null = null
 
-    // 1️⃣ 优先从 IndexedDB 读 —— 绕开 base64 图片导致的 ~1s 网络+JSON 序列化瓶颈
-    project = await panelStore.get(projectId)
+    // 1️⃣ skipCache=true 时跳过缓存直接走网络；否则优先从 IndexedDB 读
+    if (!skipCache) {
+      project = await panelStore.get(projectId)
+    }
 
     // 2️⃣ 未命中 → 走网络，成功后回填 IndexedDB（供后续面板切换复用）
     if (!project) {

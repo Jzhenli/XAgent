@@ -79,7 +79,7 @@ const currentPanel = ref<Project | null>(null);
 onMounted(async () => {
   // isEditing 默认 true 会短路 refreshBoundDevices，预览态需显式关闭
   scada.isEditing.value = false;
-  await loadPanelData();
+  await loadPanelData(true);  // 首次进入预览：强制从后端拿最新数据
 
   // 🆕 首屏加载完后，后台预加载所有项目进 IndexedDB（不阻塞遮罩）
   panelStore.preloadAll();
@@ -91,8 +91,8 @@ onUnmounted(() => {
   pointReader.clearDevices();
 });
 
-/** 加载路由参数指定 id 的 Graphic 面板数据 —— IndexedDB 优先，miss 走网络 + 回填 */
-const loadPanelData = async () => {
+/** 加载路由参数指定 id 的 Graphic 面板数据 —— 默认 IndexedDB 优先，miss 走网络 + 回填 */
+const loadPanelData = async (forceNetwork = false) => {
   const panelId = route.params.id as string;
   if (!panelId) {
     error.value = t("scada.invalidPanelId");
@@ -105,8 +105,10 @@ const loadPanelData = async () => {
   try {
     let project: Project | null = null;
 
-    // 1️⃣ 优先从 IndexedDB 读 —— 绕开 base64 图片导致的 ~1s 网络+JSON 序列化瓶颈
-    project = await panelStore.get(panelId);
+    // 1️⃣ forceNetwork=true 时跳过缓存直接走网络；否则优先从 IndexedDB 读
+    if (!forceNetwork) {
+      project = await panelStore.get(panelId);
+    }
 
     // 2️⃣ 未命中 → 走网络，成功后回填 IndexedDB
     if (!project) {
@@ -136,7 +138,7 @@ const loadPanelData = async () => {
 /** 监听路由参数变化（nav-button 跳转同路由不同面板时手动重载） */
 watch(() => route.params.id, async (newId) => {
   if (newId) {
-    await loadPanelData();
+    await loadPanelData(false);  // 预览内跳转：用 IndexedDB 缓存
   }
 });
 
