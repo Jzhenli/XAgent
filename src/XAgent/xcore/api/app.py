@@ -45,6 +45,7 @@ from .routers import (
     users_router,
     north_channels_router,
     panels_router,
+    settings_router,
     logs_router
 )
 
@@ -251,6 +252,7 @@ app.include_router(devices_router)
 app.include_router(users_router)
 app.include_router(north_channels_router)
 app.include_router(panels_router)
+app.include_router(settings_router)
 app.include_router(logs_router)
 
 # 注册生命周期端点（/api/health、/api/shutdown、/api/restart）。

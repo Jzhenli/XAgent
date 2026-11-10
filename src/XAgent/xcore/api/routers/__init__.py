@@ -12,6 +12,7 @@ from .devices import router as devices_router
 from .users import router as users_router
 from .north_channels import router as north_channels_router
 from .panels import router as panels_router
+from .settings import router as settings_router
 from .logs import router as logs_router
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "users_router",
     "north_channels_router",
     "panels_router",
+    "settings_router",
     "logs_router",
 ]

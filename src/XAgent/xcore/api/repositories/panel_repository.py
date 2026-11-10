@@ -269,22 +269,57 @@ class PanelRepository:
 
         return row[0] if row else None
 
-    async def set_setting(self, key: str, value: str) -> None:
+    async def get_setting_with_meta(self, key: str) -> Optional[Tuple[str, float]]:
+        """读取全局设置及更新时间
+
+        Args:
+            key: 设置键
+
+        Returns:
+            (设置值, 更新时间戳)，不存在返回None
+        """
+        async with self._db.execute(
+            "SELECT value, updated_at FROM app_settings WHERE key = ?",
+            [key]
+        ) as cursor:
+            row = await cursor.fetchone()
+
+        return (row[0], row[1]) if row else None
+
+    async def list_settings(self) -> List[Tuple[str, str, float]]:
+        """列出全部全局设置
+
+        Returns:
+            (key, value, updated_at) 元组列表，按 key 排序
+        """
+        async with self._db.execute(
+            "SELECT key, value, updated_at FROM app_settings ORDER BY key"
+        ) as cursor:
+            rows = await cursor.fetchall()
+
+        return [(row[0], row[1], row[2]) for row in rows]
+
+    async def set_setting(self, key: str, value: str) -> float:
         """写入全局设置（upsert）
 
         Args:
             key: 设置键
             value: 设置值
+
+        Returns:
+            写入的 updated_at 时间戳（供响应复用，保证与 GET 读回一致）
         """
+        updated_at = time.time()
         await self._db.execute(
             """
             INSERT INTO app_settings (key, value, updated_at)
             VALUES (?, ?, ?)
             ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
             """,
-            [key, value, time.time()]
+            [key, value, updated_at]
         )
         await self._db.commit()
+        return updated_at
 
     async def delete_setting(self, key: str) -> None:
         """删除全局设置（不存在时静默）
