@@ -49,6 +49,13 @@
             {{ $t("settings.visualization.auto_jump_preview_hint") }}
           </span>
         </el-form-item>
+        <el-form-item :label="$t('settings.visualization.last_preview_url')">
+          <el-input
+            v-model="systemStore.visualizationConfig.lastPreviewUrl"
+            placeholder="/scada/vant"
+            class="plain-input"
+          />
+        </el-form-item>
       </el-form>
     </div>
   </div>
@@ -172,6 +179,21 @@ onMounted(() => {
 :deep(.el-input-number.plain-input-number .el-input-number__increase:active) {
   outline: none;
   box-shadow: none;
+}
+
+:deep(.el-input.plain-input) {
+  max-width: 320px;
+}
+
+:deep(.el-input.plain-input .el-input__wrapper) {
+  box-shadow: none !important;
+  border: 1px solid var(--border-base, #dcdfe6) !important;
+  border-radius: 4px !important;
+  background: var(--bg-card, #fff) !important;
+}
+
+:deep(.el-input.plain-input .el-input__wrapper.is-focus) {
+  border-color: var(--color-primary, #409eff) !important;
 }
 
 @media (min-width: 1025px) and (max-width: 1366px) {

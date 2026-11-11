@@ -6,6 +6,7 @@ import { settingsApi } from '@/api/settings'
 
 const SETTINGS_KEY = 'visualization.polling_interval'
 const AUTO_JUMP_PREVIEW_KEY = 'visualization.auto_jump_preview'
+const LAST_PREVIEW_URL_KEY = 'visualization.last_preview_url'
 const DEFAULT_POLLING_INTERVAL = 3000
 
 export function useVisualizationConfig() {
@@ -29,10 +30,14 @@ export function useVisualizationConfig() {
       } else {
         systemStore.visualizationConfig.autoJumpPreview = false
       }
+
+      const savedUrl = await settingsApi.get<string>(LAST_PREVIEW_URL_KEY)
+      systemStore.visualizationConfig.lastPreviewUrl = savedUrl ?? ''
     } catch (err) {
       console.warn('Failed to load visualization config from backend:', err)
       systemStore.visualizationConfig.pollingInterval = DEFAULT_POLLING_INTERVAL
       systemStore.visualizationConfig.autoJumpPreview = false
+      systemStore.visualizationConfig.lastPreviewUrl = ''
     }
   }
 
@@ -43,6 +48,7 @@ export function useVisualizationConfig() {
       await Promise.all([
         settingsApi.set(SETTINGS_KEY, systemStore.visualizationConfig.pollingInterval),
         settingsApi.set(AUTO_JUMP_PREVIEW_KEY, systemStore.visualizationConfig.autoJumpPreview),
+        settingsApi.set(LAST_PREVIEW_URL_KEY, systemStore.visualizationConfig.lastPreviewUrl),
       ])
       ElMessage.success(t('settings.config_saved'))
     } catch (err) {

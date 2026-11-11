@@ -913,7 +913,8 @@
       "milliseconds": "ms",
       "config_hint": "Visualization config takes effect immediately",
       "auto_jump_preview": "Auto Jump to Preview on Startup",
-      "auto_jump_preview_hint": "After restarting the device and opening the app, go directly to the preview page"
+      "auto_jump_preview_hint": "After restarting the device and opening the app, go directly to the preview page",
+      "last_preview_url": "Last Preview URL"
     },
     "config_saved": "Config Saved",
     "config_load_failed": "Config Load Failed",

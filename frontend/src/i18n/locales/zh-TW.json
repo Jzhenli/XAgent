@@ -913,7 +913,8 @@
       "milliseconds": "ms",
       "config_hint": "視覺化設定立即生效",
       "auto_jump_preview": "啟動自動跳轉預覽",
-      "auto_jump_preview_hint": "重啟設備後打開軟體，直接進入預覽頁面"
+      "auto_jump_preview_hint": "重啟設備後打開軟體，直接進入預覽頁面",
+      "last_preview_url": "上次預覽地址"
     },
     "config_saved": "設定已儲存",
     "config_load_failed": "設定載入失敗",

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/users'
+import { settingsApi } from '@/api/settings'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
@@ -42,6 +43,22 @@ function matchRoute(path: string): string | null {
   }
   return null
 }
+
+/** 预览路由 pattern：vant 全屏轮播、scada 预览、graphic 预览 */
+const PREVIEW_ROUTE_PATTERNS: (string | RegExp)[] = [
+  '/scada/vant',
+  /^\/scada\/[^/]+\/preview$/,
+  /^\/graphic\/[^/]+\/preview$/,
+]
+
+function isPreviewRoute(path: string): boolean {
+  return PREVIEW_ROUTE_PATTERNS.some(p =>
+    typeof p === 'string' ? path === p : p.test(path)
+  )
+}
+
+/** 启动自动跳转预览逻辑仅执行一次的标志位（模块级） */
+let startupAutoJumpDone = false
 
 const routes: RouteRecordRaw[] = [
   {
@@ -157,6 +174,44 @@ router.beforeEach(async (to, _from, next) => {
   NProgress.start()
   document.title = 'XPlay'
 
+  // ========== 启动自动跳转预览逻辑（仅首次进入时执行） ==========
+  if (!startupAutoJumpDone) {
+    startupAutoJumpDone = true
+    try {
+      // 一次请求批量读取所有 settings
+      const allSettings = await settingsApi.list()
+      const settings = allSettings.settings
+      const autoJump = settings['visualization.auto_jump_preview']
+      const lastUrl = typeof settings['visualization.last_preview_url'] === 'string'
+        ? settings['visualization.last_preview_url']
+        : null
+
+      if (autoJump === true && lastUrl && isPreviewRoute(lastUrl)) {
+        // 自动登录（若未登录）
+        const userStore = useUserStore()
+        if (!userStore.isLoggedIn) {
+          userStore.restoreSession()
+        }
+        if (!userStore.isLoggedIn) {
+          const result = await userStore.login('admin', '123456')
+          if (result.success) {
+            next(lastUrl)
+            return
+          }
+          // 自动登录失败，放弃自动跳转，继续走后面的正常守卫流程
+          console.warn('Auto login failed, falling back to normal flow')
+        } else {
+          next(lastUrl)
+          return
+        }
+      }
+      // autoJump !== true，或 lastUrl 不存在，或 lastUrl 非法 → 正常继续走原有守卫流程
+    } catch (err) {
+      console.warn('Startup auto-jump check failed:', err)
+      // 出错时静默降级，走正常流程
+    }
+  }
+
   if (to.meta.public) {
     next()
     return
@@ -198,8 +253,13 @@ router.beforeEach(async (to, _from, next) => {
   next()
 })
 
-router.afterEach(() => {
+router.afterEach((to) => {
   NProgress.done()
+
+  // 进入预览页时，异步保存当前 URL 供下次启动恢复
+  if (isPreviewRoute(to.fullPath)) {
+    settingsApi.set('visualization.last_preview_url', to.fullPath).catch(() => {})
+  }
 })
 
 router.onError(() => {
