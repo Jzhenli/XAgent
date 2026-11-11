@@ -39,6 +39,16 @@
             {{ $t("settings.visualization.milliseconds") }}
           </span>
         </el-form-item>
+        <el-form-item :label="$t('settings.visualization.auto_jump_preview')">
+          <el-switch
+            v-model="systemStore.visualizationConfig.autoJumpPreview"
+            active-text=""
+            inactive-text=""
+          />
+          <span class="config-unit">
+            {{ $t("settings.visualization.auto_jump_preview_hint") }}
+          </span>
+        </el-form-item>
       </el-form>
     </div>
   </div>

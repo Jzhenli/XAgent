@@ -5,6 +5,7 @@ import { useSystemStore } from '@/stores/system'
 import { settingsApi } from '@/api/settings'
 
 const SETTINGS_KEY = 'visualization.polling_interval'
+const AUTO_JUMP_PREVIEW_KEY = 'visualization.auto_jump_preview'
 const DEFAULT_POLLING_INTERVAL = 3000
 
 export function useVisualizationConfig() {
@@ -21,9 +22,17 @@ export function useVisualizationConfig() {
       } else {
         systemStore.visualizationConfig.pollingInterval = DEFAULT_POLLING_INTERVAL
       }
+
+      const autoJumpValue = await settingsApi.get<boolean>(AUTO_JUMP_PREVIEW_KEY)
+      if (autoJumpValue !== null && typeof autoJumpValue === 'boolean') {
+        systemStore.visualizationConfig.autoJumpPreview = autoJumpValue
+      } else {
+        systemStore.visualizationConfig.autoJumpPreview = false
+      }
     } catch (err) {
       console.warn('Failed to load visualization config from backend:', err)
       systemStore.visualizationConfig.pollingInterval = DEFAULT_POLLING_INTERVAL
+      systemStore.visualizationConfig.autoJumpPreview = false
     }
   }
 
@@ -31,10 +40,10 @@ export function useVisualizationConfig() {
   async function handleSaveVisualization() {
     configLoading.value = true
     try {
-      await settingsApi.set(
-        SETTINGS_KEY,
-        systemStore.visualizationConfig.pollingInterval
-      )
+      await Promise.all([
+        settingsApi.set(SETTINGS_KEY, systemStore.visualizationConfig.pollingInterval),
+        settingsApi.set(AUTO_JUMP_PREVIEW_KEY, systemStore.visualizationConfig.autoJumpPreview),
+      ])
       ElMessage.success(t('settings.config_saved'))
     } catch (err) {
       ElMessage.error(t('settings.config_save_failed'))

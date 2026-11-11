@@ -25,6 +25,7 @@ export interface DataQualityStats {
 
 export interface VisualizationConfig {
   pollingInterval: number
+  autoJumpPreview: boolean
 }
 
 export const useSystemStore = defineStore('system', () => {
@@ -49,7 +50,8 @@ export const useSystemStore = defineStore('system', () => {
   })
 
   const visualizationConfig = ref<VisualizationConfig>({
-    pollingInterval: 3000
+    pollingInterval: 3000,
+    autoJumpPreview: false
   })
 
   const loading = ref(false)

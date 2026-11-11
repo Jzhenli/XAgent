@@ -911,7 +911,9 @@
     "visualization": {
       "polling_interval": "读值周期",
       "milliseconds": "毫秒",
-      "config_hint": "可视化配置将立即生效"
+      "config_hint": "可视化配置将立即生效",
+      "auto_jump_preview": "启动自动跳转预览",
+      "auto_jump_preview_hint": "重启设备后打开软件，直接进入预览页面"
     },
     "config_saved": "配置已保存",
     "config_load_failed": "配置加载失败",
