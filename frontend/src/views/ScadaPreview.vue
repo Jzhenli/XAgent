@@ -237,7 +237,6 @@ const handleGoBack = () => {
   backdrop-filter: blur(8px);
   color: #fff;
   cursor: pointer;
-  transition: background 0.2s ease;
 }
 
 .floating-back:hover {

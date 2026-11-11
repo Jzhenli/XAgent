@@ -57,7 +57,6 @@ const isOnState = computed(() => !!currentValue.value)
 
 /**
  * 静态样式：只放稳定的布局属性 + CSS 变量注入
- * 不包含 transition 目标属性（background-color, color, border-color, opacity）
  * 这些由 CSS class (.on) 切换驱动 transition
  */
 const staticStyle = computed(() => {
@@ -138,8 +137,6 @@ const handleToggle = async () => {
   cursor: pointer;
   user-select: none;
   box-sizing: border-box;
-  /* transition 属性由 CSS class 切换触发，与 inline style 完全分离 */
-  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, opacity 0.15s ease;
 
   /* 默认态（off）：状态色由 CSS 变量控制 */
   background-color: var(--bg-off);
@@ -148,7 +145,6 @@ const handleToggle = async () => {
   opacity: var(--opacity, 1);
 }
 
-/* 激活态：background-color / color 切换，触发 transition */
 .light-button.on {
   background-color: var(--bg-on);
   color: var(--fg-on);

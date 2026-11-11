@@ -625,7 +625,6 @@ const handleWriteFan = async (f: FanItem) => {
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   backdrop-filter: blur(4px);
-  transition: box-shadow 0.2s, transform 0.1s, background-color 0.3s;
   user-select: none;
 }
 .ac3-wrapper.ac3-card:hover { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); }
@@ -720,7 +719,6 @@ const handleWriteFan = async (f: FanItem) => {
   cursor: pointer;
   color: rgba(255, 255, 255, 0.7);
   background: rgba(255, 255, 255, 0.08);
-  transition: background 0.2s, color 0.2s;
 }
 
 .ac3-dialog-close:hover {
@@ -753,7 +751,6 @@ const handleWriteFan = async (f: FanItem) => {
   cursor: pointer;
   color: #ffffff;
   z-index: 2;
-  transition: background 0.2s;
 }
 
 .ac3-power-btn .el-icon {
@@ -830,7 +827,6 @@ const handleWriteFan = async (f: FanItem) => {
   color: #ffffff;
   cursor: pointer;
   user-select: none;
-  transition: background 0.2s, transform 0.1s;
 }
 
 .ac3-adj-btn.left {
@@ -878,7 +874,6 @@ const handleWriteFan = async (f: FanItem) => {
   border-radius: 10px;
   cursor: pointer;
   background: var(--mode-bg);
-  transition: background 0.2s;
 }
 
 .ac3-mode-item.active {
@@ -918,7 +913,6 @@ const handleWriteFan = async (f: FanItem) => {
   border-radius: 10px;
   cursor: pointer;
   background: var(--fan-bg);
-  transition: background 0.2s;
 }
 
 .ac3-fan-item.active {
@@ -941,7 +935,6 @@ const handleWriteFan = async (f: FanItem) => {
   width: 3px;
   background: var(--fan-bar-off);
   border-radius: 1px;
-  transition: background 0.2s;
 }
 
 .ac3-fan-item:nth-child(2) .ac3-fan-bars .fan-bar:nth-child(1) { height: 10px; }

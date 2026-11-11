@@ -757,7 +757,6 @@ const fanZoneStyle = computed(() => ({
   justify-content: center;
   border-radius: 50%;
   border: 1px solid;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
   margin-bottom: 4px;
   /* 默认态 border-color / background-color 由 CSS 变量控制 */
   border-color: var(--mode-border-off);
@@ -795,7 +794,6 @@ const fanZoneStyle = computed(() => ({
   flex: 1;
   padding: 4px 0;
   cursor: pointer;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
   /* 默认态 background-color 由 CSS 变量控制 */
   background-color: var(--fan-bg-off);
 }
