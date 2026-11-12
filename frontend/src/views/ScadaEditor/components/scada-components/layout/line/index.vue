@@ -9,7 +9,7 @@
       <marker
         v-if="showArrowEnd"
         id="arrow-end"
-        :refX="arrowSize"
+        refX="0"
         :refY="arrowSize / 2"
         markerUnits="userSpaceOnUse"
         :markerWidth="arrowSize"
@@ -24,7 +24,7 @@
       <marker
         v-if="showArrowStart"
         id="arrow-start"
-        :refX="arrowSize"
+        refX="0"
         :refY="arrowSize / 2"
         markerUnits="userSpaceOnUse"
         :markerWidth="arrowSize"
@@ -38,15 +38,16 @@
       </marker>
     </defs>
     <line
-      x1="0"
+      :x1="lineX1"
       :y1="lineCenterY"
-      :x2="config.width"
+      :x2="lineX2"
       :y2="lineCenterY"
       :stroke="config.strokeColor"
       :stroke-width="strokeWidth"
       stroke-linecap="round"
       :marker-start="showArrowStart ? 'url(#arrow-start)' : undefined"
       :marker-end="showArrowEnd ? 'url(#arrow-end)' : undefined"
+      :transform="lineTransform"
     />
   </svg>
 </template>
@@ -75,6 +76,24 @@ const showArrowEnd = computed(() => {
 const showArrowStart = computed(() => {
   const a = config.value.arrow
   return a === 'start' || a === 'both'
+})
+
+const angle = computed(() => {
+  const raw = config.value.angle ?? 0
+  const num = Number(raw)
+  return isNaN(num) ? 0 : num
+})
+
+const lineX1 = computed(() => (showArrowStart.value ? arrowSize.value : 0))
+const lineX2 = computed(() =>
+  showArrowEnd.value ? config.value.width - arrowSize.value : config.value.width,
+)
+
+const lineCenterX = computed(() => (lineX1.value + lineX2.value) / 2)
+
+const lineTransform = computed(() => {
+  if (!angle.value) return undefined
+  return `rotate(${angle.value} ${lineCenterX.value} ${lineCenterY.value})`
 })
 </script>
 
