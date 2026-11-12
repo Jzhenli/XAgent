@@ -127,16 +127,6 @@
         />
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>{{ t("componentConfig.backgroundColor") }}</label>
-        <el-color-picker
-          :model-value="config.backgroundColor"
-          show-alpha
-          @change="updateConfig('backgroundColor', $event)"
-        />
-      </div>
-    </div>
   </div>
 </template>
 

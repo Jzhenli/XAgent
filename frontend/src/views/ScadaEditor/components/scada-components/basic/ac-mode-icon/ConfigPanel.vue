@@ -127,7 +127,7 @@
         />
       </div>
     </div>
-    <div class="form-row">
+    <!-- <div class="form-row">
       <div class="form-group">
         <label>{{ t("componentConfig.backgroundColor") }}</label>
         <el-color-picker
@@ -136,7 +136,7 @@
           @change="updateConfig('backgroundColor', $event)"
         />
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
