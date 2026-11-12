@@ -92,10 +92,10 @@ const modeValueMap = computed<Record<AcModeKey, number | string>>(() => ({
  */
 const cycleModeList = computed<ModeItem[]>(() => {
   const configured = acConfig.value?.cycleModes;
-  const keys: AcModeKey[] =
-    configured && configured.length > 0
-      ? configured
-      : (["auto", "cool", "heat", "fan"] as AcModeKey[]);
+  // 允许空数组，空数组时 currentMode 匹配不到 → 显示 unknownCircle
+  const keys: AcModeKey[] = Array.isArray(configured)
+    ? configured
+    : (["auto", "cool", "heat", "fan"] as AcModeKey[]);
   const values = modeValueMap.value;
 
   return keys.map((key) => ({

@@ -92,10 +92,10 @@ const speedValueMap = computed<Record<AcFanSpeedKey, number | string>>(() => ({
  */
 const cycleSpeedList = computed<SpeedItem[]>(() => {
   const configured = speedConfig.value?.cycleModes;
-  const keys: AcFanSpeedKey[] =
-    configured && configured.length > 0
-      ? configured
-      : (["auto", "low", "medium", "high"] as AcFanSpeedKey[]);
+  // 允许空数组，空数组时 currentSpeed 匹配不到 → 显示 unknownCircle
+  const keys: AcFanSpeedKey[] = Array.isArray(configured)
+    ? configured
+    : (["auto", "low", "medium", "high"] as AcFanSpeedKey[]);
   const values = speedValueMap.value;
 
   return keys.map((key) => ({

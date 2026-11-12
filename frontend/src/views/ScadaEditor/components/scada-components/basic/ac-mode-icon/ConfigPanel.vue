@@ -183,9 +183,7 @@ const toggleMode = (key: AcModeKey) => {
     list.push(key);
   }
 
-  // 至少保留一个模式
-  const finalList: AcModeKey[] = list.length > 0 ? list : [key];
-  updateConfig("cycleModes", finalList);
+  updateConfig("cycleModes", list);
 };
 
 const parseValue = (value: string): number | string => {

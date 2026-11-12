@@ -173,9 +173,7 @@ const toggleSpeed = (key: AcFanSpeedKey) => {
     list.push(key);
   }
 
-  // 至少保留一个档位
-  const finalList: AcFanSpeedKey[] = list.length > 0 ? list : [key];
-  updateConfig("cycleModes", finalList);
+  updateConfig("cycleModes", list);
 };
 
 const parseValue = (value: string): number | string => {
