@@ -84,13 +84,13 @@
     <!-- 交互设置 -->
     <div class="subsection-title">{{ t('componentConfig.interactionSection') }}</div>
     <div class="form-row">
-      <div class="form-group form-group--switch">
+      <!-- <div class="form-group form-group--switch">
         <label>{{ t('componentConfig.sankeyHoverHighlight') }}</label>
         <el-switch
           :model-value="config.hoverHighlight !== false"
           @change="updateConfig('hoverHighlight', $event as boolean)"
         />
-      </div>
+      </div> -->
       <div class="form-group form-group--switch">
         <label>{{ t('componentConfig.sankeyAutoRefresh') }}</label>
         <el-switch
