@@ -1775,6 +1775,8 @@
     "yAxisLabelColor": "Y 轴标签颜色",
     "yAxisLabelFontSize": "Y 轴标签字号",
     "barColor": "柱体颜色",
+    "barStartColor": "起始颜色",
+    "barEndColor": "结束颜色",
     "barWidth": "柱体宽度",
     "barBorderRadius": "柱体圆角",
     "barCount": "柱子个数",

@@ -1775,6 +1775,8 @@
     "yAxisLabelColor": "Y-axis Label Color",
     "yAxisLabelFontSize": "Y-axis Label Font Size",
     "barColor": "Bar Color",
+    "barStartColor": "Start Color",
+    "barEndColor": "End Color",
     "barWidth": "Bar Width",
     "barBorderRadius": "Bar Corner Radius",
     "barCount": "Bar Count",

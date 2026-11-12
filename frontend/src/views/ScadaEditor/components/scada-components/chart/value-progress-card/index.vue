@@ -132,7 +132,7 @@ const trackStyle = computed(() => ({
 
 // ─── 基础填充层样式（使用 transform: scaleX 做 GPU 加速） ────
 const fillBaseStyle = computed(() => ({
-  background: config.value.barColor ?? 'linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)',
+  background: `linear-gradient(90deg, ${config.value.barStartColor ?? '#3b82f6'} 0%, ${config.value.barEndColor ?? '#6366f1'} 100%)`,
   borderRadius: `${config.value.barRadius ?? 3}px`,
 }))
 

@@ -638,8 +638,10 @@ export interface ValueProgressCardComponentConfig extends BaseComponentConfig {
   // ── 进度条区 ──
   min: number
   max: number
-  /** 进度条激活颜色（填充色） */
-  barColor: string
+  /** 进度条渐变起始色 */
+  barStartColor: string
+  /** 进度条渐变结束色 */
+  barEndColor: string
   /** 进度条轨道底色 */
   barTrackColor: string
   /** 进度条高度（px） */

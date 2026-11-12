@@ -28,7 +28,8 @@ const defaultConfig: ValueProgressCardComponentConfig = {
   // 进度条区
   min: 0,
   max: 100,
-  barColor: 'linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)',
+  barStartColor: '#3b82f6',
+  barEndColor: '#6366f1',
   barTrackColor: 'rgba(0, 0, 0, 0.08)',
   barHeight: 6,
   barRadius: 3,

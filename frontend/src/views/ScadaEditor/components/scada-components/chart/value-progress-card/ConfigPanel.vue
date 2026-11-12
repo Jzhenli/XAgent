@@ -201,12 +201,19 @@
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>{{ t('componentConfig.barColor') }}</label>
-        <input
-          type="text"
-          :value="config.barColor"
-          placeholder="#3b82f6 或 linear-gradient(90deg, #3b82f6, #6366f1)"
-          @change="updateConfig('barColor', ($event.target as HTMLInputElement).value)"
+        <label>{{ t('componentConfig.barStartColor') }}</label>
+        <el-color-picker
+          :model-value="config.barStartColor"
+          show-alpha
+          @change="updateConfig('barStartColor', $event as string)"
+        />
+      </div>
+      <div class="form-group">
+        <label>{{ t('componentConfig.barEndColor') }}</label>
+        <el-color-picker
+          :model-value="config.barEndColor"
+          show-alpha
+          @change="updateConfig('barEndColor', $event as string)"
         />
       </div>
     </div>
