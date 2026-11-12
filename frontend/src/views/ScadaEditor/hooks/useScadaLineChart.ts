@@ -443,10 +443,12 @@ export function useScadaLineChart(
     cfg: LineChartComponentConfig,
     data: string[],
   ): EChartsOption['xAxis'] => ({
-    show: cfg.showXAxis !== false,
     type: 'category',
     data,
     boundaryGap: false,
+    axisLine: {
+      show: cfg.showXAxis !== false,
+    },
     axisLabel: {
       show: cfg.showXAxisLabel !== false,
       color: cfg.xAxisLabelColor || 'var(--text-secondary)',

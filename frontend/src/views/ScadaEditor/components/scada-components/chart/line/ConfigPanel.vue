@@ -182,18 +182,17 @@
     </div>
     <div class="form-row">
       <div class="form-group form-group--switch">
-        <label>{{ t('componentConfig.showXAxis') }}</label>
-        <el-switch
-          :model-value="config.showXAxis !== false"
-          @change="updateConfig('showXAxis', $event as boolean)"
-        />
-      </div>
-      <div class="form-group form-group--switch">
         <label>{{ t('componentConfig.showXAxisLabel') }}</label>
         <el-switch
           :model-value="config.showXAxisLabel"
-          :disabled="config.showXAxis === false"
           @change="updateConfig('showXAxisLabel', $event as boolean)"
+        />
+      </div>
+      <div class="form-group form-group--switch">
+        <label>{{ t('componentConfig.showXAxisLine') }}</label>
+        <el-switch
+          :model-value="config.showXAxis !== false"
+          @change="updateConfig('showXAxis', $event as boolean)"
         />
       </div>
     </div>
