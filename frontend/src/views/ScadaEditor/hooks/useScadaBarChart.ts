@@ -530,7 +530,7 @@ export function useScadaBarChart(
   ): EChartsOption['legend'] => {
     const showLegend = !!cfg.showLegend
     return {
-      show: !!showLegend && series.length > 1,
+      show: !!showLegend,
       top: 4,
       left: 'center',
       orient: 'horizontal',
@@ -617,7 +617,7 @@ export function useScadaBarChart(
     // 首次渲染 / 配置变更：完整 option + notMerge，确保 grid/yAxis/legend 等静态配置正确；
     // 数据为空时仍渲染坐标轴与图例骨架（series 传空数据），避免进入预览页面时一片空白
     if (full || !hasInitialized) {
-      const showLegend = !!cfg.showLegend && allSeries.length > 1
+      const showLegend = !!cfg.showLegend
       const option: EChartsOption = {
         animation: false,
         grid: buildGrid(showLegend),
