@@ -51,22 +51,7 @@
         />
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>{{ t("componentConfig.blur") }}</label>
-        <input
-          type="number"
-          min="0"
-          :value="config.blur"
-          @input="
-            updateConfig(
-              'blur',
-              +($event.target as HTMLInputElement).value,
-            )
-          "
-        />
-      </div>
-    </div>
+
   </div>
 </template>
 

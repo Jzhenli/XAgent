@@ -98,16 +98,10 @@ export interface WriteValueComponentConfig extends BaseComponentConfig {
 }
 
 /** 矩形组件配置 */
-export interface RectangleComponentConfig extends BaseComponentConfig {
-  /** 背景模糊半径（px） */
-  blur?: number
-}
+export interface RectangleComponentConfig extends BaseComponentConfig {}
 
 /** 圆形组件配置 */
-export interface CircleComponentConfig extends Omit<BaseComponentConfig, 'borderRadius'> {
-  /** 背景模糊半径（px） */
-  blur?: number
-}
+export interface CircleComponentConfig extends Omit<BaseComponentConfig, 'borderRadius'> {}
 
 /** 直线组件配置 */
 export interface LineComponentConfig extends Omit<BaseComponentConfig, 'backgroundColor' | 'borderColor' | 'borderWidth' | 'borderRadius' | 'fontSize' | 'fontColor' | 'opacity'> {

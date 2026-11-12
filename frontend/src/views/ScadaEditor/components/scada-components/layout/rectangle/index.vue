@@ -21,8 +21,7 @@ const containerStyle = computed(() => ({
   borderRadius: `${rectangleConfig.value?.borderRadius ?? 0}px`,
   borderWidth: `${rectangleConfig.value?.borderWidth ?? 1}px`,
   borderColor: rectangleConfig.value?.borderColor || 'rgba(150, 150, 150, 0.5)',
-  borderStyle: 'solid',
-  backdropFilter: rectangleConfig.value?.blur ? `blur(${rectangleConfig.value.blur}px)` : undefined
+  borderStyle: 'solid'
 }))
 </script>
 

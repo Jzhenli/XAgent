@@ -21,8 +21,7 @@ const containerStyle = computed(() => ({
   borderRadius: '50%',
   borderWidth: `${circleConfig.value?.borderWidth ?? 1}px`,
   borderColor: circleConfig.value?.borderColor || 'rgba(150, 150, 150, 0.5)',
-  borderStyle: 'solid',
-  backdropFilter: circleConfig.value?.blur ? `blur(${circleConfig.value.blur}px)` : undefined
+  borderStyle: 'solid'
 }))
 </script>
 

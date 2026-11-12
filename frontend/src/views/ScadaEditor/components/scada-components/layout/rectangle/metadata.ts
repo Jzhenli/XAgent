@@ -8,8 +8,7 @@ const defaultConfig: RectangleComponentConfig = {
   backgroundColor: 'rgba(200, 200, 200, 1)',
   borderRadius: 4,
   borderWidth: 1,
-  borderColor: 'rgba(150, 150, 150, 0.5)',
-  blur: 0
+  borderColor: 'rgba(150, 150, 150, 0.5)'
 }
 
 export const rectangleMeta: ScadaComponentMeta = {
