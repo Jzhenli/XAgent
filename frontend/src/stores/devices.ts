@@ -9,7 +9,7 @@ export interface DeviceListItem {
   description?: string
   enabled: boolean
   status: DeviceStatus
-  connectionStatus: 'online' | 'offline' | 'unknown'
+  connectionStatus: 'online' | 'offline'
   pluginName: string
   pointCount: number
   connection: {
@@ -44,7 +44,7 @@ function mapDeviceToListItem(device: DeviceConfig, connectionStatusMap: Record<s
     port = (pluginConfig.port as number) || 0
   }
   
-  const connectionStatus = connectionStatusMap[device.asset] || 'unknown'
+  const connectionStatus = connectionStatusMap[device.asset] || 'offline'
   
   return {
     asset: device.asset,
@@ -52,7 +52,7 @@ function mapDeviceToListItem(device: DeviceConfig, connectionStatusMap: Record<s
     description: device.description,
     enabled: device.enabled,
     status: device.status || 'active',
-    connectionStatus: connectionStatus as 'online' | 'offline' | 'unknown',
+    connectionStatus: connectionStatus as 'online' | 'offline',
     pluginName: pluginName,
     pointCount: device.points?.length || 0,
     connection: {
