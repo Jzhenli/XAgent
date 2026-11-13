@@ -82,6 +82,8 @@ const defaultConfig: AcControllerMideaComponentConfig = {
 
   // 模式
   modeSectionTitle: 'componentConfig.mode',
+  modeIconSize: 22,
+  modeFontSize: 12,
   modeBackgroundColor: 'rgba(255, 255, 255, 0.08)',
   modeActiveBackgroundColor: '#667eea',
   modeIconColor: 'rgba(255,255,255,0.6)',
@@ -114,6 +116,8 @@ const defaultConfig: AcControllerMideaComponentConfig = {
 
   // 风速（自动 + 7 档独立 value）
   fanSectionTitle: 'componentConfig.acFanSectionTitle',
+  fanIconSize: 22,
+  fanFontSize: 12,
   fanAutoVisible: true,
   fanAutoLabel: 'componentConfig.acFanSpeedAuto',
   fanAutoValue: 0,

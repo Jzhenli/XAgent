@@ -93,7 +93,7 @@
               >
                 <Icon
                   :name="m.icon"
-                  :size="22"
+                  :size="modeIconSize"
                   type="mono-line"
                   :color="{ normal: activeModeKeys.has(m.key) ? modeActiveIconColor : modeIconColor }"
                 />
@@ -116,7 +116,7 @@
               >
                 <Icon
                   :name="'auto'"
-                  :size="22"
+                  :size="fanIconSize"
                   type="mono-line"
                   :color="{ normal: isFanAuto ? fanActiveIconColor : fanIconColor }"
                 />
@@ -369,6 +369,8 @@ const modeBackgroundColor = computed(() => config.value.modeBackgroundColor ?? '
 const modeActiveBackgroundColor = computed(() => config.value.modeActiveBackgroundColor)
 const modeFontColor = computed(() => config.value.modeFontColor)
 const modeActiveFontColor = computed(() => config.value.modeActiveFontColor)
+const modeIconSize = computed(() => config.value.modeIconSize)
+const modeFontSize = computed(() => config.value.modeFontSize)
 
 // 风速相关
 const fanIconColor = computed(() => config.value.modeIconColor)   // 复用
@@ -377,6 +379,8 @@ const fanBackgroundColor = computed(() => config.value.modeBackgroundColor)  // 
 const fanActiveBackgroundColor = computed(() => config.value.modeActiveBackgroundColor)  // 复用
 const fanFontColor = computed(() => config.value.modeFontColor)  // 复用
 const fanActiveFontColor = computed(() => config.value.modeActiveFontColor)  // 复用
+const fanIconSize = computed(() => config.value.fanIconSize)
+const fanFontSize = computed(() => config.value.fanFontSize)
 const fanLevelsTrackBackgroundColor = computed(() => config.value.fanLevelsTrackBackgroundColor)
 const fanLevelsActiveBackgroundColor = computed(() => config.value.fanLevelsActiveBackgroundColor)
 const fanLevelsTextColor = computed(() => config.value.fanLevelsTextColor)
@@ -486,6 +490,7 @@ const modeItemStyle = computed(() => ({
   '--mode-active-bg': modeActiveBackgroundColor.value,
   '--mode-active-fg': modeActiveFontColor.value,
   '--mode-fg': modeFontColor.value,
+  '--mode-fs': modeFontSize.value + 'px',
 }))
 
 const fanItemStyle = computed(() => ({
@@ -493,6 +498,7 @@ const fanItemStyle = computed(() => ({
   '--mode-active-bg': fanActiveBackgroundColor.value,
   '--mode-active-fg': fanActiveFontColor.value,
   '--mode-fg': fanFontColor.value,
+  '--fan-fs': fanFontSize.value + 'px',
 }))
 
 const sliderTrackStyle = computed(() => ({
@@ -1092,7 +1098,7 @@ const writeSetpointValue = async (target: number) => {
   pointer-events: none;
 }
 .acm-mode-item .mode-label {
-  font-size: 12px;
+  font-size: var(--mode-fs, 12px);
   color: var(--mode-fg);
   line-height: 1;
   white-space: nowrap;
@@ -1129,7 +1135,7 @@ const writeSetpointValue = async (target: number) => {
   pointer-events: none;
 }
 .acm-fan-auto-btn .fan-label {
-  font-size: 12px;
+  font-size: var(--fan-fs, 12px);
   color: var(--mode-fg);
   line-height: 1;
   white-space: nowrap;

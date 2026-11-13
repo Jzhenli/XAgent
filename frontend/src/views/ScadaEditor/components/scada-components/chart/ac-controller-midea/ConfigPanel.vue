@@ -897,9 +897,9 @@
       <!-- ④ 模式配置（5 按钮 + 自动×4 组合） -->
       <el-collapse-item :name="'mode'">
         <template #title>
-          <span class="collapse-title">{{
-            t("componentConfig.modeSection")
-          }}</span>
+          <span class="collapse-title">
+            {{ t("componentConfig.modeSection") }}
+          </span>
         </template>
 
         <div class="form-group">
@@ -914,6 +914,37 @@
               )
             "
           />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.iconSize") }}</label>
+            <input
+              type="number"
+              min="12"
+              :value="config.modeIconSize"
+              @change="
+                updateConfig(
+                  'modeIconSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.fontSize") }}</label>
+            <input
+              type="number"
+              min="10"
+              :value="config.modeFontSize"
+              @change="
+                updateConfig(
+                  'modeFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
         </div>
 
         <div class="form-row">
@@ -1173,6 +1204,37 @@
               )
             "
           />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.iconSize") }}</label>
+            <input
+              type="number"
+              min="12"
+              :value="config.fanIconSize"
+              @change="
+                updateConfig(
+                  'fanIconSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.fontSize") }}</label>
+            <input
+              type="number"
+              min="10"
+              :value="config.fanFontSize"
+              @change="
+                updateConfig(
+                  'fanFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
         </div>
 
         <div class="divider-label">{{ t("componentConfig.sliderStyle") }}</div>
@@ -1443,10 +1505,13 @@ const { config, updateConfig } = useScadaConfig(
 
 // ── i18n 默认文本跟随：key 开头翻译，否则直接显示 ──
 const resolve = (v: string | undefined) =>
-  (v?.startsWith("componentConfig.") || v?.startsWith("scadaComponents.")) ? t(v) : v;
+  v?.startsWith("componentConfig.") || v?.startsWith("scadaComponents.")
+    ? t(v)
+    : v;
 const resolveFanLevel = (level: string | undefined) => {
   if (!level) return level;
-  if (/^\d+$/.test(level)) return level + t("componentConfig.acFanLevelUnitLabel");
+  if (/^\d+$/.test(level))
+    return level + t("componentConfig.acFanLevelUnitLabel");
   return resolve(level);
 };
 const translated = computed(() => {

@@ -1064,6 +1064,8 @@ export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
 
   // ── 模式配置（5 按钮 + 自动×4 组合）──
   modeSectionTitle: string
+  modeIconSize: number
+  modeFontSize: number
   modeBackgroundColor: string
   modeActiveBackgroundColor: string
   modeIconColor: string
@@ -1098,6 +1100,8 @@ export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
 
   // ── 风速配置（自动 + 7 档独立 value）──
   fanSectionTitle: string
+  fanIconSize: number
+  fanFontSize: number
   fanAutoVisible: boolean
   fanAutoLabel: string
   fanAutoValue: number | string
