@@ -902,6 +902,7 @@ export interface AcController3ComponentConfig extends BaseComponentConfig {
   cardBackgroundColor: string
   cardTitleColor: string
   activeAccentColor: string
+  cardIconSize: number
   cardBorderRadius: number
 
   // ── 卡片数值区 ──
@@ -915,27 +916,43 @@ export interface AcController3ComponentConfig extends BaseComponentConfig {
   dialogWidth: number
   dialogBackgroundColor: string
   dialogBorderRadius: number
+  // 弹框标题栏字体
+  dialogTitleFontSize: number
+  dialogTitleColor: string
+  dialogSubtitleFontSize: number
+  dialogSubtitleColor: string
 
   // ── 主区域（蓝色渐变区）──
   mainAreaGradient: [string, string]
   mainAreaGradientAngle: number
+  mainAreaBorderRadius: number
   mainAreaFontSize: number
   mainAreaTextColor: string
   currentValueLabel: string
+  currentValueFontSize: number
+  currentValueColor: string
   gaugeUnit: string
+  gaugeUnitFontSize: number
+  gaugeUnitColor: string
 
   // ── 温度调节 ──
   gaugeMin: number
   gaugeMax: number
   gaugeStep: number
+  stepButtonBackgroundColor: string
+  stepButtonIconSize: number
+  stepButtonColor: string
 
   // ── 电源按钮 ──
   powerButtonSize: number
   powerButtonOnColor: string
   powerButtonOffColor: string
+  powerButtonIconColor: string
 
   // ── 模式配置 ──
   modeSectionTitle: string
+  modeIconSize: number
+  modeFontSize: number
   modeBackgroundColor: string
   modeActiveBackgroundColor: string
   modeIconColor: string
@@ -979,6 +996,135 @@ export interface AcController3ComponentConfig extends BaseComponentConfig {
   // [ac3-type-refresh] ensure IDE picks up latest fields
 }
 
+/** 美的空调面板配置 —— 弹框版：自动可与制冷/制热/除湿/通风组合双按钮高亮 + 7档滑块风速 */
+export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
+  // ── 点位绑定（复用 AcControllerBindings）──
+  bindings: AcControllerBindings
+
+  // ── 行为控制 ──
+  editModeOpenDialog: boolean
+
+  // ── 画布卡片外观 ──
+  cardTitle: string
+  cardTitleFontSize: number
+  cardBackgroundColor: string
+  cardTitleColor: string
+  activeAccentColor: string
+  cardIconSize: number
+  cardBorderRadius: number
+
+  // ── 卡片数值区 ──
+  cardValueFontSize: number
+  cardUnitFontSize: number
+  cardValueDecimalPlaces: number
+
+  // ── 弹框外观 ──
+  dialogTitle: string
+  dialogSubtitle: string
+  dialogWidth: number
+  dialogBackgroundColor: string
+  dialogBorderRadius: number
+  // 弹框标题栏字体
+  dialogTitleFontSize: number
+  dialogTitleColor: string
+  dialogSubtitleFontSize: number
+  dialogSubtitleColor: string
+
+  // ── 主区域（蓝色渐变区）──
+  mainAreaGradient: [string, string]
+  mainAreaGradientAngle: number
+  mainAreaBorderRadius: number              // 主区域圆角
+  mainAreaFontSize: number
+  mainAreaTextColor: string
+  currentValueLabel: string
+  currentValueFontSize: number
+  currentValueColor: string
+  gaugeUnit: string
+  gaugeUnitFontSize: number                 // 温度单位字号
+  gaugeUnitColor: string                    // 温度单位颜色
+  showMainAreaStatusText: boolean
+  mainAreaStatusTextColor: string
+
+  // ── 温度调节 ──
+  gaugeMin: number
+  gaugeMax: number
+  gaugeStep: number
+  stepButtonBackgroundColor: string          // 步进按钮背景色
+  stepButtonIconSize: number                // 步进按钮 +/− 字号
+  stepButtonColor: string                   // 步进按钮 +/− 颜色
+
+  // ── 电源按钮 ──
+  powerButtonSize: number
+  powerButtonOnColor: string
+  powerButtonOffColor: string
+  powerButtonIconColor: string              // 电源按钮图标颜色
+
+  // ── 模式配置（5 按钮 + 自动×4 组合）──
+  modeSectionTitle: string
+  modeBackgroundColor: string
+  modeActiveBackgroundColor: string
+  modeIconColor: string
+  modeActiveIconColor: string
+  modeFontColor: string
+  modeActiveFontColor: string
+
+  // 自动按钮（与其他 4 种模式分别组合，共 4 个自动值）
+  modeAutoVisible: boolean
+  modeAutoLabel: string
+  modeAutoCoolValue: number | string
+  modeAutoHeatValue: number | string
+  modeAutoDehumidifyValue: number | string
+  modeAutoFanValue: number | string
+
+  // 制冷
+  modeCoolVisible: boolean
+  modeCoolLabel: string
+  modeCoolValue: number | string
+  // 制热
+  modeHeatVisible: boolean
+  modeHeatLabel: string
+  modeHeatValue: number | string
+  // 除湿
+  modeDehumidifyVisible: boolean
+  modeDehumidifyLabel: string
+  modeDehumidifyValue: number | string
+  // 通风
+  modeFanVisible: boolean
+  modeFanLabel: string
+  modeFanValue: number | string
+
+  // ── 风速配置（自动 + 7 档独立 value）──
+  fanSectionTitle: string
+  fanAutoVisible: boolean
+  fanAutoLabel: string
+  fanAutoValue: number | string
+  fanLevelsTrackBackgroundColor: string
+  fanLevelsActiveBackgroundColor: string
+  fanLevelsTextColor: string
+  // 7 档（每档 visible/label/value 独立配置）
+  fanLevel1Visible: boolean
+  fanLevel1Label: string
+  fanLevel1Value: number | string
+  fanLevel2Visible: boolean
+  fanLevel2Label: string
+  fanLevel2Value: number | string
+  fanLevel3Visible: boolean
+  fanLevel3Label: string
+  fanLevel3Value: number | string
+  fanLevel4Visible: boolean
+  fanLevel4Label: string
+  fanLevel4Value: number | string
+  fanLevel5Visible: boolean
+  fanLevel5Label: string
+  fanLevel5Value: number | string
+  fanLevel6Visible: boolean
+  fanLevel6Label: string
+  fanLevel6Value: number | string
+  fanLevel7Visible: boolean
+  fanLevel7Label: string
+  fanLevel7Value: number | string
+}
+
 import type { ComponentType } from '../registry'
 
 /** 组件类型到统一配置的映射 */
@@ -1014,6 +1160,7 @@ export interface ComponentConfigMap {
   'ac-controller': AcControllerComponentConfig
   'ac-controller-2': AcController2ComponentConfig
   'ac-controller-3': AcController3ComponentConfig
+  'ac-controller-midea': AcControllerMideaComponentConfig
   'info-card': InfoCardComponentConfig
   'value-progress-card': ValueProgressCardComponentConfig
   'chart-sankey': SankeyChartComponentConfig

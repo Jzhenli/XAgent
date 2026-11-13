@@ -28,6 +28,7 @@ const defaultConfig: AcController3ComponentConfig = {
   cardBackgroundColor: 'rgba(245, 247, 250, 0.9)',
   cardTitleColor: 'rgba(0,0,0,0.6)',
   activeAccentColor: '#667eea',
+  cardIconSize: 22,
   cardBorderRadius: 12,
 
   // 卡片数值区
@@ -41,27 +42,43 @@ const defaultConfig: AcController3ComponentConfig = {
   dialogWidth: 420,
   dialogBackgroundColor: '#1a1a2e',
   dialogBorderRadius: 16,
+  // 弹框标题栏字体
+  dialogTitleFontSize: 18,
+  dialogTitleColor: '#ffffff',
+  dialogSubtitleFontSize: 14,
+  dialogSubtitleColor: 'rgba(255, 255, 255, 0.6)',
 
   // 主区域
   mainAreaGradient: ['#667eea', '#764ba2'],
   mainAreaGradientAngle: 135,
+  mainAreaBorderRadius: 12,
   mainAreaFontSize: 48,
   mainAreaTextColor: '#ffffff',
   currentValueLabel: '当前温度: ',
+  currentValueFontSize: 14,
+  currentValueColor: 'rgba(255, 255, 255, 0.85)',
   gaugeUnit: '°C',
+  gaugeUnitFontSize: 20,
+  gaugeUnitColor: 'rgba(255, 255, 255, 0.85)',
 
   // 温度调节
   gaugeMin: 16,
   gaugeMax: 30,
   gaugeStep: 1,
+  stepButtonBackgroundColor: 'rgba(255, 255, 255, 0.15)',
+  stepButtonIconSize: 24,
+  stepButtonColor: '#ffffff',
 
   // 电源按钮
   powerButtonSize: 40,
-  powerButtonOnColor: '#667eea',
-  powerButtonOffColor: 'rgba(255,255,255,0.2)',
+  powerButtonOnColor: 'rgba(255, 255, 255, 0.3)',
+  powerButtonOffColor: 'rgba(255, 255, 255, 0.2)',
+  powerButtonIconColor: '#ffffff',
 
   // 模式
   modeSectionTitle: '模式',
+  modeIconSize: 22,
+  modeFontSize: 12,
   modeBackgroundColor: 'rgba(255, 255, 255, 0.08)',
   modeActiveBackgroundColor: '#667eea',
   modeIconColor: 'rgba(255,255,255,0.6)',

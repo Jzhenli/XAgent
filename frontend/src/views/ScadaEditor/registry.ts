@@ -33,6 +33,7 @@ import { popupMeta } from './components/scada-components/layout/popup/metadata'
 import { acControllerMeta } from './components/scada-components/chart/ac-controller/metadata'
 import { acController2Meta } from './components/scada-components/chart/ac-controller-2/metadata'
 import { acController3Meta } from './components/scada-components/chart/ac-controller-3/metadata'
+import { acControllerMideaMeta } from './components/scada-components/chart/ac-controller-midea/metadata'
 import { infoCardMeta } from './components/scada-components/chart/info-card/metadata'
 import { valueProgressCardMeta } from './components/scada-components/chart/value-progress-card/metadata'
 import { chartSankeyMeta } from './components/scada-components/chart/sankey/metadata'
@@ -71,6 +72,7 @@ export const componentMetaRegistry = {
   'ac-controller': acControllerMeta,
   'ac-controller-2': acController2Meta,
   'ac-controller-3': acController3Meta,
+  'ac-controller-midea': acControllerMideaMeta,
   'info-card': infoCardMeta,
   'value-progress-card': valueProgressCardMeta,
   'chart-sankey': chartSankeyMeta,

@@ -1,25 +1,33 @@
 <template>
   <div class="config-section">
-    <div class="section-title">{{ t('componentConfig.acController3Config') }}</div>
+    <div class="section-title">
+      {{ t("componentConfig.acController3Config") }}
+    </div>
 
     <el-collapse v-model="activeItems" class="config-collapse">
       <!-- ① 点位绑定 -->
       <el-collapse-item :name="'bindings'">
         <template #title>
-          <span class="collapse-title">{{ t('componentConfig.bindingsSection') }}</span>
+          <span class="collapse-title">{{
+            t("componentConfig.bindingsSection")
+          }}</span>
         </template>
 
         <div class="binding-group">
-          <div class="binding-label">{{ t('componentConfig.powerBinding') }}</div>
+          <div class="binding-label">
+            {{ t("componentConfig.powerBinding") }}
+          </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.device') }}</label>
+            <label>{{ t("componentConfig.device") }}</label>
             <el-select
               :model-value="currentBindings.power?.deviceId ?? ''"
               class="scada-select"
               popper-class="scada-select-dropdown"
               clearable
               :placeholder="t('componentConfig.selectDevice')"
-              @update:model-value="handleDeviceChange('power', $event as string)"
+              @update:model-value="
+                handleDeviceChange('power', $event as string)
+              "
             >
               <el-option
                 v-for="device in pointStore.devices"
@@ -30,7 +38,7 @@
             </el-select>
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.point') }}</label>
+            <label>{{ t("componentConfig.point") }}</label>
             <el-select
               :model-value="currentBindings.power?.pointName ?? ''"
               class="scada-select"
@@ -44,23 +52,30 @@
                 v-for="point in getBindingPoints(currentBindings.power)"
                 :key="point.name"
                 :value="point.name"
-                :label="point.name + (point.description ? ` (${point.description})` : '')"
+                :label="
+                  point.name +
+                  (point.description ? ` (${point.description})` : '')
+                "
               />
             </el-select>
           </div>
         </div>
 
         <div class="binding-group">
-          <div class="binding-label">{{ t('componentConfig.setpointBinding') }}</div>
+          <div class="binding-label">
+            {{ t("componentConfig.setpointBinding") }}
+          </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.device') }}</label>
+            <label>{{ t("componentConfig.device") }}</label>
             <el-select
               :model-value="currentBindings.setpoint?.deviceId ?? ''"
               class="scada-select"
               popper-class="scada-select-dropdown"
               clearable
               :placeholder="t('componentConfig.selectDevice')"
-              @update:model-value="handleDeviceChange('setpoint', $event as string)"
+              @update:model-value="
+                handleDeviceChange('setpoint', $event as string)
+              "
             >
               <el-option
                 v-for="device in pointStore.devices"
@@ -71,7 +86,7 @@
             </el-select>
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.point') }}</label>
+            <label>{{ t("componentConfig.point") }}</label>
             <el-select
               :model-value="currentBindings.setpoint?.pointName ?? ''"
               class="scada-select"
@@ -79,29 +94,38 @@
               clearable
               :placeholder="t('componentConfig.selectPoint')"
               :disabled="!currentBindings.setpoint?.deviceId"
-              @update:model-value="handlePointChange('setpoint', $event as string)"
+              @update:model-value="
+                handlePointChange('setpoint', $event as string)
+              "
             >
               <el-option
                 v-for="point in getBindingPoints(currentBindings.setpoint)"
                 :key="point.name"
                 :value="point.name"
-                :label="point.name + (point.description ? ` (${point.description})` : '')"
+                :label="
+                  point.name +
+                  (point.description ? ` (${point.description})` : '')
+                "
               />
             </el-select>
           </div>
         </div>
 
         <div class="binding-group">
-          <div class="binding-label">{{ t('componentConfig.currentValueBindingConfig') }}</div>
+          <div class="binding-label">
+            {{ t("componentConfig.currentValueBindingConfig") }}
+          </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.device') }}</label>
+            <label>{{ t("componentConfig.device") }}</label>
             <el-select
               :model-value="currentBindings.currentValue?.deviceId ?? ''"
               class="scada-select"
               popper-class="scada-select-dropdown"
               clearable
               :placeholder="t('componentConfig.selectDevice')"
-              @update:model-value="handleDeviceChange('currentValue', $event as string)"
+              @update:model-value="
+                handleDeviceChange('currentValue', $event as string)
+              "
             >
               <el-option
                 v-for="device in pointStore.devices"
@@ -112,7 +136,7 @@
             </el-select>
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.point') }}</label>
+            <label>{{ t("componentConfig.point") }}</label>
             <el-select
               :model-value="currentBindings.currentValue?.pointName ?? ''"
               class="scada-select"
@@ -120,22 +144,29 @@
               clearable
               :placeholder="t('componentConfig.selectPoint')"
               :disabled="!currentBindings.currentValue?.deviceId"
-              @update:model-value="handlePointChange('currentValue', $event as string)"
+              @update:model-value="
+                handlePointChange('currentValue', $event as string)
+              "
             >
               <el-option
                 v-for="point in getBindingPoints(currentBindings.currentValue)"
                 :key="point.name"
                 :value="point.name"
-                :label="point.name + (point.description ? ` (${point.description})` : '')"
+                :label="
+                  point.name +
+                  (point.description ? ` (${point.description})` : '')
+                "
               />
             </el-select>
           </div>
         </div>
 
         <div class="binding-group">
-          <div class="binding-label">{{ t('componentConfig.modeBinding') }}</div>
+          <div class="binding-label">
+            {{ t("componentConfig.modeBinding") }}
+          </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.device') }}</label>
+            <label>{{ t("componentConfig.device") }}</label>
             <el-select
               :model-value="currentBindings.mode?.deviceId ?? ''"
               class="scada-select"
@@ -153,7 +184,7 @@
             </el-select>
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.point') }}</label>
+            <label>{{ t("componentConfig.point") }}</label>
             <el-select
               :model-value="currentBindings.mode?.pointName ?? ''"
               class="scada-select"
@@ -167,23 +198,30 @@
                 v-for="point in getBindingPoints(currentBindings.mode)"
                 :key="point.name"
                 :value="point.name"
-                :label="point.name + (point.description ? ` (${point.description})` : '')"
+                :label="
+                  point.name +
+                  (point.description ? ` (${point.description})` : '')
+                "
               />
             </el-select>
           </div>
         </div>
 
         <div class="binding-group binding-group--last">
-          <div class="binding-label">{{ t('componentConfig.fanSpeedBinding') }}</div>
+          <div class="binding-label">
+            {{ t("componentConfig.fanSpeedBinding") }}
+          </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.device') }}</label>
+            <label>{{ t("componentConfig.device") }}</label>
             <el-select
               :model-value="currentBindings.fanSpeed?.deviceId ?? ''"
               class="scada-select"
               popper-class="scada-select-dropdown"
               clearable
               :placeholder="t('componentConfig.selectDevice')"
-              @update:model-value="handleDeviceChange('fanSpeed', $event as string)"
+              @update:model-value="
+                handleDeviceChange('fanSpeed', $event as string)
+              "
             >
               <el-option
                 v-for="device in pointStore.devices"
@@ -194,7 +232,7 @@
             </el-select>
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.point') }}</label>
+            <label>{{ t("componentConfig.point") }}</label>
             <el-select
               :model-value="currentBindings.fanSpeed?.pointName ?? ''"
               class="scada-select"
@@ -202,13 +240,18 @@
               clearable
               :placeholder="t('componentConfig.selectPoint')"
               :disabled="!currentBindings.fanSpeed?.deviceId"
-              @update:model-value="handlePointChange('fanSpeed', $event as string)"
+              @update:model-value="
+                handlePointChange('fanSpeed', $event as string)
+              "
             >
               <el-option
                 v-for="point in getBindingPoints(currentBindings.fanSpeed)"
                 :key="point.name"
                 :value="point.name"
-                :label="point.name + (point.description ? ` (${point.description})` : '')"
+                :label="
+                  point.name +
+                  (point.description ? ` (${point.description})` : '')
+                "
               />
             </el-select>
           </div>
@@ -218,58 +261,42 @@
       <!-- ② 画布卡片外观 -->
       <el-collapse-item :name="'button'">
         <template #title>
-          <span class="collapse-title">{{ t('componentConfig.cardSection') }}</span>
+          <span class="collapse-title">
+            {{ t("componentConfig.cardSection") }}
+          </span>
         </template>
 
         <div class="form-group">
-          <label>{{ t('componentConfig.editModeOpenDialog') }}</label>
-          <el-switch
-            :model-value="config.editModeOpenDialog"
-            @update:model-value="updateConfig('editModeOpenDialog', $event)"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>{{ t('componentConfig.cardTitle') }}</label>
+          <label>{{ t("componentConfig.cardTitle") }}</label>
           <input
             type="text"
             :value="config.cardTitle"
-            @input="updateConfig('cardTitle', ($event.target as HTMLInputElement).value)"
+            @input="
+              updateConfig(
+                'cardTitle',
+                ($event.target as HTMLInputElement).value,
+              )
+            "
           />
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.cardTitleFontSize') }}</label>
+            <label>{{ t("componentConfig.cardTitleFontSize") }}</label>
             <input
               type="number"
               min="1"
               :value="config.cardTitleFontSize"
-              @change="updateConfig('cardTitleFontSize', +($event.target as HTMLInputElement).value)"
+              @change="
+                updateConfig(
+                  'cardTitleFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.borderRadius') }}</label>
-            <input
-              type="number"
-              min="0"
-              :value="config.cardBorderRadius"
-              @change="updateConfig('cardBorderRadius', +($event.target as HTMLInputElement).value)"
-            />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ t('componentConfig.cardBackgroundColor') }}</label>
-            <el-color-picker
-              :model-value="config.cardBackgroundColor"
-              show-alpha
-              @change="handleColorChange('cardBackgroundColor', $event)"
-            />
-          </div>
-          <div class="form-group">
-            <label>{{ t('componentConfig.cardTitleColor') }}</label>
+            <label>{{ t("componentConfig.cardTitleColor") }}</label>
             <el-color-picker
               :model-value="config.cardTitleColor"
               show-alpha
@@ -278,163 +305,246 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label>{{ t('componentConfig.activeAccentColor') }}</label>
-          <el-color-picker
-            :model-value="config.activeAccentColor"
-            show-alpha
-            @change="handleColorChange('activeAccentColor', $event)"
-          />
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.cardBackgroundColor") }}</label>
+            <el-color-picker
+              :model-value="config.cardBackgroundColor"
+              show-alpha
+              @change="handleColorChange('cardBackgroundColor', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.borderRadius") }}</label>
+            <input
+              type="number"
+              min="0"
+              :value="config.cardBorderRadius"
+              @change="
+                updateConfig(
+                  'cardBorderRadius',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.valueFontSize') }}</label>
+            <label>{{ t("componentConfig.valueFontSize") }}</label>
             <input
               type="number"
               min="8"
               :value="config.cardValueFontSize"
-              @change="updateConfig('cardValueFontSize', +($event.target as HTMLInputElement).value)"
+              @change="
+                updateConfig(
+                  'cardValueFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.unitFontSizeLabel') }}</label>
+            <label>{{ t("componentConfig.unitFontSizeLabel") }}</label>
             <input
               type="number"
               min="8"
               :value="config.cardUnitFontSize"
-              @change="updateConfig('cardUnitFontSize', +($event.target as HTMLInputElement).value)"
+              @change="
+                updateConfig(
+                  'cardUnitFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
         </div>
-
-        <div class="form-group">
-          <label>{{ t('componentConfig.decimalPlaces') }}</label>
-          <input
-            type="number"
-            min="0"
-            max="6"
-            :value="config.cardValueDecimalPlaces"
-            @change="updateConfig('cardValueDecimalPlaces', +($event.target as HTMLInputElement).value)"
-          />
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.activeAccentColor") }}</label>
+            <el-color-picker
+              :model-value="config.activeAccentColor"
+              show-alpha
+              @change="handleColorChange('activeAccentColor', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.iconSize") }}</label>
+            <input
+              type="number"
+              min="12"
+              :value="config.cardIconSize"
+              @change="
+                updateConfig(
+                  'cardIconSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
         </div>
       </el-collapse-item>
 
-      <!-- ③ 弹框外观 -->
+      <!-- ③ 弹框外观 + 主区域 -->
       <el-collapse-item :name="'dialog'">
         <template #title>
-          <span class="collapse-title">{{ t('componentConfig.dialogSection') }}</span>
+          <span class="collapse-title">{{
+            t("componentConfig.dialogSection")
+          }}</span>
         </template>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ t('componentConfig.mainTitle') }}</label>
-            <input
-              type="text"
-              :value="config.dialogTitle"
-              @input="updateConfig('dialogTitle', ($event.target as HTMLInputElement).value)"
-            />
-          </div>
-          <div class="form-group">
-            <label>{{ t('componentConfig.subTitle') }}</label>
-            <input
-              type="text"
-              :value="config.dialogSubtitle"
-              @input="updateConfig('dialogSubtitle', ($event.target as HTMLInputElement).value)"
-            />
-          </div>
+        <div class="form-group">
+          <label>{{ t("componentConfig.editModeOpenDialog") }}</label>
+          <el-switch
+            :model-value="config.editModeOpenDialog"
+            @update:model-value="updateConfig('editModeOpenDialog', $event)"
+          />
         </div>
 
+        <!-- 弹框容器 -->
+        <div class="divider-label">
+          {{ t("componentConfig.dialogContainerSection") }}
+        </div>
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.width') }}</label>
+            <label>{{ t("componentConfig.width") }}</label>
             <input
               type="number"
               min="200"
               :value="config.dialogWidth"
-              @change="updateConfig('dialogWidth', +($event.target as HTMLInputElement).value)"
+              @change="
+                updateConfig(
+                  'dialogWidth',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.borderRadius') }}</label>
+            <label>{{ t("componentConfig.borderRadius") }}</label>
             <input
               type="number"
               min="0"
               :value="config.dialogBorderRadius"
-              @change="updateConfig('dialogBorderRadius', +($event.target as HTMLInputElement).value)"
+              @change="
+                updateConfig(
+                  'dialogBorderRadius',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
         </div>
+        <div class="form-group">
+          <label>{{ t("componentConfig.backgroundColor") }}</label>
+          <el-color-picker
+            :model-value="config.dialogBackgroundColor"
+            show-alpha
+            @change="handleColorChange('dialogBackgroundColor', $event)"
+          />
+        </div>
 
+        <!-- 弹框标题 -->
+        <div class="divider-label">
+          {{ t("componentConfig.dialogTitleSection") }}
+        </div>
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.backgroundColor') }}</label>
+            <label>{{ t("componentConfig.mainTitle") }}</label>
+            <input
+              type="text"
+              :value="config.dialogTitle"
+              @input="
+                updateConfig(
+                  'dialogTitle',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.subTitle") }}</label>
+            <input
+              type="text"
+              :value="config.dialogSubtitle"
+              @input="
+                updateConfig(
+                  'dialogSubtitle',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label
+              >{{ t("componentConfig.mainTitle")
+              }}{{ t("componentConfig.fontSize") }}</label
+            >
+            <input
+              type="number"
+              min="8"
+              :value="config.dialogTitleFontSize"
+              @change="
+                updateConfig(
+                  'dialogTitleFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label
+              >{{ t("componentConfig.mainTitle")
+              }}{{ t("componentConfig.fontColor") }}</label
+            >
             <el-color-picker
-              :model-value="config.dialogBackgroundColor"
+              :model-value="config.dialogTitleColor"
               show-alpha
-              @change="handleColorChange('dialogBackgroundColor', $event)"
+              @change="handleColorChange('dialogTitleColor', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label
+              >{{ t("componentConfig.subTitle")
+              }}{{ t("componentConfig.fontSize") }}</label
+            >
+            <input
+              type="number"
+              min="8"
+              :value="config.dialogSubtitleFontSize"
+              @change="
+                updateConfig(
+                  'dialogSubtitleFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.unit') }}</label>
-            <input
-              type="text"
-              :value="config.gaugeUnit"
-              @input="updateConfig('gaugeUnit', ($event.target as HTMLInputElement).value)"
+            <label
+              >{{ t("componentConfig.subTitle")
+              }}{{ t("componentConfig.fontColor") }}</label
+            >
+            <el-color-picker
+              :model-value="config.dialogSubtitleColor"
+              show-alpha
+              @change="handleColorChange('dialogSubtitleColor', $event)"
             />
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ t('componentConfig.minValue') }}</label>
-            <input
-              type="number"
-              :value="config.gaugeMin"
-              @change="updateConfig('gaugeMin', +($event.target as HTMLInputElement).value)"
-            />
-          </div>
-          <div class="form-group">
-            <label>{{ t('componentConfig.maxValue') }}</label>
-            <input
-              type="number"
-              :value="config.gaugeMax"
-              @change="updateConfig('gaugeMax', +($event.target as HTMLInputElement).value)"
-            />
-          </div>
+        <!-- 主区域 - 渐变背景 -->
+        <div class="divider-label">
+          {{ t("componentConfig.mainAreaGradientSection") }}
         </div>
-
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.step') }}</label>
-            <input
-              type="number"
-              :min="0.1"
-              :step="0.1"
-              :value="config.gaugeStep"
-              @change="updateConfig('gaugeStep', +($event.target as HTMLInputElement).value)"
-            />
-          </div>
-          <div class="form-group">
-            <label>{{ t('componentConfig.currentValueLabel') }}</label>
-            <input
-              type="text"
-              :value="config.currentValueLabel"
-              @input="updateConfig('currentValueLabel', ($event.target as HTMLInputElement).value)"
-            />
-          </div>
-        </div>
-      </el-collapse-item>
-
-      <!-- ④ 主区域 / 电源 -->
-      <el-collapse-item :name="'mainarea'">
-        <template #title>
-          <span class="collapse-title">{{ t('componentConfig.mainAreaSection') }}</span>
-        </template>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ t('componentConfig.gradientStartColor') }}</label>
+            <label>{{ t("componentConfig.gradientStartColor") }}</label>
             <el-color-picker
               :model-value="config.mainAreaGradient[0]"
               show-alpha
@@ -442,7 +552,7 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.gradientEndColor') }}</label>
+            <label>{{ t("componentConfig.gradientEndColor") }}</label>
             <el-color-picker
               :model-value="config.mainAreaGradient[1]"
               show-alpha
@@ -450,30 +560,66 @@
             />
           </div>
         </div>
-
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.gradientAngle') }}</label>
+            <label>{{ t("componentConfig.gradientAngle") }}</label>
             <input
               type="number"
               :value="config.mainAreaGradientAngle"
-              @change="updateConfig('mainAreaGradientAngle', +($event.target as HTMLInputElement).value)"
+              @change="
+                updateConfig(
+                  'mainAreaGradientAngle',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.fontSize') }}</label>
+            <label
+              >{{ t("componentConfig.mainAreaSection")
+              }}{{ t("componentConfig.borderRadius") }}</label
+            >
             <input
               type="number"
-              min="10"
-              :value="config.mainAreaFontSize"
-              @change="updateConfig('mainAreaFontSize', +($event.target as HTMLInputElement).value)"
+              min="0"
+              :value="config.mainAreaBorderRadius"
+              @change="
+                updateConfig(
+                  'mainAreaBorderRadius',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
         </div>
 
+        <!-- 主区域 - 核心显示 + 电源 -->
+        <div class="divider-label">
+          {{ t("componentConfig.mainAreaCoreSection") }}
+        </div>
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.fontColor') }}</label>
+            <label
+              >{{ t("componentConfig.mainAreaSection")
+              }}{{ t("componentConfig.fontSize") }}</label
+            >
+            <input
+              type="number"
+              min="10"
+              :value="config.mainAreaFontSize"
+              @change="
+                updateConfig(
+                  'mainAreaFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label
+              >{{ t("componentConfig.mainAreaSection")
+              }}{{ t("componentConfig.fontColor") }}</label
+            >
             <el-color-picker
               :model-value="config.mainAreaTextColor"
               show-alpha
@@ -481,23 +627,235 @@
             />
           </div>
         </div>
-
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.powerButtonSize') }}</label>
+            <label>{{ t("componentConfig.decimalPlaces") }}</label>
+            <input
+              type="number"
+              min="0"
+              max="6"
+              :value="config.cardValueDecimalPlaces"
+              @change="
+                updateConfig(
+                  'cardValueDecimalPlaces',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.unit") }}</label>
+            <input
+              type="text"
+              :value="config.gaugeUnit"
+              @input="
+                updateConfig(
+                  'gaugeUnit',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label
+              >{{ t("componentConfig.unit")
+              }}{{ t("componentConfig.fontSize") }}</label
+            >
+            <input
+              type="number"
+              min="8"
+              :value="config.gaugeUnitFontSize"
+              @change="
+                updateConfig(
+                  'gaugeUnitFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label
+              >{{ t("componentConfig.unit")
+              }}{{ t("componentConfig.fontColor") }}</label
+            >
+            <el-color-picker
+              :model-value="config.gaugeUnitColor"
+              show-alpha
+              @change="handleColorChange('gaugeUnitColor', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.powerButtonSize") }}</label>
             <input
               type="number"
               min="20"
               :value="config.powerButtonSize"
-              @change="updateConfig('powerButtonSize', +($event.target as HTMLInputElement).value)"
+              @change="
+                updateConfig(
+                  'powerButtonSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.powerOnColor') }}</label>
+            <label>{{ t("componentConfig.powerBtnIconColor") }}</label>
+            <el-color-picker
+              :model-value="config.powerButtonIconColor"
+              show-alpha
+              @change="handleColorChange('powerButtonIconColor', $event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.powerBtnOffBg") }}</label>
+            <el-color-picker
+              :model-value="config.powerButtonOffColor"
+              show-alpha
+              @change="handleColorChange('powerButtonOffColor', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.powerBtnOnBg") }}</label>
             <el-color-picker
               :model-value="config.powerButtonOnColor"
               show-alpha
               @change="handleColorChange('powerButtonOnColor', $event)"
+            />
+          </div>
+        </div>
+
+        <!-- 主区域 - 温度调节 -->
+        <div class="divider-label">
+          {{ t("componentConfig.mainAreaRangeSection") }}
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.minValue") }}</label>
+            <input
+              type="number"
+              :value="config.gaugeMin"
+              @change="
+                updateConfig(
+                  'gaugeMin',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.maxValue") }}</label>
+            <input
+              type="number"
+              :value="config.gaugeMax"
+              @change="
+                updateConfig(
+                  'gaugeMax',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.step") }}</label>
+            <input
+              type="number"
+              :min="0.1"
+              :step="0.1"
+              :value="config.gaugeStep"
+              @change="
+                updateConfig(
+                  'gaugeStep',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.stepBtnIconSize") }}</label>
+            <input
+              type="number"
+              min="8"
+              :value="config.stepButtonIconSize"
+              @change="
+                updateConfig(
+                  'stepButtonIconSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.stepBtnBgColor") }}</label>
+            <el-color-picker
+              :model-value="config.stepButtonBackgroundColor"
+              show-alpha
+              @change="handleColorChange('stepButtonBackgroundColor', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.stepBtnIconColor") }}</label>
+            <el-color-picker
+              :model-value="config.stepButtonColor"
+              show-alpha
+              @change="handleColorChange('stepButtonColor', $event)"
+            />
+          </div>
+        </div>
+
+        <!-- 当前值行 -->
+        <div class="divider-label">{{ t("componentConfig.currentValue") }}</div>
+        <div class="form-group">
+          <label>{{ t("componentConfig.currentValueLabel") }}</label>
+          <input
+            type="text"
+            :value="config.currentValueLabel"
+            @input="
+              updateConfig(
+                'currentValueLabel',
+                ($event.target as HTMLInputElement).value,
+              )
+            "
+          />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label
+              >{{ t("componentConfig.currentValue")
+              }}{{ t("componentConfig.fontSize") }}</label
+            >
+            <input
+              type="number"
+              min="8"
+              :value="config.currentValueFontSize"
+              @change="
+                updateConfig(
+                  'currentValueFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label
+              >{{ t("componentConfig.currentValue")
+              }}{{ t("componentConfig.fontColor") }}</label
+            >
+            <el-color-picker
+              :model-value="config.currentValueColor"
+              show-alpha
+              @change="handleColorChange('currentValueColor', $event)"
             />
           </div>
         </div>
@@ -506,21 +864,61 @@
       <!-- ⑤ 模式配置 -->
       <el-collapse-item :name="'mode'">
         <template #title>
-          <span class="collapse-title">{{ t('componentConfig.modeSection') }}</span>
+          <span class="collapse-title">
+            {{ t("componentConfig.modeSection") }}
+          </span>
         </template>
 
-        <div class="form-group">
-          <label>{{ t('componentConfig.sectionTitle') }}</label>
-          <input
-            type="text"
-            :value="config.modeSectionTitle"
-            @input="updateConfig('modeSectionTitle', ($event.target as HTMLInputElement).value)"
-          />
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.sectionTitle") }}</label>
+            <input
+              type="text"
+              :value="config.modeSectionTitle"
+              @input="
+                updateConfig(
+                  'modeSectionTitle',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.backgroundColor') }}</label>
+            <label>{{ t("componentConfig.iconSize") }}</label>
+            <input
+              type="number"
+              min="12"
+              :value="config.modeIconSize"
+              @change="
+                updateConfig(
+                  'modeIconSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.fontSize") }}</label>
+            <input
+              type="number"
+              min="10"
+              :value="config.modeFontSize"
+              @change="
+                updateConfig(
+                  'modeFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.backgroundColor") }}</label>
             <el-color-picker
               :model-value="config.modeBackgroundColor"
               show-alpha
@@ -528,7 +926,7 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.activeBackgroundColor') }}</label>
+            <label>{{ t("componentConfig.activeBackgroundColor") }}</label>
             <el-color-picker
               :model-value="config.modeActiveBackgroundColor"
               show-alpha
@@ -539,7 +937,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.iconColor') }}</label>
+            <label>{{ t("componentConfig.iconColor") }}</label>
             <el-color-picker
               :model-value="config.modeIconColor"
               show-alpha
@@ -547,7 +945,7 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.activeIconColor') }}</label>
+            <label>{{ t("componentConfig.activeIconColor") }}</label>
             <el-color-picker
               :model-value="config.modeActiveIconColor"
               show-alpha
@@ -558,7 +956,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.fontColor') }}</label>
+            <label>{{ t("componentConfig.fontColor") }}</label>
             <el-color-picker
               :model-value="config.modeFontColor"
               show-alpha
@@ -566,7 +964,7 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.activeFontColor') }}</label>
+            <label>{{ t("componentConfig.activeFontColor") }}</label>
             <el-color-picker
               :model-value="config.modeActiveFontColor"
               show-alpha
@@ -576,46 +974,106 @@
         </div>
 
         <div class="form-group fan-levels">
-          <label>{{ t('componentConfig.modeLevels') }}</label>
+          <label>{{ t("componentConfig.modeLevels") }}</label>
           <div class="fan-level-row">
-            <el-switch :model-value="config.modeAutoVisible"
-              @update:model-value="updateConfig('modeAutoVisible', $event)" />
-            <input type="text" class="level-label" :disabled="!config.modeAutoVisible"
+            <el-switch
+              :model-value="config.modeAutoVisible"
+              @update:model-value="updateConfig('modeAutoVisible', $event)"
+            />
+            <input
+              type="text"
+              class="level-label"
+              :disabled="!config.modeAutoVisible"
               :value="config.modeAutoLabel"
-              @input="updateConfig('modeAutoLabel', ($event.target as HTMLInputElement).value)" />
-            <input type="text" class="level-value" :disabled="!config.modeAutoVisible"
+              @input="
+                updateConfig(
+                  'modeAutoLabel',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+            <input
+              type="text"
+              class="level-value"
+              :disabled="!config.modeAutoVisible"
               :value="config.modeAutoValue"
-              @change="parseAndUpdate('modeAutoValue', $event)" />
+              @change="parseAndUpdate('modeAutoValue', $event)"
+            />
           </div>
           <div class="fan-level-row">
-            <el-switch :model-value="config.modeCoolVisible"
-              @update:model-value="updateConfig('modeCoolVisible', $event)" />
-            <input type="text" class="level-label" :disabled="!config.modeCoolVisible"
+            <el-switch
+              :model-value="config.modeCoolVisible"
+              @update:model-value="updateConfig('modeCoolVisible', $event)"
+            />
+            <input
+              type="text"
+              class="level-label"
+              :disabled="!config.modeCoolVisible"
               :value="config.modeCoolLabel"
-              @input="updateConfig('modeCoolLabel', ($event.target as HTMLInputElement).value)" />
-            <input type="text" class="level-value" :disabled="!config.modeCoolVisible"
+              @input="
+                updateConfig(
+                  'modeCoolLabel',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+            <input
+              type="text"
+              class="level-value"
+              :disabled="!config.modeCoolVisible"
               :value="config.modeCoolValue"
-              @change="parseAndUpdate('modeCoolValue', $event)" />
+              @change="parseAndUpdate('modeCoolValue', $event)"
+            />
           </div>
           <div class="fan-level-row">
-            <el-switch :model-value="config.modeHeatVisible"
-              @update:model-value="updateConfig('modeHeatVisible', $event)" />
-            <input type="text" class="level-label" :disabled="!config.modeHeatVisible"
+            <el-switch
+              :model-value="config.modeHeatVisible"
+              @update:model-value="updateConfig('modeHeatVisible', $event)"
+            />
+            <input
+              type="text"
+              class="level-label"
+              :disabled="!config.modeHeatVisible"
               :value="config.modeHeatLabel"
-              @input="updateConfig('modeHeatLabel', ($event.target as HTMLInputElement).value)" />
-            <input type="text" class="level-value" :disabled="!config.modeHeatVisible"
+              @input="
+                updateConfig(
+                  'modeHeatLabel',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+            <input
+              type="text"
+              class="level-value"
+              :disabled="!config.modeHeatVisible"
               :value="config.modeHeatValue"
-              @change="parseAndUpdate('modeHeatValue', $event)" />
+              @change="parseAndUpdate('modeHeatValue', $event)"
+            />
           </div>
           <div class="fan-level-row">
-            <el-switch :model-value="config.modeFanVisible"
-              @update:model-value="updateConfig('modeFanVisible', $event)" />
-            <input type="text" class="level-label" :disabled="!config.modeFanVisible"
+            <el-switch
+              :model-value="config.modeFanVisible"
+              @update:model-value="updateConfig('modeFanVisible', $event)"
+            />
+            <input
+              type="text"
+              class="level-label"
+              :disabled="!config.modeFanVisible"
               :value="config.modeFanLabel"
-              @input="updateConfig('modeFanLabel', ($event.target as HTMLInputElement).value)" />
-            <input type="text" class="level-value" :disabled="!config.modeFanVisible"
+              @input="
+                updateConfig(
+                  'modeFanLabel',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+            <input
+              type="text"
+              class="level-value"
+              :disabled="!config.modeFanVisible"
               :value="config.modeFanValue"
-              @change="parseAndUpdate('modeFanValue', $event)" />
+              @change="parseAndUpdate('modeFanValue', $event)"
+            />
           </div>
         </div>
       </el-collapse-item>
@@ -623,21 +1081,28 @@
       <!-- ⑥ 风速配置 -->
       <el-collapse-item :name="'fan'">
         <template #title>
-          <span class="collapse-title">{{ t('componentConfig.fanSpeedSection') }}</span>
+          <span class="collapse-title">{{
+            t("componentConfig.fanSpeedSection")
+          }}</span>
         </template>
 
         <div class="form-group">
-          <label>{{ t('componentConfig.sectionTitle') }}</label>
+          <label>{{ t("componentConfig.sectionTitle") }}</label>
           <input
             type="text"
             :value="config.fanSectionTitle"
-            @input="updateConfig('fanSectionTitle', ($event.target as HTMLInputElement).value)"
+            @input="
+              updateConfig(
+                'fanSectionTitle',
+                ($event.target as HTMLInputElement).value,
+              )
+            "
           />
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.backgroundColor') }}</label>
+            <label>{{ t("componentConfig.backgroundColor") }}</label>
             <el-color-picker
               :model-value="config.fanBackgroundColor"
               show-alpha
@@ -645,7 +1110,7 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.activeBackgroundColor') }}</label>
+            <label>{{ t("componentConfig.activeBackgroundColor") }}</label>
             <el-color-picker
               :model-value="config.fanActiveBackgroundColor"
               show-alpha
@@ -656,7 +1121,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.iconColor') }}</label>
+            <label>{{ t("componentConfig.iconColor") }}</label>
             <el-color-picker
               :model-value="config.fanIconColor"
               show-alpha
@@ -664,7 +1129,7 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.activeIconColor') }}</label>
+            <label>{{ t("componentConfig.activeIconColor") }}</label>
             <el-color-picker
               :model-value="config.fanActiveIconColor"
               show-alpha
@@ -675,7 +1140,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.fontColor') }}</label>
+            <label>{{ t("componentConfig.fontColor") }}</label>
             <el-color-picker
               :model-value="config.fanFontColor"
               show-alpha
@@ -683,7 +1148,7 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t('componentConfig.activeFontColor') }}</label>
+            <label>{{ t("componentConfig.activeFontColor") }}</label>
             <el-color-picker
               :model-value="config.fanActiveFontColor"
               show-alpha
@@ -693,46 +1158,106 @@
         </div>
 
         <div class="form-group fan-levels">
-          <label>{{ t('componentConfig.fanLevels') }}</label>
+          <label>{{ t("componentConfig.fanLevels") }}</label>
           <div class="fan-level-row">
-            <el-switch :model-value="config.fanAutoVisible"
-              @update:model-value="updateConfig('fanAutoVisible', $event)" />
-            <input type="text" class="level-label" :disabled="!config.fanAutoVisible"
+            <el-switch
+              :model-value="config.fanAutoVisible"
+              @update:model-value="updateConfig('fanAutoVisible', $event)"
+            />
+            <input
+              type="text"
+              class="level-label"
+              :disabled="!config.fanAutoVisible"
               :value="config.fanAutoLabel"
-              @input="updateConfig('fanAutoLabel', ($event.target as HTMLInputElement).value)" />
-            <input type="text" class="level-value" :disabled="!config.fanAutoVisible"
+              @input="
+                updateConfig(
+                  'fanAutoLabel',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+            <input
+              type="text"
+              class="level-value"
+              :disabled="!config.fanAutoVisible"
               :value="config.fanAutoValue"
-              @change="parseAndUpdate('fanAutoValue', $event)" />
+              @change="parseAndUpdate('fanAutoValue', $event)"
+            />
           </div>
           <div class="fan-level-row">
-            <el-switch :model-value="config.fanLowVisible"
-              @update:model-value="updateConfig('fanLowVisible', $event)" />
-            <input type="text" class="level-label" :disabled="!config.fanLowVisible"
+            <el-switch
+              :model-value="config.fanLowVisible"
+              @update:model-value="updateConfig('fanLowVisible', $event)"
+            />
+            <input
+              type="text"
+              class="level-label"
+              :disabled="!config.fanLowVisible"
               :value="config.fanLowLabel"
-              @input="updateConfig('fanLowLabel', ($event.target as HTMLInputElement).value)" />
-            <input type="text" class="level-value" :disabled="!config.fanLowVisible"
+              @input="
+                updateConfig(
+                  'fanLowLabel',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+            <input
+              type="text"
+              class="level-value"
+              :disabled="!config.fanLowVisible"
               :value="config.fanLowValue"
-              @change="parseAndUpdate('fanLowValue', $event)" />
+              @change="parseAndUpdate('fanLowValue', $event)"
+            />
           </div>
           <div class="fan-level-row">
-            <el-switch :model-value="config.fanMediumVisible"
-              @update:model-value="updateConfig('fanMediumVisible', $event)" />
-            <input type="text" class="level-label" :disabled="!config.fanMediumVisible"
+            <el-switch
+              :model-value="config.fanMediumVisible"
+              @update:model-value="updateConfig('fanMediumVisible', $event)"
+            />
+            <input
+              type="text"
+              class="level-label"
+              :disabled="!config.fanMediumVisible"
               :value="config.fanMediumLabel"
-              @input="updateConfig('fanMediumLabel', ($event.target as HTMLInputElement).value)" />
-            <input type="text" class="level-value" :disabled="!config.fanMediumVisible"
+              @input="
+                updateConfig(
+                  'fanMediumLabel',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+            <input
+              type="text"
+              class="level-value"
+              :disabled="!config.fanMediumVisible"
               :value="config.fanMediumValue"
-              @change="parseAndUpdate('fanMediumValue', $event)" />
+              @change="parseAndUpdate('fanMediumValue', $event)"
+            />
           </div>
           <div class="fan-level-row">
-            <el-switch :model-value="config.fanHighVisible"
-              @update:model-value="updateConfig('fanHighVisible', $event)" />
-            <input type="text" class="level-label" :disabled="!config.fanHighVisible"
+            <el-switch
+              :model-value="config.fanHighVisible"
+              @update:model-value="updateConfig('fanHighVisible', $event)"
+            />
+            <input
+              type="text"
+              class="level-label"
+              :disabled="!config.fanHighVisible"
               :value="config.fanHighLabel"
-              @input="updateConfig('fanHighLabel', ($event.target as HTMLInputElement).value)" />
-            <input type="text" class="level-value" :disabled="!config.fanHighVisible"
+              @input="
+                updateConfig(
+                  'fanHighLabel',
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+            <input
+              type="text"
+              class="level-value"
+              :disabled="!config.fanHighVisible"
               :value="config.fanHighValue"
-              @change="parseAndUpdate('fanHighValue', $event)" />
+              @change="parseAndUpdate('fanHighValue', $event)"
+            />
           </div>
         </div>
       </el-collapse-item>
@@ -741,94 +1266,98 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { usePointStore } from '@/stores/points'
-import { useScadaConfig } from '../../../../hooks/useScadaEditor'
+import { ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { usePointStore } from "@/stores/points";
+import { useScadaConfig } from "../../../../hooks/useScadaEditor";
 import type {
   ScadaComponent,
   AcController3ComponentConfig,
   AcControllerBindings,
   PointBinding,
-} from '../../../../types'
+} from "../../../../types";
 
-const { t } = useI18n()
-const pointStore = usePointStore()
+const { t } = useI18n();
+const pointStore = usePointStore();
 
 const props = defineProps<{
-  component: ScadaComponent
-}>()
+  component: ScadaComponent;
+}>();
 
 const { config, updateConfig } = useScadaConfig(
-  props.component as ScadaComponent<'ac-controller-3'>,
-)
+  props.component as ScadaComponent<"ac-controller-3">,
+);
 
 // 折叠项
-const activeItems = ref<string[]>([])
+const activeItems = ref<string[]>([]);
 
 // 绑定相关
-type BindingKey = keyof AcControllerBindings
+type BindingKey = keyof AcControllerBindings;
 
 const currentBindings = ref<AcControllerBindings>(
   (config.value.bindings ?? {
-    power: null, mode: null, fanSpeed: null, setpoint: null, currentValue: null,
+    power: null,
+    mode: null,
+    fanSpeed: null,
+    setpoint: null,
+    currentValue: null,
   }) as AcControllerBindings,
-)
+);
 
 const getBindingPoints = (binding: PointBinding | null | undefined) => {
-  if (!binding?.deviceId) return []
+  if (!binding?.deviceId) return [];
   const device = pointStore.devices.find(
     (d) => d.asset === binding!.deviceId || d.name === binding!.deviceId,
-  )
-  return device?.points || []
-}
+  );
+  return device?.points || [];
+};
 
 const handleDeviceChange = (key: BindingKey, deviceId: string) => {
   currentBindings.value = {
     ...currentBindings.value,
-    [key]: deviceId ? { deviceId, pointName: '' } : null,
-  }
-  updateConfig('bindings', currentBindings.value)
-}
+    [key]: deviceId ? { deviceId, pointName: "" } : null,
+  };
+  updateConfig("bindings", currentBindings.value);
+};
 
 const handlePointChange = (key: BindingKey, pointName: string) => {
-  const binding = currentBindings.value[key]
+  const binding = currentBindings.value[key];
   if (!binding || !pointName) {
-    currentBindings.value = { ...currentBindings.value, [key]: null }
-    updateConfig('bindings', currentBindings.value)
-    return
+    currentBindings.value = { ...currentBindings.value, [key]: null };
+    updateConfig("bindings", currentBindings.value);
+    return;
   }
-  const point = getBindingPoints(binding).find((p) => p.name === pointName)
+  const point = getBindingPoints(binding).find((p) => p.name === pointName);
   const newBinding: PointBinding = {
     ...binding,
     pointName,
     pointDescription: point?.description,
     unit: point?.unit,
-  }
-  currentBindings.value = { ...currentBindings.value, [key]: newBinding }
-  updateConfig('bindings', currentBindings.value)
-}
+  };
+  currentBindings.value = { ...currentBindings.value, [key]: newBinding };
+  updateConfig("bindings", currentBindings.value);
+};
 
 // 渐变色更新
 const updateGradient = (index: number, val: string | null) => {
-  const current = [...config.value.mainAreaGradient] as [string, string]
-  current[index] = val || current[index]
-  updateConfig('mainAreaGradient', current)
-}
+  const current = [...config.value.mainAreaGradient] as [string, string];
+  current[index] = val || current[index];
+  updateConfig("mainAreaGradient", current);
+};
 
 // 数值/字符串解析
 const parseAndUpdate = (key: string, e: Event) => {
-  const target = e.target as HTMLInputElement
-  const trimmed = target.value.trim()
-  if (trimmed === '') return
-  const num = Number(trimmed)
-  updateConfig(key as any, Number.isNaN(num) ? trimmed : num)
-}
+  const target = e.target as HTMLInputElement;
+  const trimmed = target.value.trim();
+  if (trimmed === "") return;
+  const num = Number(trimmed);
+  updateConfig(key as any, Number.isNaN(num) ? trimmed : num);
+};
 
 // 颜色更新
 const handleColorChange = (field: string, val: string | null) => {
-  updateConfig(field as any, val || '')
-}
+  updateConfig(field as any, val || "");
+};
 </script>
 
 <style scoped>
@@ -860,7 +1389,11 @@ const handleColorChange = (field: string, val: string | null) => {
   content: "";
   width: 4px;
   height: 14px;
-  background: linear-gradient(180deg, var(--scada-cyan) 0%, var(--scada-purple) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--scada-cyan) 0%,
+    var(--scada-purple) 100%
+  );
   border-radius: 2px;
   box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
 }
@@ -1010,5 +1543,16 @@ const handleColorChange = (field: string, val: string | null) => {
   background: rgba(0, 0, 0, 0.02);
   color: rgba(0, 0, 0, 0.3);
   cursor: not-allowed;
+}
+
+.divider-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 8px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
 }
 </style>

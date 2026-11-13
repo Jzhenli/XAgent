@@ -11,7 +11,7 @@
       <span class="ac3-card-title" :style="cardTitleStyle">{{ cardTitle }}</span>
       <Icon
         :name="isOn ? currentModeIcon : 'power-off'"
-        :size="22"
+        :size="config.cardIconSize"
         type="mono-line"
         :color="{ normal: isOn ? activeAccentColor : cardTitleColor }"
       />
@@ -36,8 +36,8 @@
           <!-- 标题栏 -->
           <div class="ac3-dialog-header">
             <div class="ac3-dialog-title">
-              <span class="main">{{ dialogTitle }}</span>
-              <span v-if="dialogSubtitle" class="sub">{{ dialogSubtitle }}</span>
+              <span class="main" :style="dialogTitleStyle">{{ dialogTitle }}</span>
+              <span v-if="dialogSubtitle" class="sub" :style="dialogSubtitleStyle">{{ dialogSubtitle }}</span>
             </div>
             <div class="ac3-dialog-close" @click="dialogVisible = false">
               <el-icon><Close /></el-icon>
@@ -50,7 +50,7 @@
             <div
               class="ac3-power-btn"
               :class="{ on: isOn }"
-              :style="powerBtnStyle"
+              :style="[powerBtnStyle, powerBtnBgStyle]"
               @click="togglePower"
             >
               <el-icon><SwitchButton /></el-icon>
@@ -60,17 +60,17 @@
             <div class="ac3-center-content">
               <div class="ac3-temp-display">
                 <span class="temp-value" :style="tempFontStyle">{{ setpointValue }}</span>
-                <span class="temp-unit">{{ gaugeUnit }}</span>
+                <span class="temp-unit" :style="gaugeUnitStyle">{{ gaugeUnit }}</span>
               </div>
-              <div class="ac3-current-value">
+              <div class="ac3-current-value" :style="currentValueStyle">
                 {{ currentValueLabel }}{{ currentValueDisplay }}{{ gaugeUnit }}
               </div>
             </div>
 
             <!-- 加减按钮：胶囊拼合 -->
             <div class="ac3-adjust-btns" :class="{ disabled: !isOn }">
-              <div class="ac3-adj-btn left" @click="decrementSetpoint">−</div>
-              <div class="ac3-adj-btn right" @click="incrementSetpoint">+</div>
+              <div class="ac3-adj-btn left" :style="stepBtnStyle" @click="decrementSetpoint">−</div>
+              <div class="ac3-adj-btn right" :style="stepBtnStyle" @click="incrementSetpoint">+</div>
             </div>
           </div>
 
@@ -88,11 +88,11 @@
               >
                 <Icon
                   :name="m.icon"
-                  :size="22"
+                  :size="config.modeIconSize"
                   type="mono-line"
                   :color="{ normal: m.isActive ? modeActiveIconColor : modeIconColor }"
                 />
-                <span class="mode-label">{{ m.label }}</span>
+                <span class="mode-label" :style="modeLabelStyle">{{ m.label }}</span>
               </div>
             </div>
           </div>
@@ -400,6 +400,7 @@ const mainAreaStyle = computed(() => {
   const angle = mainAreaGradientAngle.value
   return {
     background: `linear-gradient(${angle}deg, ${c1}, ${c2})`,
+    borderRadius: `${config.value.mainAreaBorderRadius}px`,
   }
 })
 
@@ -408,9 +409,42 @@ const tempFontStyle = computed(() => ({
   color: mainAreaTextColor.value,
 }))
 
+const dialogTitleStyle = computed(() => ({
+  fontSize: `${config.value.dialogTitleFontSize}px`,
+  color: config.value.dialogTitleColor,
+}))
+
+const dialogSubtitleStyle = computed(() => ({
+  fontSize: `${config.value.dialogSubtitleFontSize}px`,
+  color: config.value.dialogSubtitleColor,
+}))
+
+const currentValueStyle = computed(() => ({
+  fontSize: `${config.value.currentValueFontSize}px`,
+  color: config.value.currentValueColor,
+}))
+
+const gaugeUnitStyle = computed(() => ({
+  fontSize: `${config.value.gaugeUnitFontSize}px`,
+  color: config.value.gaugeUnitColor,
+}))
+
+const stepBtnStyle = computed(() => ({
+  background: config.value.stepButtonBackgroundColor,
+  fontSize: `${config.value.stepButtonIconSize}px`,
+  color: config.value.stepButtonColor,
+}))
+
 const powerBtnStyle = computed(() => ({
   width: `${powerButtonSize.value}px`,
   height: `${powerButtonSize.value}px`,
+  color: config.value.powerButtonIconColor,
+}))
+
+const powerBtnBgStyle = computed(() => ({
+  background: isOn.value
+    ? config.value.powerButtonOnColor
+    : config.value.powerButtonOffColor,
 }))
 
 const modeItemStyle = computed(() => ({
@@ -418,6 +452,10 @@ const modeItemStyle = computed(() => ({
   '--mode-active-bg': modeActiveBackgroundColor.value,
   '--mode-active-fg': modeActiveFontColor.value,
   '--mode-fg': modeFontColor.value,
+}))
+
+const modeLabelStyle = computed(() => ({
+  fontSize: `${config.value.modeFontSize}px`,
 }))
 
 const fanItemStyle = computed(() => ({
