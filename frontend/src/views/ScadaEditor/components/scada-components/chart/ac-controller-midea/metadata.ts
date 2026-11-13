@@ -1,4 +1,4 @@
-import type { ScadaComponentMeta, AcControllerMideaComponentConfig } from '../../../../types'
+﻿import type { ScadaComponentMeta, AcControllerMideaComponentConfig } from '../../../../types'
 import AcControllerMidea from './index.vue'
 import AcControllerMideaConfigPanel from './ConfigPanel.vue'
 
@@ -25,7 +25,7 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   editModeOpenDialog: false,
 
   // 画布卡片外观
-  cardTitle: '空调',
+  cardTitle: 'componentConfig.acCardTitle',
   cardTitleFontSize: 12,
   cardBackgroundColor: 'rgba(245, 247, 250, 0.9)',
   cardTitleColor: 'rgba(0,0,0,0.6)',
@@ -39,8 +39,8 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   cardValueDecimalPlaces: 0,
 
   // 弹框外观
-  dialogTitle: '空调',
-  dialogSubtitle: '办公区',
+  dialogTitle: 'componentConfig.acCardTitle',
+  dialogSubtitle: 'componentConfig.acDialogSubtitle',
   dialogWidth: 420,
   dialogBackgroundColor: '#1a1a2e',
   dialogBorderRadius: 16,
@@ -56,7 +56,7 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   mainAreaBorderRadius: 12,
   mainAreaFontSize: 48,
   mainAreaTextColor: '#ffffff',
-  currentValueLabel: '当前温度: ',
+  currentValueLabel: 'componentConfig.acCurrentValueLabel',
   currentValueFontSize: 14,
   currentValueColor: 'rgba(255, 255, 255, 0.85)',
   gaugeUnit: '°C',
@@ -80,7 +80,7 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   powerButtonIconColor: '#ffffff',
 
   // 模式
-  modeSectionTitle: '模式',
+  modeSectionTitle: 'componentConfig.mode',
   modeBackgroundColor: 'rgba(255, 255, 255, 0.08)',
   modeActiveBackgroundColor: '#667eea',
   modeIconColor: 'rgba(255,255,255,0.6)',
@@ -89,57 +89,57 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   modeActiveFontColor: '#ffffff',
   // 自动（4 个组合值）
   modeAutoVisible: true,
-  modeAutoLabel: '自动',
+  modeAutoLabel: 'scadaComponents.acModeAuto',
   modeAutoCoolValue: 10,
   modeAutoHeatValue: 11,
   modeAutoDehumidifyValue: 12,
   modeAutoFanValue: 13,
   // 制冷
   modeCoolVisible: true,
-  modeCoolLabel: '制冷',
+  modeCoolLabel: 'scadaComponents.acModeCool',
   modeCoolValue: 1,
   // 制热
   modeHeatVisible: true,
-  modeHeatLabel: '制热',
+  modeHeatLabel: 'scadaComponents.acModeHeat',
   modeHeatValue: 2,
   // 除湿
   modeDehumidifyVisible: true,
-  modeDehumidifyLabel: '除湿',
+  modeDehumidifyLabel: 'componentConfig.acModeDehumidifyLabel',
   modeDehumidifyValue: 3,
   // 通风
   modeFanVisible: true,
-  modeFanLabel: '通风',
+  modeFanLabel: 'scadaComponents.acModeFan',
   modeFanValue: 4,
 
   // 风速（自动 + 7 档独立 value）
-  fanSectionTitle: '风速',
+  fanSectionTitle: 'componentConfig.acFanSectionTitle',
   fanAutoVisible: true,
-  fanAutoLabel: '自动',
+  fanAutoLabel: 'componentConfig.acFanSpeedAuto',
   fanAutoValue: 0,
   fanLevelsTrackBackgroundColor: 'rgba(255,255,255,0.12)',
   fanLevelsActiveBackgroundColor: '#667eea',
   fanLevelsTextColor: 'rgba(255,255,255,0.85)',
   // 7 档
   fanLevel1Visible: true,
-  fanLevel1Label: '1档',
+  fanLevel1Label: '1',
   fanLevel1Value: 1,
   fanLevel2Visible: true,
-  fanLevel2Label: '2档',
+  fanLevel2Label: '2',
   fanLevel2Value: 2,
   fanLevel3Visible: true,
-  fanLevel3Label: '3档',
+  fanLevel3Label: '3',
   fanLevel3Value: 3,
   fanLevel4Visible: true,
-  fanLevel4Label: '4档',
+  fanLevel4Label: '4',
   fanLevel4Value: 4,
   fanLevel5Visible: true,
-  fanLevel5Label: '5档',
+  fanLevel5Label: '5',
   fanLevel5Value: 5,
   fanLevel6Visible: true,
-  fanLevel6Label: '6档',
+  fanLevel6Label: '6',
   fanLevel6Value: 6,
   fanLevel7Visible: true,
-  fanLevel7Label: '7档',
+  fanLevel7Label: '7',
   fanLevel7Value: 7,
 }
 

@@ -76,7 +76,7 @@
 
           <!-- 模式选择 -->
           <div class="ac3-section">
-            <div class="ac3-section-label">{{ config.modeSectionTitle }}</div>
+            <div class="ac3-section-label">{{ modeSectionTitle }}</div>
             <div class="ac3-mode-grid">
               <div
                 v-for="m in modeList"
@@ -99,7 +99,7 @@
 
           <!-- 风速选择 -->
           <div class="ac3-section" style="padding-top: 8px;">
-            <div class="ac3-section-label">{{ config.fanSectionTitle }}</div>
+            <div class="ac3-section-label">{{ fanSectionTitle }}</div>
             <div class="ac3-fan-grid">
               <div
                 v-for="f in fanList"
@@ -112,14 +112,14 @@
                 <Icon
                   v-if="f.icon"
                   :name="f.icon"
-                  :size="22"
+                  :size="fanIconSize"
                   type="mono-line"
                   :color="{ normal: f.isActive ? fanActiveIconColor : fanIconColor }"
                 />
                 <div v-else class="ac3-fan-bars">
                   <span v-for="i in f.barCount" :key="i" class="fan-bar" />
                 </div>
-                <span class="fan-label">{{ f.label }}</span>
+                <span class="fan-label" :style="fanLabelStyle">{{ f.label }}</span>
               </div>
             </div>
           </div>
@@ -147,6 +147,11 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+
+// ── i18n 默认文本跟随 ──
+const resolve = (v: string | undefined) =>
+  (v?.startsWith('componentConfig.') || v?.startsWith('scadaComponents.')) ? t(v) : v
+
 const injectedReader = inject(ScadaPointReaderKey, null) as ScadaPointReader | null
 
 const config = computed(() => props.component.config as AcController3ComponentConfig)
@@ -242,7 +247,7 @@ const { currentValue: currentVal } = useScadaBinding(
 // 画布卡片样式（替换旧按钮样式）
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const cardTitle = computed(() => config.value.cardTitle)
+const cardTitle = computed(() => resolve(config.value.cardTitle) ?? '')
 const cardTitleFontSize = computed(() => config.value.cardTitleFontSize)
 const cardValueFontSize = computed(() => config.value.cardValueFontSize)
 const cardUnitFontSize = computed(() => config.value.cardUnitFontSize)
@@ -293,8 +298,8 @@ const currentModeIcon = computed(() => {
   return 'auto'
 })
 
-const dialogTitle = computed(() => config.value.dialogTitle)
-const dialogSubtitle = computed(() => config.value.dialogSubtitle)
+const dialogTitle = computed(() => resolve(config.value.dialogTitle) ?? '')
+const dialogSubtitle = computed(() => resolve(config.value.dialogSubtitle) ?? '')
 const dialogWidth = computed(() => config.value.dialogWidth)
 const dialogBackgroundColor = computed(() => config.value.dialogBackgroundColor)
 const dialogBorderRadius = computed(() => config.value.dialogBorderRadius)
@@ -308,7 +313,9 @@ const gaugeMin = computed(() => config.value.gaugeMin)
 const gaugeMax = computed(() => config.value.gaugeMax)
 const gaugeStep = computed(() => config.value.gaugeStep)
 const gaugeUnit = computed(() => config.value.gaugeUnit)
-const currentValueLabel = computed(() => config.value.currentValueLabel)
+const currentValueLabel = computed(() => resolve(config.value.currentValueLabel) ?? '')
+const modeSectionTitle = computed(() => resolve(config.value.modeSectionTitle) ?? '')
+const fanSectionTitle = computed(() => resolve(config.value.fanSectionTitle) ?? '')
 
 const powerButtonSize = computed(() => config.value.powerButtonSize)
 const powerButtonOnColor = computed(() => config.value.powerButtonOnColor)
@@ -327,6 +334,8 @@ const fanIconColor = computed(() => config.value.fanIconColor)
 const fanActiveIconColor = computed(() => config.value.fanActiveIconColor)
 const fanFontColor = computed(() => config.value.fanFontColor)
 const fanActiveFontColor = computed(() => config.value.fanActiveFontColor)
+const fanIconSize = computed(() => config.value.fanIconSize ?? 22)
+const fanFontSize = computed(() => config.value.fanFontSize ?? 12)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 弹框可见性（已在上方 computed 中定义，卡片点击仅在预览模式生效）
@@ -467,6 +476,10 @@ const fanItemStyle = computed(() => ({
   '--fan-bar-on': fanActiveIconColor.value,
 }))
 
+const fanLabelStyle = computed(() => ({
+  fontSize: `${fanFontSize.value}px`,
+}))
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // 数值格式化
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -506,10 +519,10 @@ const modeList = computed<ModeItem[]>(() => {
     return { key, label, icon, value, isActive: active }
   }
   return [
-    build(config.value.modeAutoVisible,  'auto',  config.value.modeAutoLabel,  'auto',  config.value.modeAutoValue),
-    build(config.value.modeCoolVisible,  'cool',  config.value.modeCoolLabel,  'snow',  config.value.modeCoolValue),
-    build(config.value.modeHeatVisible,  'heat',  config.value.modeHeatLabel,  'sun',   config.value.modeHeatValue),
-    build(config.value.modeFanVisible,   'fan',   config.value.modeFanLabel,   'fanSpeed3',  config.value.modeFanValue),
+    build(config.value.modeAutoVisible,  'auto',  resolve(config.value.modeAutoLabel) ?? '',  'auto',  config.value.modeAutoValue),
+    build(config.value.modeCoolVisible,  'cool',  resolve(config.value.modeCoolLabel) ?? '',  'snow',  config.value.modeCoolValue),
+    build(config.value.modeHeatVisible,  'heat',  resolve(config.value.modeHeatLabel) ?? '',   'sun',   config.value.modeHeatValue),
+    build(config.value.modeFanVisible,   'fan',   resolve(config.value.modeFanLabel) ?? '',    'fanSpeed3',  config.value.modeFanValue),
   ].filter((x): x is ModeItem => x !== null)
 })
 
@@ -542,10 +555,10 @@ const fanList = computed<FanItem[]>(() => {
     return { key, label, value, isActive: active, barCount, icon }
   }
   return [
-    build(config.value.fanAutoVisible,    'auto',   config.value.fanAutoLabel,    config.value.fanAutoValue,    3, 'auto'),
-    build(config.value.fanLowVisible,     'low',    config.value.fanLowLabel,     config.value.fanLowValue,     1),
-    build(config.value.fanMediumVisible,   'medium', config.value.fanMediumLabel,  config.value.fanMediumValue,  2),
-    build(config.value.fanHighVisible,    'high',   config.value.fanHighLabel,    config.value.fanHighValue,    3),
+    build(config.value.fanAutoVisible,    'auto',   resolve(config.value.fanAutoLabel) ?? '',    config.value.fanAutoValue,    3, 'auto'),
+    build(config.value.fanLowVisible,     'low',    resolve(config.value.fanLowLabel) ?? '',     config.value.fanLowValue,     1),
+    build(config.value.fanMediumVisible,   'medium', resolve(config.value.fanMediumLabel) ?? '',  config.value.fanMediumValue,  2),
+    build(config.value.fanHighVisible,    'high',   resolve(config.value.fanHighLabel) ?? '',    config.value.fanHighValue,    3),
   ].filter((x): x is FanItem => x !== null)
 })
 

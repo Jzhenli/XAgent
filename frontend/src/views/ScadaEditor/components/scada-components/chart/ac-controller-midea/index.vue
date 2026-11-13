@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="acm-root">
     <div
       class="acm-wrapper acm-card"
@@ -78,7 +78,7 @@
 
           <!-- 模式选择（5 按钮，支持双按钮同时高亮） -->
           <div class="acm-section">
-            <div class="acm-section-label">{{ config.modeSectionTitle }}</div>
+            <div class="acm-section-label">{{ modeSectionTitle }}</div>
             <div class="acm-mode-grid">
               <div
                 v-for="m in modeList"
@@ -101,7 +101,7 @@
 
           <!-- 风速选择：左侧自动按钮 + 右侧 7 档滑块 -->
           <div class="acm-section acm-section-fan">
-            <div class="acm-section-label">{{ config.fanSectionTitle }}</div>
+            <div class="acm-section-label">{{ fanSectionTitle }}</div>
             <div class="acm-fan-row">
               <!-- 自动按钮 -->
               <div
@@ -117,7 +117,7 @@
                   type="mono-line"
                   :color="{ normal: isFanAuto ? fanActiveIconColor : fanIconColor }"
                 />
-                <span class="fan-label">{{ config.fanAutoLabel }}</span>
+                <span class="fan-label">{{ fanAutoLabel }}</span>
               </div>
 
               <!-- 7 档滑块 -->
@@ -145,7 +145,7 @@
                   >+</div>
                 </div>
                 <div class="acm-fan-slider-label" :style="sliderTextStyle">
-                  {{ isFanAuto ? config.fanAutoLabel : (activeFanLevel?.label ?? `${fanVal.value}档`) }}
+                  {{ isFanAuto ? config.fanAutoLabel : (activeFanLevel?.label ?? `${fanVal.value}${t('componentConfig.acFanLevelUnitLabel')}`) }}
                 </div>
               </div>
             </div>
@@ -178,6 +178,16 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+
+// ── i18n 默认文本跟随 ──
+const resolve = (v: string | undefined) =>
+  (v?.startsWith('componentConfig.') || v?.startsWith('scadaComponents.')) ? t(v) : v
+const resolveFanLevel = (level: string | undefined) => {
+  if (!level) return level
+  if (/^\d+$/.test(level)) return level + t('componentConfig.acFanLevelUnitLabel')
+  return resolve(level)
+}
+
 const injectedReader = inject(ScadaPointReaderKey, null) as ScadaPointReader | null
 
 const config = computed(() => props.component.config as AcControllerMideaComponentConfig)
@@ -252,7 +262,7 @@ const { currentValue: currentVal } = useScadaBinding(
 // 画布卡片样式
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const cardTitle = computed(() => config.value.cardTitle)
+const cardTitle = computed(() => resolve(config.value.cardTitle) ?? '')
 const cardTitleFontSize = computed(() => config.value.cardTitleFontSize)
 const cardValueFontSize = computed(() => config.value.cardValueFontSize)
 const cardUnitFontSize = computed(() => config.value.cardUnitFontSize)
@@ -311,8 +321,8 @@ const currentModeIcon = computed(() => {
 // 弹框样式配置
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const dialogTitle = computed(() => config.value.dialogTitle)
-const dialogSubtitle = computed(() => config.value.dialogSubtitle)
+const dialogTitle = computed(() => resolve(config.value.dialogTitle) ?? '')
+const dialogSubtitle = computed(() => resolve(config.value.dialogSubtitle) ?? '')
 const dialogTitleStyle = computed(() => ({
   fontSize: `${config.value.dialogTitleFontSize}px`,
   color: config.value.dialogTitleColor,
@@ -338,7 +348,10 @@ const gaugeMin = computed(() => config.value.gaugeMin)
 const gaugeMax = computed(() => config.value.gaugeMax)
 const gaugeStep = computed(() => config.value.gaugeStep)
 const gaugeUnit = computed(() => config.value.gaugeUnit)
-const currentValueLabel = computed(() => config.value.currentValueLabel)
+const currentValueLabel = computed(() => resolve(config.value.currentValueLabel) ?? '')
+const modeSectionTitle = computed(() => resolve(config.value.modeSectionTitle) ?? '')
+const fanSectionTitle = computed(() => resolve(config.value.fanSectionTitle) ?? '')
+const fanAutoLabel = computed(() => resolve(config.value.fanAutoLabel) ?? '')
 const showMainAreaStatusText = computed(() => config.value.showMainAreaStatusText)
 const mainAreaStatusTextColor = computed(() => config.value.mainAreaStatusTextColor)
 
@@ -528,31 +541,31 @@ const modeList = computed<ModeItem[]>(() => {
   const items: ModeItem[] = []
   if (c.modeAutoVisible) items.push({
     key: 'auto',
-    label: c.modeAutoLabel,
+    label: resolve(c.modeAutoLabel) ?? '',
     icon: 'auto',
     writeValue: c.modeAutoCoolValue, // 自动按钮点击值由 handleAutoClick 重写，这里只是占位
   })
   if (c.modeCoolVisible) items.push({
     key: 'cool',
-    label: c.modeCoolLabel,
+    label: resolve(c.modeCoolLabel) ?? '',
     icon: 'snow',
     writeValue: c.modeCoolValue,
   })
   if (c.modeHeatVisible) items.push({
     key: 'heat',
-    label: c.modeHeatLabel,
+    label: resolve(c.modeHeatLabel) ?? '',
     icon: 'sun',
     writeValue: c.modeHeatValue,
   })
   if (c.modeDehumidifyVisible) items.push({
     key: 'dehumidify',
-    label: c.modeDehumidifyLabel,
+    label: resolve(c.modeDehumidifyLabel) ?? '',
     icon: 'droplet',
     writeValue: c.modeDehumidifyValue,
   })
   if (c.modeFanVisible) items.push({
     key: 'fan',
-    label: c.modeFanLabel,
+    label: resolve(c.modeFanLabel) ?? '',
     icon: 'fanSpeed3',
     writeValue: c.modeFanValue,
   })
@@ -630,13 +643,13 @@ interface FanLevelItem {
 const visibleFanLevels = computed<FanLevelItem[]>(() => {
   const c = config.value
   const all: FanLevelItem[] = [
-    c.fanLevel1Visible && { key: '1', label: c.fanLevel1Label, value: c.fanLevel1Value },
-    c.fanLevel2Visible && { key: '2', label: c.fanLevel2Label, value: c.fanLevel2Value },
-    c.fanLevel3Visible && { key: '3', label: c.fanLevel3Label, value: c.fanLevel3Value },
-    c.fanLevel4Visible && { key: '4', label: c.fanLevel4Label, value: c.fanLevel4Value },
-    c.fanLevel5Visible && { key: '5', label: c.fanLevel5Label, value: c.fanLevel5Value },
-    c.fanLevel6Visible && { key: '6', label: c.fanLevel6Label, value: c.fanLevel6Value },
-    c.fanLevel7Visible && { key: '7', label: c.fanLevel7Label, value: c.fanLevel7Value },
+    c.fanLevel1Visible && { key: '1', label: resolveFanLevel(c.fanLevel1Label) ?? '', value: c.fanLevel1Value },
+    c.fanLevel2Visible && { key: '2', label: resolveFanLevel(c.fanLevel2Label) ?? '', value: c.fanLevel2Value },
+    c.fanLevel3Visible && { key: '3', label: resolveFanLevel(c.fanLevel3Label) ?? '', value: c.fanLevel3Value },
+    c.fanLevel4Visible && { key: '4', label: resolveFanLevel(c.fanLevel4Label) ?? '', value: c.fanLevel4Value },
+    c.fanLevel5Visible && { key: '5', label: resolveFanLevel(c.fanLevel5Label) ?? '', value: c.fanLevel5Value },
+    c.fanLevel6Visible && { key: '6', label: resolveFanLevel(c.fanLevel6Label) ?? '', value: c.fanLevel6Value },
+    c.fanLevel7Visible && { key: '7', label: resolveFanLevel(c.fanLevel7Label) ?? '', value: c.fanLevel7Value },
   ].filter((x): x is FanLevelItem => !!x)
   return all
 })
@@ -746,8 +759,8 @@ const statusModeText = computed(() => {
 })
 
 const statusFanText = computed(() => {
-  if (isFanAuto.value) return '自动'
-  return activeFanLevel.value?.label ?? `${fanVal.value}档`
+  if (isFanAuto.value) return t('componentConfig.acFanSpeedAuto')
+  return activeFanLevel.value?.label ?? `${fanVal.value}${t('componentConfig.acFanLevelUnitLabel')}`
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════

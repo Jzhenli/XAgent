@@ -1,4 +1,4 @@
-import type { ScadaComponentMeta, AcController3ComponentConfig } from '../../../../types'
+﻿import type { ScadaComponentMeta, AcController3ComponentConfig } from '../../../../types'
 import AcController3 from './index.vue'
 import AcController3ConfigPanel from './ConfigPanel.vue'
 
@@ -23,7 +23,7 @@ const defaultConfig: AcController3ComponentConfig = {
   editModeOpenDialog: false,
 
   // 画布卡片外观
-  cardTitle: '空调',
+  cardTitle: 'componentConfig.acCardTitle',
   cardTitleFontSize: 12,
   cardBackgroundColor: 'rgba(245, 247, 250, 0.9)',
   cardTitleColor: 'rgba(0,0,0,0.6)',
@@ -37,8 +37,8 @@ const defaultConfig: AcController3ComponentConfig = {
   cardValueDecimalPlaces: 0,
 
   // 弹框外观
-  dialogTitle: '空调',
-  dialogSubtitle: '办公区',
+  dialogTitle: 'componentConfig.acCardTitle',
+  dialogSubtitle: 'componentConfig.acDialogSubtitle',
   dialogWidth: 420,
   dialogBackgroundColor: '#1a1a2e',
   dialogBorderRadius: 16,
@@ -54,7 +54,7 @@ const defaultConfig: AcController3ComponentConfig = {
   mainAreaBorderRadius: 12,
   mainAreaFontSize: 48,
   mainAreaTextColor: '#ffffff',
-  currentValueLabel: '当前温度: ',
+  currentValueLabel: 'componentConfig.acCurrentValueLabel',
   currentValueFontSize: 14,
   currentValueColor: 'rgba(255, 255, 255, 0.85)',
   gaugeUnit: '°C',
@@ -76,7 +76,7 @@ const defaultConfig: AcController3ComponentConfig = {
   powerButtonIconColor: '#ffffff',
 
   // 模式
-  modeSectionTitle: '模式',
+  modeSectionTitle: 'componentConfig.mode',
   modeIconSize: 22,
   modeFontSize: 12,
   modeBackgroundColor: 'rgba(255, 255, 255, 0.08)',
@@ -86,20 +86,22 @@ const defaultConfig: AcController3ComponentConfig = {
   modeFontColor: 'rgba(255,255,255,0.6)',
   modeActiveFontColor: '#ffffff',
   modeAutoVisible: true,
-  modeAutoLabel: '自动',
+  modeAutoLabel: 'scadaComponents.acModeAuto',
   modeAutoValue: 0,
   modeCoolVisible: true,
-  modeCoolLabel: '制冷',
+  modeCoolLabel: 'scadaComponents.acModeCool',
   modeCoolValue: 1,
   modeHeatVisible: true,
-  modeHeatLabel: '制热',
+  modeHeatLabel: 'scadaComponents.acModeHeat',
   modeHeatValue: 2,
   modeFanVisible: true,
-  modeFanLabel: '通风',
+  modeFanLabel: 'scadaComponents.acModeFan',
   modeFanValue: 3,
 
   // 风速
-  fanSectionTitle: '风速',
+  fanSectionTitle: 'componentConfig.acFanSectionTitle',
+  fanIconSize: 22,
+  fanFontSize: 12,
   fanBackgroundColor: 'rgba(255,255,255,0.08)',
   fanActiveBackgroundColor: '#667eea',
   fanIconColor: 'rgba(255,255,255,0.6)',
@@ -107,16 +109,16 @@ const defaultConfig: AcController3ComponentConfig = {
   fanFontColor: 'rgba(255,255,255,0.8)',
   fanActiveFontColor: '#ffffff',
   fanAutoVisible: true,
-  fanAutoLabel: '自动',
+  fanAutoLabel: 'componentConfig.acFanSpeedAuto',
   fanAutoValue: 0,
   fanLowVisible: true,
-  fanLowLabel: '低',
+  fanLowLabel: 'componentConfig.acFanSpeedLow',
   fanLowValue: 1,
   fanMediumVisible: true,
-  fanMediumLabel: '中',
+  fanMediumLabel: 'componentConfig.acFanSpeedMedium',
   fanMediumValue: 2,
   fanHighVisible: true,
-  fanHighLabel: '高',
+  fanHighLabel: 'componentConfig.acFanSpeedHigh',
   fanHighValue: 3,
 }
 

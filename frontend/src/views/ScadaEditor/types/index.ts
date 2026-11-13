@@ -974,6 +974,8 @@ export interface AcController3ComponentConfig extends BaseComponentConfig {
 
   // ── 风速配置 ──
   fanSectionTitle: string
+  fanIconSize: number
+  fanFontSize: number
   fanBackgroundColor: string
   fanActiveBackgroundColor: string
   fanIconColor: string

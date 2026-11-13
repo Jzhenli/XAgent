@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="config-section">
     <div class="section-title">
       {{ t("componentConfig.acController3Config") }}
@@ -270,7 +270,7 @@
           <label>{{ t("componentConfig.cardTitle") }}</label>
           <input
             type="text"
-            :value="config.cardTitle"
+            :value="translated.cardTitle"
             @input="
               updateConfig(
                 'cardTitle',
@@ -454,7 +454,7 @@
             <label>{{ t("componentConfig.mainTitle") }}</label>
             <input
               type="text"
-              :value="config.dialogTitle"
+              :value="translated.dialogTitle"
               @input="
                 updateConfig(
                   'dialogTitle',
@@ -467,7 +467,7 @@
             <label>{{ t("componentConfig.subTitle") }}</label>
             <input
               type="text"
-              :value="config.dialogSubtitle"
+              :value="translated.dialogSubtitle"
               @input="
                 updateConfig(
                   'dialogSubtitle',
@@ -820,7 +820,7 @@
           <label>{{ t("componentConfig.currentValueLabel") }}</label>
           <input
             type="text"
-            :value="config.currentValueLabel"
+            :value="translated.currentValueLabel"
             @input="
               updateConfig(
                 'currentValueLabel',
@@ -874,7 +874,7 @@
             <label>{{ t("componentConfig.sectionTitle") }}</label>
             <input
               type="text"
-              :value="config.modeSectionTitle"
+              :value="translated.modeSectionTitle"
               @input="
                 updateConfig(
                   'modeSectionTitle',
@@ -984,7 +984,7 @@
               type="text"
               class="level-label"
               :disabled="!config.modeAutoVisible"
-              :value="config.modeAutoLabel"
+              :value="translated.modeAutoLabel"
               @input="
                 updateConfig(
                   'modeAutoLabel',
@@ -1009,7 +1009,7 @@
               type="text"
               class="level-label"
               :disabled="!config.modeCoolVisible"
-              :value="config.modeCoolLabel"
+              :value="translated.modeCoolLabel"
               @input="
                 updateConfig(
                   'modeCoolLabel',
@@ -1034,7 +1034,7 @@
               type="text"
               class="level-label"
               :disabled="!config.modeHeatVisible"
-              :value="config.modeHeatLabel"
+              :value="translated.modeHeatLabel"
               @input="
                 updateConfig(
                   'modeHeatLabel',
@@ -1059,7 +1059,7 @@
               type="text"
               class="level-label"
               :disabled="!config.modeFanVisible"
-              :value="config.modeFanLabel"
+              :value="translated.modeFanLabel"
               @input="
                 updateConfig(
                   'modeFanLabel',
@@ -1090,7 +1090,7 @@
           <label>{{ t("componentConfig.sectionTitle") }}</label>
           <input
             type="text"
-            :value="config.fanSectionTitle"
+            :value="translated.fanSectionTitle"
             @input="
               updateConfig(
                 'fanSectionTitle',
@@ -1100,6 +1100,36 @@
           />
         </div>
 
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.iconSize") }}</label>
+            <input
+              type="number"
+              min="12"
+              :value="config.fanIconSize"
+              @change="
+                updateConfig(
+                  'fanIconSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.fontSize") }}</label>
+            <input
+              type="number"
+              min="10"
+              :value="config.fanFontSize"
+              @change="
+                updateConfig(
+                  'fanFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label>{{ t("componentConfig.backgroundColor") }}</label>
@@ -1168,7 +1198,7 @@
               type="text"
               class="level-label"
               :disabled="!config.fanAutoVisible"
-              :value="config.fanAutoLabel"
+              :value="translated.fanAutoLabel"
               @input="
                 updateConfig(
                   'fanAutoLabel',
@@ -1193,7 +1223,7 @@
               type="text"
               class="level-label"
               :disabled="!config.fanLowVisible"
-              :value="config.fanLowLabel"
+              :value="translated.fanLowLabel"
               @input="
                 updateConfig(
                   'fanLowLabel',
@@ -1218,7 +1248,7 @@
               type="text"
               class="level-label"
               :disabled="!config.fanMediumVisible"
-              :value="config.fanMediumLabel"
+              :value="translated.fanMediumLabel"
               @input="
                 updateConfig(
                   'fanMediumLabel',
@@ -1243,7 +1273,7 @@
               type="text"
               class="level-label"
               :disabled="!config.fanHighVisible"
-              :value="config.fanHighLabel"
+              :value="translated.fanHighLabel"
               @input="
                 updateConfig(
                   'fanHighLabel',
@@ -1266,7 +1296,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { usePointStore } from "@/stores/points";
 import { useScadaConfig } from "../../../../hooks/useScadaEditor";
@@ -1287,6 +1317,29 @@ const props = defineProps<{
 const { config, updateConfig } = useScadaConfig(
   props.component as ScadaComponent<"ac-controller-3">,
 );
+
+// ── i18n 默认文本跟随：key 开头翻译，否则直接显示 ──
+const resolve = (v: string | undefined) =>
+  (v?.startsWith("componentConfig.") || v?.startsWith("scadaComponents.")) ? t(v) : v;
+const translated = computed(() => {
+  const c = config.value;
+  return {
+    cardTitle: resolve(c.cardTitle),
+    dialogTitle: resolve(c.dialogTitle),
+    dialogSubtitle: resolve(c.dialogSubtitle),
+    currentValueLabel: resolve(c.currentValueLabel),
+    modeSectionTitle: resolve(c.modeSectionTitle),
+    modeAutoLabel: resolve(c.modeAutoLabel),
+    modeCoolLabel: resolve(c.modeCoolLabel),
+    modeHeatLabel: resolve(c.modeHeatLabel),
+    modeFanLabel: resolve(c.modeFanLabel),
+    fanSectionTitle: resolve(c.fanSectionTitle),
+    fanAutoLabel: resolve(c.fanAutoLabel),
+    fanLowLabel: resolve(c.fanLowLabel),
+    fanMediumLabel: resolve(c.fanMediumLabel),
+    fanHighLabel: resolve(c.fanHighLabel),
+  };
+});
 
 // 折叠项
 const activeItems = ref<string[]>([]);

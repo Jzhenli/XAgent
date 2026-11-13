@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="config-section">
     <div class="section-title">
       {{ t("componentConfig.acControllerMideaConfig") }}
@@ -270,7 +270,7 @@
           <label>{{ t("componentConfig.cardTitle") }}</label>
           <input
             type="text"
-            :value="config.cardTitle"
+            :value="translated.cardTitle"
             @input="
               updateConfig(
                 'cardTitle',
@@ -456,7 +456,7 @@
             <label>{{ t("componentConfig.mainTitle") }}</label>
             <input
               type="text"
-              :value="config.dialogTitle"
+              :value="translated.dialogTitle"
               @input="
                 updateConfig(
                   'dialogTitle',
@@ -469,7 +469,7 @@
             <label>{{ t("componentConfig.subTitle") }}</label>
             <input
               type="text"
-              :value="config.dialogSubtitle"
+              :value="translated.dialogSubtitle"
               @input="
                 updateConfig(
                   'dialogSubtitle',
@@ -819,7 +819,7 @@
           <label>{{ t("componentConfig.currentValueLabel") }}</label>
           <input
             type="text"
-            :value="config.currentValueLabel"
+            :value="translated.currentValueLabel"
             @input="
               updateConfig(
                 'currentValueLabel',
@@ -890,7 +890,7 @@
           <label>{{ t("componentConfig.sectionTitle") }}</label>
           <input
             type="text"
-            :value="config.modeSectionTitle"
+            :value="translated.modeSectionTitle"
             @input="
               updateConfig(
                 'modeSectionTitle',
@@ -970,7 +970,7 @@
               type="text"
               class="mode-label"
               :disabled="!config.modeAutoVisible"
-              :value="config.modeAutoLabel"
+              :value="translated.modeAutoLabel"
               @input="
                 updateConfig(
                   'modeAutoLabel',
@@ -1029,7 +1029,7 @@
               type="text"
               class="mode-label"
               :disabled="!config.modeCoolVisible"
-              :value="config.modeCoolLabel"
+              :value="translated.modeCoolLabel"
               @input="
                 updateConfig(
                   'modeCoolLabel',
@@ -1058,7 +1058,7 @@
               type="text"
               class="mode-label"
               :disabled="!config.modeHeatVisible"
-              :value="config.modeHeatLabel"
+              :value="translated.modeHeatLabel"
               @input="
                 updateConfig(
                   'modeHeatLabel',
@@ -1089,7 +1089,7 @@
               type="text"
               class="mode-label"
               :disabled="!config.modeDehumidifyVisible"
-              :value="config.modeDehumidifyLabel"
+              :value="translated.modeDehumidifyLabel"
               @input="
                 updateConfig(
                   'modeDehumidifyLabel',
@@ -1118,7 +1118,7 @@
               type="text"
               class="mode-label"
               :disabled="!config.modeFanVisible"
-              :value="config.modeFanLabel"
+              :value="translated.modeFanLabel"
               @input="
                 updateConfig(
                   'modeFanLabel',
@@ -1149,7 +1149,7 @@
           <label>{{ t("componentConfig.sectionTitle") }}</label>
           <input
             type="text"
-            :value="config.fanSectionTitle"
+            :value="translated.fanSectionTitle"
             @input="
               updateConfig(
                 'fanSectionTitle',
@@ -1205,7 +1205,7 @@
             type="text"
             class="level-label"
             :disabled="!config.fanAutoVisible"
-            :value="config.fanAutoLabel"
+            :value="translated.fanAutoLabel"
             @input="
               updateConfig(
                 'fanAutoLabel',
@@ -1232,7 +1232,7 @@
             type="text"
             class="level-label"
             :disabled="!config.fanLevel1Visible"
-            :value="config.fanLevel1Label"
+            :value="translated.fanLevel1Label"
             @input="
               updateConfig(
                 'fanLevel1Label',
@@ -1257,7 +1257,7 @@
             type="text"
             class="level-label"
             :disabled="!config.fanLevel2Visible"
-            :value="config.fanLevel2Label"
+            :value="translated.fanLevel2Label"
             @input="
               updateConfig(
                 'fanLevel2Label',
@@ -1282,7 +1282,7 @@
             type="text"
             class="level-label"
             :disabled="!config.fanLevel3Visible"
-            :value="config.fanLevel3Label"
+            :value="translated.fanLevel3Label"
             @input="
               updateConfig(
                 'fanLevel3Label',
@@ -1307,7 +1307,7 @@
             type="text"
             class="level-label"
             :disabled="!config.fanLevel4Visible"
-            :value="config.fanLevel4Label"
+            :value="translated.fanLevel4Label"
             @input="
               updateConfig(
                 'fanLevel4Label',
@@ -1332,7 +1332,7 @@
             type="text"
             class="level-label"
             :disabled="!config.fanLevel5Visible"
-            :value="config.fanLevel5Label"
+            :value="translated.fanLevel5Label"
             @input="
               updateConfig(
                 'fanLevel5Label',
@@ -1357,7 +1357,7 @@
             type="text"
             class="level-label"
             :disabled="!config.fanLevel6Visible"
-            :value="config.fanLevel6Label"
+            :value="translated.fanLevel6Label"
             @input="
               updateConfig(
                 'fanLevel6Label',
@@ -1382,7 +1382,7 @@
             type="text"
             class="level-label"
             :disabled="!config.fanLevel7Visible"
-            :value="config.fanLevel7Label"
+            :value="translated.fanLevel7Label"
             @input="
               updateConfig(
                 'fanLevel7Label',
@@ -1404,7 +1404,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { usePointStore } from "@/stores/points";
 import { useScadaConfig } from "../../../../hooks/useScadaEditor";
@@ -1424,6 +1424,39 @@ const props = defineProps<{
 const { config, updateConfig } = useScadaConfig(
   props.component as ScadaComponent<"ac-controller-midea">,
 );
+
+// ── i18n 默认文本跟随：key 开头翻译，否则直接显示 ──
+const resolve = (v: string | undefined) =>
+  (v?.startsWith("componentConfig.") || v?.startsWith("scadaComponents.")) ? t(v) : v;
+const resolveFanLevel = (level: string | undefined) => {
+  if (!level) return level;
+  if (/^\d+$/.test(level)) return level + t("componentConfig.acFanLevelUnitLabel");
+  return resolve(level);
+};
+const translated = computed(() => {
+  const c = config.value;
+  return {
+    cardTitle: resolve(c.cardTitle),
+    dialogTitle: resolve(c.dialogTitle),
+    dialogSubtitle: resolve(c.dialogSubtitle),
+    currentValueLabel: resolve(c.currentValueLabel),
+    modeSectionTitle: resolve(c.modeSectionTitle),
+    modeAutoLabel: resolve(c.modeAutoLabel),
+    modeCoolLabel: resolve(c.modeCoolLabel),
+    modeHeatLabel: resolve(c.modeHeatLabel),
+    modeDehumidifyLabel: resolve(c.modeDehumidifyLabel),
+    modeFanLabel: resolve(c.modeFanLabel),
+    fanSectionTitle: resolve(c.fanSectionTitle),
+    fanAutoLabel: resolve(c.fanAutoLabel),
+    fanLevel1Label: resolveFanLevel(c.fanLevel1Label),
+    fanLevel2Label: resolveFanLevel(c.fanLevel2Label),
+    fanLevel3Label: resolveFanLevel(c.fanLevel3Label),
+    fanLevel4Label: resolveFanLevel(c.fanLevel4Label),
+    fanLevel5Label: resolveFanLevel(c.fanLevel5Label),
+    fanLevel6Label: resolveFanLevel(c.fanLevel6Label),
+    fanLevel7Label: resolveFanLevel(c.fanLevel7Label),
+  };
+});
 
 const activeItems = ref<string[]>([]);
 
