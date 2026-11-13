@@ -302,21 +302,15 @@ const currentModeIcon = computed(() => {
   const v = modeVal.value
   const c = config.value
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoCoolValue || v == c.modeAutoCoolValue) return 'snow'
+  if (v == c.modeAutoValue) return 'auto'
+  // eslint-disable-next-line eqeqeq
+  if (v == c.modeAutoCoolValue || v == c.modeCoolValue) return 'snow'
   // eslint-disable-next-line eqeqeq
   if (v == c.modeAutoHeatValue || v == c.modeHeatValue) return 'sun'
   // eslint-disable-next-line eqeqeq
   if (v == c.modeAutoDehumidifyValue || v == c.modeDehumidifyValue) return 'humidity'
   // eslint-disable-next-line eqeqeq
   if (v == c.modeAutoFanValue || v == c.modeFanValue) return 'fanSpeed3'
-  // eslint-disable-next-line eqeqeq
-  if (v == c.modeCoolValue) return 'snow'
-  // eslint-disable-next-line eqeqeq
-  if (v == c.modeHeatValue) return 'sun'
-  // eslint-disable-next-line eqeqeq
-  if (v == c.modeDehumidifyValue) return 'humidity'
-  // eslint-disable-next-line eqeqeq
-  if (v == c.modeFanValue) return 'fanSpeed3'
   return 'auto'
 })
 
@@ -547,41 +541,13 @@ interface ModeItem {
 }
 
 // 5 个模式按钮的定义（不处理激活判断，由 activeModeKeys 统一处理）
-const modeList = computed<ModeItem[]>(() => {
-  const c = config.value
-  const items: ModeItem[] = []
-  if (c.modeAutoVisible) items.push({
-    key: 'auto',
-    label: resolve(c.modeAutoLabel) ?? '',
-    icon: 'auto',
-    writeValue: c.modeAutoCoolValue, // 自动按钮点击值由 handleAutoClick 重写，这里只是占位
-  })
-  if (c.modeCoolVisible) items.push({
-    key: 'cool',
-    label: resolve(c.modeCoolLabel) ?? '',
-    icon: 'snow',
-    writeValue: c.modeCoolValue,
-  })
-  if (c.modeHeatVisible) items.push({
-    key: 'heat',
-    label: resolve(c.modeHeatLabel) ?? '',
-    icon: 'sun',
-    writeValue: c.modeHeatValue,
-  })
-  if (c.modeDehumidifyVisible) items.push({
-    key: 'dehumidify',
-    label: resolve(c.modeDehumidifyLabel) ?? '',
-    icon: 'humidity',
-    writeValue: c.modeDehumidifyValue,
-  })
-  if (c.modeFanVisible) items.push({
-    key: 'fan',
-    label: resolve(c.modeFanLabel) ?? '',
-    icon: 'fanSpeed3',
-    writeValue: c.modeFanValue,
-  })
-  return items
-})
+const modeList = computed<ModeItem[]>(() => [
+  { key: 'auto', label: t('scadaComponents.acModeAuto'), icon: 'auto', writeValue: config.value.modeAutoValue },
+  { key: 'cool', label: t('scadaComponents.acModeCool'), icon: 'snow', writeValue: config.value.modeCoolValue },
+  { key: 'heat', label: t('scadaComponents.acModeHeat'), icon: 'sun', writeValue: config.value.modeHeatValue },
+  { key: 'dehumidify', label: t('componentConfig.acModeDehumidifyLabel'), icon: 'humidity', writeValue: config.value.modeDehumidifyValue },
+  { key: 'fan', label: t('scadaComponents.acModeFan'), icon: 'fanSpeed3', writeValue: config.value.modeFanValue },
+])
 
 // 记录上次手动选中的模式类型（用于自动模式组合）
 type ManualModeKey = 'cool' | 'heat' | 'dehumidify' | 'fan'
@@ -592,6 +558,8 @@ const activeModeKeys = computed<Set<string>>(() => {
   const v = modeVal.value
   const c = config.value
   const keys = new Set<string>()
+  // eslint-disable-next-line eqeqeq
+  if (v == c.modeAutoValue) keys.add('auto')
   // eslint-disable-next-line eqeqeq
   if (v == c.modeCoolValue) keys.add('cool')
   // eslint-disable-next-line eqeqeq
@@ -616,27 +584,45 @@ const writing = ref(false)
 
 const handleModeClick = async (m: ModeItem) => {
   if (!isOn.value || writing.value) return
-  writing.value = true
-  try {
-    if (m.key === 'auto') {
-      // 点击自动按钮 → 根据 lastManualMode 写入对应的 autoXxxValue
-      const map: Record<ManualModeKey, number | string> = {
-        cool: config.value.modeAutoCoolValue,
-        heat: config.value.modeAutoHeatValue,
-        dehumidify: config.value.modeAutoDehumidifyValue,
-        fan: config.value.modeAutoFanValue,
-      }
-      const target = map[lastManualMode.value]
-      await writeModeBinding(target)
-    } else {
-      // 手动模式 → 更新 lastManualMode，写入手动 value
-      lastManualMode.value = m.key as ManualModeKey
-      await writeModeBinding(m.writeValue)
+
+  if (m.key === 'auto') {
+    // 点击自动按钮 → 根据 lastManualMode 写入对应的 autoXxxValue
+    const map: Record<ManualModeKey, number | string> = {
+      cool: config.value.modeAutoCoolValue,
+      heat: config.value.modeAutoHeatValue,
+      dehumidify: config.value.modeAutoDehumidifyValue,
+      fan: config.value.modeAutoFanValue,
     }
-  } catch (e) {
-    handleApiError(e)
-  } finally {
-    writing.value = false
+    const target = map[lastManualMode.value]
+    if (!bindings.value?.mode) {
+      modeVal.value = target as number
+      return
+    }
+    writing.value = true
+    try {
+      const res = await writeModeBinding(target)
+      if (!res.success) ElMessage.error(res.message)
+    } catch (e) {
+      handleApiError(e)
+    } finally {
+      writing.value = false
+    }
+  } else {
+    // 手动模式 → 更新 lastManualMode，写入手动 value
+    lastManualMode.value = m.key as ManualModeKey
+    if (!bindings.value?.mode) {
+      modeVal.value = m.writeValue as number
+      return
+    }
+    writing.value = true
+    try {
+      const res = await writeModeBinding(m.writeValue)
+      if (!res.success) ElMessage.error(res.message)
+    } catch (e) {
+      handleApiError(e)
+    } finally {
+      writing.value = false
+    }
   }
 }
 
@@ -751,21 +737,23 @@ const toggleFanAuto = async () => {
 const statusModeText = computed(() => {
   const v = modeVal.value, c = config.value
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoCoolValue) return `自动${c.modeCoolLabel}`
+  if (v == c.modeAutoValue) return t('scadaComponents.acModeAuto')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoHeatValue) return `自动${c.modeHeatLabel}`
+  if (v == c.modeAutoCoolValue) return t('scadaComponents.acModeAuto') + t('scadaComponents.acModeCool')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoDehumidifyValue) return `自动${c.modeDehumidifyLabel}`
+  if (v == c.modeAutoHeatValue) return t('scadaComponents.acModeAuto') + t('scadaComponents.acModeHeat')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoFanValue) return `自动${c.modeFanLabel}`
+  if (v == c.modeAutoDehumidifyValue) return t('scadaComponents.acModeAuto') + t('componentConfig.acModeDehumidifyLabel')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeCoolValue) return c.modeCoolLabel
+  if (v == c.modeAutoFanValue) return t('scadaComponents.acModeAuto') + t('scadaComponents.acModeFan')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeHeatValue) return c.modeHeatLabel
+  if (v == c.modeCoolValue) return t('scadaComponents.acModeCool')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeDehumidifyValue) return c.modeDehumidifyLabel
+  if (v == c.modeHeatValue) return t('scadaComponents.acModeHeat')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeFanValue) return c.modeFanLabel
+  if (v == c.modeDehumidifyValue) return t('componentConfig.acModeDehumidifyLabel')
+  // eslint-disable-next-line eqeqeq
+  if (v == c.modeFanValue) return t('scadaComponents.acModeFan')
   return ''
 })
 

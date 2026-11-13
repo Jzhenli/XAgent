@@ -90,29 +90,16 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   modeActiveIconColor: '#ffffff',
   modeFontColor: 'rgba(255,255,255,0.6)',
   modeActiveFontColor: '#ffffff',
-  // 自动（4 个组合值）
-  modeAutoVisible: true,
-  modeAutoLabel: 'scadaComponents.acModeAuto',
+  // 9 种固定模式 value（弹框双高亮逻辑保留，label 固定 i18n）
+  modeAutoValue: 0,
+  modeFanValue: 4,
+  modeCoolValue: 1,
+  modeHeatValue: 2,
+  modeDehumidifyValue: 3,
+  modeAutoFanValue: 13,
   modeAutoCoolValue: 10,
   modeAutoHeatValue: 11,
   modeAutoDehumidifyValue: 12,
-  modeAutoFanValue: 13,
-  // 制冷
-  modeCoolVisible: true,
-  modeCoolLabel: 'scadaComponents.acModeCool',
-  modeCoolValue: 1,
-  // 制热
-  modeHeatVisible: true,
-  modeHeatLabel: 'scadaComponents.acModeHeat',
-  modeHeatValue: 2,
-  // 除湿
-  modeDehumidifyVisible: true,
-  modeDehumidifyLabel: 'componentConfig.acModeDehumidifyLabel',
-  modeDehumidifyValue: 3,
-  // 通风
-  modeFanVisible: true,
-  modeFanLabel: 'scadaComponents.acModeFan',
-  modeFanValue: 4,
 
   // 风速（自动 + 7 档独立 value）
   fanSectionTitle: 'componentConfig.acFanSectionTitle',

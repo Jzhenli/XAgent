@@ -1006,179 +1006,86 @@
 
         <div class="divider-label">{{ t("componentConfig.modeLevels") }}</div>
 
-        <!-- 自动（4 个组合值） -->
-        <div class="mode-block">
-          <div class="mode-block-title">
-            <el-switch
-              :model-value="config.modeAutoVisible"
-              @update:model-value="updateConfig('modeAutoVisible', $event)"
-            />
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('scadaComponents.acModeAuto') }}</label>
             <input
               type="text"
-              class="mode-label"
-              :disabled="!config.modeAutoVisible"
-              :value="translated.modeAutoLabel"
-              @input="
-                updateConfig(
-                  'modeAutoLabel',
-                  ($event.target as HTMLInputElement).value,
-                )
-              "
+              :value="config.modeAutoValue"
+              @change="parseAndUpdate('modeAutoValue', $event)"
             />
-          </div>
-          <div
-            class="mode-auto-values"
-            :class="{ disabled: !config.modeAutoVisible }"
-          >
-            <div class="mode-auto-row">
-              <label>{{ t("componentConfig.autoCoolValue") }}</label>
-              <input
-                type="text"
-                :value="config.modeAutoCoolValue"
-                @change="parseAndUpdate('modeAutoCoolValue', $event)"
-              />
-            </div>
-            <div class="mode-auto-row">
-              <label>{{ t("componentConfig.autoHeatValue") }}</label>
-              <input
-                type="text"
-                :value="config.modeAutoHeatValue"
-                @change="parseAndUpdate('modeAutoHeatValue', $event)"
-              />
-            </div>
-            <div class="mode-auto-row">
-              <label>{{ t("componentConfig.autoDehumidifyValue") }}</label>
-              <input
-                type="text"
-                :value="config.modeAutoDehumidifyValue"
-                @change="parseAndUpdate('modeAutoDehumidifyValue', $event)"
-              />
-            </div>
-            <div class="mode-auto-row">
-              <label>{{ t("componentConfig.autoFanValue") }}</label>
-              <input
-                type="text"
-                :value="config.modeAutoFanValue"
-                @change="parseAndUpdate('modeAutoFanValue', $event)"
-              />
-            </div>
           </div>
         </div>
-
-        <!-- 制冷 -->
-        <div class="mode-block">
-          <div class="mode-block-title">
-            <el-switch
-              :model-value="config.modeCoolVisible"
-              @update:model-value="updateConfig('modeCoolVisible', $event)"
-            />
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('scadaComponents.acModeCool') }}</label>
             <input
               type="text"
-              class="mode-label"
-              :disabled="!config.modeCoolVisible"
-              :value="translated.modeCoolLabel"
-              @input="
-                updateConfig(
-                  'modeCoolLabel',
-                  ($event.target as HTMLInputElement).value,
-                )
-              "
-            />
-            <input
-              type="text"
-              class="mode-value"
-              :disabled="!config.modeCoolVisible"
               :value="config.modeCoolValue"
               @change="parseAndUpdate('modeCoolValue', $event)"
             />
           </div>
-        </div>
-
-        <!-- 制热 -->
-        <div class="mode-block">
-          <div class="mode-block-title">
-            <el-switch
-              :model-value="config.modeHeatVisible"
-              @update:model-value="updateConfig('modeHeatVisible', $event)"
-            />
+          <div class="form-group">
+            <label>{{ t('scadaComponents.acModeHeat') }}</label>
             <input
               type="text"
-              class="mode-label"
-              :disabled="!config.modeHeatVisible"
-              :value="translated.modeHeatLabel"
-              @input="
-                updateConfig(
-                  'modeHeatLabel',
-                  ($event.target as HTMLInputElement).value,
-                )
-              "
-            />
-            <input
-              type="text"
-              class="mode-value"
-              :disabled="!config.modeHeatVisible"
               :value="config.modeHeatValue"
               @change="parseAndUpdate('modeHeatValue', $event)"
             />
           </div>
         </div>
-
-        <!-- 除湿 -->
-        <div class="mode-block">
-          <div class="mode-block-title">
-            <el-switch
-              :model-value="config.modeDehumidifyVisible"
-              @update:model-value="
-                updateConfig('modeDehumidifyVisible', $event)
-              "
-            />
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('componentConfig.acModeDehumidifyLabel') }}</label>
             <input
               type="text"
-              class="mode-label"
-              :disabled="!config.modeDehumidifyVisible"
-              :value="translated.modeDehumidifyLabel"
-              @input="
-                updateConfig(
-                  'modeDehumidifyLabel',
-                  ($event.target as HTMLInputElement).value,
-                )
-              "
-            />
-            <input
-              type="text"
-              class="mode-value"
-              :disabled="!config.modeDehumidifyVisible"
               :value="config.modeDehumidifyValue"
               @change="parseAndUpdate('modeDehumidifyValue', $event)"
             />
           </div>
-        </div>
-
-        <!-- 通风 -->
-        <div class="mode-block">
-          <div class="mode-block-title">
-            <el-switch
-              :model-value="config.modeFanVisible"
-              @update:model-value="updateConfig('modeFanVisible', $event)"
-            />
+          <div class="form-group">
+            <label>{{ t('scadaComponents.acModeFan') }}</label>
             <input
               type="text"
-              class="mode-label"
-              :disabled="!config.modeFanVisible"
-              :value="translated.modeFanLabel"
-              @input="
-                updateConfig(
-                  'modeFanLabel',
-                  ($event.target as HTMLInputElement).value,
-                )
-              "
-            />
-            <input
-              type="text"
-              class="mode-value"
-              :disabled="!config.modeFanVisible"
               :value="config.modeFanValue"
               @change="parseAndUpdate('modeFanValue', $event)"
+            />
+          </div>
+          
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('scadaComponents.acModeAuto') }}{{ t('scadaComponents.acModeCool') }}</label>
+            <input
+              type="text"
+              :value="config.modeAutoCoolValue"
+              @change="parseAndUpdate('modeAutoCoolValue', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t('scadaComponents.acModeAuto') }}{{ t('scadaComponents.acModeHeat') }}</label>
+            <input
+              type="text"
+              :value="config.modeAutoHeatValue"
+              @change="parseAndUpdate('modeAutoHeatValue', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t('scadaComponents.acModeAuto') }}{{ t('componentConfig.acModeDehumidifyLabel') }}</label>
+            <input
+              type="text"
+              :value="config.modeAutoDehumidifyValue"
+              @change="parseAndUpdate('modeAutoDehumidifyValue', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t('scadaComponents.acModeAuto') }}{{ t('scadaComponents.acModeFan') }}</label>
+            <input
+              type="text"
+              :value="config.modeAutoFanValue"
+              @change="parseAndUpdate('modeAutoFanValue', $event)"
             />
           </div>
         </div>
@@ -1522,11 +1429,6 @@ const translated = computed(() => {
     dialogSubtitle: resolve(c.dialogSubtitle),
     currentValueLabel: resolve(c.currentValueLabel),
     modeSectionTitle: resolve(c.modeSectionTitle),
-    modeAutoLabel: resolve(c.modeAutoLabel),
-    modeCoolLabel: resolve(c.modeCoolLabel),
-    modeHeatLabel: resolve(c.modeHeatLabel),
-    modeDehumidifyLabel: resolve(c.modeDehumidifyLabel),
-    modeFanLabel: resolve(c.modeFanLabel),
     fanSectionTitle: resolve(c.fanSectionTitle),
     fanAutoLabel: resolve(c.fanAutoLabel),
     fanLevel1Label: resolveFanLevel(c.fanLevel1Label),

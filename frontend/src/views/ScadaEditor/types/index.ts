@@ -1062,7 +1062,7 @@ export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
   powerButtonOffColor: string
   powerButtonIconColor: string              // 电源按钮图标颜色
 
-  // ── 模式配置（5 按钮 + 自动×4 组合）──
+  // ── 模式配置（5 按钮 + 自动×4 组合，固定 9 种模式值）──
   modeSectionTitle: string
   modeIconSize: number
   modeFontSize: number
@@ -1073,30 +1073,16 @@ export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
   modeFontColor: string
   modeActiveFontColor: string
 
-  // 自动按钮（与其他 4 种模式分别组合，共 4 个自动值）
-  modeAutoVisible: boolean
-  modeAutoLabel: string
-  modeAutoCoolValue: number | string
-  modeAutoHeatValue: number | string
-  modeAutoDehumidifyValue: number | string
-  modeAutoFanValue: number | string
-
-  // 制冷
-  modeCoolVisible: boolean
-  modeCoolLabel: string
-  modeCoolValue: number | string
-  // 制热
-  modeHeatVisible: boolean
-  modeHeatLabel: string
-  modeHeatValue: number | string
-  // 除湿
-  modeDehumidifyVisible: boolean
-  modeDehumidifyLabel: string
-  modeDehumidifyValue: number | string
-  // 通风
-  modeFanVisible: boolean
-  modeFanLabel: string
-  modeFanValue: number | string
+  // 9 种固定模式 value（弹框双高亮逻辑保留，label 固定 i18n）
+  modeAutoValue: number | string          // 纯自动
+  modeFanValue: number | string           // 送风
+  modeCoolValue: number | string          // 制冷
+  modeHeatValue: number | string          // 制热
+  modeDehumidifyValue: number | string    // 除湿
+  modeAutoFanValue: number | string       // 自动送风
+  modeAutoCoolValue: number | string      // 自动制冷
+  modeAutoHeatValue: number | string      // 自动制热
+  modeAutoDehumidifyValue: number | string // 自动除湿
 
   // ── 风速配置（自动 + 7 档独立 value）──
   fanSectionTitle: string
