@@ -64,6 +64,7 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   gaugeUnitColor: 'rgba(255, 255, 255, 0.85)',
   showMainAreaStatusText: true,
   mainAreaStatusTextColor: 'rgba(255,255,255,0.75)',
+  mainAreaStatusTextFontSize: 13,
 
   // 温度调节
   gaugeMin: 16,

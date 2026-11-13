@@ -2030,6 +2030,7 @@
     "acControllerMideaConfig": "美的空調面板配置",
     "showStatusText": "顯示狀態文字",
     "statusTextColor": "狀態文字顏色",
+    "statusTextFontSize": "狀態文字字號",
     "autoCoolValue": "自動製冷值",
     "autoHeatValue": "自動製熱值",
     "autoDehumidifyValue": "自動除濕值",

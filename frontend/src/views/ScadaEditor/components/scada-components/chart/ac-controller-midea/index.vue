@@ -45,6 +45,12 @@
 
           <!-- 蓝色渐变主区域 -->
           <div class="acm-main-area" :style="mainAreaStyle">
+            <!-- 左上角状态文字 -->
+            <div v-if="showMainAreaStatusText" class="acm-status-text" :style="statusTextStyle">
+              <div class="status-mode">{{ t("componentConfig.mode") }}：{{ statusModeText }}</div>
+              <div class="status-fan">{{ t("componentConfig.acFanSectionTitle") }}：{{ statusFanText }}</div>
+            </div>
+
             <!-- 电源按钮 -->
             <div
               class="acm-power-btn"
@@ -55,11 +61,8 @@
               <el-icon><SwitchButton /></el-icon>
             </div>
 
-            <!-- 中部内容：状态文字 + 设定温度 + 当前温度 -->
+            <!-- 中部内容：设定温度 + 当前温度 -->
             <div class="acm-center-content">
-              <div v-if="showMainAreaStatusText" class="acm-status-text" :style="statusTextStyle">
-                模式：{{ statusModeText }}{{ statusModeText && statusFanText ? '  ' : '' }}风速：{{ statusFanText }}
-              </div>
               <div class="acm-temp-display">
                 <span class="temp-value" :style="tempFontStyle">{{ setpointValue }}</span>
                 <span class="temp-unit" :style="gaugeUnitStyle">{{ gaugeUnit }}</span>
@@ -303,7 +306,7 @@ const currentModeIcon = computed(() => {
   // eslint-disable-next-line eqeqeq
   if (v == c.modeAutoHeatValue || v == c.modeHeatValue) return 'sun'
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoDehumidifyValue || v == c.modeDehumidifyValue) return 'droplet'
+  if (v == c.modeAutoDehumidifyValue || v == c.modeDehumidifyValue) return 'humidity'
   // eslint-disable-next-line eqeqeq
   if (v == c.modeAutoFanValue || v == c.modeFanValue) return 'fanSpeed3'
   // eslint-disable-next-line eqeqeq
@@ -311,7 +314,7 @@ const currentModeIcon = computed(() => {
   // eslint-disable-next-line eqeqeq
   if (v == c.modeHeatValue) return 'sun'
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeDehumidifyValue) return 'droplet'
+  if (v == c.modeDehumidifyValue) return 'humidity'
   // eslint-disable-next-line eqeqeq
   if (v == c.modeFanValue) return 'fanSpeed3'
   return 'auto'
@@ -354,6 +357,7 @@ const fanSectionTitle = computed(() => resolve(config.value.fanSectionTitle) ?? 
 const fanAutoLabel = computed(() => resolve(config.value.fanAutoLabel) ?? '')
 const showMainAreaStatusText = computed(() => config.value.showMainAreaStatusText)
 const mainAreaStatusTextColor = computed(() => config.value.mainAreaStatusTextColor)
+const mainAreaStatusTextFontSize = computed(() => config.value.mainAreaStatusTextFontSize)
 
 const powerButtonSize = computed(() => config.value.powerButtonSize)
 const powerButtonOnColor = computed(() => config.value.powerButtonOnColor)
@@ -456,6 +460,7 @@ const gaugeUnitStyle = computed(() => ({
 
 const statusTextStyle = computed(() => ({
   color: mainAreaStatusTextColor.value,
+  fontSize: `${mainAreaStatusTextFontSize.value}px`,
 }))
 
 const powerBtnStyle = computed(() => ({
@@ -560,7 +565,7 @@ const modeList = computed<ModeItem[]>(() => {
   if (c.modeDehumidifyVisible) items.push({
     key: 'dehumidify',
     label: resolve(c.modeDehumidifyLabel) ?? '',
-    icon: 'droplet',
+    icon: 'humidity',
     writeValue: c.modeDehumidifyValue,
   })
   if (c.modeFanVisible) items.push({
@@ -984,9 +989,15 @@ const writeSetpointValue = async (target: number) => {
 }
 
 .acm-status-text {
-  font-size: 13px;
-  margin-bottom: 2px;
-  white-space: nowrap;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.3;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .acm-temp-display {

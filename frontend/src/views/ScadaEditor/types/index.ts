@@ -1046,6 +1046,7 @@ export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
   gaugeUnitColor: string                    // 温度单位颜色
   showMainAreaStatusText: boolean
   mainAreaStatusTextColor: string
+  mainAreaStatusTextFontSize: number
 
   // ── 温度调节 ──
   gaugeMin: number

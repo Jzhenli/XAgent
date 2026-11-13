@@ -2030,6 +2030,7 @@
     "acControllerMideaConfig": "Midea AC Panel Config",
     "showStatusText": "Show Status Text",
     "statusTextColor": "Status Text Color",
+    "statusTextFontSize": "Status Text Font Size",
     "autoCoolValue": "Auto Cool Value",
     "autoHeatValue": "Auto Heat Value",
     "autoDehumidifyValue": "Auto Dehumidify Value",

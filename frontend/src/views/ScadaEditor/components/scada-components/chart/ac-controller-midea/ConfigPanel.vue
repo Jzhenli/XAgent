@@ -876,6 +876,22 @@
             />
           </div>
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.statusTextFontSize") }}</label>
+            <input
+              type="number"
+              min="8"
+              :value="config.mainAreaStatusTextFontSize"
+              @change="
+                updateConfig(
+                  'mainAreaStatusTextFontSize',
+                  +($event.target as HTMLInputElement).value,
+                )
+              "
+            />
+          </div>
+        </div>
       </el-collapse-item>
 
       <!-- ④ 模式配置（5 按钮 + 自动×4 组合） -->
