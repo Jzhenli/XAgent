@@ -25,9 +25,9 @@ const defaultConfig: AcController3ComponentConfig = {
   // 画布卡片外观
   cardTitle: 'componentConfig.acCardTitle',
   cardTitleFontSize: 12,
-  cardBackgroundColor: 'rgba(245, 247, 250, 0.9)',
-  cardTitleColor: 'rgba(0,0,0,0.6)',
-  activeAccentColor: '#667eea',
+  cardBackgroundColor: 'rgba(0, 0, 0, 0.53)',
+  cardTitleColor: 'rgba(255,255,255,0.6)',
+  activeAccentColor: 'rgba(255,255,255,1)',
   cardIconSize: 22,
   cardBorderRadius: 12,
 
