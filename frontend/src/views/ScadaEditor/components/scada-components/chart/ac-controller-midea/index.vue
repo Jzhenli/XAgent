@@ -148,7 +148,7 @@
                   >+</div>
                 </div>
                 <div class="acm-fan-slider-label" :style="sliderTextStyle">
-                  {{ isFanAuto ? fanAutoLabel : (activeFanLevel?.label ?? `${fanVal.value}${t('componentConfig.acFanLevelUnitLabel')}`) }}
+                  {{ isFanAuto ? fanAutoLabel : (activeFanLevel?.label ?? `${fanSetpointVal.value}${t('componentConfig.acFanLevelUnitLabel')}`) }}
                 </div>
               </div>
             </div>
@@ -221,25 +221,36 @@ const { currentValue: powerVal, writeValue: writePower } = useScadaBinding(
   computed(() => 1),
 )
 const isOn = computed(() => {
-  const v = powerVal.value
-  if (typeof v === 'boolean') return v
-  if (typeof v === 'number') return v > 0
-  if (typeof v === 'string') return v !== '0' && v !== 'false'
-  return !!v
+  // eslint-disable-next-line eqeqeq
+  return powerVal.value == config.value.powerOnValue
 })
 
-// 模式
-const { currentValue: modeVal, writeValue: writeModeBinding } = useScadaBinding(
-  computed<PointBinding | null>(() => bindings.value?.mode ?? null),
+// 模式设定（写入用）
+const { currentValue: modeSetpointVal, writeValue: writeModeBinding } = useScadaBinding(
+  computed<PointBinding | null>(() => bindings.value?.modeSetpoint ?? null),
   {},
-  computed(() => config.value.modeCoolValue),
+  computed(() => config.value.modeAutoValue),
 )
 
-// 风速
-const { currentValue: fanVal, writeValue: writeFanBinding } = useScadaBinding(
-  computed<PointBinding | null>(() => bindings.value?.fanSpeed ?? null),
+// 模式显示（只读，状态展示用）
+const { currentValue: modeDisplayVal } = useScadaBinding(
+  computed<PointBinding | null>(() => bindings.value?.modeDisplay ?? null),
+  {},
+  computed(() => config.value.modeDisplayOffValue),
+)
+
+// 风速设定（写入用）
+const { currentValue: fanSetpointVal, writeValue: writeFanBinding } = useScadaBinding(
+  computed<PointBinding | null>(() => bindings.value?.fanSpeedSetpoint ?? null),
   {},
   computed(() => config.value.fanAutoValue),
+)
+
+// 风速显示（只读，状态展示用）
+const { currentValue: fanDisplayVal } = useScadaBinding(
+  computed<PointBinding | null>(() => bindings.value?.fanSpeedDisplay ?? null),
+  {},
+  computed(() => config.value.fanDisplayStopValue),
 )
 
 // 设定值
@@ -292,20 +303,20 @@ const cardUnitStyle = computed(() => ({
   color: activeAccentColor.value,
 }))
 
-// 动态模式图标
+// 动态模式图标（基于设定值）
 const currentModeIcon = computed(() => {
-  const v = modeVal.value
+  const v = modeSetpointVal.value
   const c = config.value
   // eslint-disable-next-line eqeqeq
   if (v == c.modeAutoValue) return 'auto'
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoCoolValue || v == c.modeCoolValue) return 'snow'
+  if (v == c.modeCoolValue) return 'snow'
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoHeatValue || v == c.modeHeatValue) return 'sun'
+  if (v == c.modeHeatValue) return 'sun'
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoDehumidifyValue || v == c.modeDehumidifyValue) return 'humidity'
+  if (v == c.modeDehumidifyValue) return 'humidity'
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoFanValue || v == c.modeFanValue) return 'fanSpeed3'
+  if (v == c.modeFanValue) return 'fanSpeed3'
   return 'auto'
 })
 
@@ -542,80 +553,41 @@ const modeList = computed<ModeItem[]>(() => [
   { key: 'fan', label: t('scadaComponents.acModeFan'), icon: 'fanSpeed3', writeValue: config.value.modeFanValue },
 ])
 
-// 记录上次手动选中的模式类型（用于自动模式组合）
-type ManualModeKey = 'cool' | 'heat' | 'dehumidify' | 'fan'
-const lastManualMode = ref<ManualModeKey>('cool')
-
-// 当前激活的按钮 key 集合（支持 1 个或 2 个同时高亮）
+// 当前激活的按钮 key（单按钮高亮，基于设定值）
 const activeModeKeys = computed<Set<string>>(() => {
-  const v = modeVal.value
+  const v = modeSetpointVal.value
   const c = config.value
   const keys = new Set<string>()
   // eslint-disable-next-line eqeqeq
   if (v == c.modeAutoValue) keys.add('auto')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeCoolValue) keys.add('cool')
+  else if (v == c.modeCoolValue) keys.add('cool')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeHeatValue) keys.add('heat')
+  else if (v == c.modeHeatValue) keys.add('heat')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeDehumidifyValue) keys.add('dehumidify')
+  else if (v == c.modeDehumidifyValue) keys.add('dehumidify')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeFanValue) keys.add('fan')
-  // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoCoolValue) { keys.add('auto'); keys.add('cool') }
-  // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoHeatValue) { keys.add('auto'); keys.add('heat') }
-  // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoDehumidifyValue) { keys.add('auto'); keys.add('dehumidify') }
-  // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoFanValue) { keys.add('auto'); keys.add('fan') }
+  else if (v == c.modeFanValue) keys.add('fan')
   return keys
 })
 
-// 模式点击写入
+// 模式点击写入（单按单选，点击哪个就写哪个值）
 const writing = ref(false)
 
 const handleModeClick = async (m: ModeItem) => {
   if (!isOn.value || writing.value) return
-
-  if (m.key === 'auto') {
-    // 点击自动按钮 → 根据 lastManualMode 写入对应的 autoXxxValue
-    const map: Record<ManualModeKey, number | string> = {
-      cool: config.value.modeAutoCoolValue,
-      heat: config.value.modeAutoHeatValue,
-      dehumidify: config.value.modeAutoDehumidifyValue,
-      fan: config.value.modeAutoFanValue,
-    }
-    const target = map[lastManualMode.value]
-    if (!bindings.value?.mode) {
-      modeVal.value = target as number
+  writing.value = true
+  try {
+    if (!bindings.value?.modeSetpoint) {
+      modeSetpointVal.value = m.writeValue as number
       return
     }
-    writing.value = true
-    try {
-      const res = await writeModeBinding(target)
-      if (!res.success) ElMessage.error(res.message)
-    } catch (e) {
-      handleApiError(e)
-    } finally {
-      writing.value = false
-    }
-  } else {
-    // 手动模式 → 更新 lastManualMode，写入手动 value
-    lastManualMode.value = m.key as ManualModeKey
-    if (!bindings.value?.mode) {
-      modeVal.value = m.writeValue as number
-      return
-    }
-    writing.value = true
-    try {
-      const res = await writeModeBinding(m.writeValue)
-      if (!res.success) ElMessage.error(res.message)
-    } catch (e) {
-      handleApiError(e)
-    } finally {
-      writing.value = false
-    }
+    const res = await writeModeBinding(m.writeValue)
+    if (!res.success) ElMessage.error(res.message)
+  } catch (e) {
+    handleApiError(e)
+  } finally {
+    writing.value = false
   }
 }
 
@@ -647,7 +619,7 @@ const visibleFanLevels = computed<FanLevelItem[]>(() => {
 const showFanAuto = computed(() => true)
 
 const isFanAuto = computed(() => {
-  const v = fanVal.value
+  const v = fanSetpointVal.value
   const autoVal = config.value.fanAutoValue
   // eslint-disable-next-line eqeqeq
   return v == autoVal
@@ -656,7 +628,7 @@ const isFanAuto = computed(() => {
 // 当前激活档位在 visibleFanLevels 中的索引
 const activeFanLevelIndex = computed<number>(() => {
   if (isFanAuto.value) return -1
-  const v = fanVal.value
+  const v = fanSetpointVal.value
   const idx = visibleFanLevels.value.findIndex(
     l => l.value == v || String(l.value) === String(v), // eslint-disable-line eqeqeq
   )
@@ -693,8 +665,8 @@ const writeFanLevel = async (idx: number) => {
   if (!level) return
   writing.value = true
   try {
-    if (!bindings.value?.fanSpeed) {
-      fanVal.value = level.value as number
+    if (!bindings.value?.fanSpeedSetpoint) {
+      fanSetpointVal.value = level.value as number
       return
     }
     const res = await writeFanBinding(level.value)
@@ -710,8 +682,8 @@ const toggleFanAuto = async () => {
   if (!isOn.value || writing.value) return
   writing.value = true
   try {
-    if (!bindings.value?.fanSpeed) {
-      fanVal.value = config.value.fanAutoValue as number
+    if (!bindings.value?.fanSpeedSetpoint) {
+      fanSetpointVal.value = config.value.fanAutoValue as number
       return
     }
     const res = await writeFanBinding(config.value.fanAutoValue)
@@ -724,35 +696,73 @@ const toggleFanAuto = async () => {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 状态文字（主区域顶部）
+// 状态文字（主区域顶部 —— 从显示点位读取）
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const statusModeText = computed(() => {
-  const v = modeVal.value, c = config.value
+  if (!isOn.value) return t('componentConfig.acModeOff')
+  // 优先级：显示点位 > 设定点位（fallback）
+  const v = bindings.value?.modeDisplay ? modeDisplayVal.value : modeSetpointVal.value
+  const c = config.value
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoValue) return t('scadaComponents.acModeAuto')
+  if (v == c.modeDisplayAutoCoolValue) return t('scadaComponents.acModeAuto') + t('scadaComponents.acModeCool')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoCoolValue) return t('scadaComponents.acModeAuto') + t('scadaComponents.acModeCool')
+  if (v == c.modeDisplayAutoHeatValue) return t('scadaComponents.acModeAuto') + t('scadaComponents.acModeHeat')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoHeatValue) return t('scadaComponents.acModeAuto') + t('scadaComponents.acModeHeat')
+  if (v == c.modeDisplayAutoDehumidifyValue) return t('scadaComponents.acModeAuto') + t('componentConfig.acModeDehumidifyLabel')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoDehumidifyValue) return t('scadaComponents.acModeAuto') + t('componentConfig.acModeDehumidifyLabel')
+  if (v == c.modeDisplayAutoFanValue) return t('scadaComponents.acModeAuto') + t('scadaComponents.acModeFan')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeAutoFanValue) return t('scadaComponents.acModeAuto') + t('scadaComponents.acModeFan')
+  if (v == c.modeDisplayCoolValue) return t('scadaComponents.acModeCool')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeCoolValue) return t('scadaComponents.acModeCool')
+  if (v == c.modeDisplayHeatValue) return t('scadaComponents.acModeHeat')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeHeatValue) return t('scadaComponents.acModeHeat')
+  if (v == c.modeDisplayDehumidifyValue) return t('componentConfig.acModeDehumidifyLabel')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeDehumidifyValue) return t('componentConfig.acModeDehumidifyLabel')
+  if (v == c.modeDisplayFanValue) return t('scadaComponents.acModeFan')
   // eslint-disable-next-line eqeqeq
-  if (v == c.modeFanValue) return t('scadaComponents.acModeFan')
+  if (v == c.modeDisplayOffValue) return t('componentConfig.acModeOff')
   return ''
 })
 
 const statusFanText = computed(() => {
-  if (isFanAuto.value) return t('componentConfig.acFanSpeedAuto')
-  return activeFanLevel.value?.label ?? `${fanVal.value}${t('componentConfig.acFanLevelUnitLabel')}`
+  if (!isOn.value) return t('componentConfig.acFanStop')
+  // 优先级：显示点位 > 设定点位（fallback）
+  const v = bindings.value?.fanSpeedDisplay ? fanDisplayVal.value : fanSetpointVal.value
+  const c = config.value
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayAutoValue) return t('componentConfig.acFanSpeedAuto')
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayStopValue) return t('componentConfig.acFanStop')
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayLevel1Value) return `1${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayLevel2Value) return `2${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayLevel3Value) return `3${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayLevel4Value) return `4${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayLevel5Value) return `5${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayLevel6Value) return `6${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayLevel7Value) return `7${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayAutoLevel1Value) return t('scadaComponents.acModeAuto') + `1${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayAutoLevel2Value) return t('scadaComponents.acModeAuto') + `2${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayAutoLevel3Value) return t('scadaComponents.acModeAuto') + `3${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayAutoLevel4Value) return t('scadaComponents.acModeAuto') + `4${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayAutoLevel5Value) return t('scadaComponents.acModeAuto') + `5${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayAutoLevel6Value) return t('scadaComponents.acModeAuto') + `6${t('componentConfig.acFanLevelUnitLabel')}`
+  // eslint-disable-next-line eqeqeq
+  if (v == c.fanDisplayAutoLevel7Value) return t('scadaComponents.acModeAuto') + `7${t('componentConfig.acFanLevelUnitLabel')}`
+  return activeFanLevel.value?.label ?? ''
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -768,7 +778,7 @@ const handleApiError = (e: unknown) => {
 
 const togglePower = async () => {
   if (writing.value) return
-  const target = isOn.value ? 0 : 1
+  const target = isOn.value ? config.value.powerOffValue : config.value.powerOnValue
   if (!bindings.value?.power) {
     powerVal.value = target
     return

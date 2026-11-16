@@ -163,17 +163,19 @@
 
         <div class="binding-group">
           <div class="binding-label">
-            {{ t("componentConfig.modeBinding") }}
+            {{ t("componentConfig.modeSetpointBinding") || "模式设定点位" }}
           </div>
           <div class="form-group">
             <label>{{ t("componentConfig.device") }}</label>
             <el-select
-              :model-value="currentBindings.mode?.deviceId ?? ''"
+              :model-value="currentBindings.modeSetpoint?.deviceId ?? ''"
               class="scada-select"
               popper-class="scada-select-dropdown"
               clearable
               :placeholder="t('componentConfig.selectDevice')"
-              @update:model-value="handleDeviceChange('mode', $event as string)"
+              @update:model-value="
+                handleDeviceChange('modeSetpoint', $event as string)
+              "
             >
               <el-option
                 v-for="device in pointStore.devices"
@@ -186,16 +188,120 @@
           <div class="form-group">
             <label>{{ t("componentConfig.point") }}</label>
             <el-select
-              :model-value="currentBindings.mode?.pointName ?? ''"
+              :model-value="currentBindings.modeSetpoint?.pointName ?? ''"
               class="scada-select"
               popper-class="scada-select-dropdown"
               clearable
               :placeholder="t('componentConfig.selectPoint')"
-              :disabled="!currentBindings.mode?.deviceId"
-              @update:model-value="handlePointChange('mode', $event as string)"
+              :disabled="!currentBindings.modeSetpoint?.deviceId"
+              @update:model-value="
+                handlePointChange('modeSetpoint', $event as string)
+              "
             >
               <el-option
-                v-for="point in getBindingPoints(currentBindings.mode)"
+                v-for="point in getBindingPoints(currentBindings.modeSetpoint)"
+                :key="point.name"
+                :value="point.name"
+                :label="
+                  point.name +
+                  (point.description ? ` (${point.description})` : '')
+                "
+              />
+            </el-select>
+          </div>
+        </div>
+
+        <div class="binding-group">
+          <div class="binding-label">
+            {{ t("componentConfig.modeDisplayBinding") || "模式显示点位" }}
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.device") }}</label>
+            <el-select
+              :model-value="currentBindings.modeDisplay?.deviceId ?? ''"
+              class="scada-select"
+              popper-class="scada-select-dropdown"
+              clearable
+              :placeholder="t('componentConfig.selectDevice')"
+              @update:model-value="
+                handleDeviceChange('modeDisplay', $event as string)
+              "
+            >
+              <el-option
+                v-for="device in pointStore.devices"
+                :key="device.asset"
+                :value="device.asset"
+                :label="device.name"
+              />
+            </el-select>
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.point") }}</label>
+            <el-select
+              :model-value="currentBindings.modeDisplay?.pointName ?? ''"
+              class="scada-select"
+              popper-class="scada-select-dropdown"
+              clearable
+              :placeholder="t('componentConfig.selectPoint')"
+              :disabled="!currentBindings.modeDisplay?.deviceId"
+              @update:model-value="
+                handlePointChange('modeDisplay', $event as string)
+              "
+            >
+              <el-option
+                v-for="point in getBindingPoints(currentBindings.modeDisplay)"
+                :key="point.name"
+                :value="point.name"
+                :label="
+                  point.name +
+                  (point.description ? ` (${point.description})` : '')
+                "
+              />
+            </el-select>
+          </div>
+        </div>
+
+        <div class="binding-group">
+          <div class="binding-label">
+            {{ t("componentConfig.fanSpeedSetpointBinding") || "风速设定点位" }}
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.device") }}</label>
+            <el-select
+              :model-value="currentBindings.fanSpeedSetpoint?.deviceId ?? ''"
+              class="scada-select"
+              popper-class="scada-select-dropdown"
+              clearable
+              :placeholder="t('componentConfig.selectDevice')"
+              @update:model-value="
+                handleDeviceChange('fanSpeedSetpoint', $event as string)
+              "
+            >
+              <el-option
+                v-for="device in pointStore.devices"
+                :key="device.asset"
+                :value="device.asset"
+                :label="device.name"
+              />
+            </el-select>
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.point") }}</label>
+            <el-select
+              :model-value="currentBindings.fanSpeedSetpoint?.pointName ?? ''"
+              class="scada-select"
+              popper-class="scada-select-dropdown"
+              clearable
+              :placeholder="t('componentConfig.selectPoint')"
+              :disabled="!currentBindings.fanSpeedSetpoint?.deviceId"
+              @update:model-value="
+                handlePointChange('fanSpeedSetpoint', $event as string)
+              "
+            >
+              <el-option
+                v-for="point in getBindingPoints(
+                  currentBindings.fanSpeedSetpoint,
+                )"
                 :key="point.name"
                 :value="point.name"
                 :label="
@@ -209,18 +315,18 @@
 
         <div class="binding-group binding-group--last">
           <div class="binding-label">
-            {{ t("componentConfig.fanSpeedBinding") }}
+            {{ t("componentConfig.fanSpeedDisplayBinding") || "风速显示点位" }}
           </div>
           <div class="form-group">
             <label>{{ t("componentConfig.device") }}</label>
             <el-select
-              :model-value="currentBindings.fanSpeed?.deviceId ?? ''"
+              :model-value="currentBindings.fanSpeedDisplay?.deviceId ?? ''"
               class="scada-select"
               popper-class="scada-select-dropdown"
               clearable
               :placeholder="t('componentConfig.selectDevice')"
               @update:model-value="
-                handleDeviceChange('fanSpeed', $event as string)
+                handleDeviceChange('fanSpeedDisplay', $event as string)
               "
             >
               <el-option
@@ -234,18 +340,20 @@
           <div class="form-group">
             <label>{{ t("componentConfig.point") }}</label>
             <el-select
-              :model-value="currentBindings.fanSpeed?.pointName ?? ''"
+              :model-value="currentBindings.fanSpeedDisplay?.pointName ?? ''"
               class="scada-select"
               popper-class="scada-select-dropdown"
               clearable
               :placeholder="t('componentConfig.selectPoint')"
-              :disabled="!currentBindings.fanSpeed?.deviceId"
+              :disabled="!currentBindings.fanSpeedDisplay?.deviceId"
               @update:model-value="
-                handlePointChange('fanSpeed', $event as string)
+                handlePointChange('fanSpeedDisplay', $event as string)
               "
             >
               <el-option
-                v-for="point in getBindingPoints(currentBindings.fanSpeed)"
+                v-for="point in getBindingPoints(
+                  currentBindings.fanSpeedDisplay,
+                )"
                 :key="point.name"
                 :value="point.name"
                 :label="
@@ -258,7 +366,7 @@
         </div>
       </el-collapse-item>
 
-      <!-- ② 画布卡片外观 -->
+      <!-- ③ 画布卡片外观 -->
       <el-collapse-item :name="'card'">
         <template #title>
           <span class="collapse-title">{{
@@ -894,6 +1002,34 @@
         </div>
       </el-collapse-item>
 
+      <!-- ② 开/关机按钮 -->
+      <el-collapse-item :name="'power'">
+        <template #title>
+          <span class="collapse-title">{{
+            t("componentConfig.powerSectionLabel")
+          }}</span>
+        </template>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.powerOffValueLabel") }}</label>
+            <input
+              type="text"
+              :value="config.powerOffValue"
+              @change="parseAndUpdate('powerOffValue', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.powerOnValueLabel") }}</label>
+            <input
+              type="text"
+              :value="config.powerOnValue"
+              @change="parseAndUpdate('powerOnValue', $event)"
+            />
+          </div>
+        </div>
+      </el-collapse-item>
+
       <!-- ④ 模式配置（5 按钮 + 自动×4 组合） -->
       <el-collapse-item :name="'mode'">
         <template #title>
@@ -1008,7 +1144,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('scadaComponents.acModeAuto') }}</label>
+            <label>{{ t("scadaComponents.acModeAuto") }}</label>
             <input
               type="text"
               :value="config.modeAutoValue"
@@ -1018,7 +1154,7 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('scadaComponents.acModeCool') }}</label>
+            <label>{{ t("scadaComponents.acModeCool") }}</label>
             <input
               type="text"
               :value="config.modeCoolValue"
@@ -1026,7 +1162,7 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t('scadaComponents.acModeHeat') }}</label>
+            <label>{{ t("scadaComponents.acModeHeat") }}</label>
             <input
               type="text"
               :value="config.modeHeatValue"
@@ -1036,7 +1172,7 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('componentConfig.acModeDehumidifyLabel') }}</label>
+            <label>{{ t("componentConfig.acModeDehumidifyLabel") }}</label>
             <input
               type="text"
               :value="config.modeDehumidifyValue"
@@ -1044,48 +1180,117 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t('scadaComponents.acModeFan') }}</label>
+            <label>{{ t("scadaComponents.acModeFan") }}</label>
             <input
               type="text"
               :value="config.modeFanValue"
               @change="parseAndUpdate('modeFanValue', $event)"
             />
           </div>
-          
+        </div>
+      </el-collapse-item>
+
+      <!-- ⑥ 模式显示区域 -->
+      <el-collapse-item :name="'modeDisplay'">
+        <template #title>
+          <span class="collapse-title">{{
+            t("componentConfig.modeDisplaySectionLabel")
+          }}</span>
+        </template>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("scadaComponents.acModeCool") }}</label>
+            <input
+              type="text"
+              :value="config.modeDisplayCoolValue"
+              @change="parseAndUpdate('modeDisplayCoolValue', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("scadaComponents.acModeHeat") }}</label>
+            <input
+              type="text"
+              :value="config.modeDisplayHeatValue"
+              @change="parseAndUpdate('modeDisplayHeatValue', $event)"
+            />
+          </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('scadaComponents.acModeAuto') }}{{ t('scadaComponents.acModeCool') }}</label>
+            <label>{{ t("componentConfig.acModeDehumidifyLabel") }}</label>
             <input
               type="text"
-              :value="config.modeAutoCoolValue"
-              @change="parseAndUpdate('modeAutoCoolValue', $event)"
+              :value="config.modeDisplayDehumidifyValue"
+              @change="parseAndUpdate('modeDisplayDehumidifyValue', $event)"
             />
           </div>
           <div class="form-group">
-            <label>{{ t('scadaComponents.acModeAuto') }}{{ t('scadaComponents.acModeHeat') }}</label>
+            <label>{{ t("scadaComponents.acModeFan") }}</label>
             <input
               type="text"
-              :value="config.modeAutoHeatValue"
-              @change="parseAndUpdate('modeAutoHeatValue', $event)"
+              :value="config.modeDisplayFanValue"
+              @change="parseAndUpdate('modeDisplayFanValue', $event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{
+              t("scadaComponents.acModeAuto") + t("scadaComponents.acModeCool")
+            }}</label>
+            <input
+              type="text"
+              :value="config.modeDisplayAutoCoolValue"
+              @change="parseAndUpdate('modeDisplayAutoCoolValue', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>
+              {{
+                t("scadaComponents.acModeAuto") +
+                t("scadaComponents.acModeHeat")
+              }}
+            </label>
+            <input
+              type="text"
+              :value="config.modeDisplayAutoHeatValue"
+              @change="parseAndUpdate('modeDisplayAutoHeatValue', $event)"
             />
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>{{ t('scadaComponents.acModeAuto') }}{{ t('componentConfig.acModeDehumidifyLabel') }}</label>
+            <label>{{
+              t("scadaComponents.acModeAuto") +
+              t("componentConfig.acModeDehumidifyLabel")
+            }}</label>
             <input
               type="text"
-              :value="config.modeAutoDehumidifyValue"
-              @change="parseAndUpdate('modeAutoDehumidifyValue', $event)"
+              :value="config.modeDisplayAutoDehumidifyValue"
+              @change="parseAndUpdate('modeDisplayAutoDehumidifyValue', $event)"
             />
           </div>
           <div class="form-group">
-            <label>{{ t('scadaComponents.acModeAuto') }}{{ t('scadaComponents.acModeFan') }}</label>
+            <label>{{
+              t("scadaComponents.acModeAuto") + t("scadaComponents.acModeFan")
+            }}</label>
             <input
               type="text"
-              :value="config.modeAutoFanValue"
-              @change="parseAndUpdate('modeAutoFanValue', $event)"
+              :value="config.modeDisplayAutoFanValue"
+              @change="parseAndUpdate('modeDisplayAutoFanValue', $event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.acModeOff") }}</label>
+            <input
+              type="text"
+              :value="config.modeDisplayOffValue"
+              @change="parseAndUpdate('modeDisplayOffValue', $event)"
             />
           </div>
         </div>
@@ -1301,6 +1506,188 @@
           </div>
         </div>
       </el-collapse-item>
+
+      <!-- ⑦ 风速显示区域 -->
+      <el-collapse-item :name="'fanDisplay'">
+        <template #title>
+          <span class="collapse-title">{{
+            t("componentConfig.fanDisplaySectionLabel")
+          }}</span>
+        </template>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.acFanSpeedAuto") }}</label>
+            <input
+              type="text"
+              :value="config.fanDisplayAutoValue"
+              @change="parseAndUpdate('fanDisplayAutoValue', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>1{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanDisplayLevel1Value"
+              @change="parseAndUpdate('fanDisplayLevel1Value', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>2{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanDisplayLevel2Value"
+              @change="parseAndUpdate('fanDisplayLevel2Value', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>3{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanDisplayLevel3Value"
+              @change="parseAndUpdate('fanDisplayLevel3Value', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>4{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanDisplayLevel4Value"
+              @change="parseAndUpdate('fanDisplayLevel4Value', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>5{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanDisplayLevel5Value"
+              @change="parseAndUpdate('fanDisplayLevel5Value', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>6{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanDisplayLevel6Value"
+              @change="parseAndUpdate('fanDisplayLevel6Value', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>7{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanDisplayLevel7Value"
+              @change="parseAndUpdate('fanDisplayLevel7Value', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label
+              >{{ t("scadaComponents.acModeAuto") }}1{{
+                t("componentConfig.acFanLevelUnitLabel")
+              }}</label
+            >
+            <input
+              type="text"
+              :value="config.fanDisplayAutoLevel1Value"
+              @change="parseAndUpdate('fanDisplayAutoLevel1Value', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label
+              >{{ t("scadaComponents.acModeAuto") }}2{{
+                t("componentConfig.acFanLevelUnitLabel")
+              }}</label
+            >
+            <input
+              type="text"
+              :value="config.fanDisplayAutoLevel2Value"
+              @change="parseAndUpdate('fanDisplayAutoLevel2Value', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label
+              >{{ t("scadaComponents.acModeAuto") }}3{{
+                t("componentConfig.acFanLevelUnitLabel")
+              }}</label
+            >
+            <input
+              type="text"
+              :value="config.fanDisplayAutoLevel3Value"
+              @change="parseAndUpdate('fanDisplayAutoLevel3Value', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label
+              >{{ t("scadaComponents.acModeAuto") }}4{{
+                t("componentConfig.acFanLevelUnitLabel")
+              }}</label
+            >
+            <input
+              type="text"
+              :value="config.fanDisplayAutoLevel4Value"
+              @change="parseAndUpdate('fanDisplayAutoLevel4Value', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label
+              >{{ t("scadaComponents.acModeAuto") }}5{{
+                t("componentConfig.acFanLevelUnitLabel")
+              }}</label
+            >
+            <input
+              type="text"
+              :value="config.fanDisplayAutoLevel5Value"
+              @change="parseAndUpdate('fanDisplayAutoLevel5Value', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label
+              >{{ t("scadaComponents.acModeAuto") }}6{{
+                t("componentConfig.acFanLevelUnitLabel")
+              }}</label
+            >
+            <input
+              type="text"
+              :value="config.fanDisplayAutoLevel6Value"
+              @change="parseAndUpdate('fanDisplayAutoLevel6Value', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label
+              >{{ t("scadaComponents.acModeAuto") }}7{{
+                t("componentConfig.acFanLevelUnitLabel")
+              }}</label
+            >
+            <input
+              type="text"
+              :value="config.fanDisplayAutoLevel7Value"
+              @change="parseAndUpdate('fanDisplayAutoLevel7Value', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.acFanStop") }}</label>
+            <input
+              type="text"
+              :value="config.fanDisplayStopValue"
+              @change="parseAndUpdate('fanDisplayStopValue', $event)"
+            />
+          </div>
+        </div>
+      </el-collapse-item>
     </el-collapse>
   </div>
 </template>
@@ -1312,7 +1699,7 @@ import { usePointStore } from "@/stores/points";
 import { useScadaConfig } from "../../../../hooks/useScadaEditor";
 import type {
   ScadaComponent,
-  AcControllerBindings,
+  AcControllerMideaBindings,
   PointBinding,
 } from "../../../../types";
 
@@ -1346,16 +1733,18 @@ const translated = computed(() => {
 
 const activeItems = ref<string[]>([]);
 
-type BindingKey = keyof AcControllerBindings;
+type BindingKey = keyof AcControllerMideaBindings;
 
-const currentBindings = ref<AcControllerBindings>(
+const currentBindings = ref<AcControllerMideaBindings>(
   (config.value.bindings ?? {
     power: null,
-    mode: null,
-    fanSpeed: null,
+    modeSetpoint: null,
+    modeDisplay: null,
+    fanSpeedSetpoint: null,
+    fanSpeedDisplay: null,
     setpoint: null,
     currentValue: null,
-  }) as AcControllerBindings,
+  }) as AcControllerMideaBindings,
 );
 
 const getBindingPoints = (binding: PointBinding | null | undefined) => {

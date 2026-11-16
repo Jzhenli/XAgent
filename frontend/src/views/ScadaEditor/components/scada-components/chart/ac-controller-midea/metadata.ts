@@ -5,18 +5,19 @@ import AcControllerMideaConfigPanel from './ConfigPanel.vue'
 /**
  * 美的空调面板（弹框版）
  * 画布上为 info-card 风格卡片，点击弹出控制面板弹框
- * 支持自动模式与制冷/制热/除湿/通风组合双按钮同时高亮
- * 风速为 7 档滑块条
+ * 5 按钮单按单选模式 + 7档滑块风速 + 设定/显示点位分离
  */
 const defaultConfig: AcControllerMideaComponentConfig = {
   width: 100,
   height: 100,
 
-  // 点位绑定
+  // 点位绑定（美的专用：设定/显示分离，7 个点位）
   bindings: {
     power: null,
-    mode: null,
-    fanSpeed: null,
+    modeSetpoint: null,
+    modeDisplay: null,
+    fanSpeedSetpoint: null,
+    fanSpeedDisplay: null,
     setpoint: null,
     currentValue: null,
   },
@@ -80,7 +81,11 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   powerButtonOffColor: 'rgba(255, 255, 255, 0.2)',
   powerButtonIconColor: '#ffffff',
 
-  // 模式
+  // 开/关机值配置
+  powerOnValue: 1,
+  powerOffValue: 0,
+
+  // 模式设定值（5 个按钮，单按单选）
   modeSectionTitle: 'componentConfig.mode',
   modeIconSize: 22,
   modeFontSize: 12,
@@ -90,16 +95,22 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   modeActiveIconColor: '#ffffff',
   modeFontColor: 'rgba(255,255,255,0.6)',
   modeActiveFontColor: '#ffffff',
-  // 9 种固定模式 value（弹框双高亮逻辑保留，label 固定 i18n）
-  modeAutoValue: 0,
-  modeFanValue: 4,
-  modeCoolValue: 1,
-  modeHeatValue: 2,
-  modeDehumidifyValue: 3,
-  modeAutoFanValue: 13,
-  modeAutoCoolValue: 10,
-  modeAutoHeatValue: 11,
-  modeAutoDehumidifyValue: 12,
+  modeAutoValue: 6,
+  modeCoolValue: 2,
+  modeHeatValue: 3,
+  modeDehumidifyValue: 4,
+  modeFanValue: 5,
+
+  // 模式显示映射（9 个值，主区域状态文字匹配）
+  modeDisplayAutoCoolValue: 10,
+  modeDisplayAutoHeatValue: 11,
+  modeDisplayAutoDehumidifyValue: 12,
+  modeDisplayAutoFanValue: 13,
+  modeDisplayCoolValue: 2,
+  modeDisplayHeatValue: 3,
+  modeDisplayDehumidifyValue: 4,
+  modeDisplayFanValue: 5,
+  modeDisplayOffValue: 0,
 
   // 风速（自动 + 7 档独立 value）
   fanSectionTitle: 'componentConfig.acFanSectionTitle',
@@ -122,6 +133,24 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   fanLevel5Value: 5,
   fanLevel6Value: 6,
   fanLevel7Value: 7,
+
+  // 风速显示映射（16 个值，主区域状态文字匹配）
+  fanDisplayAutoValue: 0,
+  fanDisplayStopValue: 0,
+  fanDisplayLevel1Value: 1,
+  fanDisplayLevel2Value: 2,
+  fanDisplayLevel3Value: 3,
+  fanDisplayLevel4Value: 4,
+  fanDisplayLevel5Value: 5,
+  fanDisplayLevel6Value: 6,
+  fanDisplayLevel7Value: 7,
+  fanDisplayAutoLevel1Value: 11,
+  fanDisplayAutoLevel2Value: 12,
+  fanDisplayAutoLevel3Value: 13,
+  fanDisplayAutoLevel4Value: 14,
+  fanDisplayAutoLevel5Value: 15,
+  fanDisplayAutoLevel6Value: 16,
+  fanDisplayAutoLevel7Value: 17,
 }
 
 export const acControllerMideaMeta: ScadaComponentMeta = {

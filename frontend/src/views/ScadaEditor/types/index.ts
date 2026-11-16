@@ -737,6 +737,24 @@ export interface AcControllerBindings {
   currentValue: PointBinding | null
 }
 
+/** 美的空调面板点位绑定集合（设定/显示分离，7 个点位） */
+export interface AcControllerMideaBindings {
+  /** 开关点位（开/关状态） */
+  power: PointBinding | null
+  /** 模式设定点位（写入用） */
+  modeSetpoint: PointBinding | null
+  /** 模式显示点位（只读，状态展示用） */
+  modeDisplay: PointBinding | null
+  /** 风速设定点位（写入用） */
+  fanSpeedSetpoint: PointBinding | null
+  /** 风速显示点位（只读，状态展示用） */
+  fanSpeedDisplay: PointBinding | null
+  /** 设定值点位（可读写，支持小数） */
+  setpoint: PointBinding | null
+  /** 当前值点位（只读） */
+  currentValue: PointBinding | null
+}
+
 /** 区域位置配置（绝对定位偏移，像素） */
 export interface ZonePosition {
   x: number
@@ -998,10 +1016,10 @@ export interface AcController3ComponentConfig extends BaseComponentConfig {
   // [ac3-type-refresh] ensure IDE picks up latest fields
 }
 
-/** 美的空调面板配置 —— 弹框版：自动可与制冷/制热/除湿/通风组合双按钮高亮 + 7档滑块风速 */
+/** 美的空调面板配置 —— 弹框版：5 按钮单按单选 + 7 档滑块风速 + 设定/显示点位分离 */
 export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
-  // ── 点位绑定（复用 AcControllerBindings）──
-  bindings: AcControllerBindings
+  // ── 点位绑定（美的专用，设定/显示分离）──
+  bindings: AcControllerMideaBindings
 
   // ── 行为控制 ──
   editModeOpenDialog: boolean
@@ -1062,7 +1080,11 @@ export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
   powerButtonOffColor: string
   powerButtonIconColor: string              // 电源按钮图标颜色
 
-  // ── 模式配置（5 按钮 + 自动×4 组合，固定 9 种模式值）──
+  // ── 开/关机值配置（纯数字）──
+  powerOnValue: number                      // 开机对应的值
+  powerOffValue: number                     // 关机对应的值（可能 >0，比如 200）
+
+  // ── 模式配置（5 按钮，单按单选）──
   modeSectionTitle: string
   modeIconSize: number
   modeFontSize: number
@@ -1073,16 +1095,23 @@ export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
   modeFontColor: string
   modeActiveFontColor: string
 
-  // 9 种固定模式 value（弹框双高亮逻辑保留，label 固定 i18n）
-  modeAutoValue: number | string          // 纯自动
-  modeFanValue: number | string           // 送风
+  // 5 种模式设定值
+  modeAutoValue: number | string          // 自动
   modeCoolValue: number | string          // 制冷
   modeHeatValue: number | string          // 制热
   modeDehumidifyValue: number | string    // 除湿
-  modeAutoFanValue: number | string       // 自动送风
-  modeAutoCoolValue: number | string      // 自动制冷
-  modeAutoHeatValue: number | string      // 自动制热
-  modeAutoDehumidifyValue: number | string // 自动除湿
+  modeFanValue: number | string           // 通风
+
+  // ── 模式显示映射（9 个值，状态文字匹配）──
+  modeDisplayAutoCoolValue: number | string       // 自动制冷
+  modeDisplayAutoHeatValue: number | string       // 自动制热
+  modeDisplayAutoDehumidifyValue: number | string // 自动除湿
+  modeDisplayAutoFanValue: number | string        // 自动通风
+  modeDisplayCoolValue: number | string           // 制冷
+  modeDisplayHeatValue: number | string           // 制热
+  modeDisplayDehumidifyValue: number | string     // 除湿
+  modeDisplayFanValue: number | string            // 通风
+  modeDisplayOffValue: number | string            // 关机
 
   // ── 风速配置（自动 + 7 档独立 value）──
   fanSectionTitle: string
@@ -1105,6 +1134,24 @@ export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
   fanLevel5Value: number | string
   fanLevel6Value: number | string
   fanLevel7Value: number | string
+
+  // ── 风速显示映射（16 个值，状态文字匹配）──
+  fanDisplayAutoValue: number | string                  // 自动风
+  fanDisplayStopValue: number | string                  // 风机停
+  fanDisplayLevel1Value: number | string                 // 1 档
+  fanDisplayLevel2Value: number | string                 // 2 档
+  fanDisplayLevel3Value: number | string                 // 3 档
+  fanDisplayLevel4Value: number | string                 // 4 档
+  fanDisplayLevel5Value: number | string                 // 5 档
+  fanDisplayLevel6Value: number | string                 // 6 档
+  fanDisplayLevel7Value: number | string                 // 7 档
+  fanDisplayAutoLevel1Value: number | string             // 自动 1 档
+  fanDisplayAutoLevel2Value: number | string             // 自动 2 档
+  fanDisplayAutoLevel3Value: number | string             // 自动 3 档
+  fanDisplayAutoLevel4Value: number | string             // 自动 4 档
+  fanDisplayAutoLevel5Value: number | string             // 自动 5 档
+  fanDisplayAutoLevel6Value: number | string             // 自动 6 档
+  fanDisplayAutoLevel7Value: number | string             // 自动 7 档
 }
 
 import type { ComponentType } from '../registry'
