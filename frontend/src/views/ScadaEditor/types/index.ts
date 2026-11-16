@@ -918,6 +918,7 @@ export interface AcController3ComponentConfig extends BaseComponentConfig {
   cardTitle: string
   cardTitleFontSize: number
   cardBackgroundColor: string
+  cardOnBackgroundColor: string
   cardTitleColor: string
   activeAccentColor: string
   cardIconSize: number

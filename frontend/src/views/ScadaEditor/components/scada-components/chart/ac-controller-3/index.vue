@@ -189,7 +189,7 @@ const dialogVisible = computed<boolean>({
 const { currentValue: powerVal, writeValue: writePower } = useScadaBinding(
   computed<PointBinding | null>(() => bindings.value?.power ?? null),
   { transform: (v) => (typeof v === 'boolean' ? (v ? 1 : 0) : v) },
-  computed(() => 1),
+  computed(() => 0),
 )
 const isOn = computed(() => {
   const v = powerVal.value
@@ -260,7 +260,7 @@ const cardBorderRadius = computed(() => config.value.cardBorderRadius)
 const wrapperCardStyle = computed(() => ({
   width: `${config.value.width}px`,
   height: `${config.value.height}px`,
-  backgroundColor: cardBackgroundColor.value,    // 始终用用户配的背景色
+  backgroundColor: isOn.value ? config.value.cardOnBackgroundColor : cardBackgroundColor.value,
   borderRadius: `${cardBorderRadius.value}px`,
   border: '1px solid rgba(0,0,0,0.06)',
 }))
