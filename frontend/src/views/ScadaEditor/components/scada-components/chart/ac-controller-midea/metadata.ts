@@ -29,6 +29,7 @@ const defaultConfig: AcControllerMideaComponentConfig = {
   cardTitle: 'componentConfig.acCardTitle',
   cardTitleFontSize: 12,
   cardBackgroundColor: 'rgba(0, 0, 0, 0.53)',
+  cardOnBackgroundColor: 'rgb(102,126,234,1)',
   cardTitleColor: 'rgba(255,255,255,0.6)',
   activeAccentColor: 'rgba(255,255,255,1)',
   cardIconSize: 22,

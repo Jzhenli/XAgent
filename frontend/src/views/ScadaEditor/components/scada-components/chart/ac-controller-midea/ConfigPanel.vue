@@ -404,33 +404,14 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t("componentConfig.cardTitleColor") }}</label>
-            <el-color-picker
-              :model-value="config.cardTitleColor"
-              show-alpha
-              @change="handleColorChange('cardTitleColor', $event)"
-            />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>{{ t("componentConfig.cardBackgroundColor") }}</label>
-            <el-color-picker
-              :model-value="config.cardBackgroundColor"
-              show-alpha
-              @change="handleColorChange('cardBackgroundColor', $event)"
-            />
-          </div>
-          <div class="form-group">
-            <label>{{ t("componentConfig.borderRadius") }}</label>
+            <label>{{ t("componentConfig.iconSize") }}</label>
             <input
               type="number"
-              min="0"
-              :value="config.cardBorderRadius"
+              min="12"
+              :value="config.cardIconSize"
               @change="
                 updateConfig(
-                  'cardBorderRadius',
+                  'cardIconSize',
                   +($event.target as HTMLInputElement).value,
                 )
               "
@@ -471,6 +452,25 @@
 
         <div class="form-row">
           <div class="form-group">
+            <label>{{ t("componentConfig.cardTitleColor") }}</label>
+            <el-color-picker
+              :model-value="config.cardTitleColor"
+              show-alpha
+              @change="handleColorChange('cardTitleColor', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.cardBackgroundColor") }}</label>
+            <el-color-picker
+              :model-value="config.cardBackgroundColor"
+              show-alpha
+              @change="handleColorChange('cardBackgroundColor', $event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
             <label>{{ t("componentConfig.activeAccentColor") }}</label>
             <el-color-picker
               :model-value="config.activeAccentColor"
@@ -479,14 +479,25 @@
             />
           </div>
           <div class="form-group">
-            <label>{{ t("componentConfig.iconSize") }}</label>
+            <label>{{ t("componentConfig.cardOnBackgroundColor") }}</label>
+            <el-color-picker
+              :model-value="config.cardOnBackgroundColor"
+              show-alpha
+              @change="handleColorChange('cardOnBackgroundColor', $event)"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.borderRadius") }}</label>
             <input
               type="number"
-              min="12"
-              :value="config.cardIconSize"
+              min="0"
+              :value="config.cardBorderRadius"
               @change="
                 updateConfig(
-                  'cardIconSize',
+                  'cardBorderRadius',
                   +($event.target as HTMLInputElement).value,
                 )
               "

@@ -1028,6 +1028,7 @@ export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
   cardTitle: string
   cardTitleFontSize: number
   cardBackgroundColor: string
+  cardOnBackgroundColor: string
   cardTitleColor: string
   activeAccentColor: string
   cardIconSize: number

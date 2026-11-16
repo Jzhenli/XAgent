@@ -218,7 +218,7 @@ const dialogVisible = computed<boolean>({
 const { currentValue: powerVal, writeValue: writePower } = useScadaBinding(
   computed<PointBinding | null>(() => bindings.value?.power ?? null),
   { transform: (v) => (typeof v === 'boolean' ? (v ? 1 : 0) : v) },
-  computed(() => 1),
+  computed(() => config.value.powerOffValue),
 )
 const isOn = computed(() => {
   // eslint-disable-next-line eqeqeq
@@ -280,10 +280,12 @@ const cardTitleColor = computed(() => config.value.cardTitleColor)
 const activeAccentColor = computed(() => config.value.activeAccentColor)
 const cardBorderRadius = computed(() => config.value.cardBorderRadius)
 
+const cardOnBackgroundColor = computed(() => config.value.cardOnBackgroundColor)
+
 const wrapperCardStyle = computed(() => ({
   width: `${config.value.width}px`,
   height: `${config.value.height}px`,
-  backgroundColor: cardBackgroundColor.value,
+  backgroundColor: isOn.value ? cardOnBackgroundColor.value : cardBackgroundColor.value,
   borderRadius: `${cardBorderRadius.value}px`,
   border: '1px solid rgba(0,0,0,0.06)',
 }))
