@@ -2064,6 +2064,7 @@
     "currentValueSection": "當前值區域",
     "modeSection": "模式按鈕區域",
     "fanSpeedSection": "風速按鈕區域",
+    "acFanSpeedSectionTitle": "自動按鈕樣式",
     "acFanSpeedAuto": "自動",
     "acFanSpeedLow": "低",
     "acFanSpeedMedium": "中",

@@ -2064,6 +2064,7 @@
     "currentValueSection": "Current Value Area",
     "modeSection": "Mode Buttons",
     "fanSpeedSection": "Fan Speed Buttons",
+    "acFanSpeedSectionTitle": "Auto Button Style",
     "acFanSpeedAuto": "Auto",
     "acFanSpeedLow": "Low",
     "acFanSpeedMedium": "Medium",

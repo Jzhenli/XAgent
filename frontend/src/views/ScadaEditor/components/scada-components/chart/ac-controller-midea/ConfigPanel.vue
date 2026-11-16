@@ -1178,210 +1178,127 @@
           />
         </div>
 
+        <!-- 风速自动按钮独立颜色 -->
+        <div class="divider-label">
+          {{ t("componentConfig.acFanSpeedSectionTitle") ?? "自动按钮样式" }}
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.backgroundColor") }}</label>
+            <el-color-picker
+              :model-value="config.fanBackgroundColor"
+              show-alpha
+              @change="handleColorChange('fanBackgroundColor', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.activeBackgroundColor") }}</label>
+            <el-color-picker
+              :model-value="config.fanActiveBackgroundColor"
+              show-alpha
+              @change="handleColorChange('fanActiveBackgroundColor', $event)"
+            />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.iconColor") }}</label>
+            <el-color-picker
+              :model-value="config.fanTextColor"
+              show-alpha
+              @change="handleColorChange('fanTextColor', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>{{ t("componentConfig.activeIconColor") }}</label>
+            <el-color-picker
+              :model-value="config.fanActiveTextColor"
+              show-alpha
+              @change="handleColorChange('fanActiveTextColor', $event)"
+            />
+          </div>
+        </div>
+
         <div class="divider-label">{{ t("componentConfig.fanLevels") }}</div>
 
-        <!-- 自动 -->
-        <div class="fan-level-row">
-          <el-switch
-            :model-value="config.fanAutoVisible"
-            @update:model-value="updateConfig('fanAutoVisible', $event)"
-          />
-          <input
-            type="text"
-            class="level-label"
-            :disabled="!config.fanAutoVisible"
-            :value="translated.fanAutoLabel"
-            @input="
-              updateConfig(
-                'fanAutoLabel',
-                ($event.target as HTMLInputElement).value,
-              )
-            "
-          />
-          <input
-            type="text"
-            class="level-value"
-            :disabled="!config.fanAutoVisible"
-            :value="config.fanAutoValue"
-            @change="parseAndUpdate('fanAutoValue', $event)"
-          />
+        <!-- 自动 + 1档 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>{{ t("componentConfig.acFanSpeedAuto") }}</label>
+            <input
+              type="text"
+              :value="config.fanAutoValue"
+              @change="parseAndUpdate('fanAutoValue', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>1{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanLevel1Value"
+              @change="parseAndUpdate('fanLevel1Value', $event)"
+            />
+          </div>
         </div>
 
-        <!-- 7 档 -->
-        <div class="fan-level-row">
-          <el-switch
-            :model-value="config.fanLevel1Visible"
-            @update:model-value="updateConfig('fanLevel1Visible', $event)"
-          />
-          <input
-            type="text"
-            class="level-label"
-            :disabled="!config.fanLevel1Visible"
-            :value="translated.fanLevel1Label"
-            @input="
-              updateConfig(
-                'fanLevel1Label',
-                ($event.target as HTMLInputElement).value,
-              )
-            "
-          />
-          <input
-            type="text"
-            class="level-value"
-            :disabled="!config.fanLevel1Visible"
-            :value="config.fanLevel1Value"
-            @change="parseAndUpdate('fanLevel1Value', $event)"
-          />
+        <!-- 2档 + 3档 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>2{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanLevel2Value"
+              @change="parseAndUpdate('fanLevel2Value', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>3{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanLevel3Value"
+              @change="parseAndUpdate('fanLevel3Value', $event)"
+            />
+          </div>
         </div>
-        <div class="fan-level-row">
-          <el-switch
-            :model-value="config.fanLevel2Visible"
-            @update:model-value="updateConfig('fanLevel2Visible', $event)"
-          />
-          <input
-            type="text"
-            class="level-label"
-            :disabled="!config.fanLevel2Visible"
-            :value="translated.fanLevel2Label"
-            @input="
-              updateConfig(
-                'fanLevel2Label',
-                ($event.target as HTMLInputElement).value,
-              )
-            "
-          />
-          <input
-            type="text"
-            class="level-value"
-            :disabled="!config.fanLevel2Visible"
-            :value="config.fanLevel2Value"
-            @change="parseAndUpdate('fanLevel2Value', $event)"
-          />
+
+        <!-- 4档 + 5档 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>4{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanLevel4Value"
+              @change="parseAndUpdate('fanLevel4Value', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>5{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanLevel5Value"
+              @change="parseAndUpdate('fanLevel5Value', $event)"
+            />
+          </div>
         </div>
-        <div class="fan-level-row">
-          <el-switch
-            :model-value="config.fanLevel3Visible"
-            @update:model-value="updateConfig('fanLevel3Visible', $event)"
-          />
-          <input
-            type="text"
-            class="level-label"
-            :disabled="!config.fanLevel3Visible"
-            :value="translated.fanLevel3Label"
-            @input="
-              updateConfig(
-                'fanLevel3Label',
-                ($event.target as HTMLInputElement).value,
-              )
-            "
-          />
-          <input
-            type="text"
-            class="level-value"
-            :disabled="!config.fanLevel3Visible"
-            :value="config.fanLevel3Value"
-            @change="parseAndUpdate('fanLevel3Value', $event)"
-          />
-        </div>
-        <div class="fan-level-row">
-          <el-switch
-            :model-value="config.fanLevel4Visible"
-            @update:model-value="updateConfig('fanLevel4Visible', $event)"
-          />
-          <input
-            type="text"
-            class="level-label"
-            :disabled="!config.fanLevel4Visible"
-            :value="translated.fanLevel4Label"
-            @input="
-              updateConfig(
-                'fanLevel4Label',
-                ($event.target as HTMLInputElement).value,
-              )
-            "
-          />
-          <input
-            type="text"
-            class="level-value"
-            :disabled="!config.fanLevel4Visible"
-            :value="config.fanLevel4Value"
-            @change="parseAndUpdate('fanLevel4Value', $event)"
-          />
-        </div>
-        <div class="fan-level-row">
-          <el-switch
-            :model-value="config.fanLevel5Visible"
-            @update:model-value="updateConfig('fanLevel5Visible', $event)"
-          />
-          <input
-            type="text"
-            class="level-label"
-            :disabled="!config.fanLevel5Visible"
-            :value="translated.fanLevel5Label"
-            @input="
-              updateConfig(
-                'fanLevel5Label',
-                ($event.target as HTMLInputElement).value,
-              )
-            "
-          />
-          <input
-            type="text"
-            class="level-value"
-            :disabled="!config.fanLevel5Visible"
-            :value="config.fanLevel5Value"
-            @change="parseAndUpdate('fanLevel5Value', $event)"
-          />
-        </div>
-        <div class="fan-level-row">
-          <el-switch
-            :model-value="config.fanLevel6Visible"
-            @update:model-value="updateConfig('fanLevel6Visible', $event)"
-          />
-          <input
-            type="text"
-            class="level-label"
-            :disabled="!config.fanLevel6Visible"
-            :value="translated.fanLevel6Label"
-            @input="
-              updateConfig(
-                'fanLevel6Label',
-                ($event.target as HTMLInputElement).value,
-              )
-            "
-          />
-          <input
-            type="text"
-            class="level-value"
-            :disabled="!config.fanLevel6Visible"
-            :value="config.fanLevel6Value"
-            @change="parseAndUpdate('fanLevel6Value', $event)"
-          />
-        </div>
-        <div class="fan-level-row">
-          <el-switch
-            :model-value="config.fanLevel7Visible"
-            @update:model-value="updateConfig('fanLevel7Visible', $event)"
-          />
-          <input
-            type="text"
-            class="level-label"
-            :disabled="!config.fanLevel7Visible"
-            :value="translated.fanLevel7Label"
-            @input="
-              updateConfig(
-                'fanLevel7Label',
-                ($event.target as HTMLInputElement).value,
-              )
-            "
-          />
-          <input
-            type="text"
-            class="level-value"
-            :disabled="!config.fanLevel7Visible"
-            :value="config.fanLevel7Value"
-            @change="parseAndUpdate('fanLevel7Value', $event)"
-          />
+
+        <!-- 6档 + 7档 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>6{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanLevel6Value"
+              @change="parseAndUpdate('fanLevel6Value', $event)"
+            />
+          </div>
+          <div class="form-group">
+            <label>7{{ t("componentConfig.acFanLevelUnitLabel") }}</label>
+            <input
+              type="text"
+              :value="config.fanLevel7Value"
+              @change="parseAndUpdate('fanLevel7Value', $event)"
+            />
+          </div>
         </div>
       </el-collapse-item>
     </el-collapse>
@@ -1415,12 +1332,6 @@ const resolve = (v: string | undefined) =>
   v?.startsWith("componentConfig.") || v?.startsWith("scadaComponents.")
     ? t(v)
     : v;
-const resolveFanLevel = (level: string | undefined) => {
-  if (!level) return level;
-  if (/^\d+$/.test(level))
-    return level + t("componentConfig.acFanLevelUnitLabel");
-  return resolve(level);
-};
 const translated = computed(() => {
   const c = config.value;
   return {
@@ -1430,14 +1341,6 @@ const translated = computed(() => {
     currentValueLabel: resolve(c.currentValueLabel),
     modeSectionTitle: resolve(c.modeSectionTitle),
     fanSectionTitle: resolve(c.fanSectionTitle),
-    fanAutoLabel: resolve(c.fanAutoLabel),
-    fanLevel1Label: resolveFanLevel(c.fanLevel1Label),
-    fanLevel2Label: resolveFanLevel(c.fanLevel2Label),
-    fanLevel3Label: resolveFanLevel(c.fanLevel3Label),
-    fanLevel4Label: resolveFanLevel(c.fanLevel4Label),
-    fanLevel5Label: resolveFanLevel(c.fanLevel5Label),
-    fanLevel6Label: resolveFanLevel(c.fanLevel6Label),
-    fanLevel7Label: resolveFanLevel(c.fanLevel7Label),
   };
 });
 

@@ -98,7 +98,7 @@
           </div>
 
           <!-- 风速选择 -->
-          <div class="ac3-section" style="padding-top: 8px;">
+          <div class="ac3-section" style="padding-top: 8px;padding-bottom: 16px;">
             <div class="ac3-section-label">{{ fanSectionTitle }}</div>
             <div class="ac3-fan-grid">
               <div

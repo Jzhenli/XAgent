@@ -118,7 +118,7 @@
                   :name="'auto'"
                   :size="fanIconSize"
                   type="mono-line"
-                  :color="{ normal: isFanAuto ? fanActiveIconColor : fanIconColor }"
+                  :color="{ normal: isFanAuto ? fanActiveTextColor : fanTextColor }"
                 />
                 <span class="fan-label">{{ fanAutoLabel }}</span>
               </div>
@@ -136,8 +136,8 @@
                       v-for="(level, idx) in visibleFanLevels"
                       :key="level.key"
                       class="acm-fan-level-block"
-                      :class="{ active: idx === activeFanLevelIndex }"
-                      :style="sliderBlockStyle(idx === activeFanLevelIndex)"
+                      :class="{ active: idx <= activeFanLevelIndex }"
+                      :style="sliderBlockStyle(idx <= activeFanLevelIndex)"
                       @click.stop="selectFanLevel(idx)"
                     />
                   </div>
@@ -148,7 +148,7 @@
                   >+</div>
                 </div>
                 <div class="acm-fan-slider-label" :style="sliderTextStyle">
-                  {{ isFanAuto ? config.fanAutoLabel : (activeFanLevel?.label ?? `${fanVal.value}${t('componentConfig.acFanLevelUnitLabel')}`) }}
+                  {{ isFanAuto ? fanAutoLabel : (activeFanLevel?.label ?? `${fanVal.value}${t('componentConfig.acFanLevelUnitLabel')}`) }}
                 </div>
               </div>
             </div>
@@ -185,11 +185,6 @@ const { t } = useI18n()
 // ── i18n 默认文本跟随 ──
 const resolve = (v: string | undefined) =>
   (v?.startsWith('componentConfig.') || v?.startsWith('scadaComponents.')) ? t(v) : v
-const resolveFanLevel = (level: string | undefined) => {
-  if (!level) return level
-  if (/^\d+$/.test(level)) return level + t('componentConfig.acFanLevelUnitLabel')
-  return resolve(level)
-}
 
 const injectedReader = inject(ScadaPointReaderKey, null) as ScadaPointReader | null
 
@@ -348,7 +343,7 @@ const gaugeUnit = computed(() => config.value.gaugeUnit)
 const currentValueLabel = computed(() => resolve(config.value.currentValueLabel) ?? '')
 const modeSectionTitle = computed(() => resolve(config.value.modeSectionTitle) ?? '')
 const fanSectionTitle = computed(() => resolve(config.value.fanSectionTitle) ?? '')
-const fanAutoLabel = computed(() => resolve(config.value.fanAutoLabel) ?? '')
+const fanAutoLabel = computed(() => t('componentConfig.acFanSpeedAuto'))
 const showMainAreaStatusText = computed(() => config.value.showMainAreaStatusText)
 const mainAreaStatusTextColor = computed(() => config.value.mainAreaStatusTextColor)
 const mainAreaStatusTextFontSize = computed(() => config.value.mainAreaStatusTextFontSize)
@@ -366,13 +361,11 @@ const modeActiveFontColor = computed(() => config.value.modeActiveFontColor)
 const modeIconSize = computed(() => config.value.modeIconSize)
 const modeFontSize = computed(() => config.value.modeFontSize)
 
-// 风速相关
-const fanIconColor = computed(() => config.value.modeIconColor)   // 复用
-const fanActiveIconColor = computed(() => config.value.modeActiveIconColor)  // 复用
-const fanBackgroundColor = computed(() => config.value.modeBackgroundColor)  // 复用
-const fanActiveBackgroundColor = computed(() => config.value.modeActiveBackgroundColor)  // 复用
-const fanFontColor = computed(() => config.value.modeFontColor)  // 复用
-const fanActiveFontColor = computed(() => config.value.modeActiveFontColor)  // 复用
+// 风速相关（独立颜色属性）
+const fanBackgroundColor = computed(() => config.value.fanBackgroundColor)
+const fanActiveBackgroundColor = computed(() => config.value.fanActiveBackgroundColor)
+const fanTextColor = computed(() => config.value.fanTextColor)
+const fanActiveTextColor = computed(() => config.value.fanActiveTextColor)
 const fanIconSize = computed(() => config.value.fanIconSize)
 const fanFontSize = computed(() => config.value.fanFontSize)
 const fanLevelsTrackBackgroundColor = computed(() => config.value.fanLevelsTrackBackgroundColor)
@@ -490,8 +483,8 @@ const modeItemStyle = computed(() => ({
 const fanItemStyle = computed(() => ({
   '--mode-bg': fanBackgroundColor.value,
   '--mode-active-bg': fanActiveBackgroundColor.value,
-  '--mode-active-fg': fanActiveFontColor.value,
-  '--mode-fg': fanFontColor.value,
+  '--mode-active-fg': fanActiveTextColor.value,
+  '--mode-fg': fanTextColor.value,
   '--fan-fs': fanFontSize.value + 'px',
 }))
 
@@ -636,22 +629,22 @@ interface FanLevelItem {
   value: number | string
 }
 
-// 7 档档位（visible 的）
+// 7 档档位（始终显示，label 固定生成）
 const visibleFanLevels = computed<FanLevelItem[]>(() => {
   const c = config.value
-  const all: FanLevelItem[] = [
-    c.fanLevel1Visible && { key: '1', label: resolveFanLevel(c.fanLevel1Label) ?? '', value: c.fanLevel1Value },
-    c.fanLevel2Visible && { key: '2', label: resolveFanLevel(c.fanLevel2Label) ?? '', value: c.fanLevel2Value },
-    c.fanLevel3Visible && { key: '3', label: resolveFanLevel(c.fanLevel3Label) ?? '', value: c.fanLevel3Value },
-    c.fanLevel4Visible && { key: '4', label: resolveFanLevel(c.fanLevel4Label) ?? '', value: c.fanLevel4Value },
-    c.fanLevel5Visible && { key: '5', label: resolveFanLevel(c.fanLevel5Label) ?? '', value: c.fanLevel5Value },
-    c.fanLevel6Visible && { key: '6', label: resolveFanLevel(c.fanLevel6Label) ?? '', value: c.fanLevel6Value },
-    c.fanLevel7Visible && { key: '7', label: resolveFanLevel(c.fanLevel7Label) ?? '', value: c.fanLevel7Value },
-  ].filter((x): x is FanLevelItem => !!x)
-  return all
+  const unit = t('componentConfig.acFanLevelUnitLabel')
+  return [
+    { key: '1', label: '1' + unit, value: c.fanLevel1Value },
+    { key: '2', label: '2' + unit, value: c.fanLevel2Value },
+    { key: '3', label: '3' + unit, value: c.fanLevel3Value },
+    { key: '4', label: '4' + unit, value: c.fanLevel4Value },
+    { key: '5', label: '5' + unit, value: c.fanLevel5Value },
+    { key: '6', label: '6' + unit, value: c.fanLevel6Value },
+    { key: '7', label: '7' + unit, value: c.fanLevel7Value },
+  ]
 })
 
-const showFanAuto = computed(() => config.value.fanAutoVisible)
+const showFanAuto = computed(() => true)
 
 const isFanAuto = computed(() => {
   const v = fanVal.value
@@ -1138,6 +1131,7 @@ const writeSetpointValue = async (target: number) => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  border-radius: 10px;
 }
 .acm-fan-slider.disabled {
   opacity: 0.4;
@@ -1188,7 +1182,6 @@ const writeSetpointValue = async (target: number) => {
   height: 22px;
   border-radius: 3px;
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 .acm-fan-level-block:hover {
   transform: scaleY(1.15);

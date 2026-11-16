@@ -1088,33 +1088,22 @@ export interface AcControllerMideaComponentConfig extends BaseComponentConfig {
   fanSectionTitle: string
   fanIconSize: number
   fanFontSize: number
-  fanAutoVisible: boolean
-  fanAutoLabel: string
   fanAutoValue: number | string
   fanLevelsTrackBackgroundColor: string
   fanLevelsActiveBackgroundColor: string
   fanLevelsTextColor: string
-  // 7 档（每档 visible/label/value 独立配置）
-  fanLevel1Visible: boolean
-  fanLevel1Label: string
+  // 风速自动按钮独立颜色（图标与字体颜色共用同一属性）
+  fanBackgroundColor: string
+  fanActiveBackgroundColor: string
+  fanTextColor: string
+  fanActiveTextColor: string
+  // 7 档 value
   fanLevel1Value: number | string
-  fanLevel2Visible: boolean
-  fanLevel2Label: string
   fanLevel2Value: number | string
-  fanLevel3Visible: boolean
-  fanLevel3Label: string
   fanLevel3Value: number | string
-  fanLevel4Visible: boolean
-  fanLevel4Label: string
   fanLevel4Value: number | string
-  fanLevel5Visible: boolean
-  fanLevel5Label: string
   fanLevel5Value: number | string
-  fanLevel6Visible: boolean
-  fanLevel6Label: string
   fanLevel6Value: number | string
-  fanLevel7Visible: boolean
-  fanLevel7Label: string
   fanLevel7Value: number | string
 }
 
