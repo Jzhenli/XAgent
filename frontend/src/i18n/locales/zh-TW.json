@@ -1025,6 +1025,7 @@
     },
     "tabAlerts": "告警記錄",
     "levelCritical": "緊急",
+    "levelError": "錯誤",
     "levelWarning": "警告",
     "levelInfo": "資訊",
     "statusNew": "新建",

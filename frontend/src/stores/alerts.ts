@@ -7,7 +7,7 @@ export interface Alert {
   id: string
   ruleId: string
   ruleName: string
-  level: 'critical' | 'warning' | 'info'
+  level: 'critical' | 'error' | 'warning' | 'info'
   status: 'new' | 'acknowledged' | 'resolved' | 'ignored'
   asset?: string
   point?: string
@@ -26,7 +26,7 @@ export interface SystemNotificationConfig {
   quietHoursEnabled: boolean
   quietHoursStart: string
   quietHoursEnd: string
-  notifyLevels: Array<'critical' | 'warning' | 'info'>
+  notifyLevels: Array<'critical' | 'error' | 'warning' | 'info'>
 }
 
 export interface NotificationChannel {
@@ -42,7 +42,7 @@ function mapAlertFromApi(a: AlertResponse): Alert {
     id: a.id,
     ruleId: a.rule_id,
     ruleName: a.rule_name || a.title,
-    level: (['critical', 'warning', 'info'].includes(a.level) ? a.level : 'info') as Alert['level'],
+    level: (['critical', 'error', 'warning', 'info'].includes(a.level) ? a.level : 'info') as Alert['level'],
     status: (['new', 'acknowledged', 'resolved', 'ignored'].includes(a.status) ? a.status : 'new') as Alert['status'],
     asset: a.asset || undefined,
     point: a.point_name || undefined,
@@ -185,7 +185,7 @@ export const useAlertStore = defineStore('alerts', () => {
       const fieldMap = {
         retentionDays: { from: ['retention_days', 'retentionDays'], default: 30 },
         maxNotifications: { from: ['max_notifications', 'maxNotifications'], default: 1000 },
-        notifyLevels: { from: ['notify_levels', 'notifyLevels'], default: ['critical', 'warning', 'info'] },
+        notifyLevels: { from: ['notify_levels', 'notifyLevels'], default: ['critical', 'error', 'warning', 'info'] },
         soundEnabled: { from: ['sound_enabled', 'soundEnabled'], default: true },
         desktopEnabled: { from: ['desktop_enabled', 'desktopEnabled'], default: true },
         autoReadMinutes: { from: ['auto_read_minutes', 'autoReadMinutes'], default: 0 },

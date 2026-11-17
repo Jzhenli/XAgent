@@ -1025,6 +1025,7 @@
     },
     "tabAlerts": "告警记录",
     "levelCritical": "紧急",
+    "levelError": "错误",
     "levelWarning": "警告",
     "levelInfo": "信息",
     "statusNew": "新建",

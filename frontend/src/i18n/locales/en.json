@@ -1025,6 +1025,7 @@
     },
     "tabAlerts": "Alert Records",
     "levelCritical": "Critical",
+    "levelError": "Error",
     "levelWarning": "Warning",
     "levelInfo": "Info",
     "statusNew": "New",
