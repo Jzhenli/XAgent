@@ -577,7 +577,7 @@ const handleApiError = (e: unknown) => {
 
 // 电源开关
 const togglePower = async () => {
-  if (writing.value) return
+  if (props.editing || writing.value) return
   const target = isOn.value ? 0 : 1
   if (!bindings.value?.power) {
     powerVal.value = target
@@ -612,6 +612,7 @@ const decrementSetpoint = async () => {
 }
 
 const writeSetpointValue = async (target: number) => {
+  if (props.editing) return
   if (!bindings.value?.setpoint) {
     setpointVal.value = target
     return
@@ -629,7 +630,7 @@ const writeSetpointValue = async (target: number) => {
 
 // 模式写入
 const handleWriteMode = async (m: ModeItem) => {
-  if (!isOn.value || writing.value) return
+  if (props.editing || !isOn.value || writing.value) return
   if (!bindings.value?.mode) {
     modeVal.value = m.value
     return
@@ -647,7 +648,7 @@ const handleWriteMode = async (m: ModeItem) => {
 
 // 风速写入
 const handleWriteFan = async (f: FanItem) => {
-  if (!isOn.value || writing.value) return
+  if (props.editing || !isOn.value || writing.value) return
   if (!bindings.value?.fanSpeed) {
     fanVal.value = f.value
     return

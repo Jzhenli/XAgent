@@ -157,6 +157,10 @@ export function useScadaBinding(
 
   /** 向点位写入值 */
   const writeValue = async (value: any): Promise<{ success: boolean; message: string }> => {
+    if (scada.isEditing.value) {
+      return { success: false, message: t('scadaBinding.noBoundPoint') }
+    }
+
     if (!binding.value || !boundPoint.value) {
       return { success: false, message: t('scadaBinding.noBoundPoint') }
     }

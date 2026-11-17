@@ -577,7 +577,7 @@ const activeModeKeys = computed<Set<string>>(() => {
 const writing = ref(false)
 
 const handleModeClick = async (m: ModeItem) => {
-  if (!isOn.value || writing.value) return
+  if (props.editing || !isOn.value || writing.value) return
   writing.value = true
   try {
     if (!bindings.value?.modeSetpoint) {
@@ -663,6 +663,7 @@ const selectFanLevel = async (idx: number) => {
 }
 
 const writeFanLevel = async (idx: number) => {
+  if (props.editing) return
   const level = visibleFanLevels.value[idx]
   if (!level) return
   writing.value = true
@@ -681,6 +682,7 @@ const writeFanLevel = async (idx: number) => {
 }
 
 const toggleFanAuto = async () => {
+  if (props.editing) return
   if (!isOn.value || writing.value) return
   writing.value = true
   try {
@@ -779,7 +781,7 @@ const handleApiError = (e: unknown) => {
 }
 
 const togglePower = async () => {
-  if (writing.value) return
+  if (props.editing || writing.value) return
   const target = isOn.value ? config.value.powerOffValue : config.value.powerOnValue
   if (!bindings.value?.power) {
     powerVal.value = target
@@ -813,6 +815,7 @@ const decrementSetpoint = async () => {
 }
 
 const writeSetpointValue = async (target: number) => {
+  if (props.editing) return
   if (!bindings.value?.setpoint) {
     setpointVal.value = target
     return
