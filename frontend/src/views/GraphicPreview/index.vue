@@ -35,7 +35,7 @@
 
     <div v-if="currentPanel" class="floating-tools">
       <div class="floating-back" @click="handleGoBack">
-        <el-icon :size="20"><ArrowLeft /></el-icon>
+        <el-icon :size="40"><ArrowLeft /></el-icon>
       </div>
     </div>
   </div>
@@ -231,8 +231,8 @@ const handleGoBack = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(8px);

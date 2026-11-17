@@ -1,7 +1,7 @@
 <template>
   <div class="vant-container">
     <div class="floating-back" @click="exit">
-      <el-icon :size="20"><ArrowLeft /></el-icon>
+      <el-icon :size="40"><ArrowLeft /></el-icon>
     </div>
 
     <div class="floating-tab-bar">
@@ -288,8 +288,8 @@ watch(activeTab, async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(8px);
