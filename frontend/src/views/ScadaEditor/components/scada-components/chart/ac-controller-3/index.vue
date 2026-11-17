@@ -474,6 +474,7 @@ const fanItemStyle = computed(() => ({
   '--fan-fg': fanFontColor.value,
   '--fan-bar-off': fanIconColor.value,
   '--fan-bar-on': fanActiveIconColor.value,
+  '--fan-bar-base': `${fanIconSize.value}px`,
 }))
 
 const fanLabelStyle = computed(() => ({
@@ -979,31 +980,35 @@ const handleWriteFan = async (f: FanItem) => {
 .ac3-fan-bars {
   display: flex;
   align-items: flex-end;
-  gap: 2px;
-  height: 20px;
+  gap: calc(var(--fan-bar-base) * 0.091);
+  height: calc(var(--fan-bar-base) * 0.909);
 }
 
 .ac3-fan-bars .fan-bar {
-  width: 3px;
+  width: calc(var(--fan-bar-base) * 0.136);
   background: var(--fan-bar-off);
-  border-radius: 1px;
+  border-radius: calc(var(--fan-bar-base) * 0.045);
 }
 
-.ac3-fan-item:nth-child(2) .ac3-fan-bars .fan-bar:nth-child(1) { height: 10px; }
+/* low 档 (nth-child 2): 1 条 bar */
+.ac3-fan-item:nth-child(2) .ac3-fan-bars .fan-bar:nth-child(1) { height: calc(var(--fan-bar-base) * 0.455); }
 .ac3-fan-item:nth-child(2) .ac3-fan-bars .fan-bar:nth-child(2) { height: 0; display: none; }
 .ac3-fan-item:nth-child(2) .ac3-fan-bars .fan-bar:nth-child(3) { height: 0; display: none; }
 
-.ac3-fan-item:nth-child(3) .ac3-fan-bars .fan-bar:nth-child(1) { height: 6px; }
-.ac3-fan-item:nth-child(3) .ac3-fan-bars .fan-bar:nth-child(2) { height: 14px; }
+/* medium 档 (nth-child 3): 2 条 bar */
+.ac3-fan-item:nth-child(3) .ac3-fan-bars .fan-bar:nth-child(1) { height: calc(var(--fan-bar-base) * 0.273); }
+.ac3-fan-item:nth-child(3) .ac3-fan-bars .fan-bar:nth-child(2) { height: calc(var(--fan-bar-base) * 0.636); }
 .ac3-fan-item:nth-child(3) .ac3-fan-bars .fan-bar:nth-child(3) { height: 0; display: none; }
 
-.ac3-fan-item:nth-child(1) .ac3-fan-bars .fan-bar:nth-child(1) { height: 6px; }
-.ac3-fan-item:nth-child(1) .ac3-fan-bars .fan-bar:nth-child(2) { height: 10px; }
-.ac3-fan-item:nth-child(1) .ac3-fan-bars .fan-bar:nth-child(3) { height: 16px; }
+/* auto 档 (nth-child 1): 3 条 bar — 注意：auto 默认显示 Icon 不显示 bar */
+.ac3-fan-item:nth-child(1) .ac3-fan-bars .fan-bar:nth-child(1) { height: calc(var(--fan-bar-base) * 0.273); }
+.ac3-fan-item:nth-child(1) .ac3-fan-bars .fan-bar:nth-child(2) { height: calc(var(--fan-bar-base) * 0.455); }
+.ac3-fan-item:nth-child(1) .ac3-fan-bars .fan-bar:nth-child(3) { height: calc(var(--fan-bar-base) * 0.727); }
 
-.ac3-fan-item:nth-child(4) .ac3-fan-bars .fan-bar:nth-child(1) { height: 6px; }
-.ac3-fan-item:nth-child(4) .ac3-fan-bars .fan-bar:nth-child(2) { height: 12px; }
-.ac3-fan-item:nth-child(4) .ac3-fan-bars .fan-bar:nth-child(3) { height: 18px; }
+/* high 档 (nth-child 4): 3 条 bar */
+.ac3-fan-item:nth-child(4) .ac3-fan-bars .fan-bar:nth-child(1) { height: calc(var(--fan-bar-base) * 0.273); }
+.ac3-fan-item:nth-child(4) .ac3-fan-bars .fan-bar:nth-child(2) { height: calc(var(--fan-bar-base) * 0.545); }
+.ac3-fan-item:nth-child(4) .ac3-fan-bars .fan-bar:nth-child(3) { height: calc(var(--fan-bar-base) * 0.818); }
 
 .ac3-fan-item.active .ac3-fan-bars .fan-bar {
   background: var(--fan-bar-on);
