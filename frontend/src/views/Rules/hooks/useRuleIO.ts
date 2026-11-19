@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useRuleStore, type RuleViewItem } from '@/stores/rules'
 import type { RuleCreateRequest } from '@/api/types'
+import { RULE_PLUGIN_NAMES } from '../types'
 
 export function useRuleIO() {
   const { t } = useI18n()
@@ -116,7 +117,7 @@ export function useRuleIO() {
             name: rule.name || t('ruleEditor.defaultRuleName'),
             description: rule.description || undefined,
             enabled: rule.enabled ?? false,
-            plugin: rule.plugin ?? { name: 'threshold_rule', config: {} },
+            plugin: rule.plugin ?? { name: RULE_PLUGIN_NAMES.THRESHOLD, config: {} },
             data_subscriptions: rule.data_subscriptions,
             notification: rule.notification,
             pipeline_id: rule.pipeline_id,

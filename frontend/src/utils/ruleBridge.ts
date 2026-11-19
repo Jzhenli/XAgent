@@ -9,6 +9,7 @@ import type {
 } from '@/api/types'
 import { graphToExpression, graphToExpressions, groupNodesIntoChains } from './ruleConverter'
 import i18n from '@/i18n'
+import { RULE_PLUGIN_NAMES } from '@/views/Rules/types'
 
 const VISUAL_GRAPH_KEY = '_visual_graph'
 
@@ -16,7 +17,6 @@ export interface RuleViewItem {
   id: string
   name: string
   description?: string
-  type: 'scene' | 'alert' | 'schedule'
   enabled: boolean
   priority: number
   expression?: string
@@ -56,37 +56,6 @@ export interface NotificationChannelConfig {
   retention_days?: number
 }
 
-function extractRuleType(rule: RuleResponse): 'scene' | 'alert' | 'schedule' {
-  const pluginConfig = rule.plugin?.config || {}
-  const visualGraph = pluginConfig[VISUAL_GRAPH_KEY]
-
-  if (visualGraph?.nodes) {
-    const hasScheduleTrigger = visualGraph.nodes.some(
-      (n: any) => n.type === 'schedule-trigger'
-    )
-    if (hasScheduleTrigger) return 'schedule'
-
-    const hasNotification = visualGraph.nodes.some(
-      (n: any) => n.type === 'notification'
-    )
-    if (hasNotification) return 'alert'
-  }
-
-  if (rule.plugin?.name === 'schedule_rule') {
-    return 'schedule'
-  }
-
-  if (rule.plugin?.name === 'expression_rule') {
-    return 'alert'
-  }
-
-  if (rule.data_subscriptions && rule.data_subscriptions.length > 0) {
-    return 'scene'
-  }
-
-  return 'scene'
-}
-
 function extractExpression(rule: RuleResponse): { combined: string; list: string[] } {
   const pluginConfig = rule.plugin?.config || {}
   const visualGraph = pluginConfig[VISUAL_GRAPH_KEY]
@@ -98,7 +67,7 @@ function extractExpression(rule: RuleResponse): { combined: string; list: string
     }
   }
 
-  if (rule.plugin?.name === 'schedule_rule') {
+  if (rule.plugin?.name === RULE_PLUGIN_NAMES.SCHEDULE) {
     const triggerType = rule.plugin.config.trigger_type
     if (triggerType === 'cron') {
       const cron = rule.plugin.config.cron
@@ -108,13 +77,13 @@ function extractExpression(rule: RuleResponse): { combined: string; list: string
     return { combined: `每 ${interval} 秒`, list: [`每 ${interval} 秒`] }
   }
 
-  if (rule.plugin?.name === 'threshold_rule') {
+  if (rule.plugin?.name === RULE_PLUGIN_NAMES.THRESHOLD) {
     const { threshold, operator } = rule.plugin.config
     const expr = `value ${operator || '>'} ${threshold}`
     return { combined: expr, list: [expr] }
   }
 
-  if (rule.plugin?.name === 'expression_rule') {
+  if (rule.plugin?.name === RULE_PLUGIN_NAMES.EXPRESSION) {
     const expr = rule.plugin.config.expression || ''
     return { combined: expr, list: expr ? [expr] : [] }
   }
@@ -128,7 +97,6 @@ export function backendToViewItem(rule: RuleResponse): RuleViewItem {
     id: rule.id,
     name: rule.name,
     description: rule.description,
-    type: extractRuleType(rule),
     enabled: rule.enabled,
     priority: 10,
     expression: combined,
@@ -385,7 +353,7 @@ export function graphToBackendCreate(
   if (isScheduleRule) {
     const scheduleConfig = buildScheduleConfig(scheduleTriggerNodes)
     plugin = {
-      name: 'schedule_rule',
+      name: RULE_PLUGIN_NAMES.SCHEDULE,
       config: {
         ...scheduleConfig,
         [VISUAL_GRAPH_KEY]: graphData,
@@ -395,7 +363,7 @@ export function graphToBackendCreate(
     const cond = conditionNodes[0].data?.condition
     if (!cond) {
       plugin = {
-        name: 'threshold_rule',
+        name: RULE_PLUGIN_NAMES.THRESHOLD,
         config: {
           threshold: 0,
           operator: '>',
@@ -405,7 +373,7 @@ export function graphToBackendCreate(
       }
     } else {
       plugin = {
-        name: 'threshold_rule',
+        name: RULE_PLUGIN_NAMES.THRESHOLD,
         config: {
           threshold: Number(cond.value) || cond.value,
           operator: cond.operator,
@@ -420,7 +388,7 @@ export function graphToBackendCreate(
     const expression = buildCombinedExpression(chains)
     if (expression) {
       plugin = {
-        name: 'expression_rule',
+        name: RULE_PLUGIN_NAMES.EXPRESSION,
         config: {
           expression,
           duration: 0,
@@ -429,7 +397,7 @@ export function graphToBackendCreate(
       }
     } else {
       plugin = {
-        name: scheduleTriggerNodes.length > 0 ? 'schedule_rule' : 'threshold_rule',
+        name: scheduleTriggerNodes.length > 0 ? RULE_PLUGIN_NAMES.SCHEDULE : RULE_PLUGIN_NAMES.THRESHOLD,
         config: {
           trigger_type: 'interval',
           interval: 60,
@@ -557,7 +525,7 @@ function reconstructGraphFromBackend(
   const edges: RuleEdge[] = []
   let yOffset = 50
 
-  if (rule.plugin?.name === 'schedule_rule') {
+  if (rule.plugin?.name === RULE_PLUGIN_NAMES.SCHEDULE) {
     const config = rule.plugin.config
     const triggerType = config.trigger_type || 'interval'
 
@@ -598,12 +566,12 @@ function reconstructGraphFromBackend(
     }
   }
 
-  if (rule.plugin && rule.plugin.name !== 'schedule_rule') {
+  if (rule.plugin && rule.plugin.name !== RULE_PLUGIN_NAMES.SCHEDULE) {
     const condNodeId = `condition-${nodes.length}`
     const pluginName = rule.plugin.name
     const config = rule.plugin.config
 
-    if (pluginName === 'threshold_rule') {
+    if (pluginName === RULE_PLUGIN_NAMES.THRESHOLD) {
       nodes.push({
         id: condNodeId,
         type: 'condition',
@@ -619,7 +587,7 @@ function reconstructGraphFromBackend(
           label: '条件判断',
         },
       })
-    } else if (pluginName === 'expression_rule') {
+    } else if (pluginName === RULE_PLUGIN_NAMES.EXPRESSION) {
       nodes.push({
         id: condNodeId,
         type: 'condition',

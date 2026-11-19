@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { ruleApi } from '@/api/rules'
 import type { RuleCreateRequest, RuleUpdateRequest, RuleResponse } from '@/api/types'
 import { backendToViewItem, type RuleViewItem } from '@/utils/ruleBridge'
+import { RULE_PLUGIN_NAMES } from '@/views/Rules/types'
 
 export type { RuleViewItem }
 
@@ -122,7 +123,7 @@ export const useRuleStore = defineStore('rules', () => {
         name: `${rule.name} (副本)`,
         description: rule.description,
         enabled: false,
-        plugin: rule.plugin || { name: 'threshold_rule', config: {} },
+        plugin: rule.plugin || { name: RULE_PLUGIN_NAMES.THRESHOLD, config: {} },
         data_subscriptions: rule.data_subscriptions,
         notification: rule.notification,
         pipeline_id: rule.pipeline_id,

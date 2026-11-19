@@ -16,7 +16,7 @@
         clearable
         class="scada-select toolbar-filter"
         popper-class="scada-select-dropdown"
-        @update:model-value="emit('update:typeFilter', $event ?? '')"
+        @update:model-value="emit('update:typeFilter', $event ?? 'all')"
       >
         <el-option
           v-for="opt in RULE_TYPE_FILTER_OPTIONS"
@@ -63,13 +63,13 @@ import {
   Search,
 } from "@element-plus/icons-vue";
 import { Icon } from "@/icon/index";
-import { RULE_TYPE_FILTER_OPTIONS } from "../types";
+import { RULE_TYPE_FILTER_OPTIONS, type RulePluginName } from "../types";
 
 defineProps<{
   /** 搜索关键字 */
   searchQuery: string;
   /** 类型筛选值 */
-  typeFilter: string;
+  typeFilter: RulePluginName | "all";
   /** 列表加载中 */
   loading: boolean;
   /** 是否具备创建权限 */
@@ -78,7 +78,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: "update:searchQuery", value: string): void;
-  (e: "update:typeFilter", value: string): void;
+  (e: "update:typeFilter", value: RulePluginName | "all"): void;
   (e: "create"): void;
   (e: "import"): void;
   (e: "export"): void;

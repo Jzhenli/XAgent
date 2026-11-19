@@ -98,7 +98,7 @@ import type { RuleViewItem } from "@/stores/rules";
 import {
   RULE_TYPE_LABEL_KEYS,
   RULE_TYPE_TAG_TYPES,
-  type RuleType,
+  type RulePluginName,
 } from "../types";
 
 const props = defineProps<{
@@ -121,16 +121,23 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-/** 规则类型标签文案 */
+/** 插件名（从 rule.plugin.name 取，是前端类型的唯一事实源） */
+const rulePluginName = computed(
+  () => props.rule.plugin?.name as RulePluginName | undefined
+);
+
+/** 规则类型标签文案（通过 i18n 多语言切换） */
 const typeLabel = computed(
   () =>
-    t(RULE_TYPE_LABEL_KEYS[props.rule.type as RuleType] ?? "") ||
-    props.rule.type,
+    (rulePluginName.value && t(RULE_TYPE_LABEL_KEYS[rulePluginName.value])) ||
+    rulePluginName.value ||
+    t("rules.unknown")
 );
 
 /** 规则类型对应的 el-tag 样式 */
 const typeTag = computed(
-  () => RULE_TYPE_TAG_TYPES[props.rule.type as RuleType] ?? "info",
+  () =>
+    (rulePluginName.value && RULE_TYPE_TAG_TYPES[rulePluginName.value]) || "info"
 );
 </script>
 

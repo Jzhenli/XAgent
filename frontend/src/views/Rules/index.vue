@@ -64,14 +64,14 @@ import RuleToolbar from './components/RuleToolbar.vue'
 import RuleList from './components/RuleList.vue'
 import { useRuleManagement } from './hooks/useRuleManagement'
 import { useRuleIO } from './hooks/useRuleIO'
+import type { RulePluginName } from './types'
 
 const { t } = useI18n()
 const ruleStore = useRuleStore()
 const userStore = useUserStore()
 
-// ==================== 工具栏筛选状态 ====================
 const searchQuery = ref('')
-const typeFilter = ref('')
+const typeFilter = ref<RulePluginName | 'all'>('all')
 
 // ==================== 权限控制 ====================
 const canCreate = computed(() => userStore.hasPermission('rules', 'create'))
@@ -79,7 +79,7 @@ const canUpdate = computed(() => userStore.hasPermission('rules', 'update'))
 const canDelete = computed(() => userStore.hasPermission('rules', 'delete'))
 
 /** 是否存在筛选条件 (用于区分空状态文案) */
-const hasFilter = computed(() => !!(searchQuery.value || typeFilter.value))
+const hasFilter = computed(() => !!(searchQuery.value || (typeFilter.value && typeFilter.value !== 'all')))
 
 /**
  * 过滤后的规则列表
@@ -97,8 +97,8 @@ const filteredRules = computed(() => {
     )
   }
 
-  if (typeFilter.value) {
-    rules = rules.filter((r) => r.type === typeFilter.value)
+  if (typeFilter.value && typeFilter.value !== 'all') {
+    rules = rules.filter((r) => r.plugin?.name === typeFilter.value)
   }
 
   return rules
