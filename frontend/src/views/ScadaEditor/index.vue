@@ -239,7 +239,7 @@ onMounted(async () => {
 
   // 先加载面板
   try {
-    const panel = await scada.loadPanel(panelId)
+    const panel = await scada.loadPanel(panelId, true) // 编辑模式跳过 IndexedDB 缓存，强制从后端拿最新数据
     if (panel === null) {
       console.error('Panel not found or failed to parse:', panelId)
       ElMessage.error(t('scada.loadPanelFailed'))
