@@ -125,9 +125,13 @@ jobs:
             "$PY" --version
             export PATH="/opt/python/cp311-cp311/bin:$PATH"
 
-            # 2. armv7l: piwheels 提速；cffi 强制 sdist（其预编译 wheel 为 bookworm 构建，板端加载不了）
+            # 2. armv7l: 禁用 piwheels —— 其 wheel 基于 bookworm（glibc 2.36），且
+            #    cp311-cp311-linux_armv7l 标签优先级高于 PyPI 的 cp39-abi3-manylinux_2_31_armv7l，
+            #    会覆盖 cryptography/pydantic_core 的兼容 wheel，导致板端加载失败。
+            #    PyPI 已自带全部兼容 armv7 wheel（cryptography、pydantic_core），
+            #    其余编译包（cffi/psutil/pyyaml）走 sdist 本地编译，manylinux 镜像自带 gcc。
+            #    cffi 强制 sdist 兜底（其 PyPI 无 armv7 wheel，防未来引入 bookworm 产物）。
             if [[ "$ARCH" == "armv7l" ]]; then
-              export PIP_EXTRA_INDEX_URL="https://www.piwheels.org/simple"
               export PIP_NO_BINARY=cffi
             fi
 
