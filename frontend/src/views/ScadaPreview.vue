@@ -24,6 +24,9 @@
 
     <!-- 加载遮罩：覆盖层 z-index 在 canvas 之上，不销毁 canvas DOM -->
     <!-- 好处: canvas 在遮罩下继续响应式渲染新数据，loading=false 时可立即 paint -->
+    <!-- P1: loading=false 先于 nextTick 解除阻塞，Vue patch 在遮罩下继续完成，
+         spin 可见时长从"loadPanel+patch"缩至仅"loadPanel"；低端平板禁用 Transition，
+         避免 patch 与 opacity 动画抢占主线程加剧卡顿 -->
     <div v-if="loading" class="loading-overlay">
       <div class="loading-content">
         <el-icon class="loading-spinner" :size="36"><Loading /></el-icon>
@@ -90,10 +93,11 @@ async function initPanel(panelId: string, forceNetwork = false) {
     // loadPanel 内部 applyProjectData 已经更新 sourcePanel → ScadaCanvas 响应式拿到新数据
     // boundAssets 变化 → boundAssets watch 自动触发 refreshBoundDevices
   } finally {
-    // 🆕 等 Vue 完成 canvas DOM 更新（v-for diff 新组件）再移除遮罩
-    // 去掉 :key 后是组件级 diff 而非完全重建，安卓平板上 ~300ms → ~100ms
-    await nextTick()
+    // P1: 遮罩先解除阻塞（带 150ms opacity 渐隐），Vue patch 在遮罩下继续完成
+    // 原来的 await nextTick() 放在 loading=false 之前会让低端平板的 patch 阻塞用户视觉 ~500ms+
+    // 现在遮罩先淡出，渐隐期间 nextTick 同步完成；patch 耗时仍不变，但用户不再盯着 spin
     loading.value = false
+    await nextTick()  // 保留：确保 DOM 更新 flush 完成后再返回，保证 boundAssets watch 等副作用时序正确
   }
 }
 
