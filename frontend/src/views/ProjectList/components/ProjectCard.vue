@@ -17,7 +17,7 @@
         <Icon
           name="show"
           type="mono-line"
-          :size="24"
+          :size="36"
           :color="{ normal: themeStore.isDark() ? 'white' : 'black' }"
           @click="$emit('preview', project)"
           class="preview-btn"

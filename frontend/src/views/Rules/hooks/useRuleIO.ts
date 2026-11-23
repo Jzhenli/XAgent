@@ -2,6 +2,8 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useRuleStore, type RuleViewItem } from '@/stores/rules'
+import type { RuleCreateRequest } from '@/api/types'
+import { RULE_PLUGIN_NAMES } from '../types'
 
 export function useRuleIO() {
   const { t } = useI18n()
@@ -107,15 +109,19 @@ export function useRuleIO() {
           return
         }
 
-        // 构建请求体（使用 crypto.randomUUID() 替代 Date.now() 避免碰撞）
-        const createRequests = importData.rules.map((rule: any) => {
+        // 构建请求体：从系统导出文件完整透传后端字段，只换 ID + 剥只读统计字段
+        const createRequests: RuleCreateRequest[] = importData.rules.map((rule: any) => {
           const requestId = crypto.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
           return {
             id: requestId,
             name: rule.name || t('ruleEditor.defaultRuleName'),
-            description: rule.description || '',
-            graph: rule.graph || null,
-            enabled: rule.enabled ?? false
+            description: rule.description || undefined,
+            enabled: rule.enabled ?? false,
+            plugin: rule.plugin ?? { name: RULE_PLUGIN_NAMES.THRESHOLD, config: {} },
+            data_subscriptions: rule.data_subscriptions,
+            notification: rule.notification,
+            pipeline_id: rule.pipeline_id,
+            channel_ids: rule.channel_ids,
           }
         })
 

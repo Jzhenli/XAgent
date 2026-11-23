@@ -1,21 +1,13 @@
 <template>
   <div class="value-image-switch" :class="{ clickable: !editing && enableWrite, writing }" :style="containerStyle" @click="handleClick">
-    <div v-if="!currentImageUrl && editing" class="image-placeholder">
-      <span>{{ t('scadaComponents.imagePlaceholder') }}</span>
-      <span v-if="currentValue !== null && currentValue !== undefined" class="image-value">({{ currentValue }})</span>
-    </div>
     <img
-      v-else-if="currentImageUrl"
+      v-if="currentImageUrl"
       :src="currentImageUrl"
       :alt="component.name"
       class="image-content"
       :style="imageStyle"
       draggable="false"
     />
-    <div v-else class="image-placeholder">
-      <span>{{ t('scadaComponents.imagePlaceholder') }}</span>
-      <span v-if="currentValue !== null && currentValue !== undefined" class="image-value">({{ currentValue }})</span>
-    </div>
   </div>
 </template>
 
@@ -118,25 +110,6 @@ const handleClick = async () => {
   align-items: center;
   justify-content: center;
   background: var(--bg-container);
-}
-
-.image-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  color: var(--text-placeholder);
-  font-size: 14px;
-  border: 2px dashed var(--border-base);
-  border-radius: 4px;
-}
-
-.image-value {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--text-secondary);
 }
 
 .image-content {

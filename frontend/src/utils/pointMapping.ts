@@ -22,6 +22,7 @@ export function isPointWritable(point: PointConfig): boolean {
   const config = point.config || {}
 
   if (config.writable === true) return true
+  if (config.writable === false) return false
 
   const registerType = config.register_type as string | undefined
   if (registerType === 'coil' || registerType === 'holding') return true

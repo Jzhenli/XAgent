@@ -21,8 +21,9 @@
       <el-table-column :label="t('alerts.level')" width="100" align="center">
         <template #default="{ row }">
           <el-tag
-            :type="getLevelTag(row.level)"
-            effect="light"
+            :color="ALERT_LEVEL_TAG_COLORS[row.level].bg"
+            :border-color="ALERT_LEVEL_TAG_COLORS[row.level].border"
+            effect="dark"
             round
             class="level-tag"
           >
@@ -102,7 +103,7 @@ import { useI18n } from 'vue-i18n'
 import type { Alert } from '@/stores/alerts'
 import {
   ALERT_LEVEL_LABEL_KEYS,
-  ALERT_LEVEL_TAG_TYPES,
+  ALERT_LEVEL_TAG_COLORS,
   ALERT_STATUS_LABEL_KEYS,
   ALERT_STATUS_TAG_TYPES,
   type AlertLevel,
@@ -129,9 +130,6 @@ const { t } = useI18n()
 /** 获取告警级别文案 */
 const getLevelLabel = (level: AlertLevel) =>
   t(ALERT_LEVEL_LABEL_KEYS[level] ?? '') || level
-
-/** 获取告警级别 el-tag 样式 */
-const getLevelTag = (level: AlertLevel) => ALERT_LEVEL_TAG_TYPES[level] ?? 'info'
 
 /** 获取告警状态文案 */
 const getStatusLabel = (status: AlertStatus) =>

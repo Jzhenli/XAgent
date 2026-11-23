@@ -63,6 +63,7 @@ export const panelStore = {
    * 不 await，不阻塞首屏加载体验
    */
   async preloadAll(): Promise<void> {
+    console.log('[panelStore] preloadAll started')
     try {
       const { projectApi } = await import('@/api/projects')
       const res = await projectApi.list()

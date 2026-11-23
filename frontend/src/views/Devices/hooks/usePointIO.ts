@@ -169,12 +169,8 @@ export function usePointIO() {
         return
       }
 
-      // 直接清空设备上原有所有点位，使用 Excel 内容完全替换
-      const existingPoints = pointStore.getDevicePoints(deviceAsset)
-      if (existingPoints.length > 0) {
-        const allExistingNames = existingPoints.map(p => p.name)
-        await deviceApi.batchRemovePoints(deviceAsset, allExistingNames)
-      }
+      // 存储导入结果，在 beforeClose 完成后统一处理提示
+      let importResult: { succeeded: number; failed: number; details?: Array<Record<string, unknown>> } | null = null
 
       try {
         await ElMessageBox.confirm(
@@ -184,26 +180,48 @@ export function usePointIO() {
             confirmButtonText: t('common.confirm'),
             cancelButtonText: t('common.cancel'),
             type: 'info',
-            customClass: 'x-message-box'
+            customClass: 'x-message-box',
+            beforeClose: async (action, instance, done) => {
+              if (action === 'confirm') {
+                instance.confirmButtonLoading = true
+                try {
+                  // 1. 先清空设备上原有所有点位
+                  const existing = pointStore.getDevicePoints(deviceAsset)
+                  if (existing.length > 0) {
+                    await deviceApi.batchRemovePoints(deviceAsset, existing.map(p => p.name))
+                  }
+                  // 2. 再导入 Excel 中的新点位
+                  importResult = await deviceApi.batchAddPoints(deviceAsset, { points })
+                  done()
+                } catch (err) {
+                  instance.confirmButtonLoading = false
+                  done()
+                  throw err
+                }
+              } else {
+                done()
+              }
+            }
           }
         )
       } catch {
         return
       }
 
-      const result = await deviceApi.batchAddPoints(deviceAsset, { points })
-
-      if (result.failed > 0) {
-        const errorDetails = (result.details || [])
-          .filter((d) => d['status'] === 'failed')
-          .map((d) => `${d['point_name']}: ${d['message']}`)
-          .join('; ')
-        ElMessage.warning(
-          t('devices.import.importPartial', { success: result.succeeded, failed: result.failed }) +
-          (errorDetails ? ` (${errorDetails})` : '')
-        )
-      } else {
-        ElMessage.success(t('devices.import.importSuccess', { count: result.succeeded }))
+      // 弹窗关闭后，显示导入结果提示并刷新列表
+      if (importResult) {
+        if (importResult.failed > 0) {
+          const errorDetails = (importResult.details || [])
+            .filter((d) => d['status'] === 'failed')
+            .map((d) => `${d['point_name']}: ${d['message']}`)
+            .join('; ')
+          ElMessage.warning(
+            t('devices.import.importPartial', { success: importResult.succeeded, failed: importResult.failed }) +
+            (errorDetails ? ` (${errorDetails})` : '')
+          )
+        } else {
+          ElMessage.success(t('devices.import.importSuccess', { count: importResult.succeeded }))
+        }
       }
 
       await pointStore.fetchDevicePoints(deviceAsset)
