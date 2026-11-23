@@ -6,6 +6,7 @@
 import asyncio
 import inspect
 import logging
+import time
 from typing import Any, Dict, Optional
 
 from .types import PluginType, PluginStatus, PluginInfo
@@ -15,6 +16,12 @@ from ..scheduler import Scheduler, TaskType
 from ..exceptions import PluginLoadError, PluginStartError, PluginStopError
 
 logger = logging.getLogger(__name__)
+
+# 恢复失败后的指数退避参数：30s 起步，每次翻倍，封顶 10 分钟
+RECOVERY_BACKOFF_BASE_SECONDS = 30.0
+RECOVERY_BACKOFF_MAX_SECONDS = 600.0
+# 指数上限：2^10 已远超 max/base，避免长期离线后 2**failures 转 float 溢出
+RECOVERY_BACKOFF_MAX_EXPONENT = 10
 
 
 class PluginLifecycle:
@@ -45,6 +52,10 @@ class PluginLifecycle:
         self.scheduler = scheduler
         self.storage = storage
         self.stats_manager = stats_manager
+
+        # 恢复退避状态（按 plugin_id 记录失败次数与下次可尝试时间）
+        self._recovery_failures: Dict[str, int] = {}
+        self._next_recovery_at: Dict[str, float] = {}
     
     async def load_plugin(
         self,
@@ -189,6 +200,9 @@ class PluginLifecycle:
             
             plugin_info.status = PluginStatus.RUNNING
             plugin_info.error_message = None
+            # 插件成功启动后重置恢复退避（覆盖手动重启场景）
+            self._recovery_failures.pop(plugin_info.plugin_id, None)
+            self._next_recovery_at.pop(plugin_info.plugin_id, None)
             await self._publish_status_change(plugin_info)
             logger.info(f"Plugin started: {plugin_info.name}")
             return True
@@ -254,8 +268,13 @@ class PluginLifecycle:
         Returns:
             如果卸载成功返回True
         """
-        await self.stop_plugin(plugin_id)
-        
+        try:
+            await self.stop_plugin(plugin_id)
+        finally:
+            # 即使停止失败也清理该插件的恢复退避状态
+            self._recovery_failures.pop(plugin_id, None)
+            self._next_recovery_at.pop(plugin_id, None)
+
         if self.registry.unregister_plugin_instance(plugin_id):
             logger.info(f"Plugin unloaded: {plugin_id}")
             return True
@@ -271,19 +290,43 @@ class PluginLifecycle:
                 logger.error(f"Error stopping plugin {plugin_info.plugin_id}: {e}")
     
     async def recover_failed_plugins(self) -> None:
-        """恢复失败的插件"""
+        """恢复失败的插件
+
+        使用指数退避避免设备长时间离线时反复重试（每次重试都伴随
+        建连接/心跳/关闭的完整开销），成功后重置退避。
+        """
         failed_plugins = self.registry.get_failed_plugins()
-        
+
         for plugin_info in failed_plugins:
+            if time.monotonic() < self._next_recovery_at.get(plugin_info.plugin_id, 0.0):
+                continue
+
             logger.info(f"Attempting to recover failed plugin: {plugin_info.name}")
-            
+
             try:
                 if await self.start_plugin(plugin_info.plugin_id):
+                    # 退避状态已由 start_plugin 成功路径重置
                     logger.info(f"Successfully recovered plugin: {plugin_info.name}")
                 else:
-                    logger.warning(f"Failed to recover plugin: {plugin_info.name}")
+                    self._register_recovery_failure(plugin_info)
             except Exception as e:
+                self._register_recovery_failure(plugin_info)
                 logger.error(f"Error recovering plugin {plugin_info.name}: {e}")
+
+    def _register_recovery_failure(self, plugin_info: PluginInfo) -> None:
+        """记录恢复失败，按指数退避安排下次恢复时间"""
+        failures = self._recovery_failures.get(plugin_info.plugin_id, 0) + 1
+        self._recovery_failures[plugin_info.plugin_id] = failures
+        exponent = min(failures - 1, RECOVERY_BACKOFF_MAX_EXPONENT)
+        delay = min(
+            RECOVERY_BACKOFF_BASE_SECONDS * (2 ** exponent),
+            RECOVERY_BACKOFF_MAX_SECONDS,
+        )
+        self._next_recovery_at[plugin_info.plugin_id] = time.monotonic() + delay
+        logger.warning(
+            f"Plugin {plugin_info.name} recovery failed, "
+            f"next attempt in {delay:.0f}s (failures={failures})"
+        )
     
     async def _publish_status_change(self, plugin_info: PluginInfo) -> None:
         """发布插件状态变更事件

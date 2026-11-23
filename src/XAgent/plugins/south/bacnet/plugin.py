@@ -23,7 +23,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 from XAgent.xcore.plugins.south import SouthPluginBase
-from XAgent.xcore.services.bacnet_compat import patch_bacpypes
+from XAgent.xcore.services.bacnet_compat import abort_pending_transactions, patch_bacpypes
 from XAgent.xcore.storage.interface import Reading
 from XAgent.xcore.transform import StandardDataPoint
 
@@ -150,6 +150,17 @@ class BACnetAppManager:
             
             if cls._reference_count == 0 and cls._shared_app is not None:
                 # 所有设备都已断开，关闭并清理实例
+                # abort 在途事务与 close 分开 try：即使 abort 失败也必须 close，
+                # 否则 UDP socket 泄漏
+                try:
+                    pending = await abort_pending_transactions(cls._shared_app)
+                    if pending:
+                        logger.debug(
+                            f"Aborted {pending} pending BACnet transactions "
+                            f"before closing shared app (port {cls._local_port})"
+                        )
+                except Exception as e:
+                    logger.error(f"Error aborting pending BACnet transactions: {e}")
                 try:
                     if hasattr(cls._shared_app, 'close'):
                         # bacpypes3 的 Application.close() 是同步方法，不能 await
