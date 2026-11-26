@@ -29,6 +29,7 @@ from XAgent.xcore.transform import StandardDataPoint
 
 from .converter import BACnetConverter
 from .constants import (
+    BACNET_DATA_TYPES,
     DEFAULT_PORT,
     DEFAULT_DEVICE_ID,
     DEFAULT_TIMEOUT,
@@ -978,6 +979,12 @@ class BACnetPlugin(SouthPluginBase):
             object_type = point_info.get("object_type")
             object_instance = point_info.get("object_instance")
             property_id = point_info.get("property_id", "presentValue")
+
+            # 整数语义对象类型（integerValue/positiveIntegerValue/accumulator/multiState*）
+            # 做 int 强转，避免上游传入字符串导致 bacpypes3 编码失败
+            standard_type = BACNET_DATA_TYPES.get(object_type, {}).get("standard_type")
+            if standard_type == "int":
+                value = int(value)
 
             device_address = f"{self._host}:{self._port}"
             object_identifier = f"{object_type},{object_instance}"

@@ -10,6 +10,9 @@ BACNET_OBJECT_TYPE_MAPPINGS = {
     "multiStateInput": {"standard_type": "int", "object_type": "multiStateInput"},
     "multiStateOutput": {"standard_type": "int", "object_type": "multiStateOutput"},
     "multiStateValue": {"standard_type": "int", "object_type": "multiStateValue"},
+    "integerValue": {"standard_type": "int", "object_type": "integerValue"},
+    "positiveIntegerValue": {"standard_type": "int", "object_type": "positiveIntegerValue"},
+    "accumulator": {"standard_type": "int", "object_type": "accumulator"},
 }
 
 BACNET_PHYSICAL_QUANTITY_MAPPINGS = {
@@ -29,6 +32,8 @@ BACNET_PHYSICAL_QUANTITY_MAPPINGS = {
 
 BACNET_DATA_TYPES = {**BACNET_OBJECT_TYPE_MAPPINGS, **BACNET_PHYSICAL_QUANTITY_MAPPINGS}
 
+# BACnet 对象类型枚举值（与 bacpypes3 BACnetObjectType 保持一致）。
+# 仅供类型完整性维护/文档参考，当前无运行时消费者。
 BACNET_OBJECT_TYPES = {
     "analogInput": 0,
     "analogOutput": 1,
@@ -39,6 +44,9 @@ BACNET_OBJECT_TYPES = {
     "multiStateInput": 13,
     "multiStateOutput": 14,
     "multiStateValue": 19,
+    "accumulator": 23,
+    "integerValue": 45,
+    "positiveIntegerValue": 48,
 }
 
 BACNET_PROPERTY_IDS = {

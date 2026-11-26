@@ -3,7 +3,7 @@
 此模块提供BACnet设备和点位的自动发现功能，包括：
 - 点位发现：读取设备对象列表，自动识别点位
 - 批量读取优化：分批读取对象属性，避免设备过载
-- 数据类型映射：将BACnet对象类型映射为系统内部数据类型
+- 可写性判定：基于BACnet对象类型语义
 """
 
 import asyncio
@@ -54,19 +54,6 @@ class DeviceDiscoveryService:
     BATCH_SIZE = 50  # 每批读取的对象数量
     BATCH_INTERVAL = 0.2  # 批次间隔（秒）
     
-    # 数据类型映射规则
-    DATA_TYPE_MAPPING = {
-        "analogInput": "analog",
-        "analogOutput": "analog",
-        "analogValue": "analog",
-        "binaryInput": "binary",
-        "binaryOutput": "binary",
-        "binaryValue": "binary",
-        "multiStateInput": "multistate",
-        "multiStateOutput": "multistate",
-        "multiStateValue": "multistate",
-    }
-
     # 默认可写性判断
     DEFAULT_WRITABLE_MAPPING = {
         "analogInput": False,
@@ -78,6 +65,9 @@ class DeviceDiscoveryService:
         "multiStateInput": False,
         "multiStateOutput": True,
         "multiStateValue": True,
+        "integerValue": True,
+        "positiveIntegerValue": True,
+        "accumulator": False,
     }
     
     def __init__(self, plugin_loader: Any):
@@ -310,8 +300,10 @@ class DeviceDiscoveryService:
             # 默认可写性（基于对象类型语义）
             writable = self._get_default_writable(object_type)
 
-            # 数据类型映射
-            data_type = self.DATA_TYPE_MAPPING.get(object_type, "unknown")
+            # BACnet 点的 data_type 约定为对象类型字符串本身，
+            # 与 BACnetConverter 的 BACNET_DATA_TYPES 查表 key 及前端
+            # 手动建点流程（data_type = object_type）保持一致
+            data_type = object_type
 
             point_info = {
                 "object_type": object_type,
