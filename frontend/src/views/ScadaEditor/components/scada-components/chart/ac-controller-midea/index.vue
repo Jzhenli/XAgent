@@ -73,7 +73,7 @@
             </div>
 
             <!-- 加减按钮：胶囊拼合 -->
-            <div class="acm-adjust-btns" :class="{ disabled: !isOn }">
+            <div class="acm-adjust-btns">
               <div class="acm-adj-btn left" :style="stepBtnStyle" @click="decrementSetpoint">−</div>
               <div class="acm-adj-btn right" :style="stepBtnStyle" @click="incrementSetpoint">+</div>
             </div>
@@ -87,7 +87,7 @@
                 v-for="m in modeList"
                 :key="m.key"
                 class="acm-mode-item"
-                :class="{ active: activeModeKeys.has(m.key), disabled: !isOn }"
+                :class="{ active: activeModeKeys.has(m.key) }"
                 :style="modeItemStyle"
                 @click="handleModeClick(m)"
               >
@@ -110,7 +110,7 @@
               <div
                 v-if="showFanAuto"
                 class="acm-fan-auto-btn"
-                :class="{ active: isFanAuto, disabled: !isOn }"
+                :class="{ active: isFanAuto }"
                 :style="fanItemStyle"
                 @click="toggleFanAuto"
               >
@@ -124,7 +124,7 @@
               </div>
 
               <!-- 7 档滑块 -->
-              <div class="acm-fan-slider" :class="{ disabled: !isOn }">
+              <div class="acm-fan-slider">
                 <div class="acm-fan-slider-track" :style="sliderTrackStyle">
                   <div
                     class="acm-fan-slider-btn minus"
@@ -220,9 +220,18 @@ const { currentValue: powerVal, writeValue: writePower } = useScadaBinding(
   { transform: (v) => (typeof v === 'boolean' ? (v ? 1 : 0) : v) },
   computed(() => config.value.powerOffValue),
 )
+// 模式显示（只读，状态展示用）
+const { currentValue: modeDisplayVal } = useScadaBinding(
+  computed<PointBinding | null>(() => bindings.value?.modeDisplay ?? null),
+  {},
+  computed(() => config.value.modeDisplayOffValue),
+)
+
+// 画布卡片的开关机效果根据模式显示点位判断（关机值 = modeDisplayOffValue）
 const isOn = computed(() => {
+  const v = modeDisplayVal.value
   // eslint-disable-next-line eqeqeq
-  return powerVal.value != config.value.powerOffValue
+  return v != config.value.modeDisplayOffValue
 })
 
 // 模式设定（写入用）
@@ -230,13 +239,6 @@ const { currentValue: modeSetpointVal, writeValue: writeModeBinding } = useScada
   computed<PointBinding | null>(() => bindings.value?.modeSetpoint ?? null),
   {},
   computed(() => config.value.modeAutoValue),
-)
-
-// 模式显示（只读，状态展示用）
-const { currentValue: modeDisplayVal } = useScadaBinding(
-  computed<PointBinding | null>(() => bindings.value?.modeDisplay ?? null),
-  {},
-  computed(() => config.value.modeDisplayOffValue),
 )
 
 // 风速设定（写入用）
@@ -577,7 +579,7 @@ const activeModeKeys = computed<Set<string>>(() => {
 const writing = ref(false)
 
 const handleModeClick = async (m: ModeItem) => {
-  if (props.editing || !isOn.value || writing.value) return
+  if (props.editing || writing.value) return
   writing.value = true
   try {
     if (!bindings.value?.modeSetpoint) {
@@ -644,21 +646,21 @@ const activeFanLevel = computed<FanLevelItem | null>(() => {
 
 // 点击 +/- 在 visible 档位间切换
 const incrementFanLevel = async () => {
-  if (!isOn.value || writing.value) return
+  if (writing.value) return
   if (isFanAuto.value) return // 自动态不能+/-
   const nextIdx = Math.min(activeFanLevelIndex.value + 1, visibleFanLevels.value.length - 1)
   await writeFanLevel(nextIdx)
 }
 
 const decrementFanLevel = async () => {
-  if (!isOn.value || writing.value) return
+  if (writing.value) return
   if (isFanAuto.value) return
   const prevIdx = Math.max(activeFanLevelIndex.value - 1, 0)
   await writeFanLevel(prevIdx)
 }
 
 const selectFanLevel = async (idx: number) => {
-  if (!isOn.value || writing.value) return
+  if (writing.value) return
   await writeFanLevel(idx)
 }
 
@@ -682,8 +684,7 @@ const writeFanLevel = async (idx: number) => {
 }
 
 const toggleFanAuto = async () => {
-  if (props.editing) return
-  if (!isOn.value || writing.value) return
+  if (props.editing || writing.value) return
   writing.value = true
   try {
     if (!bindings.value?.fanSpeedSetpoint) {
@@ -801,14 +802,14 @@ const togglePower = async () => {
 const clamp = (v: number) => Math.min(gaugeMax.value, Math.max(gaugeMin.value, v))
 
 const incrementSetpoint = async () => {
-  if (!isOn.value || writing.value) return
+  if (writing.value) return
   const raw = Number(setpointVal.value) || gaugeMin.value
   const next = clamp(raw + gaugeStep.value)
   await writeSetpointValue(next)
 }
 
 const decrementSetpoint = async () => {
-  if (!isOn.value || writing.value) return
+  if (writing.value) return
   const raw = Number(setpointVal.value) || gaugeMin.value
   const next = clamp(raw - gaugeStep.value)
   await writeSetpointValue(next)
