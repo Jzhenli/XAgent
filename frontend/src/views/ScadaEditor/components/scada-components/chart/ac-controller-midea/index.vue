@@ -222,7 +222,7 @@ const { currentValue: powerVal, writeValue: writePower } = useScadaBinding(
 )
 const isOn = computed(() => {
   // eslint-disable-next-line eqeqeq
-  return powerVal.value == config.value.powerOnValue
+  return powerVal.value != config.value.powerOffValue
 })
 
 // 模式设定（写入用）
